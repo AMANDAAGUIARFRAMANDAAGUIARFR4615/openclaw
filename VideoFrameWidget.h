@@ -66,7 +66,9 @@ public:
 
         if ((orientation == 1 || orientation == 2) && height < width || (orientation == 3 || orientation == 4) && height > width)
         {
-            if (sizePolicy().horizontalPolicy() == QSizePolicy::Fixed && sizePolicy().verticalPolicy() == QSizePolicy::Fixed)
+            QString className = parentWidget()->metaObject()->className();
+
+            if (className == "DeviceWindow")
                 setFixedSize(height, width);
             else
                 resize(height, width);
