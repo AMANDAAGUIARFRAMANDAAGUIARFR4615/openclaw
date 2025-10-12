@@ -225,3 +225,33 @@ void DeviceWindow::inputMethodEvent(QInputMethodEvent *event)
 
     QWidget::inputMethodEvent(event);
 }
+
+void DeviceWindow::wheelEvent(QWheelEvent *event)
+{
+    // QWidget::wheelEvent(event);
+
+    int delta = event->angleDelta().y();
+
+    // 将当前位置保存在一个非const的QPoint中
+    QPoint currentPos = event->position().toPoint();  // 拷贝构造，当前点不再是const
+
+    QTimer *timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, [=]() mutable {  // 使用 mutable 允许修改 lambda 捕获的值
+        QPoint newPos = currentPos + QPoint(0, delta);
+        QMouseEvent *moveEvent = new QMouseEvent(QEvent::MouseMove, newPos, Qt::LeftButton, Qt::LeftButton, event->modifiers());
+        QApplication::postEvent(this, moveEvent);
+
+        currentPos = newPos;  // 更新当前位置
+
+        // 触发一定次数后停止定时器
+        static int count = 0;
+        if (++count > 5) {  // 设置滑动次数
+            timer->stop();
+            delete timer;
+            count = 0;
+        }
+    });
+
+    // 设置定时器间隔，模拟滑动速度
+    timer->start(50);
+}

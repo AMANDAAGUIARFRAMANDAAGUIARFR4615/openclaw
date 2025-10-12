@@ -22,4 +22,5 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;
     void inputMethodEvent(QInputMethodEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
 };
