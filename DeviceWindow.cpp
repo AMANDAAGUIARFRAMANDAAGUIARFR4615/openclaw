@@ -8,6 +8,7 @@
 #include <QVBoxLayout>
 #include <QMouseEvent>
 #include <QClipboard>
+#include <QMimeData>
 
 DeviceWindow::DeviceWindow(QTcpSocket* socket, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(socket, deviceInfo), deviceWidget(deviceWidget)
 {
@@ -178,36 +179,31 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
         if (event->key() == Qt::Key_V)
         {
             QClipboard *clipboard = QGuiApplication::clipboard();
-            QMimeData *mimeData = clipboard->mimeData();
+            const QMimeData *mimeData = clipboard->mimeData();
+
+            QJsonObject dataObject;
 
             if (mimeData->hasText())
             {
-                QJsonObject dataObject;
-                dataObject["type"] = 1;
-                dataObject["content"] = mimeData->text();
                 qDebugEx() << "剪切板内容是文本:" << mimeData->text();
 
-                QJsonObject jsonObject;
-                jsonObject["event"] = "clipboard";
-                jsonObject["data"] = dataObject;
-                TcpServer::sendData(socket, jsonObject);
+                dataObject["type"] = 1;
+                dataObject["content"] = mimeData->text();
             }
-            
-            if (mimeData->hasImage())
+            else if (mimeData->hasImage())
             {
                 QImage image = qvariant_cast<QImage>(mimeData->imageData());
-                QByteArray base64Data = QByteArray::fromRawData(reinterpret_cast<const char*>(image.bits()), image.byteCount()).toBase64();
+                QByteArray base64Data = QByteArray::fromRawData(reinterpret_cast<const char*>(image.bits()), image.sizeInBytes()).toBase64();
                 qDebugEx() << "剪切板内容是图片:" << base64Data.length();
 
-                QJsonObject dataObject;
                 dataObject["type"] = 2;
-                dataObject["content"] = base64Data;
-
-                QJsonObject jsonObject;
-                jsonObject["event"] = "clipboard";
-                jsonObject["data"] = dataObject;
-                TcpServer::sendData(socket, jsonObject);
+                dataObject["content"] = QString(base64Data);
             }
+
+            QJsonObject jsonObject;
+            jsonObject["event"] = "clipboard";
+            jsonObject["data"] = dataObject;
+            TcpServer::sendData(socket, jsonObject);
 
             return;
         }
