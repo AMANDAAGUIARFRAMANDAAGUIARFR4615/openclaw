@@ -1,6 +1,7 @@
 #include "DeviceWidget.h"
 #include "DeviceWindow.h"
 #include "EventHub.h"
+#include "ToastWidget.h"
 #include <QVBoxLayout>
 #include <QLabel>
 
@@ -53,6 +54,12 @@ DeviceWidget::~DeviceWidget()
 void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
 {
     QWidget::mouseDoubleClickEvent(event);
+
+    if (!videoFrameWidget)
+    {
+        new ToastWidget("需要先解锁才能控制", this);
+        return;
+    }
 
     videoFrameWidgetSize = videoFrameWidget->size();
 
