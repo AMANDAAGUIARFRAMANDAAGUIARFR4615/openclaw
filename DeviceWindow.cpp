@@ -82,6 +82,9 @@ QPointF DeviceWindow::getTransformedPosition(QMouseEvent *event) {
 
 void DeviceWindow::closeEvent(QCloseEvent *event)
 {
+    if (!videoFrameWidget)
+        return;
+
     videoFrameWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     videoFrameWidget->setFixedSize(deviceWidget->videoFrameWidgetSize);
     deviceWidget->addVideoFrameWidget(videoFrameWidget);
@@ -158,30 +161,24 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
     auto keySequence = QKeySequence(event->key()).toString();
 
     if (event->modifiers() == Qt::ControlModifier) {
-        if (event->key() == Qt::Key_A || event->key() == Qt::Key_C)
+        if (event->key() == Qt::Key_A || event->key() == Qt::Key_C || event->key() == Qt::Key_V)
         {
             QJsonObject dataObject;
             dataObject["type"] = "keyPress";
             dataObject["key"] = "Control" + keySequence;
 
+            if (event->key() == Qt::Key_V)
+            {
+                QClipboard *clipboard = QGuiApplication::clipboard();
+                QString text = clipboard->text();
+                
+                qDebugEx() << "获取剪贴板内容" << text;
+                dataObject["content"] = text;
+            }
+
             QJsonObject jsonObject;
             jsonObject["event"] = "keyboard";
             jsonObject["data"] = dataObject;
-
-            TcpServer::sendData(socket, jsonObject);
-            return;
-        }
-
-        if (event->key() == Qt::Key_V)
-        {
-            QClipboard *clipboard = QGuiApplication::clipboard();
-            QString text = clipboard->text();
-            
-            qDebugEx() << "获取剪贴板内容" << text;
-
-            QJsonObject jsonObject;
-            jsonObject["event"] = "inputText";
-            jsonObject["data"] = text;
 
             TcpServer::sendData(socket, jsonObject);
             return;
