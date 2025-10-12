@@ -155,12 +155,14 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
         return;
     }
 
+    auto keySequence = QKeySequence(event->key()).toString();
+
     if (event->modifiers() == Qt::ControlModifier) {
-        if (event->key() == Qt::Key_A)
+        if (event->key() == Qt::Key_A || event->key() == Qt::Key_C)
         {
             QJsonObject dataObject;
             dataObject["type"] = "keyPress";
-            dataObject["key"] = "ControlA";
+            dataObject["key"] = "Control" + keySequence;
 
             QJsonObject jsonObject;
             jsonObject["event"] = "keyboard";
@@ -185,8 +187,6 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
             return;
         }
     }
-
-    auto keySequence = QKeySequence(event->key()).toString();
 
     qDebugEx() << "Key Pressed:" << keySequence;
 
