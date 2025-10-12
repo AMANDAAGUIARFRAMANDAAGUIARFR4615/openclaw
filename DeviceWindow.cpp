@@ -151,18 +151,35 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
         return;
     }
 
-    if (event->key() == Qt::Key_V && event->modifiers() == Qt::ControlModifier) {
-        QClipboard *clipboard = QGuiApplication::clipboard();
-        QString text = clipboard->text();
-        
-        qDebugEx() << "获取剪贴板内容" << text;
+    if (event->modifiers() == Qt::ControlModifier) {
+        if (event->key() == Qt::Key_A)
+        {
+            QJsonObject dataObject;
+            dataObject["type"] = "keyPress";
+            dataObject["key"] = "ControlA";
 
-        QJsonObject jsonObject;
-        jsonObject["event"] = "inputText";
-        jsonObject["data"] = text;
+            QJsonObject jsonObject;
+            jsonObject["event"] = "keyboard";
+            jsonObject["data"] = dataObject;
 
-        TcpServer::sendData(socket, jsonObject);
-        return;
+            TcpServer::sendData(socket, jsonObject);
+            return;
+        }
+
+        if (event->key() == Qt::Key_V)
+        {
+            QClipboard *clipboard = QGuiApplication::clipboard();
+            QString text = clipboard->text();
+            
+            qDebugEx() << "获取剪贴板内容" << text;
+
+            QJsonObject jsonObject;
+            jsonObject["event"] = "inputText";
+            jsonObject["data"] = text;
+
+            TcpServer::sendData(socket, jsonObject);
+            return;
+        }
     }
 
     auto keySequence = QKeySequence(event->key()).toString();
