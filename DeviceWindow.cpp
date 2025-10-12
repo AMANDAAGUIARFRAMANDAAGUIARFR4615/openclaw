@@ -138,6 +138,8 @@ bool DeviceWindow::event(QEvent *event)
 
 void DeviceWindow::keyPressEvent(QKeyEvent *event)
 {
+    QWidget::keyPressEvent(event);
+
     if (event->key() == Qt::Key_Escape)
     {
         videoFrameWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
@@ -148,24 +150,41 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
         return;
     }
 
-    auto keyText = QKeySequence(event->key()).toString();
+    auto keySequence = QKeySequence(event->key()).toString();
 
-    qDebugEx() << "Key Pressed:" << keyText;
+    qDebugEx() << "Key Pressed:" << keySequence;
 
-    if (event->key() == Qt::Key_Backspace || event->key() == Qt::Key_Delete)
+    QList<int> keys = {
+        Qt::Key_Backspace, Qt::Key_Delete, Qt::Key_Up, Qt::Key_Down,
+        Qt::Key_Left, Qt::Key_Right, Qt::Key_Enter, Qt::Key_Return
+    };
+
+    if (keys.contains(event->key()))
     {
         QJsonObject dataObject;
         dataObject["type"] = "keyPress";
-        dataObject["key"] = keyText;
+        dataObject["key"] = keySequence;
 
         QJsonObject jsonObject;
         jsonObject["event"] = "keyboard";
         jsonObject["data"] = dataObject;
 
         TcpServer::sendData(socket, jsonObject);
+        return;
     }
 
-    QWidget::keyPressEvent(event);
+    auto keyText = event->text();
+
+    if (keyText.isEmpty())
+        return;
+
+    qDebugEx() << "按键输入:" << keyText;
+
+    QJsonObject jsonObject;
+    jsonObject["event"] = "inputText";
+    jsonObject["data"] = keyText;
+
+    TcpServer::sendData(socket, jsonObject);
 }
 
 void DeviceWindow::keyReleaseEvent(QKeyEvent *event)
