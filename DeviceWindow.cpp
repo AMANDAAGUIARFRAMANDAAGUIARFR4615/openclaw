@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "TcpServer.h"
 #include "EventHub.h"
+#include "ToastWidget.h"
 #include <QStyle>
 #include <QElapsedTimer>
 #include <QVBoxLayout>
@@ -198,6 +199,11 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
 
                 dataObject["type"] = 2;
                 dataObject["content"] = QString(base64Data);
+            }
+            else
+            {
+                new ToastWidget("此类型暂不支持", this);
+                return;
             }
 
             QJsonObject jsonObject;
