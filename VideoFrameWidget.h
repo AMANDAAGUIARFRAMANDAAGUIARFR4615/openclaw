@@ -34,7 +34,10 @@ public:
                 if (!mediaPlayer->isPlaying() && mediaPlayer->playbackState() != QMediaPlayer::PausedState) {
                     qDebugEx() << "播放...";
                     mediaPlayer->stop();
-                    mediaPlayer->play();
+                    
+                    QTimer::singleShot(0, [this]() {
+                        mediaPlayer->play();
+                    });
                 }
             }
         });
