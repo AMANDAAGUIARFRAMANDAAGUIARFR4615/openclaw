@@ -161,6 +161,9 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
 
     if (keys.contains(event->key()))
     {
+        if (event->modifiers() == Qt::ShiftModifier && (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return))
+            keySequence = "ShiftEnter";
+
         QJsonObject dataObject;
         dataObject["type"] = "keyPress";
         dataObject["key"] = keySequence;
