@@ -4,6 +4,7 @@
 #include "ToastWidget.h"
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QClipboard>
 
 DeviceWidget::DeviceWidget(QTcpSocket* socket, DeviceInfo* deviceInfo): DeviceView(socket, deviceInfo)
 {
@@ -29,6 +30,39 @@ DeviceWidget::DeviceWidget(QTcpSocket* socket, DeviceInfo* deviceInfo): DeviceVi
     
     layout->addWidget(deviceInfoLabel);
     setLayout(layout);
+
+    EventHub::StartListening("clipboard", [this](const QJsonValue &data, QTcpSocket* socket) {
+        if (this->socket != socket)
+            return;
+
+        auto type = data["type"].toInt();
+        auto content = data["content"].toString();
+
+        QClipboard *clipboard = QApplication::clipboard();
+
+        if (type == 1)
+        {
+            clipboard->setText(content);
+            return;
+        }
+        
+        if (type == 2)
+        {
+            QByteArray byteArray = QByteArray::fromBase64(content.toUtf8());
+            QImage image;
+            
+            if (!image.loadFromData(byteArray))
+            {
+                new ToastWidget("图片数据解码失败", this);
+                return;
+            }
+
+            clipboard->setPixmap(QPixmap::fromImage(image));
+            return;
+        }
+
+        new ToastWidget("此类型暂不支持", this);
+    });
 
     EventHub::StartListening("lockedStatus", [this](const QJsonValue &data, QTcpSocket* socket) {
         if (this->socket != socket)
