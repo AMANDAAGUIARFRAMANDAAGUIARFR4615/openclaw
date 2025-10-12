@@ -7,6 +7,7 @@
 #include <QElapsedTimer>
 #include <QVBoxLayout>
 #include <QMouseEvent>
+#include <QClipboard>
 
 DeviceWindow::DeviceWindow(QTcpSocket* socket, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(socket, deviceInfo), deviceWidget(deviceWidget)
 {
@@ -147,6 +148,20 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
         deviceWidget->addVideoFrameWidget(videoFrameWidget);
         videoFrameWidget = nullptr;
         close();
+        return;
+    }
+
+    if (event->key() == Qt::Key_V && event->modifiers() == Qt::ControlModifier) {
+        QClipboard *clipboard = QGuiApplication::clipboard();
+        QString text = clipboard->text();
+        
+        qDebugEx() << "获取剪贴板内容" << text;
+
+        QJsonObject jsonObject;
+        jsonObject["event"] = "inputText";
+        jsonObject["data"] = text;
+
+        TcpServer::sendData(socket, jsonObject);
         return;
     }
 
