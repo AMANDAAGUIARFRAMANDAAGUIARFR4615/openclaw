@@ -80,6 +80,14 @@ QPointF DeviceWindow::getTransformedPosition(QMouseEvent *event) {
     }
 }
 
+void DeviceWindow::closeEvent(QCloseEvent *event)
+{
+    videoFrameWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    videoFrameWidget->setFixedSize(deviceWidget->videoFrameWidgetSize);
+    deviceWidget->addVideoFrameWidget(videoFrameWidget);
+    videoFrameWidget = nullptr;
+}
+
 void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)
 {
     QWidget::mouseDoubleClickEvent(event);
@@ -143,10 +151,6 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
 
     if (event->key() == Qt::Key_Escape)
     {
-        videoFrameWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-        videoFrameWidget->setFixedSize(deviceWidget->videoFrameWidgetSize);
-        deviceWidget->addVideoFrameWidget(videoFrameWidget);
-        videoFrameWidget = nullptr;
         close();
         return;
     }

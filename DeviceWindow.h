@@ -17,6 +17,7 @@ protected:
     void addOverlay(const QString &text) override;
     void addVideoFrameWidget(VideoFrameWidget* videoFrameWidget) override;
     QPointF getTransformedPosition(QMouseEvent *event);
+    void closeEvent(QCloseEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     bool event(QEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
