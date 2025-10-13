@@ -6,6 +6,8 @@
 #include <QTcpSocket>
 #include <QFile>
 #include <QCryptographicHash>
+#include <QImage>
+#include <QBuffer>
 
 class Tools {
 public:
@@ -75,6 +77,16 @@ public:
         if (size < 1024 * 1024 * 1024)
             return QString::number(size / (1024.0 * 1024), 'f', 2) + " MB";
         return QString::number(size / (1024.0 * 1024 * 1024), 'f', 2) + " GB";
+    }
+
+    static QString imageToBase64(const QImage &image) {
+        QByteArray byteArray;
+        QBuffer buffer(&byteArray);
+        buffer.open(QIODevice::WriteOnly);
+
+        image.save(&buffer, "PNG");
+
+        return byteArray.toBase64();
     }
 
 private:

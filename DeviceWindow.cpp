@@ -4,6 +4,7 @@
 #include "TcpServer.h"
 #include "EventHub.h"
 #include "ToastWidget.h"
+#include "Tools.h"
 #include <QStyle>
 #include <QElapsedTimer>
 #include <QVBoxLayout>
@@ -193,12 +194,12 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
             }
             else if (mimeData->hasImage())
             {
-                QImage image = qvariant_cast<QImage>(mimeData->imageData());
-                QByteArray base64Data = QByteArray::fromRawData(reinterpret_cast<const char*>(image.bits()), image.sizeInBytes()).toBase64();
+                QImage image = mimeData->imageData().value<QImage>();
+                auto base64Data = Tools::imageToBase64(image);
                 qDebugEx() << "剪切板内容是图片:" << base64Data.length();
 
                 dataObject["type"] = 2;
-                dataObject["content"] = QString(base64Data);
+                dataObject["content"] = base64Data;
             }
             else
             {
