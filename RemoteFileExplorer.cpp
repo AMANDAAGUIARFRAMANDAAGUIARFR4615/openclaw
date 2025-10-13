@@ -4,6 +4,7 @@
 #include "TcpServer.h"
 #include "Tools.h"
 #include "FileTransfer.h"
+#include "ToastWidget.h"
 #include <QVBoxLayout>
 #include <QNetworkReply>
 #include <QJsonDocument>
@@ -25,6 +26,7 @@
 #include <QInputDialog>
 #include <QHeaderView>
 #include <QDrag>
+#include <QTextEdit>
 
 RemoteFileExplorer::RemoteFileExplorer(QTcpSocket* socket, QWidget *parent) : socket(socket), QWidget(parent)
 {
@@ -307,7 +309,21 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
         QAction *viewAction = new QAction("查看", &contextMenu);
         contextMenu.addAction(viewAction);
         connect(viewAction, &QAction::triggered, this, [this, &targetPath, &index]() {
-            qDebugEx() << "暂不支持";
+            auto path = QDir::homePath() + "/Desktop/" + QFileInfo(targetPath).fileName();
+
+            if (!QFile::exists(path))
+            {
+                new ToastWidget("文件不存在，请先下载", this);
+                return;
+            }
+
+            QFile file(path);
+            if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                auto textEdit = new QTextEdit();
+                textEdit->resize(size());
+                textEdit->setPlainText(QString::fromUtf8(file.readAll()));
+                textEdit->show();
+            }
         });
         viewAction->setEnabled(selectedCount == 1);
 
