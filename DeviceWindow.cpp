@@ -169,6 +169,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
             QJsonObject dataObject;
             dataObject["type"] = "keyPress";
             dataObject["key"] = "Control" + keySequence;
+            dataObject["modifiers"] = QKeySequence(event->modifiers()).toString();
 
             QJsonObject jsonObject;
             jsonObject["event"] = "keyboard";
@@ -231,6 +232,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
         QJsonObject dataObject;
         dataObject["type"] = "keyPress";
         dataObject["key"] = keySequence;
+        dataObject["modifiers"] = QKeySequence(event->modifiers()).toString();
 
         QJsonObject jsonObject;
         jsonObject["event"] = "keyboard";
@@ -259,19 +261,6 @@ void DeviceWindow::keyReleaseEvent(QKeyEvent *event)
     auto keyText = QKeySequence(event->key()).toString();
 
     qDebugEx() << "Key Released:" << keyText;
-
-    if (event->key() == Qt::Key_Backspace || event->key() == Qt::Key_Delete)
-    {
-        QJsonObject dataObject;
-        dataObject["type"] = "keyRelease";
-        dataObject["key"] = keyText;
-
-        QJsonObject jsonObject;
-        jsonObject["event"] = "keyboard";
-        jsonObject["data"] = dataObject;
-
-        TcpServer::sendData(socket, jsonObject);
-    }
 
     QWidget::keyReleaseEvent(event);
 }
