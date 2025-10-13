@@ -164,7 +164,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
     auto keySequence = QKeySequence(event->key()).toString();
 
     if (event->modifiers() == Qt::ControlModifier) {
-        if (event->key() == Qt::Key_A || event->key() == Qt::Key_C)
+        if (event->key() == Qt::Key_A || event->key() == Qt::Key_C || event->key() == Qt::Key_X)
         {
             QJsonObject dataObject;
             dataObject["type"] = "keyPress";
