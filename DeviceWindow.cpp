@@ -168,8 +168,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
         {
             QJsonObject dataObject;
             dataObject["type"] = "keyPress";
-            dataObject["key"] = "Control" + keySequence;
-            dataObject["modifiers"] = QKeySequence(event->modifiers()).toString();
+            dataObject["key"] = QKeySequence(event->modifiers()).toString() + keySequence;
 
             QJsonObject jsonObject;
             jsonObject["event"] = "keyboard";
@@ -226,13 +225,9 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
 
     if (keys.contains(event->key()))
     {
-        if (event->modifiers() == Qt::ShiftModifier && (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return))
-            keySequence = "ShiftEnter";
-
         QJsonObject dataObject;
         dataObject["type"] = "keyPress";
-        dataObject["key"] = keySequence;
-        dataObject["modifiers"] = QKeySequence(event->modifiers()).toString();
+        dataObject["key"] = QKeySequence(event->modifiers()).toString() + keySequence;
 
         QJsonObject jsonObject;
         jsonObject["event"] = "keyboard";
