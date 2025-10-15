@@ -279,30 +279,63 @@ void DeviceWindow::inputMethodEvent(QInputMethodEvent *event)
 
 void DeviceWindow::wheelEvent(QWheelEvent *event)
 {
-    QWidget::wheelEvent(event);
+    qDebugEx() << "wheelEvent" << event;
 
-    // int delta = event->angleDelta().y();
+    accumulatedDelta += event->angleDelta().y();
 
-    // // 将当前位置保存在一个非const的QPoint中
-    // QPoint currentPos = event->position().toPoint();  // 拷贝构造，当前点不再是const
+    if (wheelTimer)
+        return;
 
-    // QTimer *timer = new QTimer(this);
-    // connect(timer, &QTimer::timeout, [=]() mutable {  // 使用 mutable 允许修改 lambda 捕获的值
-    //     QPoint newPos = currentPos + QPoint(0, delta);
-    //     QMouseEvent *moveEvent = new QMouseEvent(QEvent::MouseMove, newPos, Qt::LeftButton, Qt::LeftButton, event->modifiers());
-    //     QApplication::postEvent(this, moveEvent);
+    wheelTimer = new QTimer(this);
 
-    //     currentPos = newPos;  // 更新当前位置
+    currentPos = event->position().toPoint();
+    stepCount = 0;
 
-    //     // 触发一定次数后停止定时器
-    //     static int count = 0;
-    //     if (++count > 5) {  // 设置滑动次数
-    //         timer->stop();
-    //         delete timer;
-    //         count = 0;
-    //     }
-    // });
+    auto *pressEvent = new QMouseEvent(
+        QEvent::MouseButtonPress,
+        currentPos,
+        Qt::LeftButton,
+        Qt::LeftButton,
+        Qt::NoModifier
+    );
+    QApplication::sendEvent(this, pressEvent);
 
-    // // 设置定时器间隔，模拟滑动速度
-    // timer->start(50);
+    connect(wheelTimer, &QTimer::timeout, this, [=]() mutable {
+        int stepDelta;
+        
+        if (stepCount == maxSteps - 1)
+            stepDelta = accumulatedDelta;// 最后一步，直接把剩余全部加上
+        else
+            stepDelta = accumulatedDelta / (maxSteps - stepCount);
+        
+        currentPos += QPoint(0, stepDelta);
+        accumulatedDelta -= stepDelta;
+        stepCount++;
+
+        auto *moveEvent = new QMouseEvent(
+            QEvent::MouseMove,
+            currentPos,
+            Qt::LeftButton,
+            Qt::LeftButton,
+            Qt::NoModifier
+        );
+        QApplication::sendEvent(this, moveEvent);
+
+        if (stepCount >= maxSteps) {
+            auto *releaseEvent = new QMouseEvent(
+                QEvent::MouseButtonRelease,
+                currentPos,
+                Qt::LeftButton,
+                Qt::LeftButton,
+                Qt::NoModifier
+            );
+            QApplication::sendEvent(this, releaseEvent);
+
+            wheelTimer->stop();
+            wheelTimer->deleteLater();
+            wheelTimer = nullptr;
+            accumulatedDelta = 0;
+        }
+    });
+    wheelTimer->start(30);
 }

@@ -24,4 +24,10 @@ protected:
     void keyReleaseEvent(QKeyEvent *event) override;
     void inputMethodEvent(QInputMethodEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
+
+    QTimer *wheelTimer = nullptr;
+    QPoint currentPos;
+    int accumulatedDelta = 0;
+    const int maxSteps = 5;
+    int stepCount = 0;
 };
