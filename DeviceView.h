@@ -18,6 +18,14 @@ public:
     VideoFrameWidget* getVideoFrameWidget() { return videoFrameWidget; }
     void setSource(const QUrl &source);
 
+    void onFileClicked();
+    void onScreenshotClicked();
+    void onRestartClicked();
+    void onLockClicked();
+    void onUnlockClicked();
+    void onVolumeUpClicked();
+    void onVolumeDownClicked();
+
 protected:
     virtual void addOverlay(const QString &text);
     virtual void addVideoFrameWidget(VideoFrameWidget* videoFrameWidget);

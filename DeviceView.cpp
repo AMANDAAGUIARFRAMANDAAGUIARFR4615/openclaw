@@ -84,49 +84,72 @@ void DeviceView::addVideoFrameWidget(VideoFrameWidget* videoFrameWidget)
     videoFrameWidget->orientationChanged(deviceInfo->orientation);
 }
 
+void DeviceView::onFileClicked()
+{
+    auto window = new RemoteFileExplorer(socket);
+    window->resize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
+    window->show();
+}
+
+void DeviceView::onScreenshotClicked()
+{
+    // 处理截图操作
+}
+
+void DeviceView::onRestartClicked()
+{
+    Tools::reboot(socket);
+}
+
+void DeviceView::onLockClicked()
+{
+    Tools::lockScreen(socket);
+}
+
+void DeviceView::onUnlockClicked()
+{
+    Tools::unlockScreen(socket);
+}
+
+void DeviceView::onVolumeUpClicked()
+{
+    QJsonObject jsonObject;
+    jsonObject["event"] = "volumeControl";
+    jsonObject["data"] = "+";
+
+    TcpServer::sendData(socket, jsonObject);
+}
+
+void DeviceView::onVolumeDownClicked()
+{
+    QJsonObject jsonObject;
+    jsonObject["event"] = "volumeControl";
+    jsonObject["data"] = "-";
+
+    TcpServer::sendData(socket, jsonObject);
+}
+
 void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu contextMenu(this);
 
-    QAction *fileAction = new QAction("文件传输", this);
-    connect(fileAction, &QAction::triggered, [this]() {
-        auto window = new RemoteFileExplorer(socket);
-        window->resize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
-        window->show();
-    });
+    QAction *fileAction = new QAction(QIcon(":/icons/file_move.png"), "文件", this);
+    connect(fileAction, &QAction::triggered, this, &DeviceView::onFileClicked);
 
-    QAction *unlockAction = new QAction("解锁", this);
-    connect(unlockAction, &QAction::triggered, [this]() {
-        Tools::unlockScreen(socket);
-    });
+    QAction *unlockAction = new QAction(QIcon(":/icons/unlock.png"), "解锁", this);
+    connect(unlockAction, &QAction::triggered, this, &DeviceView::onUnlockClicked);
 
-    QAction *lockAction = new QAction("锁屏", this);
-    connect(lockAction, &QAction::triggered, [this]() {
-        Tools::lockScreen(socket);
-    });
+    QAction *lockAction = new QAction(QIcon(":/icons/lock.png"), "锁屏", this);
+    connect(lockAction, &QAction::triggered, this, &DeviceView::onLockClicked);
 
-    QAction *rebootAction = new QAction("重启", this);
-    connect(rebootAction, &QAction::triggered, [this]() {
-        Tools::reboot(socket);
-    });
+    QAction *rebootAction = new QAction(QIcon(":/icons/restart.png"), "重启", this);
+    connect(rebootAction, &QAction::triggered, this, &DeviceView::onRestartClicked);
 
-    QAction *volumeUpAction = new QAction("音量+", this);
-    connect(volumeUpAction, &QAction::triggered, [this]() {
-        QJsonObject jsonObject;
-        jsonObject["event"] = "volumeControl";
-        jsonObject["data"] = "+";
+    QAction *volumeUpAction = new QAction(QIcon(":/icons/volume_up.png"), "加音", this);
+    connect(volumeUpAction, &QAction::triggered, this, &DeviceView::onVolumeUpClicked);
 
-        TcpServer::sendData(socket, jsonObject);
-    });
-
-    QAction *volumeDownAction = new QAction("音量-", this);
-    connect(volumeDownAction, &QAction::triggered, [this]() {
-        QJsonObject jsonObject;
-        jsonObject["event"] = "volumeControl";
-        jsonObject["data"] = "-";
-
-        TcpServer::sendData(socket, jsonObject);
-    });
+    QAction *volumeDownAction = new QAction(QIcon(":/icons/volume_down.png"), "减音", this);
+    connect(volumeDownAction, &QAction::triggered, this, &DeviceView::onVolumeDownClicked);
 
     contextMenu.addAction(fileAction);
     contextMenu.addAction(unlockAction);

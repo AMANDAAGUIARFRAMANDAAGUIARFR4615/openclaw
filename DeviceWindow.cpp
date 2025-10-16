@@ -32,26 +32,26 @@ DeviceWindow::DeviceWindow(QTcpSocket* socket, DeviceInfo* deviceInfo, DeviceWid
     buttonLayout->setContentsMargins(5, 5, 5, 5);
     buttonLayout->setSpacing(10);
 
-    QPushButton *fileButton = new QPushButton("文件");
-    fileButton->setIcon(QIcon(":/icons/file_move.png"));
+    QPushButton *fileButton = new QPushButton(QIcon(":/icons/file_move.png"), "文件", this);
+    connect(fileButton, &QPushButton::clicked, this, &DeviceView::onFileClicked);
 
-    QPushButton *screenshotButton = new QPushButton("截图");
-    screenshotButton->setIcon(QIcon(":/icons/screenshot.png"));
+    QPushButton *screenshotButton = new QPushButton(QIcon(":/icons/screenshot.png"), "截图", this);
+    connect(screenshotButton, &QPushButton::clicked, this, &DeviceView::onScreenshotClicked);
 
-    QPushButton *restartButton = new QPushButton("重启");
-    restartButton->setIcon(QIcon(":/icons/restart.png"));
+    QPushButton *restartButton = new QPushButton(QIcon(":/icons/restart.png"), "重启", this);
+    connect(restartButton, &QPushButton::clicked, this, &DeviceView::onRestartClicked);
 
-    QPushButton *lockButton = new QPushButton("锁屏");
-    lockButton->setIcon(QIcon(":/icons/lock.png"));
+    QPushButton *lockButton = new QPushButton(QIcon(":/icons/lock.png"), "锁屏", this);
+    connect(lockButton, &QPushButton::clicked, this, &DeviceView::onLockClicked);
 
-    QPushButton *unlockButton = new QPushButton("解锁");
-    unlockButton->setIcon(QIcon(":/icons/unlock.png"));
+    QPushButton *unlockButton = new QPushButton(QIcon(":/icons/unlock.png"), "解锁", this);
+    connect(unlockButton, &QPushButton::clicked, this, &DeviceView::onUnlockClicked);
 
-    QPushButton *volumeUpButton = new QPushButton("加音");
-    volumeUpButton->setIcon(QIcon(":/icons/volume_up.png"));
+    QPushButton *volumeUpButton = new QPushButton(QIcon(":/icons/volume_up.png"), "加音", this);
+    connect(volumeUpButton, &QPushButton::clicked, this, &DeviceView::onVolumeUpClicked);
 
-    QPushButton *volumeDownButton = new QPushButton("减音");
-    volumeDownButton->setIcon(QIcon(":/icons/volume_down.png"));
+    QPushButton *volumeDownButton = new QPushButton(QIcon(":/icons/volume_down.png"), "减音", this);
+    connect(volumeDownButton, &QPushButton::clicked, this, &DeviceView::onVolumeDownClicked);
 
     buttonLayout->addWidget(fileButton);
     buttonLayout->addWidget(screenshotButton);
