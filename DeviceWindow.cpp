@@ -11,6 +11,8 @@
 #include <QMouseEvent>
 #include <QClipboard>
 #include <QMimeData>
+#include <QHBoxLayout>
+#include <QPushButton>
 
 DeviceWindow::DeviceWindow(QTcpSocket* socket, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(socket, deviceInfo), deviceWidget(deviceWidget)
 {
@@ -25,6 +27,25 @@ DeviceWindow::DeviceWindow(QTcpSocket* socket, DeviceInfo* deviceInfo, DeviceWid
     layout->setSpacing(0);
 
     layout->addWidget(videoFrameWidget);
+
+    QVBoxLayout *buttonLayout = new QVBoxLayout();
+    buttonLayout->setContentsMargins(5, 5, 5, 5);
+    buttonLayout->setSpacing(10);
+
+    QPushButton *playBtn = new QPushButton("播放");
+    QPushButton *stopBtn = new QPushButton("停止");
+    QPushButton *screenshotBtn = new QPushButton("截图");
+
+    buttonLayout->addWidget(playBtn);
+    buttonLayout->addWidget(stopBtn);
+    buttonLayout->addWidget(screenshotBtn);
+    buttonLayout->addStretch();
+
+    QWidget *buttonContainer = new QWidget(this);
+    buttonContainer->setMaximumWidth(60);
+    buttonContainer->setLayout(buttonLayout);
+
+    layout->addWidget(buttonContainer);
 
     setLayout(layout);
 
