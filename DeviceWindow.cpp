@@ -53,13 +53,13 @@ DeviceWindow::DeviceWindow(QTcpSocket* socket, DeviceInfo* deviceInfo, DeviceWid
     QPushButton *volumeDownButton = new QPushButton("减音");
     volumeDownButton->setIcon(QIcon(":/icons/volume_down.png"));
 
-    controlButtonLayout->addWidget(fileButton);
-    controlButtonLayout->addWidget(screenshotButton);
-    controlButtonLayout->addWidget(restartButton);
-    controlButtonLayout->addWidget(lockButton);
-    controlButtonLayout->addWidget(unlockButton);
-    controlButtonLayout->addWidget(volumeUpButton);
-    controlButtonLayout->addWidget(volumeDownButton);
+    buttonLayout->addWidget(fileButton);
+    buttonLayout->addWidget(screenshotButton);
+    buttonLayout->addWidget(restartButton);
+    buttonLayout->addWidget(lockButton);
+    buttonLayout->addWidget(unlockButton);
+    buttonLayout->addWidget(volumeUpButton);
+    buttonLayout->addWidget(volumeDownButton);
     buttonLayout->addStretch();
 
     QWidget *buttonContainer = new QWidget(this);

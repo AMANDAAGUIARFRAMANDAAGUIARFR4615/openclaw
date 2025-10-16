@@ -5,5 +5,13 @@
         <file>icons/folder.png</file>
         <file>icons/folder_link.png</file>
         <file>icons/ipa.png</file>
+
+        <file>icons/restart.png</file>
+        <file>icons/screenshot.png</file>
+        <file>icons/lock.png</file>
+        <file>icons/unlock.png</file>
+        <file>icons/volume_down.png</file>
+        <file>icons/volume_up.png</file>
+        <file>icons/file_move.png</file>
     </qresource>
 </RCC>
