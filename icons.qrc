@@ -1,92 +1,9 @@
 <RCC>
     <qresource prefix="/">
-        <file>icons/7z.png</file>
-        <file>icons/acc.png</file>
-        <file>icons/ai.png</file>
-        <file>icons/aiff.png</file>
-        <file>icons/asp.png</file>
-        <file>icons/avi.png</file>
-        <file>icons/bak.png</file>
-        <file>icons/bmp.png</file>
-        <file>icons/bz.png</file>
-        <file>icons/c.png</file>
-        <file>icons/cpp.png</file>
-        <file>icons/css.png</file>
-        <file>icons/dat.png</file>
-        <file>icons/db.png</file>
-        <file>icons/deb.png</file>
-        <file>icons/dmg.png</file>
-        <file>icons/doc.png</file>
-        <file>icons/docx.png</file>
-        <file>icons/dot.png</file>
-        <file>icons/dotx.png</file>
-        <file>icons/dwg.png</file>
-        <file>icons/dxf.png</file>
-        <file>icons/eps.png</file>
-        <file>icons/exe.png</file>
-        <file>icons/exec.png</file>
-        <file>icons/exec_link.png</file>
         <file>icons/file.png</file>
-        <file>icons/file_blocked.png</file>
         <file>icons/file_link.png</file>
-        <file>icons/flv.png</file>
         <file>icons/folder.png</file>
         <file>icons/folder_link.png</file>
-        <file>icons/fzs.png</file>
-        <file>icons/gif.png</file>
-        <file>icons/h.png</file>
-        <file>icons/html.png</file>
-        <file>icons/ics.png</file>
         <file>icons/ipa.png</file>
-        <file>icons/iso.png</file>
-        <file>icons/java.png</file>
-        <file>icons/jpg.png</file>
-        <file>icons/js.png</file>
-        <file>icons/json.png</file>
-        <file>icons/key.png</file>
-        <file>icons/less.png</file>
-        <file>icons/log.png</file>
-        <file>icons/m.png</file>
-        <file>icons/m4a.png</file>
-        <file>icons/m4v.png</file>
-        <file>icons/mid.png</file>
-        <file>icons/mov.png</file>
-        <file>icons/mp3.png</file>
-        <file>icons/mp4.png</file>
-        <file>icons/mpg.png</file>
-        <file>icons/nib.png</file>
-        <file>icons/ods.png</file>
-        <file>icons/odt.png</file>
-        <file>icons/ott.png</file>
-        <file>icons/pdf.png</file>
-        <file>icons/php.png</file>
-        <file>icons/plist.png</file>
-        <file>icons/png.png</file>
-        <file>icons/pps.png</file>
-        <file>icons/ppt.png</file>
-        <file>icons/psd.png</file>
-        <file>icons/py.png</file>
-        <file>icons/qt.png</file>
-        <file>icons/rar.png</file>
-        <file>icons/rb.png</file>
-        <file>icons/rtf.png</file>
-        <file>icons/sass.png</file>
-        <file>icons/scss.png</file>
-        <file>icons/sh.png</file>
-        <file>icons/sql.png</file>
-        <file>icons/sqlite.png</file>
-        <file>icons/sqlite3.png</file>
-        <file>icons/strings.png</file>
-        <file>icons/tga.png</file>
-        <file>icons/tgz.png</file>
-        <file>icons/tiff.png</file>
-        <file>icons/txt.png</file>
-        <file>icons/wav.png</file>
-        <file>icons/xib.png</file>
-        <file>icons/xls.png</file>
-        <file>icons/xlsx.png</file>
-        <file>icons/xml.png</file>
-        <file>icons/yml.png</file>
-        <file>icons/zip.png</file>
     </qresource>
 </RCC>
