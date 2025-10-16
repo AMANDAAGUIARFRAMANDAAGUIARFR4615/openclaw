@@ -123,11 +123,16 @@ MainWindow::~MainWindow()
     EventHub::StopListening("deviceInfo");
 }
 
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    QApplication::quit();
+}
+
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Escape)
     {
-        QApplication::quit();
+        close();
     }
     else
     {

@@ -17,6 +17,7 @@ public:
     void addItem(QTcpSocket* socket = nullptr, DeviceInfo* deviceInfo = nullptr);
 
 protected:
+    void closeEvent(QCloseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void onTabClicked(int index);
 
