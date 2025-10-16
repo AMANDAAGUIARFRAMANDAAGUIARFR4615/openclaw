@@ -194,7 +194,7 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
         auto isDirectory = type == "NSFileTypeDirectory" || type == "NSFileTypeSymbolicLink";
 
         if (isDirectory) {
-            item->setIcon(symbolicLink.isEmpty() ? QIcon(":/icons/folder.png") : QIcon(":/icons/folder_link.png"));
+            item->setIcon(QIcon(symbolicLink.isEmpty() ? ":/icons/folder.png" : ":/icons/folder_link.png"));
         } else {
             QString suffix = name.section('.', -1).toLower();
             QString iconPath = ":/icons/" + suffix + ".png";
