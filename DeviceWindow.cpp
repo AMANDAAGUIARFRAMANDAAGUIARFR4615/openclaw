@@ -32,13 +32,34 @@ DeviceWindow::DeviceWindow(QTcpSocket* socket, DeviceInfo* deviceInfo, DeviceWid
     buttonLayout->setContentsMargins(5, 5, 5, 5);
     buttonLayout->setSpacing(10);
 
-    QPushButton *playBtn = new QPushButton("播放");
-    QPushButton *stopBtn = new QPushButton("停止");
-    QPushButton *screenshotBtn = new QPushButton("截图");
+    QPushButton *fileButton = new QPushButton("文件");
+    fileButton->setIcon(QIcon(":/icons/file_move.png"));
 
-    buttonLayout->addWidget(playBtn);
-    buttonLayout->addWidget(stopBtn);
-    buttonLayout->addWidget(screenshotBtn);
+    QPushButton *screenshotButton = new QPushButton("截图");
+    screenshotButton->setIcon(QIcon(":/icons/screenshot.png"));
+
+    QPushButton *restartButton = new QPushButton("重启");
+    restartButton->setIcon(QIcon(":/icons/restart.png"));
+
+    QPushButton *lockButton = new QPushButton("锁屏");
+    lockButton->setIcon(QIcon(":/icons/lock.png"));
+
+    QPushButton *unlockButton = new QPushButton("解锁");
+    unlockButton->setIcon(QIcon(":/icons/unlock.png"));
+
+    QPushButton *volumeUpButton = new QPushButton("加音");
+    volumeUpButton->setIcon(QIcon(":/icons/volume_up.png"));
+
+    QPushButton *volumeDownButton = new QPushButton("减音");
+    volumeDownButton->setIcon(QIcon(":/icons/volume_down.png"));
+
+    controlButtonLayout->addWidget(fileButton);
+    controlButtonLayout->addWidget(screenshotButton);
+    controlButtonLayout->addWidget(restartButton);
+    controlButtonLayout->addWidget(lockButton);
+    controlButtonLayout->addWidget(unlockButton);
+    controlButtonLayout->addWidget(volumeUpButton);
+    controlButtonLayout->addWidget(volumeDownButton);
     buttonLayout->addStretch();
 
     QWidget *buttonContainer = new QWidget(this);
