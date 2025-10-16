@@ -198,7 +198,19 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
         } else {
             QString suffix = name.section('.', -1).toLower();
             QString iconPath = ":/icons/" + suffix + ".png";
-            QIcon fileIcon = QFile::exists(iconPath) ? QIcon(iconPath) : (symbolicLink.isEmpty() ? QIcon(":/icons/file.png") : QIcon(":/icons/file_link.png"));
+
+            QIcon fileIcon;
+
+            if (QFile::exists(iconPath)) {
+                // 使用自定义图标
+                fileIcon = QIcon(iconPath);
+            } else {
+                if (symbolicLink.isEmpty())
+                    fileIcon = QFileIconProvider().icon(QFileInfo(name));
+                else
+                    fileIcon = QIcon(":/icons/file_link.png");
+            }
+            
             item->setIcon(fileIcon);
         }
 
