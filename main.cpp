@@ -43,7 +43,7 @@ void onError(QTcpSocket* socket, QAbstractSocket::SocketError socketError) {
 
 int main(int argc, char *argv[])
 {
-    QApplication application(argc, argv);
+    QApplication app(argc, argv);
 
     // qputenv("QT_FFMPEG_DEBUG", "1");
 
@@ -80,24 +80,8 @@ int main(int argc, char *argv[])
     mainWindow->move(x, y);
 
     mainWindow->show();
-    // mainWindow->showMinimized();
 
-    // QTimer::singleShot(3000, [&mainWindow](){
-    //     qDebugEx() << "singleShot";
-    //     mainWindow.addItem();
-    //     mainWindow.addItem();
-    //     mainWindow.addItem();
-    //     mainWindow.addItem();
-    //     mainWindow.addItem();
-    // });
-
-    // auto player = new DeviceWidget();
-    // // player->setSource(QString("tcp://192.168.0.102:23145"));
-    // mainWindow.addPlayer(player);
-    // mainWindow.addPlayer(new DeviceWidget());
-    // mainWindow.addPlayer(new DeviceWidget());
-
-    return application.exec();
+    return app.exec();
 }
 
 #ifdef _WIN32
