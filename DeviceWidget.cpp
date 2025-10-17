@@ -6,7 +6,7 @@
 #include <QLabel>
 #include <QClipboard>
 
-DeviceWidget::DeviceWidget(QTcpSocket* socket, DeviceInfo* deviceInfo): DeviceView(socket, deviceInfo)
+DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo): DeviceView(connection, deviceInfo)
 {
     auto layout = new QVBoxLayout;
 
@@ -31,8 +31,8 @@ DeviceWidget::DeviceWidget(QTcpSocket* socket, DeviceInfo* deviceInfo): DeviceVi
     layout->addWidget(deviceInfoLabel);
     setLayout(layout);
 
-    EventHub::StartListening("clipboard", [this](const QJsonValue &data, QTcpSocket* socket) {
-        if (this->socket != socket)
+    EventHub::StartListening("clipboard", [this](const QJsonValue &data, DeviceConnection* connection) {
+        if (this->connection != connection)
             return;
 
         auto type = data["type"].toInt();
@@ -64,8 +64,8 @@ DeviceWidget::DeviceWidget(QTcpSocket* socket, DeviceInfo* deviceInfo): DeviceVi
         new ToastWidget("此类型暂不支持", this);
     });
 
-    EventHub::StartListening("lockedStatus", [this](const QJsonValue &data, QTcpSocket* socket) {
-        if (this->socket != socket)
+    EventHub::StartListening("lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
+        if (this->connection != connection)
             return;
 
         if (deviceWindow)
@@ -97,7 +97,7 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
 
     videoFrameWidgetSize = videoFrameWidget->size();
 
-    deviceWindow = new DeviceWindow(socket, deviceInfo, this);
+    deviceWindow = new DeviceWindow(connection, deviceInfo, this);
     videoFrameWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     videoFrameWidget->setFixedSize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
     videoFrameWidget->orientationChanged(deviceInfo->orientation);

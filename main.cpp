@@ -26,7 +26,7 @@ void onDataReceived(QTcpSocket* socket, const QJsonObject &jsonObject) {
 
     qDebugEx() << event << data;
 
-    EventHub::TriggerEvent(event, data, socket);
+    EventHub::TriggerEvent(event, data, new DeviceConnection(socket));
 }
 
 void onClientDisconnected(QTcpSocket* socket) {

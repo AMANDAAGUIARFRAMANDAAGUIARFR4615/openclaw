@@ -16,13 +16,13 @@
 #include <QDir>
 #include <QUuid>
 
-DeviceView::DeviceView(QTcpSocket* socket, DeviceInfo* deviceInfo, QWidget *parent)
-    : socket(socket), deviceInfo(deviceInfo), QWidget(parent)
+DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWidget *parent)
+    : connection(connection), deviceInfo(deviceInfo), QWidget(parent)
 {
     setAcceptDrops(true);
 
-    EventHub::StartListening("orientation", [this](const QJsonValue &data, QTcpSocket* socket) {
-        if (this->socket != socket)
+    EventHub::StartListening("orientation", [this](const QJsonValue &data, DeviceConnection* connection) {
+        if (this->connection != connection)
             return;
 
         this->deviceInfo->orientation = data.toInt();
@@ -86,49 +86,49 @@ void DeviceView::addVideoFrameWidget(VideoFrameWidget* videoFrameWidget)
 
 void DeviceView::onHomeScreenClicked()
 {
-    Tools::sendEvent(socket, "homeScreen");
+    connection->send("homeScreen");
 }
 
 void DeviceView::onCenterControllerClicked()
 {
-    Tools::sendEvent(socket, "showCenterController");
+    connection->send("showCenterController");
 }
 
 void DeviceView::onKillAllAppClicked()
 {
-    Tools::sendEvent(socket, "killAllApp");
+    connection->send("killAllApp");
 }
 
 void DeviceView::onAppSwitcherClicked()
 {
-    Tools::sendEvent(socket, "appSwitcher");
+    connection->send("appSwitcher");
 }
 
 void DeviceView::onFileClicked()
 {
-    auto window = new RemoteFileExplorer(socket);
+    auto window = new RemoteFileExplorer(connection);
     window->resize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
     window->show();
 }
 
 void DeviceView::onScreenshotClicked()
 {
-    Tools::sendEvent(socket, "screenshot");
+    connection->send("screenshot");
 }
 
 void DeviceView::onRebootClicked()
 {
-    Tools::sendEvent(socket, "reboot");
+    connection->send("reboot");
 }
 
 void DeviceView::onLockClicked()
 {
-    Tools::sendEvent(socket, "changeScreenLockedStatus", 1);
+    connection->send("changeScreenLockedStatus", 1);
 }
 
 void DeviceView::onUnlockClicked()
 {
-    Tools::sendEvent(socket, "changeScreenLockedStatus", 0);
+    connection->send("changeScreenLockedStatus", 0);
 }
 
 void DeviceView::onVolumeUpClicked()
@@ -137,7 +137,7 @@ void DeviceView::onVolumeUpClicked()
     jsonObject["event"] = "volumeControl";
     jsonObject["data"] = "+";
 
-    TcpServer::sendData(socket, jsonObject);
+    connection->send(jsonObject);
 }
 
 void DeviceView::onVolumeDownClicked()
@@ -146,7 +146,7 @@ void DeviceView::onVolumeDownClicked()
     jsonObject["event"] = "volumeControl";
     jsonObject["data"] = "-";
 
-    TcpServer::sendData(socket, jsonObject);
+    connection->send(jsonObject);
 }
 
 void DeviceView::contextMenuEvent(QContextMenuEvent *event)
@@ -235,11 +235,7 @@ void DeviceView::dropEvent(QDropEvent *event)
         dataObject["name"] = QFileInfo(path).fileName();
         dataObject["size"] = size;
 
-        QJsonObject jsonObject;
-        jsonObject["event"] = "transferFile";
-        jsonObject["data"] = dataObject;
-
-        TcpServer::sendData(socket, jsonObject);
+        connection->send("transferFile", dataObject);
     }
 
     event->accept();

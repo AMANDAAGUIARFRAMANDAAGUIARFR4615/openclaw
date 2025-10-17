@@ -1,10 +1,10 @@
 #pragma once
 
 #include "DeviceInfo.h"
+#include "DeviceConnection.h"
 #include "VideoFrameWidget.h"
 #include <QWidget>
 #include <QUrl>
-#include <QTcpSocket>
 
 class QMediaPlayer;
 
@@ -12,7 +12,7 @@ class DeviceView : public QWidget
 {
     Q_OBJECT
 public:
-    explicit DeviceView(QTcpSocket* socket, DeviceInfo* deviceInfo, QWidget *parent = nullptr);
+    explicit DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWidget *parent = nullptr);
     ~DeviceView();
 
     VideoFrameWidget* getVideoFrameWidget() { return videoFrameWidget; }
@@ -38,7 +38,7 @@ protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
 
-    QTcpSocket* const socket;
+    DeviceConnection* const connection;
     DeviceInfo* const deviceInfo;
     VideoFrameWidget *videoFrameWidget = nullptr;
     QUrl mediaSource;

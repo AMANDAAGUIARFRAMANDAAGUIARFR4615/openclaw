@@ -3,7 +3,6 @@
 #include "TcpServer.h"
 
 #include <QJsonObject>
-#include <QTcpSocket>
 #include <QFile>
 #include <QCryptographicHash>
 #include <QImage>
@@ -64,15 +63,5 @@ public:
         image.save(&buffer, "PNG");
 
         return byteArray.toBase64();
-    }
-
-    static void sendEvent(QTcpSocket* socket, const QString& event, int data = -1) {
-        QJsonObject jsonObject;
-        jsonObject["event"] = event;
-        
-        if (data != -1)
-            jsonObject["data"] = data;
-        
-        TcpServer::sendData(socket, jsonObject);
     }
 };

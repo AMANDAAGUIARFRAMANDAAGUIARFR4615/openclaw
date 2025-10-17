@@ -23,31 +23,6 @@ TcpServer::TcpServer(const std::function<void(QTcpSocket*)> &onClientConnected,
     qDebugEx() << "服务器已启动,监听端口:" << this->serverPort();
 }
 
-void TcpServer::sendData(QTcpSocket* socket, const QJsonObject &jsonObject)
-{
-    qDebugEx() << "sendData" << jsonObject;
-
-    if (socket->state() != QAbstractSocket::ConnectedState) {
-        qDebugEx() << "不是连接状态，无法发送数据";
-        return;
-    }
-
-    quint64 identifier = 0xc6e8f3de9a654d6b;
-
-    QJsonDocument doc(jsonObject);
-    QByteArray jsonData = doc.toJson();
-
-    quint32 jsonDataLength = jsonData.size();
-
-    QByteArray dataToSend;
-    dataToSend.append(reinterpret_cast<const char*>(&identifier), sizeof(identifier));
-    dataToSend.append(reinterpret_cast<const char*>(&jsonDataLength), sizeof(jsonDataLength));
-    dataToSend.append(jsonData);
-
-    socket->write(dataToSend);
-    socket->flush();
-}
-
 void TcpServer::onNewConnection() {
     auto socket = this->nextPendingConnection();
 

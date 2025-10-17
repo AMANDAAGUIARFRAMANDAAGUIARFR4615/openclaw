@@ -1,8 +1,8 @@
 #include "EventHub.h"
 
-QMap<QString, QList<std::pair<std::function<void(QJsonValue, QTcpSocket*)>, int>>> EventHub::listeners;
+QMap<QString, QList<std::pair<std::function<void(QJsonValue, DeviceConnection*)>, int>>> EventHub::listeners;
 
-void EventHub::StartListening(const QString& eventName, std::function<void(QJsonValue, QTcpSocket*)> listener, int priority)
+void EventHub::StartListening(const QString& eventName, std::function<void(QJsonValue, DeviceConnection*)> listener, int priority)
 {
     listeners[eventName].emplace_back(listener, priority);
 
@@ -13,7 +13,7 @@ void EventHub::StartListening(const QString& eventName, std::function<void(QJson
     });
 }
 
-void EventHub::StopListening(const QString& eventName, std::function<void(QJsonValue, QTcpSocket*)> listener)
+void EventHub::StopListening(const QString& eventName, std::function<void(QJsonValue, DeviceConnection*)> listener)
 {
     if (listeners.contains(eventName))
     {
@@ -33,13 +33,13 @@ void EventHub::StopListening(const QString& eventName, std::function<void(QJsonV
     }
 }
 
-void EventHub::TriggerEvent(const QString& eventName, const QJsonValue& data, QTcpSocket* socket)
+void EventHub::TriggerEvent(const QString& eventName, const QJsonValue& data, DeviceConnection* connection)
 {
     if (listeners.contains(eventName))
     {
         for (const auto& action : listeners[eventName])
         {
-            action.first(data, socket);
+            action.first(data, connection);
         }
     }
 }

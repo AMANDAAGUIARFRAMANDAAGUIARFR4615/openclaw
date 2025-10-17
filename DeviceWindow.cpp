@@ -14,7 +14,7 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 
-DeviceWindow::DeviceWindow(QTcpSocket* socket, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(socket, deviceInfo), deviceWidget(deviceWidget)
+DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(connection, deviceInfo), deviceWidget(deviceWidget)
 {
     setAttribute(Qt::WA_InputMethodEnabled, true);
 
@@ -77,8 +77,8 @@ DeviceWindow::DeviceWindow(QTcpSocket* socket, DeviceInfo* deviceInfo, DeviceWid
 
     setLayout(layout);
 
-    EventHub::StartListening("lockedStatus", [this](const QJsonValue &data, QTcpSocket* socket) {
-        if (this->socket != socket)
+    EventHub::StartListening("lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
+        if (this->connection != connection)
             return;
 
         auto locked = data.toBool();
@@ -191,10 +191,7 @@ bool DeviceWindow::event(QEvent *event)
         dataObject["x"] = pos.x();
         dataObject["y"] = pos.y();
 
-        QJsonObject jsonObject;
-        jsonObject["event"] = "mouse";
-        jsonObject["data"] = dataObject;
-        TcpServer::sendData(socket, jsonObject);
+        connection->send("mouse", dataObject);
     }
 
     return QWidget::event(event);
@@ -223,7 +220,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
             jsonObject["event"] = "keyboard";
             jsonObject["data"] = dataObject;
 
-            TcpServer::sendData(socket, jsonObject);
+            connection->send(jsonObject);
             return;
         }
 
@@ -259,7 +256,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
             QJsonObject jsonObject;
             jsonObject["event"] = "clipboard";
             jsonObject["data"] = dataObject;
-            TcpServer::sendData(socket, jsonObject);
+            connection->send(jsonObject);
 
             return;
         }
@@ -282,7 +279,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
         jsonObject["event"] = "keyboard";
         jsonObject["data"] = dataObject;
 
-        TcpServer::sendData(socket, jsonObject);
+        connection->send(jsonObject);
         return;
     }
 
@@ -297,7 +294,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
     jsonObject["event"] = "inputText";
     jsonObject["data"] = keyText;
 
-    TcpServer::sendData(socket, jsonObject);
+    connection->send(jsonObject);
 }
 
 void DeviceWindow::keyReleaseEvent(QKeyEvent *event)
@@ -320,7 +317,7 @@ void DeviceWindow::inputMethodEvent(QInputMethodEvent *event)
         jsonObject["event"] = "inputText";
         jsonObject["data"] = commitText;
 
-        TcpServer::sendData(socket, jsonObject);
+        connection->send(jsonObject);
     }
 
     QWidget::inputMethodEvent(event);

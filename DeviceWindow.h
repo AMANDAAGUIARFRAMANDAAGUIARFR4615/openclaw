@@ -8,7 +8,7 @@ class DeviceWindow : public DeviceView
 {
     Q_OBJECT
 public:
-    explicit DeviceWindow(QTcpSocket* socket, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget);
+    explicit DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget);
     ~DeviceWindow();
 
     DeviceWidget* const deviceWidget;

@@ -8,7 +8,7 @@ class DeviceWidget : public DeviceView
 {
     Q_OBJECT
 public:
-    explicit DeviceWidget(QTcpSocket* socket, DeviceInfo* deviceInfo);
+    explicit DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo);
     ~DeviceWidget();
 
 protected:

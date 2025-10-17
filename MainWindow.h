@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceInfo.h"
+#include "DeviceConnection.h"
 #include <QMainWindow>
 #include <QKeyEvent>
 #include <QGridLayout>
@@ -14,7 +15,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    void addItem(QTcpSocket* socket = nullptr, DeviceInfo* deviceInfo = nullptr);
+    void addItem(DeviceConnection* connection = nullptr, DeviceInfo* deviceInfo = nullptr);
 
 protected:
     void closeEvent(QCloseEvent *event) override;

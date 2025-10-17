@@ -28,7 +28,7 @@
 #include <QDrag>
 #include <QTextEdit>
 
-RemoteFileExplorer::RemoteFileExplorer(QTcpSocket* socket, QWidget *parent) : socket(socket), QWidget(parent)
+RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, QWidget *parent) : connection(connection), QWidget(parent)
 {
     setAcceptDrops(true);
 
@@ -58,8 +58,8 @@ RemoteFileExplorer::RemoteFileExplorer(QTcpSocket* socket, QWidget *parent) : so
     connect(treeView, &QTreeView::expanded, this, &RemoteFileExplorer::onDirectoryExpanded);
     fetchDirectoryContents("/");
 
-    EventHub::StartListening("fileList", [this](QJsonValue data, QTcpSocket* socket) {
-        if (this->socket != socket)
+    EventHub::StartListening("fileList", [this](QJsonValue data, DeviceConnection* connection) {
+        if (this->connection != connection)
             return;
 
         auto path = data["path"].toString();
@@ -141,10 +141,7 @@ void RemoteFileExplorer::fetchDirectoryContents(const QString &path)
 {
     qDebugEx() << "fetchDirectoryContents" << path;
 
-    QJsonObject jsonObject;
-    jsonObject["event"] = "fileList";
-    jsonObject["data"] = path;
-    TcpServer::sendData(socket, jsonObject);
+    connection->send("fileList", path);
 }
 
 void RemoteFileExplorer::fetchDirectoryContents(const QModelIndex &index)
@@ -307,11 +304,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
         QAction *compressAction = new QAction("压缩", &contextMenu);
         contextMenu.addAction(compressAction);
         connect(compressAction, &QAction::triggered, this, [this, &targetPath, &index]() {
-            QJsonObject jsonObject;
-            jsonObject["event"] = "compressArchive";
-            jsonObject["data"] = targetPath;
-
-            TcpServer::sendData(socket, jsonObject);
+            connection->send("compressArchive", targetPath);
         });
 
         compressAction->setEnabled(selectedCount == 1);
@@ -356,11 +349,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
             dataObject["port"] = transfer->serverPort();
             dataObject["path"] = targetPath;
 
-            QJsonObject jsonObject;
-            jsonObject["event"] = "transferFile";
-            jsonObject["data"] = dataObject;
-
-            TcpServer::sendData(socket, jsonObject);
+            connection->send("transferFile", dataObject);
         });
         downloadAction->setEnabled(selectedCount == 1);
     }
@@ -380,11 +369,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
         dataObject["atPath"] = targetPath;
         dataObject["toPath"] = name;
 
-        QJsonObject jsonObject;
-        jsonObject["event"] = "renameItem";
-        jsonObject["data"] = dataObject;
-
-        TcpServer::sendData(socket, jsonObject);
+        connection->send("renameItem", dataObject);
         fetchDirectoryContents(index.parent());
     });
     renameAction->setEnabled(selectedCount == 1);
@@ -399,12 +384,8 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
             return;
 
         setStatusMessage("新建文件夹: " + name);
-            
-        QJsonObject jsonObject;
-        jsonObject["event"] = "createDirectory";
-        jsonObject["data"] = targetPath + "/" + name;
 
-        TcpServer::sendData(socket, jsonObject);
+        connection->send("createDirectory", targetPath + "/" + name);
         fetchDirectoryContents(index);
     });
     createAction->setEnabled(selectedCount == 1);
@@ -422,11 +403,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
         
         for (const QString& path : paths)
         {
-            QJsonObject jsonObject;
-            jsonObject["event"] = "removeItem";
-            jsonObject["data"] = path;
-
-            TcpServer::sendData(socket, jsonObject);
+            connection->send("removeItem", path);
             fetchDirectoryContents(index.parent());
         }
     });
@@ -437,11 +414,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
         connect(extractAction, &QAction::triggered, this, [this, &targetPath, &index]() {
             setStatusMessage("解压: " + targetPath);
 
-            QJsonObject jsonObject;
-            jsonObject["event"] = "extractArchive";
-            jsonObject["data"] = targetPath;
-
-            TcpServer::sendData(socket, jsonObject);
+            connection->send("extractArchive", targetPath);
             fetchDirectoryContents(index.parent());
         });
         extractAction->setEnabled(selectedCount == 1);
@@ -502,11 +475,7 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
         dataObject["path"] = dir + QString("/") + QFileInfo(path).fileName();
         dataObject["size"] = size;
 
-        QJsonObject jsonObject;
-        jsonObject["event"] = "transferFile";
-        jsonObject["data"] = dataObject;
-
-        TcpServer::sendData(socket, jsonObject);
+        connection->send("transferFile", dataObject);
     }
 
     fetchDirectoryContents(index);

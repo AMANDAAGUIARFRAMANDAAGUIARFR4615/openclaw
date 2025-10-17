@@ -1,11 +1,11 @@
 #pragma once
 
+#include "DeviceConnection.h"
 #include <QWidget>
 #include <QNetworkAccessManager>
 #include <QTreeView>
 #include <QStandardItemModel>
 #include <QMap>
-#include <QTcpSocket>
 #include <QStyledItemDelegate>
 #include <QPainter>
 #include <QStatusBar>
@@ -39,7 +39,7 @@ class RemoteFileExplorer : public QWidget
     Q_OBJECT
 
 public:
-    explicit RemoteFileExplorer(QTcpSocket* socket, QWidget *parent = nullptr);
+    explicit RemoteFileExplorer(DeviceConnection* connection, QWidget *parent = nullptr);
     ~RemoteFileExplorer();
 
 protected:
@@ -56,7 +56,7 @@ protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
 
-    QTcpSocket* socket;
+    DeviceConnection* connection;
     QTreeView *treeView;
     QStandardItemModel *model;
     QStatusBar *statusBar;

@@ -112,9 +112,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     QSize screenSize = QGuiApplication::primaryScreen()->size();
     resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
 
-    EventHub::StartListening("deviceInfo", [this](const QJsonValue &data, QTcpSocket* socket) {
+    EventHub::StartListening("deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         auto deviceInfo = new DeviceInfo(data.toObject());
-        addItem(socket, deviceInfo);
+        addItem(connection, deviceInfo);
     });
 }
 
@@ -159,7 +159,7 @@ void MainWindow::onTabClicked(int index)
     }
 }
 
-void MainWindow::addItem(QTcpSocket* socket, DeviceInfo* deviceInfo)
+void MainWindow::addItem(DeviceConnection* connection, DeviceInfo* deviceInfo)
 {
     auto url = deviceInfo ? "tcp://" + deviceInfo->localIp + ":23145" : nullptr;
 
@@ -179,7 +179,7 @@ void MainWindow::addItem(QTcpSocket* socket, DeviceInfo* deviceInfo)
             if (qobject_cast<DeviceWidget*>(w) == nullptr) {
                 qDebugEx() << "找到占位" << i;
                 delete w;
-                auto player = new DeviceWidget(socket, deviceInfo);
+                auto player = new DeviceWidget(connection, deviceInfo);
                 player->setSource(url);
                 frameLayout->addWidget(player);
                 bottomWidget->adjustSize();
@@ -201,7 +201,7 @@ void MainWindow::addItem(QTcpSocket* socket, DeviceInfo* deviceInfo)
 
         if (i == 0 && url != nullptr) {
             qDebugEx() << "放在新行第一个" << url;
-            auto player = new DeviceWidget(socket, deviceInfo);
+            auto player = new DeviceWidget(connection, deviceInfo);
             player->setSource(url);
             frameLayout->addWidget(player);
         } else {
