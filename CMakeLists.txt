@@ -5,21 +5,23 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Network Concurrent Multimedia)
 
 qt_standard_project_setup()
 
-set(LIBIMOBILEDEVICE_DIR "mingw64/libimobiledevice")
-include_directories(${LIBIMOBILEDEVICE_DIR}/include)
-link_directories(${LIBIMOBILEDEVICE_DIR}/lib)
+if(APPLE)
+    set(PLATFORM_DIR "macOS") 
+else()
+    set(PLATFORM_DIR "mingw64")
+endif()
 
-set(LIBPLIST_DIR "mingw64/libplist")
-include_directories(${LIBPLIST_DIR}/include)
-link_directories(${LIBPLIST_DIR}/lib)
+include_directories(${PLATFORM_DIR}/libimobiledevice/include)
+link_directories(${PLATFORM_DIR}/libimobiledevice/lib)
 
-set(LIBIMOBILEDEVICE_GLUE_DIR "mingw64/libimobiledevice-glue")
-# include_directories(${LIBIMOBILEDEVICE_GLUE_DIR}/include)
-link_directories(${LIBIMOBILEDEVICE_GLUE_DIR}/lib)
+include_directories(${PLATFORM_DIR}/libplist/include)
+link_directories(${PLATFORM_DIR}/libplist/lib)
 
-set(LIBUSBMUXD_DIR "mingw64/libusbmuxd")
-# include_directories(${LIBUSBMUXD_DIR}/include)
-link_directories(${LIBUSBMUXD_DIR}/lib)
+include_directories(${PLATFORM_DIR}/libusbmuxd/include)
+link_directories(${PLATFORM_DIR}/libusbmuxd/lib)
+
+include_directories(${PLATFORM_DIR}/libimobiledevice-glue/include)
+link_directories(${PLATFORM_DIR}/libimobiledevice-glue/lib)
 
 qt_add_resources(RESOURCE_SOURCES icons.qrc)
 
