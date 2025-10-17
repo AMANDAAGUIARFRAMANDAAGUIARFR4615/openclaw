@@ -101,7 +101,7 @@ void DeviceView::onKillAllAppClicked()
 
 void DeviceView::onAppSwitcherClicked()
 {
-    Tools::sendEvent(socket, "AppSwitcher");
+    Tools::sendEvent(socket, "appSwitcher");
 }
 
 void DeviceView::onFileClicked()
