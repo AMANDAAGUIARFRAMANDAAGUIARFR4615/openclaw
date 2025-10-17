@@ -51,7 +51,7 @@ DeviceWindow::DeviceWindow(QTcpSocket* socket, DeviceInfo* deviceInfo, DeviceWid
     connect(screenshotButton, &QPushButton::clicked, this, &DeviceView::onScreenshotClicked);
 
     QPushButton *restartButton = new QPushButton(QIcon(":/icons/restart.png"), "重启", this);
-    connect(restartButton, &QPushButton::clicked, this, &DeviceView::onRestartClicked);
+    connect(restartButton, &QPushButton::clicked, this, &DeviceView::onRebootClicked);
 
     QPushButton *lockButton = new QPushButton(QIcon(":/icons/lock.png"), "锁屏", this);
     connect(lockButton, &QPushButton::clicked, this, &DeviceView::onLockClicked);

@@ -24,7 +24,7 @@ public:
     void onAppSwitcherClicked();
     void onFileClicked();
     void onScreenshotClicked();
-    void onRestartClicked();
+    void onRebootClicked();
     void onLockClicked();
     void onUnlockClicked();
     void onVolumeUpClicked();

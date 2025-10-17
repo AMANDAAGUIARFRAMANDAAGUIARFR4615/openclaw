@@ -116,7 +116,7 @@ void DeviceView::onScreenshotClicked()
     Tools::sendEvent(socket, "screenshot");
 }
 
-void DeviceView::onRestartClicked()
+void DeviceView::onRebootClicked()
 {
     Tools::sendEvent(socket, "reboot");
 }
@@ -169,7 +169,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     connect(lockAction, &QAction::triggered, this, &DeviceView::onLockClicked);
 
     QAction *rebootAction = new QAction(QIcon(":/icons/restart.png"), "重启", this);
-    connect(rebootAction, &QAction::triggered, this, &DeviceView::onRestartClicked);
+    connect(rebootAction, &QAction::triggered, this, &DeviceView::onRebootClicked);
 
     QAction *volumeUpAction = new QAction(QIcon(":/icons/volume_up.png"), "加音", this);
     connect(volumeUpAction, &QAction::triggered, this, &DeviceView::onVolumeUpClicked);
