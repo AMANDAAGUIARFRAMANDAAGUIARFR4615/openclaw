@@ -53,6 +53,18 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER "com.qt6.remotepro"
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Concurrent Qt6::Multimedia libimobiledevice-1.0 libplist-2.0)
+if(APPLE)
+    set(THIRD_PARTY_LIBS
+        libimobiledevice-1.0.dylib
+        libplist-2.0.dylib
+    )
+else()
+    set(THIRD_PARTY_LIBS
+        libimobiledevice-1.0
+        libplist-2.0
+    )
+endif()
+
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Concurrent Qt6::Multimedia ${THIRD_PARTY_LIBS})
 
 add_definitions(-DPROJECT_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\")
