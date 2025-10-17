@@ -18,6 +18,10 @@ public:
     VideoFrameWidget* getVideoFrameWidget() { return videoFrameWidget; }
     void setSource(const QUrl &source);
 
+    void onHomeScreenClicked();
+    void onCenterControllerClicked();
+    void onKillAllAppClicked();
+    void onAppSwitcherClicked();
     void onFileClicked();
     void onScreenshotClicked();
     void onRestartClicked();

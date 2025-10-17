@@ -13,5 +13,9 @@
         <file>icons/volume_down.png</file>
         <file>icons/volume_up.png</file>
         <file>icons/file_move.png</file>
+        <file>icons/home.png</file>
+        <file>icons/dashboard.png</file>
+        <file>icons/flip_to_front.png</file>
+        <file>icons/kill.png</file>
     </qresource>
 </RCC>

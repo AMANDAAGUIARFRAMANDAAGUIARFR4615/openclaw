@@ -11,29 +11,6 @@
 
 class Tools {
 public:
-    // 解锁
-    static void unlockScreen(QTcpSocket* socket) {
-        sendEvent(socket, "changeScreenLockedStatus", 0);
-    }
-
-    // 锁屏
-    static void lockScreen(QTcpSocket* socket) {
-        sendEvent(socket, "changeScreenLockedStatus", 1);
-    }
-
-    static void homeScreen(QTcpSocket* socket) {
-        sendEvent(socket, "homeScreen");
-    }
-
-    static void killAllApp(QTcpSocket* socket) {
-        sendEvent(socket, "killAllApp");
-    }
-
-    // 重启
-    static void reboot(QTcpSocket* socket) {
-        sendEvent(socket, "reboot");
-    }
-
     // 计算文件的 MD5 值
     static QString getFileMd5(const QString &filePath) {
         QFile file(filePath);
@@ -89,7 +66,6 @@ public:
         return byteArray.toBase64();
     }
 
-private:
     static void sendEvent(QTcpSocket* socket, const QString& event, int data = -1) {
         QJsonObject jsonObject;
         jsonObject["event"] = event;

@@ -30,9 +30,21 @@ DeviceWindow::DeviceWindow(QTcpSocket* socket, DeviceInfo* deviceInfo, DeviceWid
 
     QVBoxLayout *buttonLayout = new QVBoxLayout();
     buttonLayout->setContentsMargins(5, 5, 5, 5);
-    buttonLayout->setSpacing(10);
+    buttonLayout->setSpacing(5);
 
-    QPushButton *fileButton = new QPushButton(QIcon(":/icons/file_move.png"), "文件", this);
+    QPushButton *homeScreenButton = new QPushButton(QIcon(":/icons/home.png"), "主屏幕", this);
+    connect(homeScreenButton, &QPushButton::clicked, this, &DeviceView::onHomeScreenClicked);
+
+    QPushButton *centerControllerButton = new QPushButton(QIcon(":/icons/dashboard.png"), "控制中心", this);
+    connect(centerControllerButton, &QPushButton::clicked, this, &DeviceView::onCenterControllerClicked);
+
+    QPushButton *appSwitcherButton = new QPushButton(QIcon(":/icons/flip_to_front.png"), "应用切换", this);
+    connect(appSwitcherButton, &QPushButton::clicked, this, &DeviceView::onAppSwitcherClicked);
+
+    QPushButton *killAllAppButton = new QPushButton(QIcon(":/icons/kill.png"), "清理应用", this);
+    connect(killAllAppButton, &QPushButton::clicked, this, &DeviceView::onKillAllAppClicked);
+
+    QPushButton *fileButton = new QPushButton(QIcon(":/icons/file_move.png"), "文件管理", this);
     connect(fileButton, &QPushButton::clicked, this, &DeviceView::onFileClicked);
 
     QPushButton *screenshotButton = new QPushButton(QIcon(":/icons/screenshot.png"), "截图", this);
@@ -47,23 +59,18 @@ DeviceWindow::DeviceWindow(QTcpSocket* socket, DeviceInfo* deviceInfo, DeviceWid
     QPushButton *unlockButton = new QPushButton(QIcon(":/icons/unlock.png"), "解锁", this);
     connect(unlockButton, &QPushButton::clicked, this, &DeviceView::onUnlockClicked);
 
-    QPushButton *volumeUpButton = new QPushButton(QIcon(":/icons/volume_up.png"), "加音", this);
-    connect(volumeUpButton, &QPushButton::clicked, this, &DeviceView::onVolumeUpClicked);
-
-    QPushButton *volumeDownButton = new QPushButton(QIcon(":/icons/volume_down.png"), "减音", this);
-    connect(volumeDownButton, &QPushButton::clicked, this, &DeviceView::onVolumeDownClicked);
-
+    buttonLayout->addWidget(homeScreenButton);
+    buttonLayout->addWidget(centerControllerButton);
+    buttonLayout->addWidget(appSwitcherButton);
+    buttonLayout->addWidget(killAllAppButton);
     buttonLayout->addWidget(fileButton);
     buttonLayout->addWidget(screenshotButton);
     buttonLayout->addWidget(restartButton);
     buttonLayout->addWidget(lockButton);
     buttonLayout->addWidget(unlockButton);
-    buttonLayout->addWidget(volumeUpButton);
-    buttonLayout->addWidget(volumeDownButton);
     buttonLayout->addStretch();
 
     QWidget *buttonContainer = new QWidget(this);
-    buttonContainer->setMaximumWidth(60);
     buttonContainer->setLayout(buttonLayout);
 
     layout->addWidget(buttonContainer);

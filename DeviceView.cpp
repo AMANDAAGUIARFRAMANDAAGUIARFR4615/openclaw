@@ -84,6 +84,26 @@ void DeviceView::addVideoFrameWidget(VideoFrameWidget* videoFrameWidget)
     videoFrameWidget->orientationChanged(deviceInfo->orientation);
 }
 
+void DeviceView::onHomeScreenClicked()
+{
+    Tools::sendEvent(socket, "homeScreen");
+}
+
+void DeviceView::onCenterControllerClicked()
+{
+    Tools::sendEvent(socket, "showCenterController");
+}
+
+void DeviceView::onKillAllAppClicked()
+{
+    Tools::sendEvent(socket, "killAllApp");
+}
+
+void DeviceView::onAppSwitcherClicked()
+{
+    Tools::sendEvent(socket, "AppSwitcher");
+}
+
 void DeviceView::onFileClicked()
 {
     auto window = new RemoteFileExplorer(socket);
@@ -93,22 +113,22 @@ void DeviceView::onFileClicked()
 
 void DeviceView::onScreenshotClicked()
 {
-    // 处理截图操作
+    Tools::sendEvent(socket, "screenshot");
 }
 
 void DeviceView::onRestartClicked()
 {
-    Tools::reboot(socket);
+    Tools::sendEvent(socket, "reboot");
 }
 
 void DeviceView::onLockClicked()
 {
-    Tools::lockScreen(socket);
+    Tools::sendEvent(socket, "changeScreenLockedStatus", 1);
 }
 
 void DeviceView::onUnlockClicked()
 {
-    Tools::unlockScreen(socket);
+    Tools::sendEvent(socket, "changeScreenLockedStatus", 0);
 }
 
 void DeviceView::onVolumeUpClicked()
@@ -133,7 +153,13 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu contextMenu(this);
 
-    QAction *fileAction = new QAction(QIcon(":/icons/file_move.png"), "文件", this);
+    QAction *homeAction = new QAction(QIcon(":/icons/home.png"), "主屏幕", this);
+    connect(homeAction, &QAction::triggered, this, &DeviceView::onHomeScreenClicked);
+
+    QAction *killAllAppAction = new QAction(QIcon(":/icons/kill.png"), "清理应用", this);
+    connect(killAllAppAction, &QAction::triggered, this, &DeviceView::onKillAllAppClicked);
+
+    QAction *fileAction = new QAction(QIcon(":/icons/file_move.png"), "文件管理", this);
     connect(fileAction, &QAction::triggered, this, &DeviceView::onFileClicked);
 
     QAction *unlockAction = new QAction(QIcon(":/icons/unlock.png"), "解锁", this);
@@ -151,6 +177,8 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     QAction *volumeDownAction = new QAction(QIcon(":/icons/volume_down.png"), "减音", this);
     connect(volumeDownAction, &QAction::triggered, this, &DeviceView::onVolumeDownClicked);
 
+    contextMenu.addAction(homeAction);
+    contextMenu.addAction(killAllAppAction);
     contextMenu.addAction(fileAction);
     contextMenu.addAction(unlockAction);
     contextMenu.addAction(lockAction);
