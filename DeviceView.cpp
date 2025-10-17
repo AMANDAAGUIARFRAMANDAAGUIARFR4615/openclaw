@@ -133,20 +133,12 @@ void DeviceView::onUnlockClicked()
 
 void DeviceView::onVolumeUpClicked()
 {
-    QJsonObject jsonObject;
-    jsonObject["event"] = "volumeControl";
-    jsonObject["data"] = "+";
-
-    connection->send(jsonObject);
+    connection->send("volumeControl", "+");
 }
 
 void DeviceView::onVolumeDownClicked()
 {
-    QJsonObject jsonObject;
-    jsonObject["event"] = "volumeControl";
-    jsonObject["data"] = "-";
-
-    connection->send(jsonObject);
+    connection->send("volumeControl", "-");
 }
 
 void DeviceView::contextMenuEvent(QContextMenuEvent *event)

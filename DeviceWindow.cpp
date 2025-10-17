@@ -216,11 +216,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
             dataObject["type"] = "keyPress";
             dataObject["key"] = QKeySequence(event->modifiers()).toString() + keySequence;
 
-            QJsonObject jsonObject;
-            jsonObject["event"] = "keyboard";
-            jsonObject["data"] = dataObject;
-
-            connection->send(jsonObject);
+            connection->send("keyboard", dataObject);
             return;
         }
 
@@ -253,10 +249,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
                 return;
             }
 
-            QJsonObject jsonObject;
-            jsonObject["event"] = "clipboard";
-            jsonObject["data"] = dataObject;
-            connection->send(jsonObject);
+            connection->send("clipboard", dataObject);
 
             return;
         }
@@ -275,11 +268,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
         dataObject["type"] = "keyPress";
         dataObject["key"] = QKeySequence(event->modifiers()).toString() + keySequence;
 
-        QJsonObject jsonObject;
-        jsonObject["event"] = "keyboard";
-        jsonObject["data"] = dataObject;
-
-        connection->send(jsonObject);
+        connection->send("keyboard", dataObject);
         return;
     }
 
@@ -290,11 +279,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
 
     qDebugEx() << "按键输入:" << keyText;
 
-    QJsonObject jsonObject;
-    jsonObject["event"] = "inputText";
-    jsonObject["data"] = keyText;
-
-    connection->send(jsonObject);
+    connection->send("inputText", keyText);
 }
 
 void DeviceWindow::keyReleaseEvent(QKeyEvent *event)
@@ -312,12 +297,7 @@ void DeviceWindow::inputMethodEvent(QInputMethodEvent *event)
     if (!commitText.isEmpty())
     {
         qDebugEx() << "输入内容:" << commitText;
-
-        QJsonObject jsonObject;
-        jsonObject["event"] = "inputText";
-        jsonObject["data"] = commitText;
-
-        connection->send(jsonObject);
+        connection->send("inputText", commitText);
     }
 
     QWidget::inputMethodEvent(event);

@@ -26,11 +26,6 @@ public:
         if (!jsonValue.isUndefined() && !jsonValue.isNull())
             jsonObject["data"] = jsonValue;
 
-        send(jsonObject);
-    }
-
-    void send(const QJsonObject &jsonObject)
-    {
         qDebugEx() << "sendData" << jsonObject;
 
         if (type == Tcp && tcpSocket->state() != QAbstractSocket::ConnectedState) {
@@ -62,6 +57,17 @@ public:
             if (error != IDEVICE_E_SUCCESS)
                 qDebugEx() << "发送失败" << error;
         }
+    }
+
+    inline bool operator==(const DeviceConnection &other) const
+    {
+        if (type != other.type)
+            return false;
+
+        if (type == Tcp)
+            return tcpSocket == other.tcpSocket;
+
+        return usbConnection == other.usbConnection;
     }
 
 private:
