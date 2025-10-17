@@ -59,7 +59,7 @@ public:
         }
     }
 
-    inline bool operator==(const DeviceConnection &other) const
+    bool operator==(const DeviceConnection &other) const
     {
         if (type != other.type)
             return false;
@@ -68,6 +68,10 @@ public:
             return tcpSocket == other.tcpSocket;
 
         return usbConnection == other.usbConnection;
+    }
+
+    bool operator!=(const DeviceConnection& other) const {
+        return !(*this == other);
     }
 
 private:
