@@ -23,7 +23,7 @@ public:
     explicit UsbDeviceManager(
         const std::function<void(DeviceConnection*)> &onDeviceConnected = nullptr,
         const std::function<void(DeviceConnection*)> &onDeviceDisconnected = nullptr,
-        const std::function<void(DeviceConnection*, const QByteArray&)> &onDataReceived = nullptr,
+        const std::function<void(DeviceConnection*, const QJsonObject&)> &onDataReceived = nullptr,
         const std::function<void(DeviceConnection*, const QString&)> &onError = nullptr,
         QObject* parent = nullptr)
         : QObject(parent),
@@ -37,13 +37,13 @@ public:
     }
 
     void start() {
-        qDebug() << "🚀 启动设备管理器...";
+        qDebugEx() << "🚀 启动设备管理器...";
         pollDevices();
         timer->start(2000);
     }
 
     void stop() {
-        qDebug() << "🛑 停止设备管理器，清理所有设备...";
+        qDebugEx() << "🛑 停止设备管理器，清理所有设备...";
         for (const QString& udid : devices.keys()) {
             disconnectDevice(udid);
         }
@@ -54,10 +54,11 @@ private:
     QTimer* timer;
     QHash<QString, DeviceContext*> devices;
     QSet<QString> previousDevices;
+    QHash<QString, QByteArray> deviceBuffers;
 
     std::function<void(DeviceConnection*)> onDeviceConnectedCallback;
     std::function<void(DeviceConnection*)> onDeviceDisconnectedCallback;
-    std::function<void(DeviceConnection*, const QByteArray&)> onDataReceivedCallback;
+    std::function<void(DeviceConnection*, const QJsonObject&)> onDataReceivedCallback;
     std::function<void(DeviceConnection*, const QString&)> onErrorCallback;
 
     void pollDevices() {
@@ -74,7 +75,7 @@ private:
             QString udid = QString::fromUtf8(deviceList[i]);
             currentDevices.insert(udid);
             if (!previousDevices.contains(udid)) {
-                qDebug() << "📱 检测到新设备:" << udid;
+                qDebugEx() << "📱 检测到新设备:" << udid;
                 DeviceConnection* conn = connectDevice(udid);
                 if (conn && onDeviceConnectedCallback)
                     onDeviceConnectedCallback(conn);
@@ -84,7 +85,7 @@ private:
         // 检测断开设备
         for (const QString& udid : previousDevices) {
             if (!currentDevices.contains(udid)) {
-                qDebug() << "❌ 检测到设备拔出:" << udid;
+                qDebugEx() << "❌ 检测到设备拔出:" << udid;
                 DeviceConnection* conn = getConnection(udid);
                 disconnectDevice(udid);
                 if (conn && onDeviceDisconnectedCallback)
@@ -103,7 +104,7 @@ private:
 
     DeviceConnection* connectDevice(const QString& qUdid) {
         if (devices.contains(qUdid)) {
-            qDebug() << "⚠️ 设备已连接:" << qUdid;
+            qDebugEx() << "⚠️ 设备已连接:" << qUdid;
             return devices.value(qUdid)->handler;
         }
 
@@ -135,9 +136,8 @@ private:
                 idevice_error_t err = idevice_connection_receive(ctx->connection, buffer, sizeof(buffer), &bytes);
                 if (err == IDEVICE_E_SUCCESS && bytes > 0) {
                     QByteArray data(buffer, bytes);
-                    qDebug() << "📩 [" << qUdid << "] 收到数据:" << data;
-                    if (onDataReceivedCallback)
-                        onDataReceivedCallback(ctx->handler, data);
+                    deviceBuffers[qUdid].append(data);
+                    processBufferedData(qUdid, ctx->handler);
                 } else if (err != IDEVICE_E_SUCCESS) {
                     emitError(ctx->handler, QString("设备通信错误: %1").arg(err));
                 }
@@ -155,7 +155,7 @@ private:
             return;
 
         DeviceContext* ctx = devices.value(udid);
-        qDebug() << "❌ 断开设备:" << udid;
+        qDebugEx() << "❌ 断开设备:" << udid;
 
         if (ctx->notifier) ctx->notifier->deleteLater();
         if (ctx->handler) delete ctx->handler;
@@ -171,5 +171,38 @@ private:
         qWarning() << "⚠️ UsbDeviceManager 错误:" << msg;
         if (onErrorCallback)
             onErrorCallback(conn, msg);
+    }
+
+    void processBufferedData(const QString& udid, DeviceConnection* handler) {
+        auto &buffer = deviceBuffers[udid];
+
+        while (buffer.size() >= sizeof(quint64) + sizeof(quint32)) {
+            auto identifier = *reinterpret_cast<quint64*>(buffer.data());
+            if (identifier != 0xb7c2e0f542a39a3e) {
+                qCriticalEx() << "识别码不匹配，丢弃数据" << QString("0x%1").arg(identifier, 0, 16);
+                buffer.clear(); // 清空缓冲区
+                return;
+            }
+
+            auto jsonDataLength = *reinterpret_cast<quint32*>(buffer.data() + sizeof(quint64));
+
+            if (buffer.size() < static_cast<int>(sizeof(quint64) + sizeof(quint32) + jsonDataLength)) {
+                // qDebugEx() << "数据不完整，等待更多数据" << buffer.size() << sizeof(quint64) + sizeof(quint32) + jsonDataLength;
+                return;
+            }
+
+            QByteArray jsonData = buffer.mid(sizeof(quint64) + sizeof(quint32), jsonDataLength);
+            // 移除已处理的数据包
+            buffer.remove(0, sizeof(quint64) + sizeof(quint32) + jsonDataLength);
+            QJsonDocument doc = QJsonDocument::fromJson(jsonData);
+            
+            if (!doc.isNull()) {
+                if (onDataReceivedCallback) {
+                    onDataReceivedCallback(handler, doc.object());
+                }
+            } else {
+                qCriticalEx() << "JSON 解析失败，丢弃数据";
+            }
+        }
     }
 };

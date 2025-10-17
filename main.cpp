@@ -6,6 +6,7 @@
 #include "LogWindow.h"
 #include "DeviceInfo.h"
 #include "EventHub.h"
+#include "UsbDeviceManager.h"
 #include <QApplication>
 #include <QLoggingCategory>
 #include <QShortcut>
@@ -17,7 +18,7 @@ void onClientConnected(QTcpSocket* socket) {
     // qDebugEx() << "有新的客户端连接！";
 }
 
-void onDataReceived(QTcpSocket* socket, const QJsonObject &jsonObject) {
+void onDataReceived(DeviceConnection *connection, const QJsonObject &jsonObject) {
     auto event = jsonObject["event"].toString();
     auto data = jsonObject["data"];
 
@@ -26,10 +27,6 @@ void onDataReceived(QTcpSocket* socket, const QJsonObject &jsonObject) {
 
     qDebugEx() << event << data;
 
-    DeviceConnection *connection = DeviceConnection::find(socket);
-    if (!connection)
-        connection = new DeviceConnection(socket);
-    
     EventHub::TriggerEvent(event, data, connection);
 }
 
@@ -55,7 +52,32 @@ int main(int argc, char *argv[])
     auto shortcut = new QShortcut(QKeySequence(Qt::Key_F5), mainWindow);
     QObject::connect(shortcut, &QShortcut::activated, logWindow, &LogWindow::toggleVisibility);
 
-    TcpServer server(onClientConnected, onDataReceived, onClientDisconnected, onError);
+    TcpServer server(onClientConnected, [](QTcpSocket* socket, const QJsonObject &jsonObject) {
+            DeviceConnection *connection = DeviceConnection::find(socket);
+            if (!connection)
+                connection = new DeviceConnection(socket);
+
+            onDataReceived(connection, jsonObject);
+        }, onClientDisconnected, onError);
+
+    UsbDeviceManager* manager = new UsbDeviceManager(
+        [](DeviceConnection* conn) {
+            // qDebug() << "✅ 设备已连接:" << conn;
+        },
+        [](DeviceConnection* conn) {
+            // qDebug() << "❌ 设备已断开:" << conn;
+        },
+        onDataReceived,
+        [](DeviceConnection* conn, const QString& msg) {
+            qWarning() << "⚠️ 设备错误:" << msg;
+        }
+    );
+
+    manager->start();
+
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, [&]() {
+        manager->stop();
+    });
 
     QString localIP = NetworkUtils::getLocalIP();
     qDebugEx() << "本机内网IP:" << localIP;
