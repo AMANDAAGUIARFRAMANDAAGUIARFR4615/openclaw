@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DeviceConnection.h"
+#include "UsbDeviceContext.h"
 #include <QSocketNotifier>
 #include <QHash>
 #include <QTimer>
@@ -8,15 +8,6 @@
 #include <QJsonObject>
 #include <functional>
 #include <libimobiledevice/libimobiledevice.h>
-
-struct UsbDeviceContext {
-    idevice_t device = nullptr;
-    idevice_connection_t connection = nullptr;
-    QSocketNotifier* notifier = nullptr;
-    DeviceConnection* handler = nullptr;
-    QString udid;
-    uint16_t port = 0;
-};
 
 class UsbDeviceManager : public QObject {
     Q_OBJECT

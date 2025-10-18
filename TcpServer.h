@@ -19,8 +19,6 @@ public:
               const std::function<void(QTcpSocket*, QAbstractSocket::SocketError)> &onError,
               quint16 port = 0);
 
-    static void sendData(QTcpSocket* socket, const QJsonObject &jsonObject);
-
 private slots:
     void onNewConnection();
     void onReadyRead();
