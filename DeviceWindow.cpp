@@ -308,19 +308,26 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
 {
     qDebugEx() << "wheelEvent" << event;
 
-    if (QOperatingSystemVersion::currentType() == QOperatingSystemVersion::MacOS)
-        accumulatedDelta += event->angleDelta().y() * 10;
-    else
-        accumulatedDelta += event->angleDelta().y();
+    currentPos = event->position().toPoint();
 
-    if (std::abs(accumulatedDelta) < 1)
+    if (!event->pixelDelta().isNull()) {
+        auto *moveEvent = new QMouseEvent(
+            QEvent::MouseMove,
+            currentPos,
+            Qt::LeftButton,
+            Qt::LeftButton,
+            Qt::NoModifier
+        );
+        QApplication::postEvent(this, moveEvent);
         return;
+    }
+
+    accumulatedDelta += event->angleDelta().y();
 
     if (wheelTimer)
         return;
 
     wheelTimer = new QTimer(this);
-    currentPos = event->position().toPoint();
     stepCount = 0;
 
     auto *pressEvent = new QMouseEvent(
@@ -330,7 +337,7 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
         Qt::LeftButton,
         Qt::NoModifier
     );
-    QApplication::sendEvent(this, pressEvent);
+    QApplication::postEvent(this, pressEvent);
 
     connect(wheelTimer, &QTimer::timeout, this, [=]() mutable {
         int stepDelta;
@@ -351,7 +358,7 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
             Qt::LeftButton,
             Qt::NoModifier
         );
-        QApplication::sendEvent(this, moveEvent);
+        QApplication::postEvent(this, moveEvent);
 
         if (stepCount >= maxSteps) {
             auto *releaseEvent = new QMouseEvent(
@@ -361,7 +368,7 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
                 Qt::LeftButton,
                 Qt::NoModifier
             );
-            QApplication::sendEvent(this, releaseEvent);
+            QApplication::postEvent(this, releaseEvent);
 
             wheelTimer->stop();
             wheelTimer->deleteLater();
