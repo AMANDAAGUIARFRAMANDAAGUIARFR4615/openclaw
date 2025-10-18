@@ -13,16 +13,15 @@ class UsbDeviceManager : public QObject {
     Q_OBJECT
 
 public:
-    // 单例获取方法
     static UsbDeviceManager* instance();
 
-    // 启动/停止管理器
     void start();
     void stop();
 
-    // 设备连接管理
-    UsbDeviceContext* connectDevice(const QString& udid, uint16_t port);
+    UsbDeviceContext* connectDevice(const QString& udid, uint16_t port, std::function<void(DeviceConnection*, const QByteArray&)> rawDataCallback = nullptr);
     void disconnectDevice(const QString& key);
+
+    UsbDeviceContext* getContext(DeviceConnection* conn) const;
 
 signals:
     void deviceConnected(DeviceConnection* conn);
@@ -50,4 +49,6 @@ private:
     QHash<QString, UsbDeviceContext*> devices;
     QSet<QString> previousDevices;
     QHash<QString, QByteArray> deviceBuffers;
+
+    QHash<DeviceConnection*, UsbDeviceContext*> connToContext;
 };

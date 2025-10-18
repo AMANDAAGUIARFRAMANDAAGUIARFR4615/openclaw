@@ -28,7 +28,7 @@ void UsbDeviceManager::stop() {
     devices.clear();
 }
 
-UsbDeviceContext* UsbDeviceManager::connectDevice(const QString& udid, uint16_t port) {
+UsbDeviceContext* UsbDeviceManager::connectDevice(const QString& udid, uint16_t port, std::function<void(DeviceConnection*, const QByteArray&)> rawDataCallback) {
     QString key = udid + ":" + QString::number(port);
     if (devices.contains(key)) {
         qDebug() << "⚠️ 已存在连接:" << key;
@@ -61,11 +61,18 @@ UsbDeviceContext* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
     if (idevice_connection_get_fd(ctx->connection, &fd) == IDEVICE_E_SUCCESS && fd >= 0) {
         ctx->notifier = new QSocketNotifier(fd, QSocketNotifier::Read, this);
         connect(ctx->notifier, &QSocketNotifier::activated, this, [=](int) {
-            char buffer[512];
+            char buffer[65536];
             uint32_t bytes = 0;
             idevice_error_t err = idevice_connection_receive(ctx->connection, buffer, sizeof(buffer), &bytes);
             if (err == IDEVICE_E_SUCCESS && bytes > 0) {
                 QByteArray data(buffer, bytes);
+
+                if (rawDataCallback)
+                {
+                    rawDataCallback(ctx->handler, data);
+                    return;
+                }
+
                 deviceBuffers[key].append(data);
                 processBufferedData(key, ctx->handler);
             } else if (err != IDEVICE_E_SUCCESS) {
@@ -75,6 +82,7 @@ UsbDeviceContext* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
     }
 
     devices.insert(key, ctx);
+    connToContext.insert(ctx->handler, ctx);
     qDebug() << "✅ 已连接设备:" << key;
     emit deviceConnected(ctx->handler);
     return ctx;
@@ -89,6 +97,7 @@ void UsbDeviceManager::disconnectDevice(const QString& key) {
     if (ctx->notifier) ctx->notifier->deleteLater();
     if (ctx->handler) {
         emit deviceDisconnected(ctx->handler);
+        connToContext.remove(ctx->handler);
         delete ctx->handler;
     }
     if (ctx->connection) idevice_disconnect(ctx->connection);
@@ -164,4 +173,8 @@ void UsbDeviceManager::processBufferedData(const QString& key, DeviceConnection*
             qCritical() << "JSON 解析失败，丢弃数据";
         }
     }
+}
+
+UsbDeviceContext* UsbDeviceManager::getContext(DeviceConnection* conn) const {
+    return connToContext.value(conn, nullptr);
 }
