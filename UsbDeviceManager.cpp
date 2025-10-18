@@ -2,17 +2,14 @@
 #include <QJsonDocument>
 #include <QDebug>
 
-UsbDeviceManager::UsbDeviceManager(
-    const std::function<void(DeviceConnection*)> &onDeviceConnected,
-    const std::function<void(DeviceConnection*)> &onDeviceDisconnected,
-    const std::function<void(DeviceConnection*, const QJsonObject&)> &onDataReceived,
-    const std::function<void(DeviceConnection*, const QString&)> &onError,
-    QObject* parent)
-    : QObject(parent),
-      onDeviceConnectedCallback(onDeviceConnected),
-      onDeviceDisconnectedCallback(onDeviceDisconnected),
-      onDataReceivedCallback(onDataReceived),
-      onErrorCallback(onError)
+Q_GLOBAL_STATIC(UsbDeviceManager, s_usbDeviceManager)
+
+UsbDeviceManager* UsbDeviceManager::instance() {
+    return s_usbDeviceManager;
+}
+
+UsbDeviceManager::UsbDeviceManager(QObject* parent)
+    : QObject(parent)
 {
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &UsbDeviceManager::pollDevices);
@@ -79,8 +76,7 @@ UsbDeviceContext* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
 
     devices.insert(key, ctx);
     qDebug() << "✅ 已连接设备:" << key;
-    if (onDeviceConnectedCallback)
-        onDeviceConnectedCallback(ctx->handler);
+    emit deviceConnected(ctx->handler);
     return ctx;
 }
 
@@ -92,8 +88,7 @@ void UsbDeviceManager::disconnectDevice(const QString& key) {
 
     if (ctx->notifier) ctx->notifier->deleteLater();
     if (ctx->handler) {
-        if (onDeviceDisconnectedCallback)
-            onDeviceDisconnectedCallback(ctx->handler);
+        emit deviceDisconnected(ctx->handler);
         delete ctx->handler;
     }
     if (ctx->connection) idevice_disconnect(ctx->connection);
@@ -141,8 +136,7 @@ void UsbDeviceManager::pollDevices() {
 
 void UsbDeviceManager::emitError(DeviceConnection* conn, const QString& msg) {
     qWarning() << "⚠️ UsbDeviceManager 错误:" << msg;
-    if (onErrorCallback)
-        onErrorCallback(conn, msg);
+    emit errorOccurred(conn, msg);
 }
 
 void UsbDeviceManager::processBufferedData(const QString& key, DeviceConnection* handler) {
@@ -165,8 +159,7 @@ void UsbDeviceManager::processBufferedData(const QString& key, DeviceConnection*
         QJsonDocument doc = QJsonDocument::fromJson(jsonData);
 
         if (!doc.isNull()) {
-            if (onDataReceivedCallback)
-                onDataReceivedCallback(handler, doc.object());
+            emit dataReceived(handler, doc.object());
         } else {
             qCritical() << "JSON 解析失败，丢弃数据";
         }

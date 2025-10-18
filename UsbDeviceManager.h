@@ -7,38 +7,47 @@
 #include <QTimer>
 #include <QHostInfo>
 #include <QJsonObject>
-#include <functional>
 #include <libimobiledevice/libimobiledevice.h>
 
 class UsbDeviceManager : public QObject {
     Q_OBJECT
 
 public:
-    explicit UsbDeviceManager(
-        const std::function<void(DeviceConnection*)> &onDeviceConnected = nullptr,
-        const std::function<void(DeviceConnection*)> &onDeviceDisconnected = nullptr,
-        const std::function<void(DeviceConnection*, const QJsonObject&)> &onDataReceived = nullptr,
-        const std::function<void(DeviceConnection*, const QString&)> &onError = nullptr,
-        QObject* parent = nullptr);
+    // 单例获取方法
+    static UsbDeviceManager* instance();
 
+    // 启动/停止管理器
     void start();
     void stop();
 
+    // 设备连接管理
     UsbDeviceContext* connectDevice(const QString& udid, uint16_t port);
     void disconnectDevice(const QString& key);
+
+signals:
+    void deviceConnected(DeviceConnection* conn);
+    void deviceDisconnected(DeviceConnection* conn);
+    void dataReceived(DeviceConnection* conn, const QJsonObject& json);
+    void errorOccurred(DeviceConnection* conn, const QString& message);
+
+public:
+    // 公开构造给 Q_GLOBAL_STATIC 使用
+    explicit UsbDeviceManager(QObject* parent = nullptr);
+    ~UsbDeviceManager() override = default;
+
+    // 禁止拷贝和移动（保持单例安全）
+    UsbDeviceManager(const UsbDeviceManager&) = delete;
+    UsbDeviceManager& operator=(const UsbDeviceManager&) = delete;
+    UsbDeviceManager(UsbDeviceManager&&) = delete;
+    UsbDeviceManager& operator=(UsbDeviceManager&&) = delete;
 
 private:
     void pollDevices();
     void emitError(DeviceConnection* conn, const QString& msg);
     void processBufferedData(const QString& key, DeviceConnection* handler);
 
-    QTimer* timer;
+    QTimer* timer = nullptr;
     QHash<QString, UsbDeviceContext*> devices;
     QSet<QString> previousDevices;
     QHash<QString, QByteArray> deviceBuffers;
-
-    std::function<void(DeviceConnection*)> onDeviceConnectedCallback;
-    std::function<void(DeviceConnection*)> onDeviceDisconnectedCallback;
-    std::function<void(DeviceConnection*, const QJsonObject&)> onDataReceivedCallback;
-    std::function<void(DeviceConnection*, const QString&)> onErrorCallback;
 };
