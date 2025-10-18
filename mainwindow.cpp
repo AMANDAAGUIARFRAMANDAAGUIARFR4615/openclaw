@@ -161,7 +161,7 @@ void MainWindow::onTabClicked(int index)
 
 void MainWindow::addItem(DeviceConnection* connection, DeviceInfo* deviceInfo)
 {
-    auto url = deviceInfo ? "tcp://" + deviceInfo->localIp + ":23145" : nullptr;
+    auto url = deviceInfo ? "tcp://" + deviceInfo->localIp + ":" + deviceInfo->videoPort : nullptr;
 
     int count = gridLayout->count();
 

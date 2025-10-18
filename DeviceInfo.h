@@ -10,7 +10,7 @@ public:
     DeviceInfo(const QJsonObject &json)
         : deviceId(json["deviceId"].toString()),
           deviceName(json["deviceName"].toString()),
-          inuse(json["inuse"].toString()),
+          videoPort(json["videoPort"].toInt()),
           jbType(json["jbType"].toInt()),
           localIp(json["localIp"].toString()),
           orientation(json["orientation"].toInt()),
@@ -32,7 +32,7 @@ public:
 
     const QString deviceId;
     const QString deviceName;
-    const QString inuse;
+    const int videoPort;
     const int jbType;
     const QString localIp;
     const QString platform;
@@ -45,12 +45,12 @@ public:
     float scaleFactor = 1;
 
     QString toString() const {
-        return QString("deviceId: %1, deviceName: %2, inuse: %3, jbType: %4, "
+        return QString("deviceId: %1, deviceName: %2, videoPort: %3, jbType: %4, "
                        "localIp: %5, orientation: %6, platform: %7, screenWidth: %8, "
                        "screenHeight: %9, scaleFactor: %10, lockedStatus: %11, version: %12")
             .arg(deviceId)
             .arg(deviceName)
-            .arg(inuse)
+            .arg(videoPort)
             .arg(jbType)
             .arg(localIp)
             .arg(orientation)
