@@ -34,7 +34,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, QWidget *pa
 
     treeView = new QTreeView(this);
     QFont font = treeView->font();
-    font.setPointSize(12);
+    font.setPointSize(16);
     treeView->setFont(font);
     treeView->setIconSize(QSize(24, 24));
 
