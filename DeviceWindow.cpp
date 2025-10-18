@@ -13,6 +13,7 @@
 #include <QMimeData>
 #include <QHBoxLayout>
 #include <QPushButton>
+#include <QOperatingSystemVersion>
 
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(connection, deviceInfo), deviceWidget(deviceWidget)
 {
@@ -307,13 +308,18 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
 {
     qDebugEx() << "wheelEvent" << event;
 
-    accumulatedDelta += event->angleDelta().y();
+    if (QOperatingSystemVersion::currentType() == QOperatingSystemVersion::MacOS)
+        accumulatedDelta += event->angleDelta().y() * 10;
+    else
+        accumulatedDelta += event->angleDelta().y();
+
+    if (std::abs(accumulatedDelta) < 1)
+        return;
 
     if (wheelTimer)
         return;
 
     wheelTimer = new QTimer(this);
-
     currentPos = event->position().toPoint();
     stepCount = 0;
 
@@ -328,12 +334,12 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
 
     connect(wheelTimer, &QTimer::timeout, this, [=]() mutable {
         int stepDelta;
-        
+
         if (stepCount == maxSteps - 1)
             stepDelta = accumulatedDelta;// 最后一步，直接把剩余全部加上
         else
             stepDelta = accumulatedDelta / (maxSteps - stepCount);
-        
+
         currentPos += QPoint(0, stepDelta);
         accumulatedDelta -= stepDelta;
         stepCount++;
@@ -363,5 +369,6 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
             accumulatedDelta = 0;
         }
     });
+
     wheelTimer->start(30);
 }
