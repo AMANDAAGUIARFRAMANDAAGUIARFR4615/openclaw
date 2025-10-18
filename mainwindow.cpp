@@ -161,7 +161,7 @@ void MainWindow::onTabClicked(int index)
 
 void MainWindow::addItem(DeviceConnection* connection, DeviceInfo* deviceInfo)
 {
-    auto url = deviceInfo ? "tcp://" + deviceInfo->localIp + ":" + deviceInfo->videoPort : nullptr;
+    auto url = deviceInfo ? QString("tcp://%1:%2").arg(deviceInfo->localIp).arg(deviceInfo->videoPort) : nullptr;
 
     int count = gridLayout->count();
 

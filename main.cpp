@@ -60,24 +60,24 @@ int main(int argc, char *argv[])
             onDataReceived(connection, jsonObject);
         }, onClientDisconnected, onError);
 
-    UsbDeviceManager* manager = new UsbDeviceManager(
-        [](DeviceConnection* conn) {
-            // qDebug() << "✅ 设备已连接:" << conn;
-        },
-        [](DeviceConnection* conn) {
-            // qDebug() << "❌ 设备已断开:" << conn;
-        },
-        onDataReceived,
-        [](DeviceConnection* conn, const QString& msg) {
-            qWarning() << "⚠️ 设备错误:" << msg;
-        }
-    );
+    // UsbDeviceManager* manager = new UsbDeviceManager(
+    //     [](DeviceConnection* conn) {
+    //         // qDebug() << "✅ 设备已连接:" << conn;
+    //     },
+    //     [](DeviceConnection* conn) {
+    //         // qDebug() << "❌ 设备已断开:" << conn;
+    //     },
+    //     onDataReceived,
+    //     [](DeviceConnection* conn, const QString& msg) {
+    //         qWarning() << "⚠️ 设备错误:" << msg;
+    //     }
+    // );
 
-    manager->start();
+    // manager->start();
 
-    QObject::connect(&app, &QCoreApplication::aboutToQuit, [&]() {
-        manager->stop();
-    });
+    // QObject::connect(&app, &QCoreApplication::aboutToQuit, [&]() {
+    //     manager->stop();
+    // });
 
     QString localIP = NetworkUtils::getLocalIP();
     qDebugEx() << "本机内网IP:" << localIP;
