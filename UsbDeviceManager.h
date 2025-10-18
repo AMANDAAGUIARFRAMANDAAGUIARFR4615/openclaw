@@ -9,11 +9,13 @@
 #include <functional>
 #include <libimobiledevice/libimobiledevice.h>
 
-struct DeviceContext {
+struct UsbDeviceContext {
     idevice_t device = nullptr;
     idevice_connection_t connection = nullptr;
     QSocketNotifier* notifier = nullptr;
     DeviceConnection* handler = nullptr;
+    QString udid;
+    uint16_t port = 0;
 };
 
 class UsbDeviceManager : public QObject {
@@ -43,16 +45,88 @@ public:
     }
 
     void stop() {
-        qDebugEx() << "🛑 停止设备管理器，清理所有设备...";
-        for (const QString& udid : devices.keys()) {
-            disconnectDevice(udid);
-        }
+        qDebugEx() << "🛑 停止设备管理器...";
+        for (const QString& key : devices.keys())
+            disconnectDevice(key);
         devices.clear();
+    }
+
+    UsbDeviceContext* connectDevice(const QString& udid, uint16_t port) {
+        QString key = udid + ":" + QString::number(port);
+        if (devices.contains(key)) {
+            qDebugEx() << "⚠️ 已存在连接:" << key;
+            return devices[key];
+        }
+
+        UsbDeviceContext* ctx = new UsbDeviceContext();
+        ctx->udid = udid;
+        ctx->port = port;
+
+        if (IDEVICE_E_SUCCESS != idevice_new(&ctx->device, udid.toUtf8().constData())) {
+            emitError(nullptr, QString("无法创建 idevice: %1").arg(udid));
+            delete ctx;
+            return nullptr;
+        }
+
+        if (idevice_connect(ctx->device, port, &ctx->connection) != IDEVICE_E_SUCCESS) {
+            emitError(nullptr, QString("无法连接端口 %1 的设备: %2").arg(port).arg(udid));
+            idevice_free(ctx->device);
+            delete ctx;
+            return nullptr;
+        }
+
+        ctx->handler = new DeviceConnection(ctx->connection);
+        ctx->handler->send("deviceInfo", QJsonObject{
+            {"remoteDeviceName", QHostInfo::localHostName()}
+        });
+
+        int fd = -1;
+        if (idevice_connection_get_fd(ctx->connection, &fd) == IDEVICE_E_SUCCESS && fd >= 0) {
+            ctx->notifier = new QSocketNotifier(fd, QSocketNotifier::Read, this);
+            connect(ctx->notifier, &QSocketNotifier::activated, this, [=](int) {
+                char buffer[512];
+                uint32_t bytes = 0;
+                idevice_error_t err = idevice_connection_receive(ctx->connection, buffer, sizeof(buffer), &bytes);
+                if (err == IDEVICE_E_SUCCESS && bytes > 0) {
+                    QByteArray data(buffer, bytes);
+                    deviceBuffers[key].append(data);
+                    processBufferedData(key, ctx->handler);
+                } else if (err != IDEVICE_E_SUCCESS) {
+                    emitError(ctx->handler, QString("设备通信错误: %1").arg(err));
+                }
+            });
+        }
+
+        devices.insert(key, ctx);
+        qDebugEx() << "✅ 已连接设备:" << key;
+        if (onDeviceConnectedCallback)
+            onDeviceConnectedCallback(ctx->handler);
+        return ctx;
+    }
+
+    void disconnectDevice(const QString& key) {
+        if (!devices.contains(key)) return;
+
+        UsbDeviceContext* ctx = devices[key];
+        qDebugEx() << "❌ 断开设备:" << key;
+
+        if (ctx->notifier) ctx->notifier->deleteLater();
+        if (ctx->handler) {
+            if (onDeviceDisconnectedCallback)
+                onDeviceDisconnectedCallback(ctx->handler);
+            delete ctx->handler;
+        }
+        if (ctx->connection) idevice_disconnect(ctx->connection);
+        if (ctx->device) idevice_free(ctx->device);
+
+        delete ctx;
+        devices.remove(key);
+        deviceBuffers.remove(key);
     }
 
 private:
     QTimer* timer;
-    QHash<QString, DeviceContext*> devices;
+    QHash<QString, UsbDeviceContext*> devices;
     QSet<QString> previousDevices;
     QHash<QString, QByteArray> deviceBuffers;
 
@@ -76,95 +150,24 @@ private:
             currentDevices.insert(udid);
             if (!previousDevices.contains(udid)) {
                 qDebugEx() << "📱 检测到新设备:" << udid;
-                DeviceConnection* conn = connectDevice(udid);
-                if (conn && onDeviceConnectedCallback)
-                    onDeviceConnectedCallback(conn);
+                connectDevice(udid, 32839);
             }
         }
 
-        // 检测断开设备
+        // 检测设备拔出
         for (const QString& udid : previousDevices) {
             if (!currentDevices.contains(udid)) {
                 qDebugEx() << "❌ 检测到设备拔出:" << udid;
-                DeviceConnection* conn = getConnection(udid);
-                disconnectDevice(udid);
-                if (conn && onDeviceDisconnectedCallback)
-                    onDeviceDisconnectedCallback(conn);
+                auto keys = devices.keys();
+                for (const QString& key : keys) {
+                    if (key.startsWith(udid + ":"))
+                        disconnectDevice(key);
+                }
             }
         }
 
         previousDevices = currentDevices;
         idevice_device_list_free(deviceList);
-    }
-
-    DeviceConnection* getConnection(const QString& udid) {
-        if (!devices.contains(udid)) return nullptr;
-        return devices.value(udid)->handler;
-    }
-
-    DeviceConnection* connectDevice(const QString& qUdid) {
-        if (devices.contains(qUdid)) {
-            qDebugEx() << "⚠️ 设备已连接:" << qUdid;
-            return devices.value(qUdid)->handler;
-        }
-
-        DeviceContext* ctx = new DeviceContext();
-
-        if (IDEVICE_E_SUCCESS != idevice_new(&ctx->device, qUdid.toUtf8().constData())) {
-            emitError(nullptr, QString("无法创建 idevice: %1").arg(qUdid));
-            delete ctx;
-            return nullptr;
-        }
-
-        uint16_t port = 32839;
-        if (idevice_connect(ctx->device, port, &ctx->connection) != IDEVICE_E_SUCCESS) {
-            emitError(nullptr, QString("无法连接端口 %1 设备: %2").arg(port).arg(qUdid));
-            idevice_free(ctx->device);
-            delete ctx;
-            return nullptr;
-        }
-
-        ctx->handler = new DeviceConnection(ctx->connection);
-        ctx->handler->send("deviceInfo", QJsonObject{{"remoteDeviceName", QHostInfo::localHostName()}});
-
-        int fd = -1;
-        if (idevice_connection_get_fd(ctx->connection, &fd) == IDEVICE_E_SUCCESS && fd >= 0) {
-            ctx->notifier = new QSocketNotifier(fd, QSocketNotifier::Read, this);
-            connect(ctx->notifier, &QSocketNotifier::activated, this, [=](int) {
-                char buffer[512];
-                uint32_t bytes = 0;
-                idevice_error_t err = idevice_connection_receive(ctx->connection, buffer, sizeof(buffer), &bytes);
-                if (err == IDEVICE_E_SUCCESS && bytes > 0) {
-                    QByteArray data(buffer, bytes);
-                    deviceBuffers[qUdid].append(data);
-                    processBufferedData(qUdid, ctx->handler);
-                } else if (err != IDEVICE_E_SUCCESS) {
-                    emitError(ctx->handler, QString("设备通信错误: %1").arg(err));
-                }
-            });
-        }
-
-        devices.insert(qUdid, ctx);
-        previousDevices.insert(qUdid);
-
-        return ctx->handler;
-    }
-
-    void disconnectDevice(const QString& udid) {
-        if (!devices.contains(udid))
-            return;
-
-        DeviceContext* ctx = devices.value(udid);
-        qDebugEx() << "❌ 断开设备:" << udid;
-
-        if (ctx->notifier) ctx->notifier->deleteLater();
-        if (ctx->handler) delete ctx->handler;
-        if (ctx->connection) idevice_disconnect(ctx->connection);
-        if (ctx->device) idevice_free(ctx->device);
-
-        delete ctx;
-        devices.remove(udid);
-        previousDevices.remove(udid);
     }
 
     void emitError(DeviceConnection* conn, const QString& msg) {
@@ -173,29 +176,25 @@ private:
             onErrorCallback(conn, msg);
     }
 
-    void processBufferedData(const QString& udid, DeviceConnection* handler) {
-        auto &buffer = deviceBuffers[udid];
+    void processBufferedData(const QString& key, DeviceConnection* handler) {
+        auto &buffer = deviceBuffers[key];
 
         while (buffer.size() >= sizeof(quint64) + sizeof(quint32)) {
-            auto identifier = *reinterpret_cast<quint64*>(buffer.data());
+            auto identifier = *reinterpret_cast<const quint64*>(buffer.constData());
             if (identifier != 0xb7c2e0f542a39a3e) {
-                qCriticalEx() << "识别码不匹配，丢弃数据" << QString("0x%1").arg(identifier, 0, 16);
-                buffer.clear(); // 清空缓冲区
+                qCriticalEx() << "识别码不匹配，清空缓冲区";
+                buffer.clear();
                 return;
             }
 
-            auto jsonDataLength = *reinterpret_cast<quint32*>(buffer.data() + sizeof(quint64));
-
-            if (buffer.size() < static_cast<int>(sizeof(quint64) + sizeof(quint32) + jsonDataLength)) {
-                // qDebugEx() << "数据不完整，等待更多数据" << buffer.size() << sizeof(quint64) + sizeof(quint32) + jsonDataLength;
+            auto jsonDataLength = *reinterpret_cast<const quint32*>(buffer.constData() + sizeof(quint64));
+            if (buffer.size() < static_cast<int>(sizeof(quint64) + sizeof(quint32) + jsonDataLength))
                 return;
-            }
 
             QByteArray jsonData = buffer.mid(sizeof(quint64) + sizeof(quint32), jsonDataLength);
-            // 移除已处理的数据包
             buffer.remove(0, sizeof(quint64) + sizeof(quint32) + jsonDataLength);
             QJsonDocument doc = QJsonDocument::fromJson(jsonData);
-            
+
             if (!doc.isNull()) {
                 if (onDataReceivedCallback) {
                     onDataReceivedCallback(handler, doc.object());
