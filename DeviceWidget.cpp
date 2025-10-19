@@ -10,9 +10,10 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
 {
     auto layout = new QVBoxLayout;
 
-    auto deviceInfoText = QString("%1 - %2  |  %3 x %4")
+    auto deviceInfoText = QString("%1 - %2  | %3 | %4 x %5")
         .arg(deviceInfo->deviceName)
         .arg(deviceInfo->platform)
+        .arg(connection->type == DeviceConnection::Usb ? "USB" : "WIFI")
         .arg(deviceInfo->screenWidth)
         .arg(deviceInfo->screenHeight);
 
