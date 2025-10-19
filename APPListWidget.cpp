@@ -51,21 +51,23 @@ void AppListWidget::setupTable()
     table->setShowGrid(true);
 
     // 设置列宽
-    table->setColumnWidth(0, 60);   // 图标列固定宽度
-    table->setColumnWidth(1, 120);  // 应用名列适中
-    table->setColumnWidth(2, 200);  // 包名列稍宽
+    table->setColumnWidth(0, 60);
+    table->setColumnWidth(1, 120);
+    table->setColumnWidth(2, 200);
 
-    // 设置列伸缩策略
+    // 列伸缩策略
     table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
     table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
     table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Interactive);
     table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
 
+    // 表格样式（仅行间隔颜色）
     table->setStyleSheet(R"(
         QTableWidget {
             border: 1px solid #DADCE0;
             border-radius: 8px;
             background: white;
+            alternate-background-color: #F9FAFB; /* 行间隔色 */
         }
         QTableWidget::item {
             padding: 6px;
@@ -91,15 +93,13 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
         qDebug() << "图标加载失败";
     }
 
-    // 设置图标大小
     int rowHeight = table->rowHeight(table->rowCount() - 1);
     int iconBoxSize = rowHeight - 8;
     int innerSize = iconBoxSize * 0.85;
 
-    // 保持比例缩放
     QPixmap scaled = pix.scaled(innerSize, innerSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-    // --- 去掉多余背景的圆角裁剪 ---
+    // 圆角裁剪图标
     QPixmap rounded(innerSize, innerSize);
     rounded.fill(Qt::transparent);
     QPainter painter(&rounded);
@@ -108,16 +108,12 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
     QPainterPath path;
     path.addRoundedRect(0, 0, innerSize, innerSize, innerSize / 5, innerSize / 5);
     painter.setClipPath(path);
-
-    // 直接绘制图标，无背景
     painter.drawPixmap(0, 0, scaled);
 
-    // QLabel 设置透明背景
     iconLabel->setAttribute(Qt::WA_TranslucentBackground);
     iconLabel->setPixmap(rounded);
     iconLabel->setAlignment(Qt::AlignCenter);
-    iconLabel->setStyleSheet("background: transparent;"); // ✅ 关键行
-
+    iconLabel->setStyleSheet("background: transparent;");
     table->setCellWidget(row, 0, iconLabel);
 
     // 应用名
@@ -197,7 +193,6 @@ void AppListWidget::applyStyle()
 {
     this->setStyleSheet(R"(
         QWidget {
-            background-color: #F6F7FB;
             font-family: "Microsoft YaHei";
             font-size: 14px;
             color: #333333;
