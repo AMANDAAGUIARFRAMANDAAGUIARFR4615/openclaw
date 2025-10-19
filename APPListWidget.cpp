@@ -1,6 +1,9 @@
 #include "AppListWidget.h"
 #include <QHeaderView>
+#include <QVBoxLayout>
 #include <QDebug>
+#include <QStyleOption>
+#include <QPainter>
 
 AppListWidget::AppListWidget(QWidget *parent)
     : QWidget(parent)
@@ -8,9 +11,11 @@ AppListWidget::AppListWidget(QWidget *parent)
     table = new QTableWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->addWidget(table);
+    mainLayout->setContentsMargins(10, 10, 10, 10);
     setLayout(mainLayout);
 
     setupTable();
+    applyStyle();
 }
 
 void AppListWidget::setupTable()
@@ -18,39 +23,64 @@ void AppListWidget::setupTable()
     table->setColumnCount(4);
     table->setHorizontalHeaderLabels(QStringList() << "图标" << "应用名" << "包名" << "操作");
     table->horizontalHeader()->setStretchLastSection(true);
+    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     table->verticalHeader()->setVisible(false);
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table->setAlternatingRowColors(true);
     table->setShowGrid(false);
+    table->setStyleSheet("QTableWidget { border: none; }");
+    table->setColumnWidth(0, 60);
+    table->setColumnWidth(1, 180);
+    table->setColumnWidth(2, 200);
 }
 
 void AppListWidget::addApp(const QString &iconPath, const QString &appName, const QString &packageName)
 {
     int row = table->rowCount();
     table->insertRow(row);
+    table->setRowHeight(row, 48);
 
     // 图标
     QLabel *iconLabel = new QLabel();
     QPixmap pix(iconPath);
-    iconLabel->setPixmap(pix.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    iconLabel->setPixmap(pix.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     iconLabel->setAlignment(Qt::AlignCenter);
     table->setCellWidget(row, 0, iconLabel);
 
     // 应用名
-    table->setItem(row, 1, new QTableWidgetItem(appName));
+    QTableWidgetItem *appItem = new QTableWidgetItem(appName);
+    appItem->setTextAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+    table->setItem(row, 1, appItem);
+
     // 包名
-    table->setItem(row, 2, new QTableWidgetItem(packageName));
+    QTableWidgetItem *pkgItem = new QTableWidgetItem(packageName);
+    pkgItem->setTextAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+    table->setItem(row, 2, pkgItem);
 
     // 操作按钮
     QWidget *actionWidget = new QWidget();
     QHBoxLayout *layout = new QHBoxLayout(actionWidget);
-    layout->setContentsMargins(5, 0, 5, 0);
-    layout->setSpacing(5);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(8);
 
     QPushButton *openBtn = new QPushButton("打开");
     QPushButton *uninstallBtn = new QPushButton("卸载");
     QPushButton *detailBtn = new QPushButton("详情");
+
+    // 设置按钮样式
+    QString btnStyle = R"(
+        QPushButton {
+            border-radius: 6px;
+            padding: 4px 10px;
+            color: white;
+            font-size: 13px;
+        }
+        QPushButton:hover { opacity: 0.85; }
+    )";
+    openBtn->setStyleSheet(btnStyle + "QPushButton { background-color: #5CB85C; }");      // 绿色
+    uninstallBtn->setStyleSheet(btnStyle + "QPushButton { background-color: #D9534F; }"); // 红色
+    detailBtn->setStyleSheet(btnStyle + "QPushButton { background-color: #0275D8; }");    // 蓝色
 
     layout->addWidget(openBtn);
     layout->addWidget(uninstallBtn);
@@ -90,4 +120,41 @@ void AppListWidget::handleDetail()
     int row = table->indexAt(btn->parentWidget()->pos()).row();
     QString pkg = table->item(row, 2)->text();
     emit showDetail(pkg);
+}
+
+void AppListWidget::applyStyle()
+{
+    // 整体背景与字体
+    this->setStyleSheet(R"(
+        QWidget {
+            background-color: #F6F7FB;
+            font-family: "Microsoft YaHei";
+            font-size: 14px;
+            color: #333333;
+        }
+        QHeaderView::section {
+            background-color: #E9ECEF;
+            padding: 6px;
+            border: none;
+            font-weight: bold;
+            color: #444;
+        }
+        QTableWidget {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #DADCE0;
+        }
+        QTableWidget::item:selected {
+            background-color: #D0E9FF;
+            color: #000;
+        }
+        QScrollBar:vertical {
+            width: 8px;
+            background: transparent;
+        }
+        QScrollBar::handle:vertical {
+            background: #C5C6CA;
+            border-radius: 4px;
+        }
+    )");
 }

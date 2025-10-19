@@ -30,4 +30,5 @@ private slots:
 private:
     QTableWidget *table;
     void setupTable();
+    void applyStyle(); // 设置样式
 };
