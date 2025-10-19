@@ -28,11 +28,26 @@ void AppListWidget::setupTable()
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table->setAlternatingRowColors(true);
-    table->setShowGrid(false);
-    table->setStyleSheet("QTableWidget { border: none; }");
+    table->setShowGrid(true); // 显示网格
+
     table->setColumnWidth(0, 60);
     table->setColumnWidth(1, 180);
     table->setColumnWidth(2, 200);
+
+    table->setStyleSheet(R"(
+        QTableWidget {
+            border: 1px solid #DADCE0;
+            border-radius: 8px;
+            background: white;
+        }
+        QTableWidget::item {
+            padding: 6px; /* 单元格内容与边框间距 */
+        }
+        QTableWidget::item:selected {
+            background-color: #D0E9FF;
+            color: #000;
+        }
+    )");
 }
 
 void AppListWidget::addApp(const QString &iconPath, const QString &appName, const QString &packageName)
@@ -61,7 +76,7 @@ void AppListWidget::addApp(const QString &iconPath, const QString &appName, cons
     // 操作按钮
     QWidget *actionWidget = new QWidget();
     QHBoxLayout *layout = new QHBoxLayout(actionWidget);
-    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setContentsMargins(4, 2, 4, 2); // 内边距
     layout->setSpacing(8);
 
     QPushButton *openBtn = new QPushButton("打开");
@@ -124,7 +139,6 @@ void AppListWidget::handleDetail()
 
 void AppListWidget::applyStyle()
 {
-    // 整体背景与字体
     this->setStyleSheet(R"(
         QWidget {
             background-color: #F6F7FB;
@@ -135,18 +149,9 @@ void AppListWidget::applyStyle()
         QHeaderView::section {
             background-color: #E9ECEF;
             padding: 6px;
-            border: none;
+            border: 1px solid #DADCE0;
             font-weight: bold;
             color: #444;
-        }
-        QTableWidget {
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #DADCE0;
-        }
-        QTableWidget::item:selected {
-            background-color: #D0E9FF;
-            color: #000;
         }
         QScrollBar:vertical {
             width: 8px;
