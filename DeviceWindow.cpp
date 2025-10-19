@@ -307,6 +307,9 @@ void DeviceWindow::inputMethodEvent(QInputMethodEvent *event)
 
 void DeviceWindow::wheelEvent(QWheelEvent *event)
 {
+    if (QOperatingSystemVersion::current().type() == QOperatingSystemVersion::MacOS)
+        return;
+
     qDebugEx() << "wheelEvent" << event;
 
     currentPos = event->position().toPoint();
