@@ -81,8 +81,7 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
 {
     int row = table->rowCount();
     table->insertRow(row);
-    int rowHeight = 48;
-    table->setRowHeight(row, rowHeight);
+    table->setRowHeight(row, 48);
 
     // 图标
     QLabel *iconLabel = new QLabel();
@@ -92,21 +91,29 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
         qDebug() << "图标加载失败";
     }
 
-    // 缩放到单元格大小
-    int iconSize = rowHeight - 8; // 留点边距
-    QPixmap scaled = pix.scaled(iconSize, iconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    int rowHeight = table->rowHeight(table->rowCount() - 1);
+    int iconBoxSize = rowHeight - 8; // 图标区域大小
+    int innerSize = iconBoxSize * 0.85; // 实际图标缩放稍微小一点，留出上下空间
 
-    // 创建圆角图标
-    QPixmap rounded(iconSize, iconSize);
+    // 保持比例缩放
+    QPixmap scaled = pix.scaled(innerSize, innerSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    // 创建圆角背景容器
+    QPixmap rounded(iconBoxSize, iconBoxSize);
     rounded.fill(Qt::transparent);
 
     QPainter painter(&rounded);
     painter.setRenderHint(QPainter::Antialiasing);
 
+    // 圆角路径（半径稍微小一点）
     QPainterPath path;
-    path.addRoundedRect(0, 0, iconSize, iconSize, iconSize/4, iconSize/4);
+    path.addRoundedRect(0, 0, iconBoxSize, iconBoxSize, iconBoxSize / 5, iconBoxSize / 5);
     painter.setClipPath(path);
-    painter.drawPixmap(0, 0, scaled);
+
+    // 居中绘制缩放后的图标
+    int x = (iconBoxSize - scaled.width()) / 2;
+    int y = (iconBoxSize - scaled.height()) / 2;
+    painter.drawPixmap(x, y, scaled);
 
     iconLabel->setPixmap(rounded);
     iconLabel->setAlignment(Qt::AlignCenter);
