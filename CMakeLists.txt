@@ -44,6 +44,7 @@ add_executable(${PROJECT_NAME}
     ToastWidget.h
     NetworkUtils.h
     RemoteFileExplorer.h RemoteFileExplorer.cpp FileTransfer.h
+    APPListWidget.h APPListWidget.cpp
     ${RESOURCE_SOURCES}
 )
 
