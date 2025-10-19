@@ -29,10 +29,11 @@ add_executable(${PROJECT_NAME}
     main.cpp Tools.h
     Logger.h LogWindow.h
     EventHub.h EventHub.cpp
+    LiveStreamDevice.h
     MainWindow.h MainWindow.cpp
     VideoFrameWidget.h
     DeviceInfo.h
-    UsbDeviceManager.h
+    UsbDeviceManager.h UsbDeviceManager.cpp
     DeviceConnection.h DeviceConnection.cpp
     DeviceView.h DeviceView.cpp
     DeviceWidget.h DeviceWidget.cpp

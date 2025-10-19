@@ -44,7 +44,7 @@ protected:
 
         // 若无数据且未结束，等待
         while (m_buffer.isEmpty() && !m_eof) {
-            m_dataAvailable.wait(&m_mutex, 100);
+            m_dataAvailable.wait(&m_mutex);
         }
 
         if (m_buffer.isEmpty() && m_eof)
