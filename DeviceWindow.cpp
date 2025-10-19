@@ -48,6 +48,9 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     QPushButton *fileButton = new QPushButton(QIcon(":/icons/file_move.png"), "文件管理", this);
     connect(fileButton, &QPushButton::clicked, this, &DeviceView::onFileClicked);
 
+    QPushButton *appListButton = new QPushButton(QIcon(":/icons/apps.png"), "应用列表", this);
+    connect(appListButton, &QPushButton::clicked, this, &DeviceView::onAppListClicked);
+
     QPushButton *screenshotButton = new QPushButton(QIcon(":/icons/screenshot.png"), "截图", this);
     connect(screenshotButton, &QPushButton::clicked, this, &DeviceView::onScreenshotClicked);
 
@@ -65,6 +68,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     buttonLayout->addWidget(appSwitcherButton);
     buttonLayout->addWidget(killAllAppButton);
     buttonLayout->addWidget(fileButton);
+    buttonLayout->addWidget(appListButton);
     buttonLayout->addWidget(screenshotButton);
     buttonLayout->addWidget(restartButton);
     buttonLayout->addWidget(lockButton);

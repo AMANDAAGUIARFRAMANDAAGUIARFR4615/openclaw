@@ -1,9 +1,11 @@
 #include "AppListWidget.h"
+#include "EventHub.h"
 #include <QHeaderView>
 #include <QVBoxLayout>
 #include <QDebug>
 #include <QStyleOption>
 #include <QPainter>
+#include <QJsonArray>
 
 AppListWidget::AppListWidget(QWidget *parent)
     : QWidget(parent)
@@ -16,6 +18,24 @@ AppListWidget::AppListWidget(QWidget *parent)
 
     setupTable();
     applyStyle();
+
+    EventHub::StartListening("appList", [this](const QJsonValue &data, DeviceConnection* connection) {
+        // if (this->connection != connection)
+        //     return;
+
+        QJsonArray appArray = data.toArray();
+        for (const QJsonValue &itemValue : appArray) {
+            if (!itemValue.isObject())
+                continue;
+
+            QJsonObject item = itemValue.toObject();
+            QString id = item.value("id").toString();
+            QString name = item.value("name").toString();
+            QString icon = item.value("icon").toString();
+
+            addApp(icon, name, id);
+        }
+    });
 }
 
 void AppListWidget::setupTable()
@@ -56,7 +76,7 @@ void AppListWidget::setupTable()
     )");
 }
 
-void AppListWidget::addApp(const QString &iconPath, const QString &appName, const QString &packageName)
+void AppListWidget::addApp(const QString &iconBase64, const QString &appName, const QString &packageName)
 {
     int row = table->rowCount();
     table->insertRow(row);
@@ -64,7 +84,11 @@ void AppListWidget::addApp(const QString &iconPath, const QString &appName, cons
 
     // 图标
     QLabel *iconLabel = new QLabel();
-    QPixmap pix(iconPath);
+    QByteArray byteArray = QByteArray::fromBase64(iconBase64.toUtf8()); // 解码Base64
+    QPixmap pix;
+    if (!pix.loadFromData(byteArray)) {
+        qDebug() << "图标加载失败";
+    }
     iconLabel->setPixmap(pix.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     iconLabel->setAlignment(Qt::AlignCenter);
     table->setCellWidget(row, 0, iconLabel);
@@ -82,14 +106,13 @@ void AppListWidget::addApp(const QString &iconPath, const QString &appName, cons
     // 操作按钮
     QWidget *actionWidget = new QWidget();
     QHBoxLayout *layout = new QHBoxLayout(actionWidget);
-    layout->setContentsMargins(4, 2, 4, 2); // 内边距
+    layout->setContentsMargins(4, 2, 4, 2);
     layout->setSpacing(8);
 
     QPushButton *openBtn = new QPushButton("打开");
     QPushButton *uninstallBtn = new QPushButton("卸载");
     QPushButton *detailBtn = new QPushButton("详情");
 
-    // 设置按钮样式
     QString btnStyle = R"(
         QPushButton {
             border-radius: 6px;
@@ -99,9 +122,9 @@ void AppListWidget::addApp(const QString &iconPath, const QString &appName, cons
         }
         QPushButton:hover { opacity: 0.85; }
     )";
-    openBtn->setStyleSheet(btnStyle + "QPushButton { background-color: #5CB85C; }");      // 绿色
-    uninstallBtn->setStyleSheet(btnStyle + "QPushButton { background-color: #D9534F; }"); // 红色
-    detailBtn->setStyleSheet(btnStyle + "QPushButton { background-color: #0275D8; }");    // 蓝色
+    openBtn->setStyleSheet(btnStyle + "QPushButton { background-color: #5CB85C; }");
+    uninstallBtn->setStyleSheet(btnStyle + "QPushButton { background-color: #D9534F; }");
+    detailBtn->setStyleSheet(btnStyle + "QPushButton { background-color: #0275D8; }");
 
     layout->addWidget(openBtn);
     layout->addWidget(uninstallBtn);

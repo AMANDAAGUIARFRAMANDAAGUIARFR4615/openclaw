@@ -6,6 +6,7 @@
 #include "TcpServer.h"
 #include "FileTransfer.h"
 #include "EventHub.h"
+#include "AppListWidget.h"
 #include <QLayout>
 #include <QMenu>
 #include <QLabel>
@@ -134,6 +135,26 @@ void DeviceView::onFileClicked()
     auto window = new RemoteFileExplorer(connection);
     window->resize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
     window->show();
+}
+
+void DeviceView::onAppListClicked()
+{
+    connection->send("appList");
+
+    AppListWidget *list = new AppListWidget();
+
+    QObject::connect(list, &AppListWidget::openApp, [](const QString &pkg){
+        qDebug() << "打开:" << pkg;
+    });
+    QObject::connect(list, &AppListWidget::uninstallApp, [](const QString &pkg){
+        qDebug() << "卸载:" << pkg;
+    });
+    QObject::connect(list, &AppListWidget::showDetail, [](const QString &pkg){
+        qDebug() << "详情:" << pkg;
+    });
+
+    list->resize(600, 300);
+    list->show();
 }
 
 void DeviceView::onScreenshotClicked()

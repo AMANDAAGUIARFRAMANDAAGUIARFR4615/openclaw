@@ -17,5 +17,6 @@
         <file>icons/dashboard.png</file>
         <file>icons/flip_to_front.png</file>
         <file>icons/kill.png</file>
+        <file>icons/apps.png</file>
     </qresource>
 </RCC>
