@@ -48,7 +48,7 @@ void AppListWidget::setupTable()
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table->setAlternatingRowColors(true);
-    table->setShowGrid(true); // 显示网格
+    table->setShowGrid(true);
 
     // 设置列宽
     table->setColumnWidth(0, 60);   // 图标列固定宽度
@@ -56,10 +56,10 @@ void AppListWidget::setupTable()
     table->setColumnWidth(2, 200);  // 包名列稍宽
 
     // 设置列伸缩策略
-    table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);   // 图标固定
-    table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive); // 应用名可手动调整
-    table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Interactive); // 包名可手动调整
-    table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch); // 操作列拉伸填充剩余空间
+    table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
+    table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
+    table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Interactive);
+    table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
 
     table->setStyleSheet(R"(
         QTableWidget {
@@ -81,7 +81,8 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
 {
     int row = table->rowCount();
     table->insertRow(row);
-    table->setRowHeight(row, 48);
+    int rowHeight = 48;
+    table->setRowHeight(row, rowHeight);
 
     // 图标
     QLabel *iconLabel = new QLabel();
@@ -91,24 +92,21 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
         qDebug() << "图标加载失败";
     }
 
-    // 图片大小
-    int w = pix.width();
-    int h = pix.height();
+    // 缩放到单元格大小
+    int iconSize = rowHeight - 8; // 留点边距
+    QPixmap scaled = pix.scaled(iconSize, iconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-    // 创建透明画布
-    QPixmap rounded(w, h);
+    // 创建圆角图标
+    QPixmap rounded(iconSize, iconSize);
     rounded.fill(Qt::transparent);
 
     QPainter painter(&rounded);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    // 大圆角，取宽高一半
     QPainterPath path;
-    path.addRoundedRect(0, 0, w, h, w/2, h/2);
+    path.addRoundedRect(0, 0, iconSize, iconSize, iconSize/4, iconSize/4);
     painter.setClipPath(path);
-
-    // 绘制原图
-    painter.drawPixmap(0, 0, pix);
+    painter.drawPixmap(0, 0, scaled);
 
     iconLabel->setPixmap(rounded);
     iconLabel->setAlignment(Qt::AlignCenter);
@@ -129,7 +127,6 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
     QHBoxLayout *layout = new QHBoxLayout(actionWidget);
     layout->setContentsMargins(4, 2, 4, 2);
     layout->setSpacing(8);
-
     layout->setAlignment(Qt::AlignCenter);
 
     QPushButton *openBtn = new QPushButton("打开");
