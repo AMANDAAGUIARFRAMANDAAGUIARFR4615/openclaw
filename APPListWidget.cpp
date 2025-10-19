@@ -8,8 +8,8 @@
 #include <QJsonArray>
 #include <QPainterPath>
 
-AppListWidget::AppListWidget(QWidget *parent)
-    : QWidget(parent)
+AppListWidget::AppListWidget(DeviceConnection* connection, QWidget *parent)
+    : connection(connection), QWidget(parent)
 {
     table = new QTableWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -21,8 +21,8 @@ AppListWidget::AppListWidget(QWidget *parent)
     applyStyle();
 
     EventHub::StartListening("appList", [this](const QJsonValue &data, DeviceConnection* connection) {
-        // if (this->connection != connection)
-        //     return;
+        if (this->connection != connection)
+            return;
 
         QJsonArray appArray = data.toArray();
         for (const QJsonValue &itemValue : appArray) {

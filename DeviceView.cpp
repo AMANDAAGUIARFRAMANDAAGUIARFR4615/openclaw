@@ -141,7 +141,7 @@ void DeviceView::onAppListClicked()
 {
     connection->send("appList");
 
-    AppListWidget *list = new AppListWidget();
+    AppListWidget *list = new AppListWidget(connection);
 
     QObject::connect(list, &AppListWidget::openApp, [](const QString &pkg){
         qDebug() << "打开:" << pkg;

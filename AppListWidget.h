@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DeviceConnection.h"
 #include <QWidget>
 #include <QTableWidget>
 #include <QPushButton>
@@ -11,7 +12,7 @@ class AppListWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit AppListWidget(QWidget *parent = nullptr);
+    explicit AppListWidget(DeviceConnection* connection, QWidget *parent = nullptr);
 
     // 添加一行应用
     void addApp(const QString &iconPath, const QString &appName, const QString &packageName);
@@ -28,6 +29,7 @@ private slots:
     void handleDetail();
 
 private:
+    DeviceConnection* const connection;
     QTableWidget *table;
     void setupTable();
     void applyStyle(); // 设置样式
