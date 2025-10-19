@@ -22,17 +22,23 @@ void AppListWidget::setupTable()
 {
     table->setColumnCount(4);
     table->setHorizontalHeaderLabels(QStringList() << "图标" << "应用名" << "包名" << "操作");
-    table->horizontalHeader()->setStretchLastSection(true);
-    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
     table->verticalHeader()->setVisible(false);
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table->setAlternatingRowColors(true);
     table->setShowGrid(true); // 显示网格
 
-    table->setColumnWidth(0, 60);
-    table->setColumnWidth(1, 180);
-    table->setColumnWidth(2, 200);
+    // 设置列宽
+    table->setColumnWidth(0, 60);   // 图标列固定宽度
+    table->setColumnWidth(1, 120);  // 应用名列适中
+    table->setColumnWidth(2, 200);  // 包名列稍宽
+
+    // 设置列伸缩策略
+    table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);   // 图标固定
+    table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive); // 应用名可手动调整
+    table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Interactive); // 包名可手动调整
+    table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch); // 操作列拉伸填充剩余空间
 
     table->setStyleSheet(R"(
         QTableWidget {
@@ -41,7 +47,7 @@ void AppListWidget::setupTable()
             background: white;
         }
         QTableWidget::item {
-            padding: 6px; /* 单元格内容与边框间距 */
+            padding: 6px;
         }
         QTableWidget::item:selected {
             background-color: #D0E9FF;
