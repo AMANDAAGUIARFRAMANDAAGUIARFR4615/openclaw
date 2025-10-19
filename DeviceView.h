@@ -17,6 +17,7 @@ public:
 
     VideoFrameWidget* getVideoFrameWidget() { return videoFrameWidget; }
     void setSource(const QUrl &source);
+    void setSourceDevice(QIODevice *device, const QUrl &sourceUrl = QUrl());
 
     void onHomeScreenClicked();
     void onCenterControllerClicked();
@@ -30,7 +31,7 @@ public:
     void onVolumeUpClicked();
     void onVolumeDownClicked();
 
-protected:
+public:
     virtual void addOverlay(const QString &text);
     virtual void addVideoFrameWidget(VideoFrameWidget* videoFrameWidget);
 
@@ -42,5 +43,6 @@ protected:
     DeviceInfo* const deviceInfo;
     VideoFrameWidget *videoFrameWidget = nullptr;
     QUrl mediaSource;
+    QIODevice* mediaSourceDevice;
     QWidget *overlay = nullptr;
 };

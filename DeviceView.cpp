@@ -40,6 +40,18 @@ DeviceView::~DeviceView()
 void DeviceView::setSource(const QUrl &source)
 {
     mediaSource = source;
+    mediaSourceDevice = nullptr;
+    
+    if (deviceInfo->lockedStatus)
+        addOverlay("设备已锁定");
+    else
+        addVideoFrameWidget(new VideoFrameWidget(this));
+}
+
+void DeviceView::setSourceDevice(QIODevice *device, const QUrl &sourceUrl)
+{
+    mediaSource = sourceUrl;
+    mediaSourceDevice = device;
     
     if (deviceInfo->lockedStatus)
         addOverlay("设备已锁定");
@@ -80,7 +92,20 @@ void DeviceView::addVideoFrameWidget(VideoFrameWidget* videoFrameWidget)
 
     this->videoFrameWidget = videoFrameWidget;
     layout()->addWidget(videoFrameWidget);
-    videoFrameWidget->mediaPlayer->setSource(mediaSource);
+    
+    if (mediaSourceDevice)
+    {
+        videoFrameWidget->mediaPlayer->setSourceDevice(mediaSourceDevice);
+        // 要多设置一次才能播放
+        QTimer::singleShot(500, [this, videoFrameWidget]() {
+            videoFrameWidget->mediaPlayer->setSourceDevice(mediaSourceDevice);
+        });
+    }
+    else
+    {
+        videoFrameWidget->mediaPlayer->setSource(mediaSource);
+    }
+    
     videoFrameWidget->orientationChanged(deviceInfo->orientation);
 }
 
