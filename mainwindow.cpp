@@ -3,6 +3,8 @@
 #include "CenteredItemDelegate.h"
 #include "RemoteFileExplorer.h"
 #include "EventHub.h"
+#include "LiveStreamDevice.h"
+#include "UsbDeviceManager.h"
 #include <QTabWidget>
 #include <QWidget>
 #include <QVBoxLayout>
@@ -163,6 +165,20 @@ void MainWindow::addItem(DeviceConnection* connection, DeviceInfo* deviceInfo)
 {
     auto url = deviceInfo ? QString("tcp://%1:%2").arg(deviceInfo->localIp).arg(deviceInfo->videoPort) : nullptr;
 
+    LiveStreamDevice* liveStreamDevice = nullptr;
+    
+    if (connection->type == DeviceConnection::Usb)
+    {
+        liveStreamDevice = new LiveStreamDevice();
+
+        auto manager = UsbDeviceManager::instance();
+        auto ctx = manager->getContext(connection);
+
+        manager->connectDevice(ctx->udid, deviceInfo->videoPort, [&](DeviceConnection* conn, const QByteArray& data){
+            liveStreamDevice->appendData(QByteArray(data));
+        });
+    }
+
     int count = gridLayout->count();
 
     if (url != nullptr) {
@@ -180,7 +196,10 @@ void MainWindow::addItem(DeviceConnection* connection, DeviceInfo* deviceInfo)
                 qDebugEx() << "找到占位" << i;
                 delete w;
                 auto player = new DeviceWidget(connection, deviceInfo);
-                player->setSource(url);
+                if (liveStreamDevice)
+                    player->setSourceDevice(liveStreamDevice);
+                else
+                    player->setSource(url);
                 frameLayout->addWidget(player);
                 bottomWidget->adjustSize();
                 return;
@@ -202,7 +221,10 @@ void MainWindow::addItem(DeviceConnection* connection, DeviceInfo* deviceInfo)
         if (i == 0 && url != nullptr) {
             qDebugEx() << "放在新行第一个" << url;
             auto player = new DeviceWidget(connection, deviceInfo);
-            player->setSource(url);
+            if (liveStreamDevice)
+                player->setSourceDevice(liveStreamDevice);
+            else
+                player->setSource(url);
             frameLayout->addWidget(player);
         } else {
             // 其他先放占位

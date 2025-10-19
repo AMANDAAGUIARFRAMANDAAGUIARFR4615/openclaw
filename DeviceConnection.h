@@ -26,8 +26,9 @@ public:
     bool operator==(const DeviceConnection &other) const;
     bool operator!=(const DeviceConnection& other) const;
 
+    const Type type;
+
 private:
-    Type type;
     QTcpSocket *tcpSocket;
     idevice_connection_t usbConnection;
 
