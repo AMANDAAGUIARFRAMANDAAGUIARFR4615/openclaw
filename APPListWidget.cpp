@@ -29,7 +29,7 @@ AppListWidget::AppListWidget(QWidget *parent)
                 continue;
 
             QJsonObject item = itemValue.toObject();
-            QString id = item.value("id").toString();
+            QString id = item.value("identifier").toString();
             QString name = item.value("name").toString();
             QString icon = item.value("icon").toString();
 
