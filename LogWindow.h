@@ -4,6 +4,9 @@
 #include <QMetaObject>
 #include <QMessageLogContext>
 #include <QTextBlock>
+#include <QFile>
+#include <QTextStream>
+#include <QDateTime>
 
 class LogWindow : public QTextBrowser
 {
@@ -12,15 +15,28 @@ public:
     explicit LogWindow(QWidget *parent = nullptr) : QTextBrowser(parent)
     {
         logWindow = this;
-
         setVisible(false);
+
+        logFile.setFileName("app_log.txt");
+        if (!logFile.open(QIODevice::Append | QIODevice::Text)) {
+            append("<span style='color:red;'>无法打开日志文件！</span>");
+        }
 
         qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &message) {
             QMetaObject::invokeMethod(logWindow, [type, message]() {
+                QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+                QString formattedMessage = QString("[%1] %2").arg(time, message);
+
                 if (type == QtCriticalMsg || type == QtFatalMsg || type == QtWarningMsg) {
-                    logWindow->appendWithLimit(QString("<span style='color:red;'>%1</span>").arg(message));
+                    logWindow->appendWithLimit(QString("<span style='color:red;'>%1</span>").arg(formattedMessage));
                 } else {
-                    logWindow->appendWithLimit(QString("<span style='color:black;'>%1</span>").arg(message));
+                    logWindow->appendWithLimit(QString("<span style='color:black;'>%1</span>").arg(formattedMessage));
+                }
+
+                if (logWindow->logFile.isOpen()) {
+                    QTextStream out(&logWindow->logFile);
+                    out << formattedMessage << "\n";
+                    out.flush();
                 }
             });
         });
@@ -33,13 +49,13 @@ public:
 
 private:
     inline static LogWindow* logWindow;
+    QFile logFile;
 
     void appendWithLimit(const QString& message)
     {
         if (document()->blockCount() > 500) {
             QTextBlock firstBlock = document()->firstBlock();
             QTextCursor cursor(firstBlock);
-            
             cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor, 1);
             cursor.removeSelectedText();
         }
