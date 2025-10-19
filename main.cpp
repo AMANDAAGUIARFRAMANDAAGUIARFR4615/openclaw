@@ -60,29 +60,31 @@ int main(int argc, char *argv[])
             onDataReceived(connection, jsonObject);
         }, onClientDisconnected, onError);
 
-    auto manager = UsbDeviceManager::instance();
+    if (QOperatingSystemVersion::current().type() == QOperatingSystemVersion::Windows) {
+        auto manager = UsbDeviceManager::instance();
 
-    QObject::connect(manager, &UsbDeviceManager::deviceConnected, [](DeviceConnection* conn){
-        qDebug() << "✅ 设备已连接:" << conn;
-    });
+        QObject::connect(manager, &UsbDeviceManager::deviceConnected, [](DeviceConnection* conn){
+            qDebug() << "✅ 设备已连接:" << conn;
+        });
 
-    QObject::connect(manager, &UsbDeviceManager::deviceDisconnected, [](DeviceConnection* conn){
-        qDebug() << "❌ 设备已断开:" << conn;
-    });
+        QObject::connect(manager, &UsbDeviceManager::deviceDisconnected, [](DeviceConnection* conn){
+            qDebug() << "❌ 设备已断开:" << conn;
+        });
 
-    QObject::connect(manager, &UsbDeviceManager::dataReceived, [](DeviceConnection* conn, const QJsonObject& data){
-        onDataReceived(conn, data);
-    });
+        QObject::connect(manager, &UsbDeviceManager::dataReceived, [](DeviceConnection* conn, const QJsonObject& data){
+            onDataReceived(conn, data);
+        });
 
-    QObject::connect(manager, &UsbDeviceManager::errorOccurred, [](DeviceConnection* conn, const QString& msg){
-        qWarning() << "⚠️ 设备错误:" << msg;
-    });
+        QObject::connect(manager, &UsbDeviceManager::errorOccurred, [](DeviceConnection* conn, const QString& msg){
+            qWarning() << "⚠️ 设备错误:" << msg;
+        });
 
-    manager->start();
+        manager->start();
 
-    QObject::connect(&app, &QCoreApplication::aboutToQuit, [&]() {
-        manager->stop();
-    });
+        QObject::connect(&app, &QCoreApplication::aboutToQuit, [&]() {
+            manager->stop();
+        });
+    }
 
     QString localIP = NetworkUtils::getLocalIP();
     qDebugEx() << "本机内网IP:" << localIP;

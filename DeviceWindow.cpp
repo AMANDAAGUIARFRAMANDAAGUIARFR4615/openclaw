@@ -259,8 +259,9 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
     qDebugEx() << "Key Pressed:" << keySequence;
 
     QList<int> keys = {
-        Qt::Key_Backspace, Qt::Key_Delete, Qt::Key_Up, Qt::Key_Down,
-        Qt::Key_Left, Qt::Key_Right, Qt::Key_Enter, Qt::Key_Return
+        Qt::Key_Backspace, Qt::Key_Delete, Qt::Key_Enter, Qt::Key_Return,
+        Qt::Key_Up, Qt::Key_Down, Qt::Key_Left, Qt::Key_Right,
+        Qt::Key_Tab
     };
 
     if (keys.contains(event->key()))
