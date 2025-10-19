@@ -212,6 +212,8 @@ jobs:
             7z a RemotePro.zip . -x!.* -x!CMakeFiles -x!*_autogen -x!build.ninja -x!cmake_install.cmake -x!CMakeCache.txt
           else
             $QT_ROOT_DIR/bin/macdeployqt RemotePro.app
+            cp ../macOS/libimobiledevice/lib/libimobiledevice-1.0.dylib RemotePro.app/Contents/Frameworks/
+            cp ../macOS/libplist/lib/libplist-2.0.dylib RemotePro.app/Contents/Frameworks/
             zip -r RemotePro.zip RemotePro.app
           fi
 
