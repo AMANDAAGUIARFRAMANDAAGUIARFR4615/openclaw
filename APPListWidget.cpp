@@ -91,32 +91,33 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
         qDebug() << "图标加载失败";
     }
 
+    // 设置图标大小
     int rowHeight = table->rowHeight(table->rowCount() - 1);
-    int iconBoxSize = rowHeight - 8; // 图标区域大小
-    int innerSize = iconBoxSize * 0.85; // 实际图标缩放稍微小一点，留出上下空间
+    int iconBoxSize = rowHeight - 8;
+    int innerSize = iconBoxSize * 0.85;
 
     // 保持比例缩放
     QPixmap scaled = pix.scaled(innerSize, innerSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-    // 创建圆角背景容器
-    QPixmap rounded(iconBoxSize, iconBoxSize);
+    // --- 去掉多余背景的圆角裁剪 ---
+    QPixmap rounded(innerSize, innerSize);
     rounded.fill(Qt::transparent);
-
     QPainter painter(&rounded);
-    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::Antialiasing, true);
 
-    // 圆角路径（半径稍微小一点）
     QPainterPath path;
-    path.addRoundedRect(0, 0, iconBoxSize, iconBoxSize, iconBoxSize / 5, iconBoxSize / 5);
+    path.addRoundedRect(0, 0, innerSize, innerSize, innerSize / 5, innerSize / 5);
     painter.setClipPath(path);
 
-    // 居中绘制缩放后的图标
-    int x = (iconBoxSize - scaled.width()) / 2;
-    int y = (iconBoxSize - scaled.height()) / 2;
-    painter.drawPixmap(x, y, scaled);
+    // 直接绘制图标，无背景
+    painter.drawPixmap(0, 0, scaled);
 
+    // QLabel 设置透明背景
+    iconLabel->setAttribute(Qt::WA_TranslucentBackground);
     iconLabel->setPixmap(rounded);
     iconLabel->setAlignment(Qt::AlignCenter);
+    iconLabel->setStyleSheet("background: transparent;"); // ✅ 关键行
+
     table->setCellWidget(row, 0, iconLabel);
 
     // 应用名
