@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QIODevice>
 #include <QMutex>
 #include <QWaitCondition>
