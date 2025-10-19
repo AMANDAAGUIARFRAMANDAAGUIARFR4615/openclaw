@@ -6,6 +6,7 @@
 #include <QStyleOption>
 #include <QPainter>
 #include <QJsonArray>
+#include <QPainterPath>
 
 AppListWidget::AppListWidget(QWidget *parent)
     : QWidget(parent)
@@ -84,12 +85,32 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
 
     // 图标
     QLabel *iconLabel = new QLabel();
-    QByteArray byteArray = QByteArray::fromBase64(iconBase64.toUtf8()); // 解码Base64
+    QByteArray byteArray = QByteArray::fromBase64(iconBase64.toUtf8());
     QPixmap pix;
     if (!pix.loadFromData(byteArray)) {
         qDebug() << "图标加载失败";
     }
-    iconLabel->setPixmap(pix.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+
+    // 图片大小
+    int w = pix.width();
+    int h = pix.height();
+
+    // 创建透明画布
+    QPixmap rounded(w, h);
+    rounded.fill(Qt::transparent);
+
+    QPainter painter(&rounded);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    // 大圆角，取宽高一半
+    QPainterPath path;
+    path.addRoundedRect(0, 0, w, h, w/2, h/2);
+    painter.setClipPath(path);
+
+    // 绘制原图
+    painter.drawPixmap(0, 0, pix);
+
+    iconLabel->setPixmap(rounded);
     iconLabel->setAlignment(Qt::AlignCenter);
     table->setCellWidget(row, 0, iconLabel);
 
