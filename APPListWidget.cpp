@@ -109,6 +109,8 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
     layout->setContentsMargins(4, 2, 4, 2);
     layout->setSpacing(8);
 
+    layout->setAlignment(Qt::AlignCenter);
+
     QPushButton *openBtn = new QPushButton("打开");
     QPushButton *uninstallBtn = new QPushButton("卸载");
     QPushButton *detailBtn = new QPushButton("详情");
@@ -129,7 +131,6 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
     layout->addWidget(openBtn);
     layout->addWidget(uninstallBtn);
     layout->addWidget(detailBtn);
-    layout->addStretch();
     actionWidget->setLayout(layout);
     table->setCellWidget(row, 3, actionWidget);
 
