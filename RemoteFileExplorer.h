@@ -39,7 +39,7 @@ class RemoteFileExplorer : public QWidget
     Q_OBJECT
 
 public:
-    explicit RemoteFileExplorer(DeviceConnection* connection, QWidget *parent = nullptr);
+    explicit RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath = "/", QWidget *parent = nullptr);
     ~RemoteFileExplorer();
 
 protected:
@@ -59,6 +59,7 @@ protected:
     DeviceConnection* connection;
     QTreeView *treeView;
     QStandardItemModel *model;
+    QString rootPath;
     QStatusBar *statusBar;
     QPoint m_dragStartPos;
 };

@@ -29,7 +29,7 @@
 #include <QTextEdit>
 #include <QClipboard>
 
-RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, QWidget *parent) : connection(connection), QWidget(parent)
+RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath, QWidget *parent) : connection(connection), rootPath(rootPath), QWidget(parent)
 {
     setAcceptDrops(true);
 
@@ -57,7 +57,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, QWidget *pa
     treeView->setItemDelegate(new VirtualItemDelegate(treeView));
 
     connect(treeView, &QTreeView::expanded, this, &RemoteFileExplorer::onDirectoryExpanded);
-    fetchDirectoryContents("/");
+    fetchDirectoryContents(rootPath);
 
     EventHub::StartListening("fileList", [this](QJsonValue data, DeviceConnection* connection) {
         if (this->connection != connection)
