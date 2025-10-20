@@ -1,6 +1,7 @@
 #include "AppListWidget.h"
 #include "EventHub.h"
 #include "RemoteFileExplorer.h"
+#include "ToastWidget.h"
 #include <QHeaderView>
 #include <QVBoxLayout>
 #include <QDebug>
@@ -46,6 +47,12 @@ AppListWidget::AppListWidget(DeviceConnection* connection, QWidget *parent)
 
         auto name = data["name"].toString();
         auto path = data["path"].toString();
+
+        if (path == "")
+        {
+            new ToastWidget("路径不存在", this);
+            return;
+        }
 
         auto window = new RemoteFileExplorer(connection, path);
         window->setWindowTitle(QString("%1 -> %2").arg(name).arg(path));
