@@ -37,6 +37,24 @@ AppListWidget::AppListWidget(DeviceConnection* connection, QWidget *parent)
             addApp(icon, name, id);
         }
     });
+
+    // EventHub::StartListening("appOperation", [this](const QJsonValue &data, DeviceConnection* connection) {
+    //     if (this->connection != connection)
+    //         return;
+
+    //     QJsonArray appArray = data.toArray();
+    //     for (const QJsonValue &itemValue : appArray) {
+    //         if (!itemValue.isObject())
+    //             continue;
+
+    //         QJsonObject item = itemValue.toObject();
+    //         QString id = item.value("identifier").toString();
+    //         QString name = item.value("name").toString();
+    //         QString icon = item.value("icon").toString();
+
+    //         addApp(icon, name, id);
+    //     }
+    // });
 }
 
 void AppListWidget::setupTable()
@@ -133,10 +151,6 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
     layout->setSpacing(8);
     layout->setAlignment(Qt::AlignCenter);
 
-    QPushButton *openBtn = new QPushButton("打开");
-    QPushButton *uninstallBtn = new QPushButton("卸载");
-    QPushButton *detailBtn = new QPushButton("详情");
-
     QString btnStyle = R"(
         QPushButton {
             border-radius: 6px;
@@ -146,20 +160,36 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
         }
         QPushButton:hover { opacity: 0.85; }
     )";
-    openBtn->setStyleSheet(btnStyle + "QPushButton { background-color: #5CB85C; }");
-    uninstallBtn->setStyleSheet(btnStyle + "QPushButton { background-color: #D9534F; }");
-    detailBtn->setStyleSheet(btnStyle + "QPushButton { background-color: #0275D8; }");
 
-    layout->addWidget(openBtn);
-    layout->addWidget(uninstallBtn);
-    layout->addWidget(detailBtn);
+    QStringList btnNames = {
+        "卸载",
+        "沙盒路径",
+        "安装路径",
+        "共享路径",
+        "清除缓存",
+        "清除钥匙串"
+    };
+
+    for (int i = 0; i < btnNames.size(); ++i) {
+        const QString &name = btnNames[i];
+        QPushButton *btn = new QPushButton(name);
+        btn->setStyleSheet(btnStyle + "QPushButton { background-color: #5CB85C; }");
+        layout->addWidget(btn);
+
+        connect(btn, &QPushButton::clicked, this, [=](bool) {
+            QJsonObject dataObject;
+            dataObject["identifier"] = packageName;
+            dataObject["type"] = i + 1;
+
+            connection->send("appOperation", dataObject);
+
+            if (name == "卸载")
+                ;// 隐藏那一行
+        });
+    }
+
     actionWidget->setLayout(layout);
     table->setCellWidget(row, 3, actionWidget);
-
-    // 信号槽绑定
-    connect(openBtn, &QPushButton::clicked, this, &AppListWidget::handleOpen);
-    connect(uninstallBtn, &QPushButton::clicked, this, &AppListWidget::handleUninstall);
-    connect(detailBtn, &QPushButton::clicked, this, &AppListWidget::handleDetail);
 }
 
 void AppListWidget::handleOpen()
