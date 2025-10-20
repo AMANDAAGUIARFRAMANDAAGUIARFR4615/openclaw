@@ -227,7 +227,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
 
         if (event->key() == Qt::Key_V)
         {
-            QClipboard *clipboard = QGuiApplication::clipboard();
+            QClipboard *clipboard = QApplication::clipboard();
             const QMimeData *mimeData = clipboard->mimeData();
 
             QJsonObject dataObject;

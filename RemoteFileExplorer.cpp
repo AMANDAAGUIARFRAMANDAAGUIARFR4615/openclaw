@@ -27,6 +27,7 @@
 #include <QHeaderView>
 #include <QDrag>
 #include <QTextEdit>
+#include <QClipboard>
 
 RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, QWidget *parent) : connection(connection), QWidget(parent)
 {
@@ -406,6 +407,13 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
             connection->send("removeItem", path);
             fetchDirectoryContents(index.parent());
         }
+    });
+
+    QAction *copyPathAction = new QAction("复制路径", &contextMenu);
+    contextMenu.addAction(copyPathAction);
+    connect(copyPathAction, &QAction::triggered, this, [this, &targetPath]() {
+        QClipboard *clipboard = QApplication::clipboard();
+        clipboard->setText(targetPath);
     });
 
     if (targetPath.endsWith(".zip") || targetPath.endsWith(".rar")) {
