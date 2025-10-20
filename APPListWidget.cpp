@@ -7,6 +7,7 @@
 #include <QPainter>
 #include <QJsonArray>
 #include <QPainterPath>
+#include <QMessageBox>
 
 AppListWidget::AppListWidget(DeviceConnection* connection, QWidget *parent)
     : connection(connection), QWidget(parent)
@@ -177,6 +178,16 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
         layout->addWidget(btn);
 
         connect(btn, &QPushButton::clicked, this, [=](bool) {
+            bool needConfirm = (name == "卸载" || name == "清除缓存" || name == "清除钥匙串");
+            if (needConfirm) {
+                QString msg = QString("确定要执行“%1”操作吗？").arg(name);
+                QMessageBox::StandardButton reply = QMessageBox::question(this, "确认操作", msg,
+                                                                        QMessageBox::Yes | QMessageBox::No);
+                if (reply != QMessageBox::Yes) {
+                    return; // 用户取消操作
+                }
+            }
+
             QJsonObject dataObject;
             dataObject["identifier"] = packageName;
             dataObject["type"] = i + 1;
@@ -184,7 +195,11 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
             connection->send("appOperation", dataObject);
 
             if (name == "卸载")
-                ;// 隐藏那一行
+            {
+                int row = table->indexAt(btn->parentWidget()->pos()).row();
+                if (row >= 0)
+                    table->removeRow(row);
+            }
         });
     }
 
