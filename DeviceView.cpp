@@ -153,7 +153,7 @@ void DeviceView::onAppListClicked()
         qDebug() << "详情:" << pkg;
     });
 
-    list->resize(600, 300);
+    list->resize(920, 400);
     list->show();
 }
 
