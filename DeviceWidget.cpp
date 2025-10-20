@@ -65,20 +65,20 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
         new ToastWidget("此类型暂不支持", this);
     });
 
-    EventHub::StartListening("lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
-        if (this->connection != connection)
-            return;
+    // EventHub::StartListening("lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
+    //     if (this->connection != connection)
+    //         return;
 
-        if (deviceWindow)
-            return;
+    //     if (deviceWindow)
+    //         return;
 
-        auto locked = data.toBool();
+    //     auto locked = data.toBool();
 
-        if (locked)
-            addOverlay("设备已锁定");
-        else
-            addVideoFrameWidget(new VideoFrameWidget(this));
-    });
+    //     if (locked)
+    //         addOverlay("设备已锁定");
+    //     else
+    //         addVideoFrameWidget(new VideoFrameWidget(this));
+    // });
 }
 
 DeviceWidget::~DeviceWidget()

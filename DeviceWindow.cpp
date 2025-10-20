@@ -82,17 +82,17 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 
     setLayout(layout);
 
-    EventHub::StartListening("lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
-        if (this->connection != connection)
-            return;
+    // EventHub::StartListening("lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
+    //     if (this->connection != connection)
+    //         return;
 
-        auto locked = data.toBool();
+    //     auto locked = data.toBool();
 
-        if (locked)
-            addOverlay("设备已锁定");
-        else
-            addVideoFrameWidget(new VideoFrameWidget(this));
-    });
+    //     if (locked)
+    //         addOverlay("设备已锁定");
+    //     else
+    //         addVideoFrameWidget(new VideoFrameWidget(this));
+    // });
 }
 
 DeviceWindow::~DeviceWindow()
