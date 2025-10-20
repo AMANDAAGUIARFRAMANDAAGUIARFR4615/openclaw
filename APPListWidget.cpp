@@ -1,5 +1,6 @@
 #include "AppListWidget.h"
 #include "EventHub.h"
+#include "RemoteFileExplorer.h"
 #include <QHeaderView>
 #include <QVBoxLayout>
 #include <QDebug>
@@ -39,23 +40,18 @@ AppListWidget::AppListWidget(DeviceConnection* connection, QWidget *parent)
         }
     });
 
-    // EventHub::StartListening("appOperation", [this](const QJsonValue &data, DeviceConnection* connection) {
-    //     if (this->connection != connection)
-    //         return;
+    EventHub::StartListening("appOperation", [this](const QJsonValue &data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
 
-    //     QJsonArray appArray = data.toArray();
-    //     for (const QJsonValue &itemValue : appArray) {
-    //         if (!itemValue.isObject())
-    //             continue;
+        auto name = data["name"].toString();
+        auto path = data["path"].toString();
 
-    //         QJsonObject item = itemValue.toObject();
-    //         QString id = item.value("identifier").toString();
-    //         QString name = item.value("name").toString();
-    //         QString icon = item.value("icon").toString();
-
-    //         addApp(icon, name, id);
-    //     }
-    // });
+        auto window = new RemoteFileExplorer(connection, path);
+        window->setWindowTitle(QString("%1 -> %2").arg(name).arg(path));
+        window->resize(size());
+        window->show();
+    });
 }
 
 void AppListWidget::setupTable()
@@ -190,6 +186,7 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
 
             QJsonObject dataObject;
             dataObject["identifier"] = packageName;
+            dataObject["name"] = name;
             dataObject["type"] = i + 1;
 
             connection->send("appOperation", dataObject);

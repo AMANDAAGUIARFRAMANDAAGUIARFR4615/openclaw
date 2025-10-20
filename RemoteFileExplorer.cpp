@@ -29,7 +29,8 @@
 #include <QTextEdit>
 #include <QClipboard>
 
-RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath, QWidget *parent) : connection(connection), rootPath(rootPath), QWidget(parent)
+RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath, QWidget *parent) 
+    : connection(connection), rootPath(rootPath), QWidget(parent)
 {
     setAcceptDrops(true);
 
@@ -57,6 +58,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     treeView->setItemDelegate(new VirtualItemDelegate(treeView));
 
     connect(treeView, &QTreeView::expanded, this, &RemoteFileExplorer::onDirectoryExpanded);
+
     fetchDirectoryContents(rootPath);
 
     EventHub::StartListening("fileList", [this](QJsonValue data, DeviceConnection* connection) {
@@ -123,7 +125,6 @@ bool RemoteFileExplorer::eventFilter(QObject* obj, QEvent* event)
 
             if (result == Qt::IgnoreAction) {
                 qDebug() << "拖拽取消，删除占位文件";
-                // tempFile.remove();
             } else if (result == Qt::CopyAction) {
                 qDebug() << "拖拽完成，开始下载远程文件";
             }
@@ -154,7 +155,14 @@ void RemoteFileExplorer::fetchDirectoryContents(const QModelIndex &index)
 
 void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArray &list)
 {
-    auto parentItem = findItemByPath(path);
+    QStandardItem* parentItem = nullptr;
+
+    if (path == rootPath) {
+        parentItem = model->invisibleRootItem();
+    } else {
+        parentItem = findItemByPath(path);
+    }
+
     if (!parentItem) {
         setStatusMessage("目录加载失败: " + path);
         return;
@@ -174,20 +182,14 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
         auto name = obj["name"].toString();
         auto type = obj["type"].toString();
         auto symbolicLink = obj["symbolicLink"].toString();
-        auto myPath = path == '/' ? '/' + name : path + '/' + name;
+        auto myPath = path + '/' + name;
+        if (path.endsWith('/')) myPath = path + name;
+
         auto date = obj["date"].toString();
         auto size = obj["size"].toInt();
 
         auto item = new QStandardItem(name);
         item->setData(myPath, Qt::UserRole);
-
-        // NSFileTypeDirectory;
-        // NSFileTypeRegular;
-        // NSFileTypeSymbolicLink;
-        // NSFileTypeSocket;
-        // NSFileTypeCharacterSpecial;
-        // NSFileTypeBlockSpecial;
-        // NSFileTypeUnknown;
 
         auto isDirectory = type == "NSFileTypeDirectory" || type == "NSFileTypeSymbolicLink";
 
@@ -198,9 +200,7 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
             QString iconPath = ":/icons/" + suffix + ".png";
 
             QIcon fileIcon;
-
             if (QFile::exists(iconPath)) {
-                // 使用自定义图标
                 fileIcon = QIcon(iconPath);
             } else {
                 if (symbolicLink.isEmpty())
@@ -208,17 +208,16 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
                 else
                     fileIcon = QIcon(":/icons/file_link.png");
             }
-            
             item->setIcon(fileIcon);
         }
 
         item->setEditable(false);
 
         if (name.startsWith('.')) {
-            item->setData(true, Qt::UserRole + 1); // 隐藏文件标记
+            item->setData(true, Qt::UserRole + 1);
         }
 
-        item->setData(isDirectory, Qt::UserRole + 2); // 隐藏是否文件夹
+        item->setData(isDirectory, Qt::UserRole + 2);
 
         if (isDirectory) item->setChild(0, nullptr);
 
@@ -232,12 +231,14 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
 
 QStandardItem* RemoteFileExplorer::findItemByPath(const QString &path)
 {
-    qDebugEx() << "findItemByPath" << path;
+    QString relativePath = path;
+    if (path.startsWith(rootPath)) {
+        relativePath = path.mid(rootPath.length());
+        if (relativePath.startsWith('/')) relativePath = relativePath.mid(1);
+    }
 
-    // 分割路径，得到每一层的目录名
-    QStringList pathParts = path.split('/', Qt::SkipEmptyParts);
-    
-    // 从根目录开始查找
+    QStringList pathParts = relativePath.split('/', Qt::SkipEmptyParts);
+
     return findItemByPathRecursive(model->invisibleRootItem(), pathParts);
 }
 
@@ -248,7 +249,6 @@ QStandardItem* RemoteFileExplorer::findItemByPathRecursive(QStandardItem* parent
     auto currentPart = pathParts.first();
     for (int row = 0; row < parentItem->rowCount(); ++row) {
         auto item = parentItem->child(row);
-
         if (currentPart == item->text())
             return findItemByPathRecursive(item, pathParts.mid(1));
     }
