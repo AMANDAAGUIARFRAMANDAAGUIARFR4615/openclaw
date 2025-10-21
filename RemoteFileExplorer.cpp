@@ -95,6 +95,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     connect(quickAccessList, &QListWidget::itemClicked, this, [this](QListWidgetItem* item) {
         QString path = item->text();
         setStatusMessage("打开收藏路径: " + path);
+        this->rootPath = path;
         fetchDirectoryContents(path);
     });
 }
@@ -535,9 +536,12 @@ void RemoteFileExplorer::saveFavorites() {
 
 void RemoteFileExplorer::refreshQuickAccessList() {
     quickAccessList->clear();
+    
+    auto item = new QListWidgetItem("/");
+    quickAccessList->addItem(item);
+
     for (const QString& path : favorites) {
         auto item = new QListWidgetItem(path);
-        item->setIcon(QIcon(":/icons/folder_star.png"));
         quickAccessList->addItem(item);
     }
 }
