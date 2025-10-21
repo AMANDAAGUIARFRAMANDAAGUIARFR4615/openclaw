@@ -93,7 +93,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     refreshQuickAccessList();
 
     connect(quickAccessList, &QListWidget::itemClicked, this, [this](QListWidgetItem* item) {
-        QString path = item->data(Qt::UserRole).toString();
+        QString path = item->text();
         setStatusMessage("打开收藏路径: " + path);
         fetchDirectoryContents(path);
     });
@@ -321,22 +321,22 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
     auto targetPath = index.data(Qt::UserRole).toString();
     bool isDir = index.data(Qt::UserRole + 2).toBool();
 
-    QAction *favoriteAction = nullptr;
-    if (favorites.contains(targetPath)) {
-        favoriteAction = new QAction("从快速访问移除", &contextMenu);
-        connect(favoriteAction, &QAction::triggered, this, [this, targetPath]() {
-            removeFromFavorites(targetPath);
-        });
-    } else {
-        favoriteAction = new QAction("添加到快速访问", &contextMenu);
-        connect(favoriteAction, &QAction::triggered, this, [this, targetPath]() {
-            addToFavorites(targetPath);
-        });
-    }
-    contextMenu.addAction(favoriteAction);
-
     if (isDir)
     {
+        QAction *favoriteAction = nullptr;
+        if (favorites.contains(targetPath)) {
+            favoriteAction = new QAction("从快速访问移除", &contextMenu);
+            connect(favoriteAction, &QAction::triggered, this, [this, targetPath]() {
+                removeFromFavorites(targetPath);
+            });
+        } else {
+            favoriteAction = new QAction("添加到快速访问", &contextMenu);
+            connect(favoriteAction, &QAction::triggered, this, [this, targetPath]() {
+                addToFavorites(targetPath);
+            });
+        }
+        contextMenu.addAction(favoriteAction);
+
         QAction *compressAction = new QAction("压缩", &contextMenu);
         contextMenu.addAction(compressAction);
         connect(compressAction, &QAction::triggered, this, [this, &targetPath, &index]() {
@@ -536,21 +536,17 @@ void RemoteFileExplorer::saveFavorites() {
 void RemoteFileExplorer::refreshQuickAccessList() {
     quickAccessList->clear();
     for (const QString& path : favorites) {
-        QListWidgetItem* item = new QListWidgetItem(QFileInfo(path).fileName().isEmpty() ? path : QFileInfo(path).fileName());
-        item->setData(Qt::UserRole, path);
-        item->setToolTip(path);
+        auto item = new QListWidgetItem(path);
         item->setIcon(QIcon(":/icons/folder_star.png"));
         quickAccessList->addItem(item);
     }
 }
 
 void RemoteFileExplorer::addToFavorites(const QString& path) {
-    if (!favorites.contains(path)) {
-        favorites.append(path);
-        saveFavorites();
-        refreshQuickAccessList();
-        setStatusMessage("已添加到快速访问: " + path);
-    }
+    favorites.append(path);
+    saveFavorites();
+    refreshQuickAccessList();
+    setStatusMessage("已添加到快速访问: " + path);
 }
 
 void RemoteFileExplorer::removeFromFavorites(const QString& path) {
