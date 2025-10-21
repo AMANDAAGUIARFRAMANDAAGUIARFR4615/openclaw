@@ -28,6 +28,7 @@
 #include <QDrag>
 #include <QTextEdit>
 #include <QClipboard>
+#include <QPushButton>
 
 RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath, QWidget *parent) 
     : connection(connection), rootPath(rootPath), QWidget(parent)
@@ -58,6 +59,16 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     layout->addWidget(quickAccessLabel);
     layout->addWidget(quickAccessList);
     layout->addWidget(treeView);
+
+    QPushButton* addQuickAccessButton = new QPushButton("添加路径", this);
+    layout->insertWidget(1, addQuickAccessButton); // 插入到快速访问列表上方
+    connect(addQuickAccessButton, &QPushButton::clicked, this, [this]() {
+        bool ok;
+        QString path = QInputDialog::getText(this, "添加快速访问路径", "请输入路径:", QLineEdit::Normal, "", &ok);
+        if (ok && !path.isEmpty()) {
+            addToFavorites(path);
+        }
+    });
 
     statusBar = new QStatusBar(this);
     layout->addWidget(statusBar);
