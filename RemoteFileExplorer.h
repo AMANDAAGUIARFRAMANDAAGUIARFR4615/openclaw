@@ -9,6 +9,8 @@
 #include <QStyledItemDelegate>
 #include <QPainter>
 #include <QStatusBar>
+#include <QListWidget>
+#include <QSettings>
 
 class VirtualItemDelegate : public QStyledItemDelegate {
     Q_OBJECT
@@ -62,4 +64,14 @@ protected:
     QString rootPath;
     QStatusBar *statusBar;
     QPoint m_dragStartPos;
+
+    QListWidget* quickAccessList = nullptr;
+    QSettings* settings;
+    QStringList favorites;
+
+    void loadFavorites();
+    void saveFavorites();
+    void refreshQuickAccessList();
+    void addToFavorites(const QString& path);
+    void removeFromFavorites(const QString& path);
 };
