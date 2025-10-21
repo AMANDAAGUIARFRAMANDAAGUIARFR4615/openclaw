@@ -36,13 +36,14 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
 
     // 初始化收藏功能
     settings = new QSettings("MyApp", "RemoteFileExplorer", this);
+
+    QLabel* quickAccessLabel = new QLabel("⭐ 快速访问", this);
+    quickAccessLabel->setStyleSheet("font-weight: bold; padding: 4px;");
+
     quickAccessList = new QListWidget(this);
     quickAccessList->setFixedHeight(120);
     quickAccessList->setSelectionMode(QAbstractItemView::SingleSelection);
     quickAccessList->setStyleSheet("QListWidget { background-color: #f7f7f7; border: 1px solid #ccc; }");
-
-    QLabel* quickAccessLabel = new QLabel("⭐ 快速访问", this);
-    quickAccessLabel->setStyleSheet("font-weight: bold; padding: 4px;");
 
     treeView = new QTreeView(this);
     QFont font = treeView->font();
@@ -287,10 +288,25 @@ void RemoteFileExplorer::onDirectoryExpanded(const QModelIndex &index)
 
 void RemoteFileExplorer::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Escape)
+    if (event->key() == Qt::Key_Escape) {
         close();
-    else
-        QWidget::keyPressEvent(event);
+        return;
+    }
+
+    if (event->key() == Qt::Key_Delete) {
+        auto item = quickAccessList->currentItem();
+        if (item) {
+            if (item->text() == "/") {
+                new ToastWidget("根目录不能删除");
+                return;
+            }
+
+            removeFromFavorites(item->text());
+            return;
+        }
+    }
+    
+    QWidget::keyPressEvent(event);
 }
 
 void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
