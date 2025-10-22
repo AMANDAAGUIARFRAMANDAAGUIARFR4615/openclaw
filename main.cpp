@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
             onDataReceived(connection, jsonObject);
         }, onClientDisconnected, onError);
 
-    if (QOperatingSystemVersion::current().type() == QOperatingSystemVersion::Windows) {
+    // if (QOperatingSystemVersion::current().type() == QOperatingSystemVersion::Windows || QOperatingSystemVersion::current().type() == QOperatingSystemVersion::MacOS) {
         auto manager = UsbDeviceManager::instance();
 
         QObject::connect(manager, &UsbDeviceManager::deviceConnected, [](DeviceConnection* conn){
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
         QObject::connect(&app, &QCoreApplication::aboutToQuit, [=]() {
             manager->stop();
         });
-    }
+    // }
 
     QString localIP = NetworkUtils::getLocalIP();
     qDebugEx() << "本机内网IP:" << localIP;
