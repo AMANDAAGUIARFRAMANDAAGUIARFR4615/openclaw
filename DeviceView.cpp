@@ -52,21 +52,21 @@ DeviceView::~DeviceView()
 
 void DeviceView::setSource(const QUrl &source)
 {
+    addVideoFrameWidget(new VideoFrameWidget(this));
+
     if (deviceInfo->lockedStatus)
         addOverlay("设备已锁定");
-    else
-        addVideoFrameWidget(new VideoFrameWidget(this));
 
     videoFrameWidget->mediaPlayer->setSource(source);
 }
 
 void DeviceView::setSourceDevice(QIODevice *device, const QUrl &sourceUrl)
 {
+    addVideoFrameWidget(new VideoFrameWidget(this));
+
     if (deviceInfo->lockedStatus)
         addOverlay("设备已锁定");
-    else
-        addVideoFrameWidget(new VideoFrameWidget(this));
-
+        
     videoFrameWidget->mediaPlayer->setSourceDevice(device);
     // 要多设置一次才能播放
     QTimer::singleShot(500, [=]() {
