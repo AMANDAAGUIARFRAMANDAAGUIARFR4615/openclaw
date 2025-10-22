@@ -354,12 +354,12 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
         QAction *favoriteAction = nullptr;
         if (favorites.contains(targetPath)) {
             favoriteAction = new QAction("从快速访问移除", &contextMenu);
-            connect(favoriteAction, &QAction::triggered, this, [this, targetPath]() {
+            connect(favoriteAction, &QAction::triggered, this, [=]() {
                 removeFromFavorites(targetPath);
             });
         } else {
             favoriteAction = new QAction("添加到快速访问", &contextMenu);
-            connect(favoriteAction, &QAction::triggered, this, [this, targetPath]() {
+            connect(favoriteAction, &QAction::triggered, this, [=]() {
                 addToFavorites(targetPath);
             });
         }
@@ -367,7 +367,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
 
         QAction *compressAction = new QAction("压缩", &contextMenu);
         contextMenu.addAction(compressAction);
-        connect(compressAction, &QAction::triggered, this, [this, &targetPath, &index]() {
+        connect(compressAction, &QAction::triggered, this, [=]() {
             connection->send("compressArchive", targetPath);
         });
 
@@ -377,7 +377,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
     {
         QAction *viewAction = new QAction("查看", &contextMenu);
         contextMenu.addAction(viewAction);
-        connect(viewAction, &QAction::triggered, this, [this, &targetPath, &index]() {
+        connect(viewAction, &QAction::triggered, this, [=]() {
             auto path = QDir::homePath() + "/Desktop/" + QFileInfo(targetPath).fileName();
 
             if (!QFile::exists(path))
@@ -398,7 +398,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
 
         QAction *downloadAction = new QAction("下载", &contextMenu);
         contextMenu.addAction(downloadAction);
-        connect(downloadAction, &QAction::triggered, this, [this, &targetPath, &index]() {
+        connect(downloadAction, &QAction::triggered, this, [=]() {
             auto id = QUuid::createUuid().toString();
             auto type = 1; // 收是1，发是2
             auto path = QDir::homePath() + "/Desktop/" + QFileInfo(targetPath).fileName();
@@ -420,7 +420,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
 
     QAction *renameAction = new QAction("重命名", &contextMenu);
     contextMenu.addAction(renameAction);
-    connect(renameAction, &QAction::triggered, this, [this, &targetPath, &index]() {
+    connect(renameAction, &QAction::triggered, this, [=]() {
         bool ok;
         auto name = QInputDialog::getText(this, "重命名", "请输入名称:", QLineEdit::Normal, "", &ok);
         
@@ -440,7 +440,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
 
     QAction *createAction = new QAction("新建文件夹", &contextMenu);
     contextMenu.addAction(createAction);
-    connect(createAction, &QAction::triggered, this, [this, &targetPath, &index]() {
+    connect(createAction, &QAction::triggered, this, [=]() {
         bool ok;
         auto name = QInputDialog::getText(this, "新建文件夹", "请输入名称:", QLineEdit::Normal, "", &ok);
         
@@ -456,7 +456,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
 
     QAction *deleteAction = new QAction("删除", &contextMenu);
     contextMenu.addAction(deleteAction);
-    connect(deleteAction, &QAction::triggered, this, [this, &targetPath, &index, &paths]() {
+    connect(deleteAction, &QAction::triggered, this, [=]() {
         auto description = paths.count() > 1 ? QString("%1项").arg(paths.count()) : QFileInfo(targetPath).fileName();
         auto reply = QMessageBox::question(this, "确认删除", "你确定要删除【" + description + "】吗？", QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
@@ -474,7 +474,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
 
     QAction *copyPathAction = new QAction("复制路径", &contextMenu);
     contextMenu.addAction(copyPathAction);
-    connect(copyPathAction, &QAction::triggered, this, [this, &targetPath]() {
+    connect(copyPathAction, &QAction::triggered, this, [=]() {
         QClipboard *clipboard = QApplication::clipboard();
         clipboard->setText(targetPath);
     });
@@ -482,7 +482,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
     if (targetPath.endsWith(".zip") || targetPath.endsWith(".rar")) {
         QAction *extractAction = new QAction("解压", &contextMenu);
         contextMenu.addAction(extractAction);
-        connect(extractAction, &QAction::triggered, this, [this, &targetPath, &index]() {
+        connect(extractAction, &QAction::triggered, this, [=]() {
             setStatusMessage("解压: " + targetPath);
 
             connection->send("extractArchive", targetPath);

@@ -52,7 +52,7 @@ protected:
             return;
         }
 
-        QtConcurrent::run([this, socket]() {
+        QtConcurrent::run([=]() {
             QFile sendFile(path);
 
             if (!sendFile.open(QIODevice::ReadOnly))
@@ -64,7 +64,7 @@ protected:
             while (!sendFile.atEnd())
             {
                 auto buffer = sendFile.read(4096);
-                QMetaObject::invokeMethod(this, [socket, buffer]() {
+                QMetaObject::invokeMethod(this, [=, &buffer]() {
                     socket->write(buffer);
                 });
             }

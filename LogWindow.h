@@ -23,7 +23,7 @@ public:
         }
 
         qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &message) {
-            QMetaObject::invokeMethod(logWindow, [type, message]() {
+            QMetaObject::invokeMethod(logWindow, [=]() {
                 QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
                 QString formattedMessage = QString("[%1] %2").arg(time, message);
 

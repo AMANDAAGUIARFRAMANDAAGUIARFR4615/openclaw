@@ -161,7 +161,7 @@ void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)
 
         QApplication::postEvent(this, pressEvent);
 
-        QTimer::singleShot(100, [this, releaseEvent]() {
+        QTimer::singleShot(100, [=]() {
             QApplication::postEvent(this, releaseEvent);
         });
     }

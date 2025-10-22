@@ -174,8 +174,8 @@ void MainWindow::addItem(DeviceConnection* connection, DeviceInfo* deviceInfo)
         auto manager = UsbDeviceManager::instance();
         auto ctx = manager->getContext(connection);
 
-        manager->connectDevice(ctx->udid, deviceInfo->videoPort, [&](DeviceConnection* conn, const QByteArray& data){
-            liveStreamDevice->appendData(QByteArray(data));
+        manager->connectDevice(ctx->udid, deviceInfo->videoPort, [=](DeviceConnection* conn, const QByteArray& data){
+            liveStreamDevice->appendData(data);
         });
     }
 

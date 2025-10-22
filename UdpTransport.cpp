@@ -81,7 +81,7 @@ void UdpTransport::sendData(const QJsonObject &jsonObject, const QHostAddress &h
                      << "发送失败，剩余重试次数:" << remainingRetries;
 
         // 使用单次定时器延迟重试
-        QTimer::singleShot(50, [sendAttempt, remainingRetries]() {
+        QTimer::singleShot(50, [=]() {
             (*sendAttempt)(remainingRetries - 1);
         });
     };

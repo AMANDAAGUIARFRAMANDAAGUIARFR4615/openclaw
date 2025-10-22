@@ -98,7 +98,7 @@ void DeviceView::addVideoFrameWidget(VideoFrameWidget* videoFrameWidget)
     {
         videoFrameWidget->mediaPlayer->setSourceDevice(mediaSourceDevice);
         // 要多设置一次才能播放
-        QTimer::singleShot(500, [this, videoFrameWidget]() {
+        QTimer::singleShot(500, [=]() {
             videoFrameWidget->mediaPlayer->setSourceDevice(mediaSourceDevice);
         });
     }
@@ -142,16 +142,6 @@ void DeviceView::onAppListClicked()
     connection->send("appList");
 
     AppListWidget *list = new AppListWidget(connection);
-
-    QObject::connect(list, &AppListWidget::openApp, [](const QString &pkg){
-        qDebug() << "打开:" << pkg;
-    });
-    QObject::connect(list, &AppListWidget::uninstallApp, [](const QString &pkg){
-        qDebug() << "卸载:" << pkg;
-    });
-    QObject::connect(list, &AppListWidget::showDetail, [](const QString &pkg){
-        qDebug() << "详情:" << pkg;
-    });
 
     list->resize(920, 400);
     list->show();

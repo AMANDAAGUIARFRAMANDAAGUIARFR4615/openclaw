@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 
         manager->start();
 
-        QObject::connect(&app, &QCoreApplication::aboutToQuit, [&]() {
+        QObject::connect(&app, &QCoreApplication::aboutToQuit, [=]() {
             manager->stop();
         });
     }

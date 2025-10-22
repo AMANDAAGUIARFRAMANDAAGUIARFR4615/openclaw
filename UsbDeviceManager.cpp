@@ -25,7 +25,6 @@ void UsbDeviceManager::stop() {
     qDebug() << "🛑 停止设备管理器...";
     for (const QString& key : devices.keys())
         disconnectDevice(key);
-    devices.clear();
 }
 
 UsbDeviceContext* UsbDeviceManager::connectDevice(const QString& udid, uint16_t port, std::function<void(DeviceConnection*, const QByteArray&)> rawDataCallback) {
