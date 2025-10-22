@@ -22,7 +22,6 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     videoFrameWidget = deviceWidget->getVideoFrameWidget();
 
     QHBoxLayout *layout = new QHBoxLayout(this);
-    layout->setSizeConstraint(QLayout::SetFixedSize);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
