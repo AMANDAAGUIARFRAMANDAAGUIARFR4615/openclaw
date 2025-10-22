@@ -22,6 +22,18 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 {
     setAcceptDrops(true);
 
+    overlay = new QWidget(this);
+    overlay->setStyleSheet("background-color: black;");
+    QLabel *label = new QLabel("设备已锁定", overlay);
+    label->setStyleSheet("color: white; font-size: 20px;");
+    label->setAlignment(Qt::AlignCenter);
+
+    QVBoxLayout *layout = new QVBoxLayout(overlay);
+    layout->addStretch();
+    layout->addWidget(label);
+    layout->addStretch();
+    overlay->setLayout(layout);
+
     EventHub::StartListening("orientation", [this](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
@@ -40,72 +52,45 @@ DeviceView::~DeviceView()
 
 void DeviceView::setSource(const QUrl &source)
 {
-    mediaSource = source;
-    mediaSourceDevice = nullptr;
-    
     if (deviceInfo->lockedStatus)
         addOverlay("设备已锁定");
     else
         addVideoFrameWidget(new VideoFrameWidget(this));
+
+    videoFrameWidget->mediaPlayer->setSource(source);
 }
 
 void DeviceView::setSourceDevice(QIODevice *device, const QUrl &sourceUrl)
 {
-    mediaSource = sourceUrl;
-    mediaSourceDevice = device;
-    
     if (deviceInfo->lockedStatus)
         addOverlay("设备已锁定");
     else
         addVideoFrameWidget(new VideoFrameWidget(this));
+
+    videoFrameWidget->mediaPlayer->setSourceDevice(device);
+    // 要多设置一次才能播放
+    QTimer::singleShot(500, [=]() {
+        videoFrameWidget->mediaPlayer->setSourceDevice(device);
+    });
 }
 
 void DeviceView::addOverlay(const QString &text)
 {
-    if (videoFrameWidget)
-    {
-        videoFrameWidget->deleteLater();
-        videoFrameWidget = nullptr;
-    }
+    QLabel *label = overlay->findChild<QLabel *>();
+    label->setText(text);
 
-    overlay = new QWidget(this);
-    overlay->setStyleSheet("background-color: black;");
-    QLabel *label = new QLabel(text, overlay);
-    label->setStyleSheet("color: white; font-size: 20px;");
-    label->setAlignment(Qt::AlignCenter);
-
-    QVBoxLayout *layout = new QVBoxLayout(overlay);
-    layout->addStretch();
-    layout->addWidget(label);
-    layout->addStretch();
-    overlay->setLayout(layout);
-
-    this->layout()->addWidget(overlay);
+    overlay->setVisible(deviceInfo->lockedStatus);
+    
+    layout()->removeWidget(overlay);
+    layout()->addWidget(overlay);
 }
 
-void DeviceView::addVideoFrameWidget(VideoFrameWidget* videoFrameWidget)
+void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
 {
-    if (overlay)
-    {
-        overlay->deleteLater();
-        overlay = nullptr;
-    }
+    overlay->hide();
 
-    this->videoFrameWidget = videoFrameWidget;
-    layout()->addWidget(videoFrameWidget);
-    
-    if (mediaSourceDevice)
-    {
-        videoFrameWidget->mediaPlayer->setSourceDevice(mediaSourceDevice);
-        // 要多设置一次才能播放
-        QTimer::singleShot(500, [=]() {
-            videoFrameWidget->mediaPlayer->setSourceDevice(mediaSourceDevice);
-        });
-    }
-    else
-    {
-        videoFrameWidget->mediaPlayer->setSource(mediaSource);
-    }
+    videoFrameWidget = widget;
+    layout()->addWidget(widget);
     
     videoFrameWidget->orientationChanged(deviceInfo->orientation);
 }

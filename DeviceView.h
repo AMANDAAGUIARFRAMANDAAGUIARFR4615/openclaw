@@ -43,7 +43,5 @@ public:
     DeviceConnection* const connection;
     DeviceInfo* const deviceInfo;
     VideoFrameWidget *videoFrameWidget = nullptr;
-    QUrl mediaSource;
-    QIODevice* mediaSourceDevice;
     QWidget *overlay = nullptr;
 };

@@ -20,7 +20,6 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     setAttribute(Qt::WA_InputMethodEnabled, true);
 
     videoFrameWidget = deviceWidget->getVideoFrameWidget();
-    mediaSource = deviceWidget->mediaSource;
 
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setSizeConstraint(QLayout::SetFixedSize);
@@ -82,39 +81,22 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 
     setLayout(layout);
 
-    // EventHub::StartListening("lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
-    //     if (this->connection != connection)
-    //         return;
+    EventHub::StartListening("lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
 
-    //     auto locked = data.toBool();
+        auto locked = data.toBool();
 
-    //     if (locked)
-    //         addOverlay("设备已锁定");
-    //     else
-    //         addVideoFrameWidget(new VideoFrameWidget(this));
-    // });
+        if (locked)
+            addOverlay("设备已锁定");
+        else
+            overlay->hide();
+    });
 }
 
 DeviceWindow::~DeviceWindow()
 {
 
-}
-
-void DeviceWindow::addOverlay(const QString &text)
-{
-    auto orientation = deviceInfo->orientation;
-    auto size = videoFrameWidget->size();
-
-    DeviceView::addOverlay(text);
-    overlay->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    overlay->setFixedSize(size);
-}
-
-void DeviceWindow::addVideoFrameWidget(VideoFrameWidget* videoFrameWidget)
-{
-    videoFrameWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    videoFrameWidget->setFixedSize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
-    DeviceView::addVideoFrameWidget(videoFrameWidget);
 }
 
 QPointF DeviceWindow::getTransformedPosition(QMouseEvent *event) {
