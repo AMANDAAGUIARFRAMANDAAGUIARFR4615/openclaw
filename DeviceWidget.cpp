@@ -91,7 +91,7 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
 {
     QWidget::mouseDoubleClickEvent(event);
 
-    if (!videoFrameWidget)
+    if (overlay->isVisible())
     {
         new ToastWidget("需要先解锁才能控制", this);
         return;
