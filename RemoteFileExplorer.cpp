@@ -304,7 +304,7 @@ void RemoteFileExplorer::keyPressEvent(QKeyEvent *event)
         return;
     }
 
-    if (event->key() == Qt::Key_Delete) {
+    if (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace) {
         auto item = quickAccessList->currentItem();
         if (item) {
             if (item->text() == "/") {
