@@ -79,7 +79,7 @@ void DeviceView::addOverlay(const QString &text)
     QLabel *label = overlay->findChild<QLabel *>();
     label->setText(text);
 
-    overlay->setVisible(true);
+    overlay->show();
     
     layout()->removeWidget(overlay);
     layout()->addWidget(overlay);
