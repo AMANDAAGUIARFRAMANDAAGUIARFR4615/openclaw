@@ -211,33 +211,6 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
     table->setCellWidget(row, 3, actionWidget);
 }
 
-void AppListWidget::handleOpen()
-{
-    QPushButton *btn = qobject_cast<QPushButton*>(sender());
-    if (!btn) return;
-    int row = table->indexAt(btn->parentWidget()->pos()).row();
-    QString pkg = table->item(row, 2)->text();
-    emit openApp(pkg);
-}
-
-void AppListWidget::handleUninstall()
-{
-    QPushButton *btn = qobject_cast<QPushButton*>(sender());
-    if (!btn) return;
-    int row = table->indexAt(btn->parentWidget()->pos()).row();
-    QString pkg = table->item(row, 2)->text();
-    emit uninstallApp(pkg);
-}
-
-void AppListWidget::handleDetail()
-{
-    QPushButton *btn = qobject_cast<QPushButton*>(sender());
-    if (!btn) return;
-    int row = table->indexAt(btn->parentWidget()->pos()).row();
-    QString pkg = table->item(row, 2)->text();
-    emit showDetail(pkg);
-}
-
 void AppListWidget::applyStyle()
 {
     this->setStyleSheet(R"(
