@@ -78,8 +78,6 @@ protected:
 
         connect(socket, &QTcpSocket::readyRead, this, &FileTransfer::onReadyRead);
         // connect(socket, &QTcpSocket::bytesWritten, this, &FileTransfer::onBytesWritten);
-        connect(socket, &QTcpSocket::disconnected, socket, &QTcpSocket::deleteLater);
-        connect(socket, &QTcpSocket::disconnected, this, &FileTransfer::deleteLater);
 
         handleNewConnection();
     }

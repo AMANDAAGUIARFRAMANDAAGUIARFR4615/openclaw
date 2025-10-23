@@ -77,6 +77,7 @@ void DeviceConnection::close()
     if (type == Tcp)
     {
         tcpSocket->close();
+        tcpSocket->deleteLater();
     }
     else
     {
