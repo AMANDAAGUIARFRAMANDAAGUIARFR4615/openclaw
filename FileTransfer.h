@@ -116,7 +116,7 @@ protected:
             while (!sendFile.atEnd())
             {
                 auto buffer = sendFile.read(4096);
-                QMetaObject::invokeMethod(this, [=, &buffer]() {
+                QMetaObject::invokeMethod(this, [=]() {
                     transferConnection->write(buffer);
                 });
             }
