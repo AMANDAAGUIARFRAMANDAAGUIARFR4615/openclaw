@@ -512,6 +512,20 @@ void RemoteFileExplorer::dragEnterEvent(QDragEnterEvent *event)
     event->accept();
 }
 
+void RemoteFileExplorer::dragMoveEvent(QDragMoveEvent *event)
+{
+    QPoint globalPos = mapToGlobal(event->pos());
+    QPoint localPos = treeView->viewport()->mapFromGlobal(globalPos);
+    
+    treeView->selectionModel()->clearSelection();
+
+    QModelIndex index = treeView->indexAt(localPos);
+    if (index.isValid())
+        treeView->selectionModel()->select(index, QItemSelectionModel::Select | QItemSelectionModel::Rows);
+
+    event->accept();
+}
+
 void RemoteFileExplorer::dropEvent(QDropEvent *event)
 {
     auto urls = event->mimeData()->urls();
