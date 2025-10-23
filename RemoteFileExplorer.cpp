@@ -399,19 +399,18 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
         QAction *downloadAction = new QAction("下载", &contextMenu);
         contextMenu.addAction(downloadAction);
         connect(downloadAction, &QAction::triggered, this, [=]() {
-            auto id = QUuid::createUuid().toString();
             auto type = 1; // 收是1，发是2
             auto path = QDir::homePath() + "/Desktop/" + QFileInfo(targetPath).fileName();
 
             qDebugEx() << path << "<=" << targetPath;
 
-            auto transfer = new FileTransfer(type, path, 0);
+            auto transfer = new FileTransfer(connection, type, path, 0);
 
             QJsonObject dataObject;
-            dataObject["id"] = id;
             dataObject["type"] = type;
             dataObject["port"] = transfer->serverPort();
             dataObject["path"] = targetPath;
+            dataObject["id"] = targetPath;
 
             connection->send("transferFile", dataObject);
         });
@@ -525,7 +524,6 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
     bool isDir = index.data(Qt::UserRole + 2).toBool();
 
     for (const QUrl &url : urls) {
-        auto id = QUuid::createUuid().toString();
         auto type = 2; // 收是1，发是2
         auto path = url.toLocalFile();
         auto size = Tools::getFileSize(path);
@@ -537,14 +535,14 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
         qDebugEx() << path << "=>" << targetPath;
 
         auto dir = isDir ? targetPath : targetPath.left(targetPath.lastIndexOf('/'));
-        auto transfer = new FileTransfer(type, path, size);
+        auto transfer = new FileTransfer(connection, type, path, size);
 
         QJsonObject dataObject;
-        dataObject["id"] = id;
         dataObject["type"] = type;
         dataObject["port"] = transfer->serverPort();
         dataObject["path"] = dir + QString("/") + QFileInfo(path).fileName();
         dataObject["size"] = size;
+        dataObject["id"] = dataObject["path"];
 
         connection->send("transferFile", dataObject);
     }

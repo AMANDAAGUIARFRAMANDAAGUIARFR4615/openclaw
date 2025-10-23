@@ -15,7 +15,6 @@
 #include <QDropEvent>
 #include <QFileInfo>
 #include <QDir>
-#include <QUuid>
 
 DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWidget *parent)
     : connection(connection), deviceInfo(deviceInfo), QWidget(parent)
@@ -234,19 +233,18 @@ void DeviceView::dropEvent(QDropEvent *event)
     const QList<QUrl> urls = event->mimeData()->urls();
 
     for (const QUrl& url : urls) {
-        auto id = QUuid::createUuid().toString();
         auto type = 2; // 收是1，发是2
         auto path = url.toLocalFile();
         auto size = Tools::getFileSize(path);
         
-        auto transfer = new FileTransfer(type, path, size);
+        auto transfer = new FileTransfer(connection, type, path, size);
 
         QJsonObject dataObject;
-        dataObject["id"] = id;
         dataObject["type"] = type;
         dataObject["port"] = transfer->serverPort();
         dataObject["name"] = QFileInfo(path).fileName();
         dataObject["size"] = size;
+        dataObject["id"] = path;
 
         connection->send("transferFile", dataObject);
     }

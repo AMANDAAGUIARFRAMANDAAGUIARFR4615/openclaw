@@ -18,7 +18,7 @@ public:
     void start();
     void stop();
 
-    UsbDeviceContext* connectDevice(const QString& udid, uint16_t port, std::function<void(DeviceConnection*, const QByteArray&)> rawDataCallback = nullptr);
+    DeviceConnection* connectDevice(const QString& udid, uint16_t port, std::function<void(DeviceConnection*, const QByteArray&)> rawDataCallback = nullptr);
     void disconnectDevice(const QString& key);
 
     UsbDeviceContext* getContext(DeviceConnection* conn) const;

@@ -1,4 +1,5 @@
 #include "DeviceConnection.h"
+// #include "UsbDeviceManager.h"
 
 QHash<QTcpSocket*, DeviceConnection*> DeviceConnection::tcpSocketToDevice;
 QHash<idevice_connection_t, DeviceConnection*> DeviceConnection::usbConnectionToDevice;
@@ -52,17 +53,36 @@ void DeviceConnection::send(const QString& event, const QJsonValue &jsonValue)
     dataToSend.append(reinterpret_cast<const char*>(&jsonDataLength), sizeof(jsonDataLength));
     dataToSend.append(jsonData);
 
+    send(dataToSend);
+}
+
+void DeviceConnection::write(const QByteArray &byteArray)
+{
     if (type == Tcp)
     {
-        tcpSocket->write(dataToSend);
+        tcpSocket->write(byteArray);
         tcpSocket->flush();
     }
     else
     {
         uint32_t sent = 0;
-        idevice_error_t error = idevice_connection_send(usbConnection, dataToSend.constData(), dataToSend.size(), &sent);
+        idevice_error_t error = idevice_connection_send(usbConnection, byteArray.constData(), byteArray.size(), &sent);
         if (error != IDEVICE_E_SUCCESS)
             qDebugEx() << "发送失败" << error;
+    }
+}
+
+void DeviceConnection::close()
+{
+    if (type == Tcp)
+    {
+        tcpSocket->close();
+    }
+    else
+    {
+        // auto manager = UsbDeviceManager::instance();
+        // auto ctx = manager->getContext(this);
+        // manager->disconnectDevice(QString("%1:%2").arg(ctx->udid).arg(ctx->port));
     }
 }
 

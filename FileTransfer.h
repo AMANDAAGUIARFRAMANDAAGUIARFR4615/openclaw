@@ -1,38 +1,66 @@
 #pragma once
 
 #include "Logger.h"
-#include <QTcpSocket>
+#include "EventHub.h"
+#include "DeviceConnection.h"
+#include "UsbDeviceManager.h"
 #include <QTcpServer>
 #include <QFile>
 #include <QDataStream>
 #include <QtConcurrent>
 
+// type 1收2发
+
 class FileTransfer : public QObject
 {
     Q_OBJECT
 public:
-    FileTransfer(int type, const QString &path, quint64 size) 
-        : type(type), path(path), size(size)
+    FileTransfer(DeviceConnection* connection, int type, const QString &path, quint64 size) : connection(connection), type(type), path(path), size(size)
     {
-        tcpServer = new QTcpServer(this);
+        qDebugEx() << "FileTransfer" << path << type;
 
-        connect(tcpServer, &QTcpServer::newConnection, this, &FileTransfer::onNewConnection);
-
-        if (!tcpServer->listen(QHostAddress::Any, 0))
+        if (connection->type != DeviceConnection::Usb)
         {
-            qWarningEx() << "Server failed to start";
+            tcpServer = new QTcpServer(this);
+
+            connect(tcpServer, &QTcpServer::newConnection, this, &FileTransfer::onNewConnection);
+
+            if (!tcpServer->listen(QHostAddress::Any, 0))
+            {
+                qWarningEx() << "Server failed to start";
+            }
+            else
+            {
+                qDebugEx() << "Server started, waiting for connections...";
+            }
         }
         else
         {
-            qDebugEx() << "Server started, waiting for connections...";
+            EventHub::StartListening("transferPort", [=](const QJsonValue &data, DeviceConnection* connection) {
+                if (this->connection != connection)
+                    return;
+
+                if (data["id"] != path)
+                    return;
+
+                auto manager = UsbDeviceManager::instance();
+                auto ctx = manager->getContext(connection);
+
+                transferConnection = manager->connectDevice(ctx->udid, data["port"].toInt(), [=](DeviceConnection* conn, const QByteArray& data){
+                    handleDataRead(data);
+                });
+
+                handleNewConnection();
+            });
         }
     }
 
     ~FileTransfer() {
         delete tcpServer;
+        delete connection;
     }
 
-    serverPort() {
+    quint16 serverPort() {
         return tcpServer ? tcpServer->serverPort() : 0;
     }
 
@@ -40,6 +68,7 @@ protected:
     void onNewConnection()
     {
         auto socket = tcpServer->nextPendingConnection();
+        transferConnection = new DeviceConnection(socket);
 
         tcpServer->close();
         qDebugEx() << "已接受第一个连接，服务器停止监听新连接。";
@@ -49,8 +78,18 @@ protected:
         connect(socket, &QTcpSocket::disconnected, socket, &QTcpSocket::deleteLater);
         connect(socket, &QTcpSocket::disconnected, this, &FileTransfer::deleteLater);
 
-        qDebugEx() << path << type;
+        handleNewConnection();
+    }
 
+    void onReadyRead()
+    {
+        auto socket = qobject_cast<QTcpSocket *>(sender());
+        auto data = socket->readAll();
+        handleDataRead(data);
+    }
+
+    void handleNewConnection()
+    {
         if (type == 1)
         {
             recvFile.setFileName(path);
@@ -58,7 +97,7 @@ protected:
             if (!recvFile.open(QIODevice::WriteOnly))
             {
                 qCritical() << "文件保存失败:" << recvFile.errorString();
-                socket->close();
+                transferConnection->close();
             }
 
             return;
@@ -77,7 +116,7 @@ protected:
             {
                 auto buffer = sendFile.read(4096);
                 QMetaObject::invokeMethod(this, [=, &buffer]() {
-                    socket->write(buffer);
+                    transferConnection->write(buffer);
                 });
             }
 
@@ -86,10 +125,8 @@ protected:
         });
     }
 
-    void onReadyRead()
+    void handleDataRead(const QByteArray& data)
     {
-        auto socket = qobject_cast<QTcpSocket *>(sender());
-        auto data = socket->readAll();
         buffer.append(data);
         
         if (type == 1) {
@@ -110,7 +147,7 @@ protected:
 
             if (recvFile.size() == size) {
                 recvFile.close();
-                socket->close();
+                transferConnection->close();
                 qDebugEx() << path << "接收完成断开连接";
             }
         }
@@ -121,7 +158,7 @@ protected:
                 buffer.remove(0, 8);
 
                 if (bytesSent == size) {
-                    socket->close();
+                    transferConnection->close();
                     qDebugEx() << path << "发送完成断开连接";
                 }
             }
@@ -129,10 +166,14 @@ protected:
     }
 
 private:
+    DeviceConnection* connection;
     int type;
     QString path;
     quint64 size;
+
     QByteArray buffer;
     QFile recvFile;
-    QTcpServer *tcpServer;
+
+    QTcpServer *tcpServer = nullptr;
+    DeviceConnection* transferConnection = nullptr;
 };

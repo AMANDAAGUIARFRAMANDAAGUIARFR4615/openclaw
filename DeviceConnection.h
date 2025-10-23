@@ -22,6 +22,8 @@ public:
     static DeviceConnection* find(idevice_connection_t connection);
 
     void send(const QString& event, const QJsonValue &jsonValue = QJsonValue());
+    void write(const QByteArray &byteArray);
+    void close();
 
     bool operator==(const DeviceConnection &other) const;
     bool operator!=(const DeviceConnection& other) const;
