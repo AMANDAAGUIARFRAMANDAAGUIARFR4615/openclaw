@@ -407,10 +407,10 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
             auto transfer = new FileTransfer(connection, type, path, 0);
 
             QJsonObject dataObject;
+            dataObject["id"] = transfer->id;
             dataObject["type"] = type;
             dataObject["port"] = transfer->serverPort();
             dataObject["path"] = targetPath;
-            dataObject["id"] = targetPath;
 
             connection->send("transferFile", dataObject);
         });
@@ -538,11 +538,11 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
         auto transfer = new FileTransfer(connection, type, path, size);
 
         QJsonObject dataObject;
+        dataObject["id"] = transfer->id;
         dataObject["type"] = type;
         dataObject["port"] = transfer->serverPort();
         dataObject["path"] = dir + QString("/") + QFileInfo(path).fileName();
         dataObject["size"] = size;
-        dataObject["id"] = dataObject["path"];
 
         connection->send("transferFile", dataObject);
     }

@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QDataStream>
 #include <QtConcurrent>
+#include <QUuid>
 
 // type 1收2发
 
@@ -15,7 +16,7 @@ class FileTransfer : public QObject
 {
     Q_OBJECT
 public:
-    FileTransfer(DeviceConnection* connection, int type, const QString &path, quint64 size) : connection(connection), type(type), path(path), size(size)
+    FileTransfer(DeviceConnection* connection, int type, const QString &path, quint64 size) : id(QUuid::createUuid().toString()), connection(connection), type(type), path(path), size(size)
     {
         qDebugEx() << "FileTransfer" << path << type;
 
@@ -40,7 +41,7 @@ public:
                 if (this->connection != connection)
                     return;
 
-                if (data["id"] != path)
+                if (data["id"] != id)
                     return;
 
                 auto manager = UsbDeviceManager::instance();
@@ -59,6 +60,8 @@ public:
         delete tcpServer;
         delete connection;
     }
+
+    const QString id;
 
     quint16 serverPort() {
         return tcpServer ? tcpServer->serverPort() : 0;

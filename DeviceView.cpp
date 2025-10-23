@@ -240,11 +240,11 @@ void DeviceView::dropEvent(QDropEvent *event)
         auto transfer = new FileTransfer(connection, type, path, size);
 
         QJsonObject dataObject;
+        dataObject["id"] = transfer->id;
         dataObject["type"] = type;
         dataObject["port"] = transfer->serverPort();
         dataObject["name"] = QFileInfo(path).fileName();
         dataObject["size"] = size;
-        dataObject["id"] = path;
 
         connection->send("transferFile", dataObject);
     }

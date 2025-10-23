@@ -1,5 +1,5 @@
 #include "DeviceConnection.h"
-// #include "UsbDeviceManager.h"
+#include "UsbDeviceManager.h"
 
 QHash<QTcpSocket*, DeviceConnection*> DeviceConnection::tcpSocketToDevice;
 QHash<idevice_connection_t, DeviceConnection*> DeviceConnection::usbConnectionToDevice;
@@ -53,7 +53,7 @@ void DeviceConnection::send(const QString& event, const QJsonValue &jsonValue)
     dataToSend.append(reinterpret_cast<const char*>(&jsonDataLength), sizeof(jsonDataLength));
     dataToSend.append(jsonData);
 
-    send(dataToSend);
+    write(dataToSend);
 }
 
 void DeviceConnection::write(const QByteArray &byteArray)
@@ -80,9 +80,9 @@ void DeviceConnection::close()
     }
     else
     {
-        // auto manager = UsbDeviceManager::instance();
-        // auto ctx = manager->getContext(this);
-        // manager->disconnectDevice(QString("%1:%2").arg(ctx->udid).arg(ctx->port));
+        auto manager = UsbDeviceManager::instance();
+        auto ctx = manager->getContext(this);
+        manager->disconnectDevice(QString("%1:%2").arg(ctx->udid).arg(ctx->port));
     }
 }
 
