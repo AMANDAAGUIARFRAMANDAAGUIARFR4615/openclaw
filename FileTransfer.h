@@ -95,7 +95,7 @@ protected:
         {
             recvFile.setFileName(path);
 
-            if (!recvFile.open(QIODevice::WriteOnly))
+            if (!recvFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
             {
                 qCritical() << "文件保存失败:" << recvFile.errorString();
                 transferConnection->close();
