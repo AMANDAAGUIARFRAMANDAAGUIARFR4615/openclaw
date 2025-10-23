@@ -347,6 +347,12 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
     QModelIndex index = treeView->selectionModel()->currentIndex();
 
     auto targetPath = index.data(Qt::UserRole).toString();
+    if (targetPath == "")
+    {
+        new ToastWidget("路径错误", this);
+        return;
+    }
+
     bool isDir = index.data(Qt::UserRole + 2).toBool();
 
     if (isDir)
