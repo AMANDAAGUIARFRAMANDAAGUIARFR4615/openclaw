@@ -7,17 +7,20 @@
 #include <QDataStream>
 #include <QtConcurrent>
 
-class FileTransfer : public QTcpServer
+class FileTransfer : public QObject
 {
     Q_OBJECT
 public:
-    FileTransfer(int type, const QString &path, quint64 size) : type(type), path(path), size(size)
+    FileTransfer(int type, const QString &path, quint64 size) 
+        : type(type), path(path), size(size)
     {
-        connect(this, &QTcpServer::newConnection, this, &FileTransfer::onNewConnection);
+        tcpServer = new QTcpServer(this);
 
-        if (!listen(QHostAddress::Any, 0))
+        connect(tcpServer, &QTcpServer::newConnection, this, &FileTransfer::onNewConnection);
+
+        if (!tcpServer->listen(QHostAddress::Any, 0))
         {
-            qWarning() << "Server failed to start";
+            qWarningEx() << "Server failed to start";
         }
         else
         {
@@ -25,12 +28,20 @@ public:
         }
     }
 
+    ~FileTransfer() {
+        delete tcpServer;
+    }
+
+    serverPort() {
+        return tcpServer ? tcpServer->serverPort() : 0;
+    }
+
 protected:
     void onNewConnection()
     {
-        auto socket = nextPendingConnection();
+        auto socket = tcpServer->nextPendingConnection();
 
-        close();
+        tcpServer->close();
         qDebugEx() << "已接受第一个连接，服务器停止监听新连接。";
 
         connect(socket, &QTcpSocket::readyRead, this, &FileTransfer::onReadyRead);
@@ -123,4 +134,5 @@ private:
     quint64 size;
     QByteArray buffer;
     QFile recvFile;
+    QTcpServer *tcpServer;
 };
