@@ -70,9 +70,6 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         }
     });
 
-    statusBar = new QStatusBar(this);
-    layout->addWidget(statusBar);
-
     setLayout(layout);
 
     model = new QStandardItemModel();
@@ -94,8 +91,6 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         updateDirectoryView(path, list);
     });
 
-    setStatusMessage("就绪");
-
     treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
     treeView->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     treeView->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
@@ -110,6 +105,26 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         this->rootPath = path;
         fetchDirectoryContents(path);
     });
+
+    QLabel* transferLabel = new QLabel("📂 文件传输列表", this);
+    transferLabel->setStyleSheet("font-weight: bold; padding: 4px;");
+
+    transferTable = new QTableWidget(this);
+    transferTable->setColumnCount(8);
+    transferTable->setHorizontalHeaderLabels({ "名称", "状态", "进度", "大小", "本地路径", "远程路径", "速度", "用时" });
+    transferTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    transferTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    transferTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    transferTable->setFixedHeight(180);
+    transferTable->setAlternatingRowColors(true);
+
+    layout->addWidget(transferLabel);
+    layout->addWidget(transferTable);
+
+    statusBar = new QStatusBar(this);
+    layout->addWidget(statusBar);
+
+    setStatusMessage("就绪");
 }
 
 RemoteFileExplorer::~RemoteFileExplorer()

@@ -11,6 +11,7 @@
 #include <QStatusBar>
 #include <QListWidget>
 #include <QSettings>
+#include <QTableWidget>
 
 class VirtualItemDelegate : public QStyledItemDelegate {
     Q_OBJECT
@@ -75,4 +76,6 @@ protected:
     void refreshQuickAccessList();
     void addToFavorites(const QString& path);
     void removeFromFavorites(const QString& path);
+
+    QTableWidget* transferTable = nullptr;
 };
