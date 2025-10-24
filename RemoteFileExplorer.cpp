@@ -312,6 +312,47 @@ void RemoteFileExplorer::onDirectoryExpanded(const QModelIndex &index)
     fetchDirectoryContents(path);
 }
 
+void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, const QString &remotePath, int size)
+{
+    auto transfer = new FileTransfer(connection, type, localPath, size);
+
+    int row = transferTable->rowCount();
+    transferTable->insertRow(row);
+
+    transferTable->setItem(row, 0, new QTableWidgetItem(QFileInfo(localPath).fileName()));
+    transferTable->setItem(row, 1, new QTableWidgetItem(type == 1 ? "接收中" : "发送中"));
+    transferTable->setItem(row, 2, new QTableWidgetItem("0%"));
+    transferTable->setItem(row, 3, new QTableWidgetItem(size));
+    transferTable->setItem(row, 4, new QTableWidgetItem(localPath));
+    transferTable->setItem(row, 5, new QTableWidgetItem(remotePath));
+    transferTable->setItem(row, 6, new QTableWidgetItem("0 B/s"));
+    transferTable->setItem(row, 7, new QTableWidgetItem("0 s"));
+
+    connect(transfer, &FileTransfer::progressUpdated, this, [=](quint64 transferred, quint64 total) {
+        double percent = (double)transferred / total * 100;
+        transferTable->item(row, 2)->setText(QString::number(percent, 'f', 1) + "%");
+
+        quint64 elapsed = transfer->elapsedTime();
+        transferTable->item(row, 6)->setText(Tools::formatByteSize(transferred / (elapsed + 1)) + "/s");
+        transferTable->item(row, 7)->setText(QString::number(elapsed) + " s");
+
+        if (transferred == total) {
+            transferTable->item(row, 1)->setText(type == 1 ? "接收完成" : "发送完成");
+        }
+    });
+
+    QJsonObject dataObject;
+    dataObject["id"] = transfer->id;
+    dataObject["type"] = type;
+    dataObject["port"] = transfer->serverPort();
+    dataObject["path"] = remotePath;
+
+    if (type == 2)
+        dataObject["size"] = size;
+
+    connection->send("transferFile", dataObject);
+}
+
 void RemoteFileExplorer::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Escape) {
@@ -420,20 +461,12 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
         QAction *downloadAction = new QAction("下载", &contextMenu);
         contextMenu.addAction(downloadAction);
         connect(downloadAction, &QAction::triggered, this, [=]() {
-            auto type = 1; // 收是1，发是2
-            auto path = QDir::homePath() + "/Desktop/" + QFileInfo(targetPath).fileName();
+            auto localPath = QDir::homePath() + "/Desktop/" + QFileInfo(targetPath).fileName();
 
-            qDebugEx() << path << "<=" << targetPath;
+            qDebugEx() << localPath << "<=" << targetPath;
 
-            auto transfer = new FileTransfer(connection, type, path, 0);
-
-            QJsonObject dataObject;
-            dataObject["id"] = transfer->id;
-            dataObject["type"] = type;
-            dataObject["port"] = transfer->serverPort();
-            dataObject["path"] = targetPath;
-
-            connection->send("transferFile", dataObject);
+            int size = 0;
+            startFileTransfer(1, localPath, targetPath, size);
         });
         downloadAction->setEnabled(selectedCount == 1);
     }
@@ -559,27 +592,18 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
     bool isDir = index.data(Qt::UserRole + 2).toBool();
 
     for (const QUrl &url : urls) {
-        auto type = 2; // 收是1，发是2
-        auto path = url.toLocalFile();
-        auto size = Tools::getFileSize(path);
+        auto localPath = url.toLocalFile();
+        auto size = Tools::getFileSize(localPath);
         if (size == -1) {
-            qCriticalEx() << path << "=>" << targetPath;
+            qCriticalEx() << localPath << "=>" << targetPath;
             continue;
         }
 
-        qDebugEx() << path << "=>" << targetPath;
+        qDebugEx() << localPath << "=>" << targetPath;
 
         auto dir = isDir ? targetPath : targetPath.left(targetPath.lastIndexOf('/'));
-        auto transfer = new FileTransfer(connection, type, path, size);
 
-        QJsonObject dataObject;
-        dataObject["id"] = transfer->id;
-        dataObject["type"] = type;
-        dataObject["port"] = transfer->serverPort();
-        dataObject["path"] = dir + QString("/") + QFileInfo(path).fileName();
-        dataObject["size"] = size;
-
-        connection->send("transferFile", dataObject);
+        startFileTransfer(2, localPath, dir + QString("/") + QFileInfo(localPath).fileName(), size);
     }
 
     fetchDirectoryContents(index);

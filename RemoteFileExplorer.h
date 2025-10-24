@@ -54,6 +54,7 @@ protected:
     QStandardItem* findItemByPath(const QString &path);
     QStandardItem* findItemByPathRecursive(QStandardItem* parentItem, const QStringList &pathParts);
     void onDirectoryExpanded(const QModelIndex &index);
+    void startFileTransfer(int type, const QString &localPath, const QString &remotePath, int size);
     void keyPressEvent(QKeyEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;

@@ -20,6 +20,8 @@ public:
     {
         qDebugEx() << "FileTransfer" << path << type;
 
+        timer.start();
+
         if (connection->type != DeviceConnection::Usb)
         {
             tcpServer = new QTcpServer(this);
@@ -66,6 +68,13 @@ public:
     quint16 serverPort() {
         return tcpServer ? tcpServer->serverPort() : 0;
     }
+
+    quint64 elapsedTime() const {
+        return timer.elapsed() / 1000;
+    }
+
+signals:
+    void progressUpdated(quint64 transferred, quint64 total);
 
 protected:
     void onNewConnection()
@@ -118,6 +127,8 @@ protected:
                 auto buffer = sendFile.read(4096);
                 QMetaObject::invokeMethod(this, [=]() {
                     transferConnection->write(buffer);
+                    transferredBytes += buffer.size();
+                    emit progressUpdated(transferredBytes, size);
                 });
             }
 
@@ -129,14 +140,13 @@ protected:
     void handleDataRead(const QByteArray& data)
     {
         buffer.append(data);
-        
+
         if (type == 1) {
             if (size == 0) {
-                if (buffer.size() < 8)
-                    return;
-
+                if (buffer.size() < 8) return;
                 size = *reinterpret_cast<quint64 *>(buffer.data());
                 buffer.remove(0, 8);
+
                 qDebugEx() << "文件大小" << size;
 
                 if (buffer.size() == 0)
@@ -144,17 +154,17 @@ protected:
             }
 
             recvFile.write(buffer);
+            transferredBytes += buffer.size();
             buffer.clear();
+            emit progressUpdated(transferredBytes, size);
 
             if (recvFile.size() == size) {
                 recvFile.close();
                 transferConnection->close();
                 qDebugEx() << path << "接收完成断开连接";
             }
-        }
-        else {
-            while (buffer.size() >= 8)
-            {
+        } else {
+            while (buffer.size() >= 8) {
                 auto bytesSent = *reinterpret_cast<quint64 *>(buffer.data());
                 buffer.remove(0, 8);
 
@@ -166,10 +176,9 @@ protected:
         }
     }
 
-private:
-    DeviceConnection* connection;
-    int type;
-    QString path;
+    DeviceConnection* const connection;
+    const int type;
+    const QString path;
     quint64 size;
 
     QByteArray buffer;
@@ -177,4 +186,7 @@ private:
 
     QTcpServer *tcpServer = nullptr;
     DeviceConnection* transferConnection = nullptr;
+
+    QElapsedTimer timer;
+    quint64 transferredBytes = 0;
 };
