@@ -28,6 +28,12 @@ public:
             // 选择最小的缩放比例，保证宽高都不会超过屏幕
             scaleFactor = std::min(maxWidth / screenWidth, maxHeight / screenHeight);
         }
+
+        allDevices.append(this);
+    }
+
+    ~DeviceInfo() {
+        allDevices.remove(this);
     }
 
     const QString deviceId;
@@ -62,6 +68,19 @@ public:
             .arg(version);
     }
 
+    QString uniqueName() const {
+        int sameCount = 0;
+        for (auto dev : allDevices) {
+            if (dev->deviceName == deviceName)
+                sameCount++;
+        }
+
+        if (sameCount == 1)
+            return deviceName;
+        
+        return QString("%1_%2").arg(deviceName, deviceId);
+    }
+
     friend QDebug operator<<(QDebug dbg, const DeviceInfo* deviceInfo)
     {
         if (deviceInfo)
@@ -71,4 +90,7 @@ public:
 
         return dbg;
     }
+
+private:
+    static QList<DeviceInfo*> allDevices;
 };
