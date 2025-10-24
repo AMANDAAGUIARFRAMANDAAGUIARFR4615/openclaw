@@ -462,18 +462,24 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
     }
     else
     {
+        auto localPath = QDir::homePath() + "/Desktop/" + connection->deviceInfo->deviceName + "/" + QFileInfo(targetPath).fileName();
+
+        QString dirPath = QFileInfo(localPath).absolutePath();
+
+        QDir dir;
+        if (!dir.exists(dirPath))
+            dir.mkpath(dirPath);
+
         QAction *viewAction = new QAction("查看", &contextMenu);
         contextMenu.addAction(viewAction);
         connect(viewAction, &QAction::triggered, this, [=]() {
-            auto path = QDir::homePath() + "/Desktop/" + QFileInfo(targetPath).fileName();
-
-            if (!QFile::exists(path))
+            if (!QFile::exists(localPath))
             {
                 new ToastWidget("文件不存在，请先下载", this);
                 return;
             }
 
-            QFile file(path);
+            QFile file(localPath);
             if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 auto textEdit = new QTextEdit();
                 textEdit->resize(size());
@@ -486,8 +492,6 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
         QAction *downloadAction = new QAction("下载", &contextMenu);
         contextMenu.addAction(downloadAction);
         connect(downloadAction, &QAction::triggered, this, [=]() {
-            auto localPath = QDir::homePath() + "/Desktop/" + QFileInfo(targetPath).fileName();
-
             qDebugEx() << localPath << "<=" << targetPath;
 
             startFileTransfer(1, localPath, targetPath, 0);

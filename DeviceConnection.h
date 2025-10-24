@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Logger.h"
+#include "DeviceInfo.h"
 #include <QByteArray>
 #include <QJsonObject>
 #include <QTcpSocket>
@@ -25,10 +26,12 @@ public:
     void write(const QByteArray &byteArray);
     void close();
 
-    bool operator==(const DeviceConnection &other) const;
+    bool operator==(const DeviceConnection& other) const;
     bool operator!=(const DeviceConnection& other) const;
 
     const Type type;
+
+    DeviceInfo* deviceInfo;
 
 private:
     QTcpSocket *tcpSocket;

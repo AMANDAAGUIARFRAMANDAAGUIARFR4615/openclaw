@@ -116,6 +116,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     EventHub::StartListening("deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         auto deviceInfo = new DeviceInfo(data.toObject());
+        connection->deviceInfo = deviceInfo;
         addItem(connection, deviceInfo);
     });
 }
