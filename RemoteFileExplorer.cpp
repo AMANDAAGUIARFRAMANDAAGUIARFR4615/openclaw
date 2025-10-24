@@ -396,6 +396,13 @@ void RemoteFileExplorer::keyPressEvent(QKeyEvent *event)
 
 void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
 {
+    QPoint localPos = treeView->viewport()->mapFromGlobal(event->globalPos());
+    if (!treeView->viewport()->rect().contains(localPos)) {
+        // 不在 treeView 区域，忽略上下文菜单
+        event->ignore();
+        return;
+    }
+
     QMenu contextMenu(this);
 
     QModelIndexList selectedIndexes = treeView->selectionModel()->selectedIndexes();
