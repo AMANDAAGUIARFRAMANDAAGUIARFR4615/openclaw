@@ -5,6 +5,7 @@
 #include "Tools.h"
 #include "FileTransfer.h"
 #include "ToastWidget.h"
+#include "CenterAlignDelegate.h"
 #include <QVBoxLayout>
 #include <QNetworkReply>
 #include <QJsonDocument>
@@ -117,6 +118,8 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     transferTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     transferTable->setFixedHeight(180);
     transferTable->setAlternatingRowColors(true);
+    
+    transferTable->setItemDelegate(new CenterAlignDelegate(transferTable));
 
     layout->addWidget(transferLabel);
     layout->addWidget(transferTable);

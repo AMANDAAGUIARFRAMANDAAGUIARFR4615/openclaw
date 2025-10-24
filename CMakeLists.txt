@@ -26,7 +26,7 @@ link_directories(${PLATFORM_DIR}/libimobiledevice-glue/lib)
 qt_add_resources(RESOURCE_SOURCES icons.qrc)
 
 add_executable(${PROJECT_NAME}
-    main.cpp Tools.h
+    main.cpp Tools.h CenterAlignDelegate.h
     Logger.h LogWindow.h
     EventHub.h EventHub.cpp
     LiveStreamDevice.h
