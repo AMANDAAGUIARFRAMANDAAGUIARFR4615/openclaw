@@ -32,7 +32,7 @@ add_executable(${PROJECT_NAME}
     LiveStreamDevice.h
     MainWindow.h MainWindow.cpp
     VideoFrameWidget.h
-    DeviceInfo.h
+    DeviceInfo.h DeviceInfo.cpp
     UsbDeviceManager.h UsbDeviceManager.cpp
     DeviceConnection.h DeviceConnection.cpp
     DeviceView.h DeviceView.cpp
