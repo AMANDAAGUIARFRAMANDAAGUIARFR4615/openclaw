@@ -112,11 +112,17 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     transferTable = new QTableWidget(this);
     transferTable->setColumnCount(8);
     transferTable->setHorizontalHeaderLabels({ "名称", "状态", "进度", "大小", "本地路径", "远程路径", "速度", "用时" });
-    transferTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     transferTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     transferTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     transferTable->setFixedHeight(180);
     transferTable->setAlternatingRowColors(true);
+
+    for (int i = 0; i < transferTable->columnCount(); i++) {
+        if (i == 0 || i == 4 || i == 5)
+            transferTable->horizontalHeader()->setSectionResizeMode(i, QHeaderView::Stretch);
+        else
+            transferTable->horizontalHeader()->setSectionResizeMode(i, QHeaderView::ResizeToContents);
+    }
 
     layout->addWidget(transferLabel);
     layout->addWidget(transferTable);
