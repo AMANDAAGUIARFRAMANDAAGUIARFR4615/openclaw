@@ -15,7 +15,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    void addItem(DeviceConnection* connection = nullptr, DeviceInfo* deviceInfo = nullptr);
+    void addItem(DeviceConnection* connection = nullptr);
 
 protected:
     void closeEvent(QCloseEvent *event) override;

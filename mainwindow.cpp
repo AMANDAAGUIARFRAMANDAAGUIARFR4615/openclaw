@@ -115,9 +115,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
 
     EventHub::StartListening("deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
-        auto deviceInfo = new DeviceInfo(data.toObject());
-        connection->deviceInfo = deviceInfo;
-        addItem(connection, deviceInfo);
+        connection->deviceInfo = new DeviceInfo(data.toObject());
+        addItem(connection);
     });
 }
 
@@ -162,8 +161,9 @@ void MainWindow::onTabClicked(int index)
     }
 }
 
-void MainWindow::addItem(DeviceConnection* connection, DeviceInfo* deviceInfo)
+void MainWindow::addItem(DeviceConnection* connection)
 {
+    auto deviceInfo = connection->deviceInfo;
     auto url = deviceInfo ? QString("tcp://%1:%2").arg(deviceInfo->localIp).arg(deviceInfo->videoPort) : nullptr;
 
     LiveStreamDevice* liveStreamDevice = nullptr;
