@@ -5,7 +5,6 @@
 #include "Tools.h"
 #include "FileTransfer.h"
 #include "ToastWidget.h"
-#include "CenterAlignDelegate.h"
 #include <QVBoxLayout>
 #include <QNetworkReply>
 #include <QJsonDocument>
@@ -118,8 +117,6 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     transferTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     transferTable->setFixedHeight(180);
     transferTable->setAlternatingRowColors(true);
-    
-    transferTable->setItemDelegate(new CenterAlignDelegate(transferTable));
 
     layout->addWidget(transferLabel);
     layout->addWidget(transferTable);
@@ -322,18 +319,31 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
     int row = transferTable->rowCount();
     transferTable->insertRow(row);
 
-    transferTable->setItem(row, 0, new QTableWidgetItem(QFileInfo(localPath).fileName()));
-    transferTable->setItem(row, 1, new QTableWidgetItem(type == 1 ? "接收中" : "发送中"));
-    transferTable->setItem(row, 2, new QTableWidgetItem("0%"));
-    transferTable->setItem(row, 3, new QTableWidgetItem(Tools::formatByteSize(size)));
-    transferTable->setItem(row, 4, new QTableWidgetItem(localPath));
-    transferTable->setItem(row, 5, new QTableWidgetItem(remotePath));
-    transferTable->setItem(row, 6, new QTableWidgetItem("0 B/s"));
-    transferTable->setItem(row, 7, new QTableWidgetItem("0 s"));
+    QStringList texts = {
+        QFileInfo(localPath).fileName(),
+        type == 1 ? "接收中" : "发送中",
+        "0%",
+        "",
+        localPath,
+        remotePath,
+        "0 B/s",
+        "0 s"
+    };
+
+    for (int col = 0; col < texts.size(); ++col) {
+        auto item = new QTableWidgetItem(texts[col]);
+        item->setTextAlignment(Qt::AlignCenter);
+
+        if (col == 0 || col == 4 || col == 5)
+            item->setToolTip(texts[col]);
+
+        transferTable->setItem(row, col, item);
+    }
 
     connect(transfer, &FileTransfer::progressUpdated, this, [=](quint64 transferred, quint64 total) {
         double percent = (double)transferred / total * 100;
         transferTable->item(row, 2)->setText(QString::number(percent, 'f', 1) + "%");
+        transferTable->item(row, 3)->setText(QString("%1/%2").arg(Tools::formatByteSize(transferred)).arg(Tools::formatByteSize(total)));
 
         double elapsed = transfer->elapsedTime();
         transferTable->item(row, 6)->setText(Tools::formatByteSize(transferred / elapsed) + "/s");
@@ -468,8 +478,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
 
             qDebugEx() << localPath << "<=" << targetPath;
 
-            int size = 0;
-            startFileTransfer(1, localPath, targetPath, size);
+            startFileTransfer(1, localPath, targetPath, 0);
         });
         downloadAction->setEnabled(selectedCount == 1);
     }
