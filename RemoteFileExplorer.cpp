@@ -110,7 +110,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
 
     transferTable = new QTableWidget(this);
     transferTable->setColumnCount(8);
-    transferTable->setHorizontalHeaderLabels({ "名称", "状态", "进度", "大小", "本地路径", "远程路径", "速度", "用时" });
+    transferTable->setHorizontalHeaderLabels({ "名称", "状态", "进度", "大小", "本地路径", "远程路径", "平均速度", "用时" });
     transferTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     transferTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     transferTable->setFixedHeight(180);
