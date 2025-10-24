@@ -69,8 +69,8 @@ public:
         return tcpServer ? tcpServer->serverPort() : 0;
     }
 
-    quint64 elapsedTime() const {
-        return timer.elapsed() / 1000;
+    double elapsedTime() const {
+        return timer.elapsed() / 1000.0;
     }
 
 signals:
@@ -125,11 +125,14 @@ protected:
             while (!sendFile.atEnd())
             {
                 auto buffer = sendFile.read(4096);
-                QMetaObject::invokeMethod(this, [=]() {
+                if (connection->type == DeviceConnection::Usb) {
                     transferConnection->write(buffer);
-                    transferredBytes += buffer.size();
-                    emit progressUpdated(transferredBytes, size);
-                });
+                }
+                else {
+                    QMetaObject::invokeMethod(this, [=]() {
+                        transferConnection->write(buffer);
+                    });
+                }
             }
 
             sendFile.close();
@@ -167,6 +170,9 @@ protected:
             while (buffer.size() >= 8) {
                 auto bytesSent = *reinterpret_cast<quint64 *>(buffer.data());
                 buffer.remove(0, 8);
+
+                transferredBytes = bytesSent;
+                emit progressUpdated(transferredBytes, size);
 
                 if (bytesSent == size) {
                     transferConnection->close();

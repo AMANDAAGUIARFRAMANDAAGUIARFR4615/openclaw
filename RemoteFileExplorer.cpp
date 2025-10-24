@@ -332,9 +332,9 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
         double percent = (double)transferred / total * 100;
         transferTable->item(row, 2)->setText(QString::number(percent, 'f', 1) + "%");
 
-        quint64 elapsed = transfer->elapsedTime();
-        transferTable->item(row, 6)->setText(Tools::formatByteSize(transferred / (elapsed + 1)) + "/s");
-        transferTable->item(row, 7)->setText(QString::number(elapsed) + " s");
+        double elapsed = transfer->elapsedTime();
+        transferTable->item(row, 6)->setText(Tools::formatByteSize(transferred / elapsed) + "/s");
+        transferTable->item(row, 7)->setText(QString::number(elapsed, 'f', 2) + " s");
 
         if (transferred == total) {
             transferTable->item(row, 1)->setText(type == 1 ? "接收完成" : "发送完成");
