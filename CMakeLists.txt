@@ -45,6 +45,7 @@ add_executable(${PROJECT_NAME}
     NetworkUtils.h
     RemoteFileExplorer.h RemoteFileExplorer.cpp FileTransfer.h
     AppListWidget.h AppListWidget.cpp
+    Recorder.h
     ${RESOURCE_SOURCES}
 )
 

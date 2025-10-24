@@ -27,39 +27,43 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 
     layout->addWidget(videoFrameWidget);
 
-    QVBoxLayout *buttonLayout = new QVBoxLayout();
+    auto buttonLayout = new QVBoxLayout();
     buttonLayout->setContentsMargins(5, 5, 5, 5);
     buttonLayout->setSpacing(5);
 
-    QPushButton *homeScreenButton = new QPushButton(QIcon(":/icons/home.png"), "主屏幕", this);
+    auto homeScreenButton = new QPushButton(QIcon(":/icons/home.png"), "主屏幕", this);
     connect(homeScreenButton, &QPushButton::clicked, this, &DeviceView::onHomeScreenClicked);
     buttonLayout->addWidget(homeScreenButton);
 
-    QPushButton *centerControllerButton = new QPushButton(QIcon(":/icons/dashboard.png"), "控制中心", this);
+    auto centerControllerButton = new QPushButton(QIcon(":/icons/dashboard.png"), "控制中心", this);
     connect(centerControllerButton, &QPushButton::clicked, this, &DeviceView::onCenterControllerClicked);
     buttonLayout->addWidget(centerControllerButton);
 
-    QPushButton *appSwitcherButton = new QPushButton(QIcon(":/icons/flip_to_front.png"), "应用切换", this);
+    auto appSwitcherButton = new QPushButton(QIcon(":/icons/flip_to_front.png"), "应用切换", this);
     connect(appSwitcherButton, &QPushButton::clicked, this, &DeviceView::onAppSwitcherClicked);
     buttonLayout->addWidget(appSwitcherButton);
 
-    QPushButton *killAllAppButton = new QPushButton(QIcon(":/icons/kill.png"), "清理应用", this);
+    auto killAllAppButton = new QPushButton(QIcon(":/icons/kill.png"), "清理应用", this);
     connect(killAllAppButton, &QPushButton::clicked, this, &DeviceView::onKillAllAppClicked);
     buttonLayout->addWidget(killAllAppButton);
 
-    QPushButton *fileButton = new QPushButton(QIcon(":/icons/file_move.png"), "文件管理", this);
+    auto fileButton = new QPushButton(QIcon(":/icons/file_move.png"), "文件管理", this);
     connect(fileButton, &QPushButton::clicked, this, &DeviceView::onFileClicked);
     buttonLayout->addWidget(fileButton);
 
-    QPushButton *appListButton = new QPushButton(QIcon(":/icons/apps.png"), "应用列表", this);
+    auto recorderButton = new QPushButton(QIcon(":/icons/screen_record.png"), "录屏", this);
+    connect(recorderButton, &QPushButton::clicked, this, &DeviceView::onRecorderClicked);
+    buttonLayout->addWidget(recorderButton);
+
+    auto appListButton = new QPushButton(QIcon(":/icons/apps.png"), "应用列表", this);
     connect(appListButton, &QPushButton::clicked, this, &DeviceView::onAppListClicked);
     buttonLayout->addWidget(appListButton);
 
-    QPushButton *screenshotButton = new QPushButton(QIcon(":/icons/screenshot.png"), "截图", this);
+    auto screenshotButton = new QPushButton(QIcon(":/icons/screenshot.png"), "截图", this);
     connect(screenshotButton, &QPushButton::clicked, this, &DeviceView::onScreenshotClicked);
     buttonLayout->addWidget(screenshotButton);
 
-    QPushButton *restartButton = new QPushButton(QIcon(":/icons/restart.png"), "重启", this);
+    auto restartButton = new QPushButton(QIcon(":/icons/restart.png"), "重启", this);
     connect(restartButton, &QPushButton::clicked, this, &DeviceView::onRebootClicked);
     buttonLayout->addWidget(restartButton);
 

@@ -24,6 +24,7 @@ public:
     void onKillAllAppClicked();
     void onAppSwitcherClicked();
     void onFileClicked();
+    void onRecorderClicked();
     void onAppListClicked();
     void onScreenshotClicked();
     void onRebootClicked();

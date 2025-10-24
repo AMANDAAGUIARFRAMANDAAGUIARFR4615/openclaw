@@ -124,7 +124,7 @@ protected:
 
             while (!sendFile.atEnd())
             {
-                auto buffer = sendFile.read(4096);
+                auto buffer = sendFile.read(65536);
                 if (connection->type == DeviceConnection::Usb) {
                     transferConnection->write(buffer);
                 }

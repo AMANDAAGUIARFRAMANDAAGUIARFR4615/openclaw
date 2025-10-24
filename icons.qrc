@@ -18,5 +18,6 @@
         <file>icons/flip_to_front.png</file>
         <file>icons/kill.png</file>
         <file>icons/apps.png</file>
+        <file>icons/screen_record.png</file>
     </qresource>
 </RCC>
