@@ -44,7 +44,6 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     quickAccessList = new QListWidget(this);
     quickAccessList->setFixedHeight(120);
     quickAccessList->setSelectionMode(QAbstractItemView::SingleSelection);
-    quickAccessList->setStyleSheet("QListWidget { background-color: #f7f7f7; border: 1px solid #ccc; }");
 
     treeView = new QTreeView(this);
     QFont font = treeView->font();
