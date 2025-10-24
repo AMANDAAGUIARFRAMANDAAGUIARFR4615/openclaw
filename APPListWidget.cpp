@@ -77,11 +77,9 @@ void AppListWidget::setupTable()
     table->setColumnWidth(1, 120);
     table->setColumnWidth(2, 200);
 
-    // 列伸缩策略
-    table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
+    table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
-    table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Interactive);
-    table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
+    table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
 
     // 表格样式（仅行间隔颜色）
     table->setStyleSheet(R"(
