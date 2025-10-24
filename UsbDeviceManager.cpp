@@ -52,9 +52,13 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
     }
 
     ctx->handler = new DeviceConnection(ctx->connection);
-    ctx->handler->send("deviceInfo", QJsonObject{
-        {"remoteDeviceName", QHostInfo::localHostName()}
-    });
+
+    if (!rawDataCallback)
+    {
+        ctx->handler->send("deviceInfo", QJsonObject{
+            {"remoteDeviceName", QHostInfo::localHostName()}
+        });
+    }
 
     int fd = -1;
     if (idevice_connection_get_fd(ctx->connection, &fd) == IDEVICE_E_SUCCESS && fd >= 0) {
