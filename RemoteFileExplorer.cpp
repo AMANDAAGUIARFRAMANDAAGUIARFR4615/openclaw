@@ -322,7 +322,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
     transferTable->setItem(row, 0, new QTableWidgetItem(QFileInfo(localPath).fileName()));
     transferTable->setItem(row, 1, new QTableWidgetItem(type == 1 ? "接收中" : "发送中"));
     transferTable->setItem(row, 2, new QTableWidgetItem("0%"));
-    transferTable->setItem(row, 3, new QTableWidgetItem(size));
+    transferTable->setItem(row, 3, new QTableWidgetItem(Tools::formatByteSize(size)));
     transferTable->setItem(row, 4, new QTableWidgetItem(localPath));
     transferTable->setItem(row, 5, new QTableWidgetItem(remotePath));
     transferTable->setItem(row, 6, new QTableWidgetItem("0 B/s"));
