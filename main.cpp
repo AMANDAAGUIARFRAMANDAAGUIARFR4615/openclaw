@@ -60,9 +60,6 @@ int main(int argc, char *argv[])
             onDataReceived(connection, jsonObject);
         }, onClientDisconnected, onError);
 
-    qDebugEx() << QOperatingSystemVersion::current();
-    qDebugEx() << QOperatingSystemVersion::current().type();
-
     // if (QOperatingSystemVersion::current().type() == QOperatingSystemVersion::Windows || QOperatingSystemVersion::current().type() == QOperatingSystemVersion::MacOS) {
         auto manager = UsbDeviceManager::instance();
 
