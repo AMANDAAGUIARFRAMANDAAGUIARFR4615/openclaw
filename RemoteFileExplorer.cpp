@@ -235,17 +235,18 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
         auto obj = value.toObject();
         auto name = obj["name"].toString();
         auto type = obj["type"].toString();
+
+        auto isDirectory = type == "NSFileTypeDirectory" || type == "NSFileTypeSymbolicLink";
+
         auto symbolicLink = obj["symbolicLink"].toString();
         auto myPath = path + '/' + name;
         if (path.endsWith('/')) myPath = path + name;
 
-        auto date = obj["date"].toString();
-        auto size = obj["size"].toInt();
+        auto date = isDirectory ? "" : obj["date"].toString();
+        auto size = isDirectory ? -1 : obj["size"].toInteger();
 
         auto item = new QStandardItem(name);
         item->setData(myPath, Qt::UserRole);
-
-        auto isDirectory = type == "NSFileTypeDirectory" || type == "NSFileTypeSymbolicLink";
 
         if (isDirectory) {
             item->setIcon(QIcon(symbolicLink.isEmpty() ? ":/icons/folder.png" : ":/icons/folder_link.png"));

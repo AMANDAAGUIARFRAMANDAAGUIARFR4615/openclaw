@@ -45,7 +45,9 @@ public:
         return file.size();
     }
 
-    static QString formatByteSize(quint64 size) {
+    static QString formatByteSize(qint64 size) {
+        if (size < 0)
+            return "";
         if (size < 1024)
             return QString::number(size) + " B";
         if (size < 1024 * 1024)
