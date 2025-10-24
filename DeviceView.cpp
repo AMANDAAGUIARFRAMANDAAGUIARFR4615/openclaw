@@ -238,16 +238,16 @@ void DeviceView::dropEvent(QDropEvent *event)
 
     for (const QUrl& url : urls) {
         auto type = 2; // 收是1，发是2
-        auto path = url.toLocalFile();
-        auto size = Tools::getFileSize(path);
+        auto localPath = url.toLocalFile();
+        auto size = Tools::getFileSize(localPath);
         
-        auto transfer = new FileTransfer(connection, type, path, size);
+        auto transfer = new FileTransfer(connection, type, localPath, size);
 
         QJsonObject dataObject;
         dataObject["id"] = transfer->id;
         dataObject["type"] = type;
         dataObject["port"] = transfer->serverPort();
-        dataObject["name"] = QFileInfo(path).fileName();
+        dataObject["name"] = QFileInfo(localPath).fileName();
         dataObject["size"] = size;
 
         connection->send("transferFile", dataObject);
