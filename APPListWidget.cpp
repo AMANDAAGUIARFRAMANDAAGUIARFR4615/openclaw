@@ -80,23 +80,6 @@ void AppListWidget::setupTable()
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
     table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
-
-    // 表格样式（仅行间隔颜色）
-    table->setStyleSheet(R"(
-        QTableWidget {
-            border: 1px solid #DADCE0;
-            border-radius: 8px;
-            background: white;
-            alternate-background-color: #F9FAFB; /* 行间隔色 */
-        }
-        QTableWidget::item {
-            padding: 6px;
-        }
-        QTableWidget::item:selected {
-            background-color: #D0E9FF;
-            color: #000;
-        }
-    )");
 }
 
 void AppListWidget::addApp(const QString &iconBase64, const QString &appName, const QString &packageName)
@@ -133,7 +116,6 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
     iconLabel->setAttribute(Qt::WA_TranslucentBackground);
     iconLabel->setPixmap(rounded);
     iconLabel->setAlignment(Qt::AlignCenter);
-    iconLabel->setStyleSheet("background: transparent;");
     table->setCellWidget(row, 0, iconLabel);
 
     // 应用名
@@ -175,7 +157,6 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
     for (int i = 0; i < btnNames.size(); ++i) {
         const QString &name = btnNames[i];
         QPushButton *btn = new QPushButton(name);
-        btn->setStyleSheet(btnStyle + "QPushButton { background-color: #5CB85C; }");
         layout->addWidget(btn);
 
         connect(btn, &QPushButton::clicked, this, [=](bool) {
