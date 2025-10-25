@@ -14,6 +14,7 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QOperatingSystemVersion>
+#include <QApplication>
 
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(connection, deviceInfo), deviceWidget(deviceWidget)
 {
@@ -22,6 +23,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     videoFrameWidget = deviceWidget->getVideoFrameWidget();
 
     QHBoxLayout *layout = new QHBoxLayout(this);
+    layout->setSizeConstraint(QLayout::SetFixedSize);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 

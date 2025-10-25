@@ -32,10 +32,6 @@ void UsbDeviceManager::stop() {
 
 DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t port, std::function<void(DeviceConnection*, const QByteArray&)> rawDataCallback) {
     QString key = udid + ":" + QString::number(port);
-    if (devices.contains(key)) {
-        qDebug() << "⚠️ 已存在连接:" << key;
-        return devices[key]->handler;
-    }
 
     UsbDeviceContext* ctx = new UsbDeviceContext();
     ctx->udid = udid;

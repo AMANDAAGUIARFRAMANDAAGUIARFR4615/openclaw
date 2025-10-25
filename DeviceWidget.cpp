@@ -4,6 +4,7 @@
 #include "ToastWidget.h"
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QApplication>
 #include <QClipboard>
 
 DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo): DeviceView(connection, deviceInfo)
