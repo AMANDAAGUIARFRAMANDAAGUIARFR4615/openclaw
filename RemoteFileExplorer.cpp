@@ -44,6 +44,17 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     quickAccessList = new QListWidget(this);
     quickAccessList->setFixedHeight(120);
     quickAccessList->setSelectionMode(QAbstractItemView::SingleSelection);
+    quickAccessList->setDragDropMode(QAbstractItemView::InternalMove);
+
+    // 当顺序改变时，更新 favorites
+    connect(quickAccessList->model(), &QAbstractItemModel::rowsMoved, this, [this](const QModelIndex &, int, int, const QModelIndex &, int){
+        QStringList newOrder;
+        for (int i = 1; i < quickAccessList->count(); i++) {
+            newOrder.append(quickAccessList->item(i)->text());
+        }
+        favorites = newOrder;
+        saveFavorites();
+    });
 
     treeView = new QTreeView(this);
     QFont font = treeView->font();
