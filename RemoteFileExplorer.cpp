@@ -471,6 +471,22 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
         });
 
         compressAction->setEnabled(selectedCount == 1);
+
+        QAction *createAction = new QAction("新建文件夹", &contextMenu);
+        contextMenu.addAction(createAction);
+        connect(createAction, &QAction::triggered, this, [=]() {
+            bool ok;
+            auto name = QInputDialog::getText(this, "新建文件夹", "请输入名称:", QLineEdit::Normal, "", &ok);
+            
+            if (!ok || name.isEmpty())
+                return;
+
+            setStatusMessage("新建文件夹: " + name);
+
+            connection->send("createDirectory", targetPath + "/" + name);
+            fetchDirectoryContents(index);
+        });
+        createAction->setEnabled(selectedCount == 1);
     }
     else
     {
@@ -509,6 +525,18 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
             startFileTransfer(1, localPath, targetPath, 0);
         });
         downloadAction->setEnabled(selectedCount == 1);
+
+        if (targetPath.endsWith(".zip") || targetPath.endsWith(".rar")) {
+            QAction *extractAction = new QAction("解压", &contextMenu);
+            contextMenu.addAction(extractAction);
+            connect(extractAction, &QAction::triggered, this, [=]() {
+                setStatusMessage("解压: " + targetPath);
+
+                connection->send("extractArchive", targetPath);
+                fetchDirectoryContents(index.parent());
+            });
+            extractAction->setEnabled(selectedCount == 1);
+        }
     }
 
     QAction *renameAction = new QAction("重命名", &contextMenu);
@@ -530,22 +558,6 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
         fetchDirectoryContents(index.parent());
     });
     renameAction->setEnabled(selectedCount == 1);
-
-    QAction *createAction = new QAction("新建文件夹", &contextMenu);
-    contextMenu.addAction(createAction);
-    connect(createAction, &QAction::triggered, this, [=]() {
-        bool ok;
-        auto name = QInputDialog::getText(this, "新建文件夹", "请输入名称:", QLineEdit::Normal, "", &ok);
-        
-        if (!ok || name.isEmpty())
-            return;
-
-        setStatusMessage("新建文件夹: " + name);
-
-        connection->send("createDirectory", targetPath + "/" + name);
-        fetchDirectoryContents(index);
-    });
-    createAction->setEnabled(selectedCount == 1);
 
     QAction *deleteAction = new QAction("删除", &contextMenu);
     contextMenu.addAction(deleteAction);
@@ -571,18 +583,6 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
         QClipboard *clipboard = QApplication::clipboard();
         clipboard->setText(targetPath);
     });
-
-    if (targetPath.endsWith(".zip") || targetPath.endsWith(".rar")) {
-        QAction *extractAction = new QAction("解压", &contextMenu);
-        contextMenu.addAction(extractAction);
-        connect(extractAction, &QAction::triggered, this, [=]() {
-            setStatusMessage("解压: " + targetPath);
-
-            connection->send("extractArchive", targetPath);
-            fetchDirectoryContents(index.parent());
-        });
-        extractAction->setEnabled(selectedCount == 1);
-    }
 
     contextMenu.exec(event->globalPos());
 }
