@@ -91,6 +91,11 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
 {
     QWidget::mouseDoubleClickEvent(event);
 
+    if (deviceWindow) {
+        deviceWindow->activateWindow();
+        return;
+    }
+
     if (overlay->isVisible())
     {
         new ToastWidget("需要先解锁才能控制", this);
