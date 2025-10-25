@@ -50,6 +50,7 @@ public:
         treeView->setModel(filterModel);
         QModelIndex rootIndex = fileSystemModel->index(QDir::currentPath());
         treeView->setRootIndex(filterModel->mapFromSource(rootIndex));
+        treeView->setColumnHidden(2, true);
 
         layout->addWidget(treeView);
         setLayout(layout);
