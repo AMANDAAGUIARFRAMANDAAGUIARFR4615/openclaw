@@ -7,6 +7,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QDateTime>
+#include <QDir>
 
 class LogWindow : public QTextBrowser
 {
