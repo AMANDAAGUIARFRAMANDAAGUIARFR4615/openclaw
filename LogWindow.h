@@ -17,7 +17,7 @@ public:
         logWindow = this;
         setVisible(false);
 
-        logFile.setFileName("app_log.txt");
+        logFile.setFileName(QDir::homePath() + "/Desktop/app_log.txt");
         if (!logFile.open(QIODevice::Append | QIODevice::Text)) {
             append("<span style='color:red;'>无法打开日志文件！</span>");
         }
