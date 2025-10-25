@@ -8,6 +8,8 @@
 #include <QHostInfo>
 #include <QJsonObject>
 #include <libimobiledevice/libimobiledevice.h>
+#include <QtConcurrent>
+#include <QFutureWatcher>
 
 class UsbDeviceManager : public QObject {
     Q_OBJECT
@@ -40,6 +42,9 @@ public:
     UsbDeviceManager(UsbDeviceManager&&) = delete;
     UsbDeviceManager& operator=(UsbDeviceManager&&) = delete;
 
+private slots:
+    void handlePollFinished();
+
 private:
     void pollDevices();
     void emitError(DeviceConnection* conn, const QString& msg);
@@ -51,4 +56,6 @@ private:
     QHash<QString, QByteArray> deviceBuffers;
 
     QHash<DeviceConnection*, UsbDeviceContext*> connToContext;
+
+    QFutureWatcher<QSet<QString>>* watcher = nullptr;
 };

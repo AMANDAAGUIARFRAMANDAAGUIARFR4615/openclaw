@@ -13,6 +13,9 @@ UsbDeviceManager::UsbDeviceManager(QObject* parent)
 {
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &UsbDeviceManager::pollDevices);
+
+    watcher = new QFutureWatcher<QSet<QString>>(this);
+    connect(watcher, &QFutureWatcher<QSet<QString>>::finished, this, &UsbDeviceManager::handlePollFinished);
 }
 
 void UsbDeviceManager::start() {
@@ -112,18 +115,36 @@ void UsbDeviceManager::disconnectDevice(const QString& key) {
 }
 
 void UsbDeviceManager::pollDevices() {
-    char** deviceList = nullptr;
-    int count = 0;
-
-    if (idevice_get_device_list(&deviceList, &count) != IDEVICE_E_SUCCESS) {
-        qWarning() << "⚠️ 获取设备列表失败";
-        return;
+    if (watcher->isRunning()) {
+        return; // 避免多次并发轮询
     }
 
-    QSet<QString> currentDevices;
-    for (int i = 0; i < count; i++) {
-        QString udid = QString::fromUtf8(deviceList[i]);
-        currentDevices.insert(udid);
+    auto future = QtConcurrent::run([=]() -> QSet<QString> {
+        char** deviceList = nullptr;
+        int count = 0;
+
+        if (idevice_get_device_list(&deviceList, &count) != IDEVICE_E_SUCCESS) {
+            qWarning() << "⚠️ 获取设备列表失败";
+            return {};
+        }
+
+        QSet<QString> currentDevices;
+        for (int i = 0; i < count; i++) {
+            QString udid = QString::fromUtf8(deviceList[i]);
+            currentDevices.insert(udid);
+        }
+
+        idevice_device_list_free(deviceList);
+        return currentDevices;
+    });
+
+    watcher->setFuture(future);
+}
+
+void UsbDeviceManager::handlePollFinished() {
+    QSet<QString> currentDevices = watcher->result();
+
+    for (const QString& udid : currentDevices) {
         if (!previousDevices.contains(udid)) {
             qDebug() << "📱 检测到新设备:" << udid;
             connectDevice(udid, 32839);
@@ -143,7 +164,6 @@ void UsbDeviceManager::pollDevices() {
     }
 
     previousDevices = currentDevices;
-    idevice_device_list_free(deviceList);
 }
 
 void UsbDeviceManager::emitError(DeviceConnection* conn, const QString& msg) {
