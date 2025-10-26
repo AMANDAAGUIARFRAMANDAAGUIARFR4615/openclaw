@@ -106,6 +106,10 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
     videoFrameWidgetSize = videoFrameWidget->size();
 
     deviceWindow = new DeviceWindow(connection, deviceInfo, this);
+    connect(deviceWindow, &QObject::destroyed, [this]() {
+        deviceWindow = nullptr;
+    });
+
     videoFrameWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     videoFrameWidget->setFixedSize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
     videoFrameWidget->orientationChanged(deviceInfo->orientation);
