@@ -69,18 +69,13 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     connect(restartButton, &QPushButton::clicked, this, &DeviceView::onRebootClicked);
     buttonLayout->addWidget(restartButton);
 
-    if (deviceInfo->lockedStatus)
-    {
-        QPushButton *unlockButton = new QPushButton(QIcon(":/icons/unlock.png"), "解锁", this);
-        connect(unlockButton, &QPushButton::clicked, this, &DeviceView::onUnlockClicked);
-        buttonLayout->addWidget(unlockButton);
-    }
-    else
-    {
-        QPushButton *lockButton = new QPushButton(QIcon(":/icons/lock.png"), "锁屏", this);
-        connect(lockButton, &QPushButton::clicked, this, &DeviceView::onLockClicked);
-        buttonLayout->addWidget(lockButton);
-    }
+    QPushButton *unlockButton = new QPushButton(QIcon(":/icons/unlock.png"), "解锁", this);
+    connect(unlockButton, &QPushButton::clicked, this, &DeviceView::onUnlockClicked);
+    buttonLayout->addWidget(unlockButton);
+
+    QPushButton *lockButton = new QPushButton(QIcon(":/icons/lock.png"), "锁屏", this);
+    connect(lockButton, &QPushButton::clicked, this, &DeviceView::onLockClicked);
+    buttonLayout->addWidget(lockButton);
     
     buttonLayout->addStretch();
 
