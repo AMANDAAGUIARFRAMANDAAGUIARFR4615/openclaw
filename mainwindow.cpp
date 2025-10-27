@@ -21,8 +21,8 @@
 #include <QListWidgetItem>
 #include <QStyle>
 #include <QIcon>
-#include <QScrollArea>
 #include <QTimer>
+#include <cmath>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
@@ -31,9 +31,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     auto splitter = new QSplitter(Qt::Horizontal, this);
     splitter->setStyleSheet("QSplitter::handle {"
-                            "background-color: #B0B0B0;"
-                            "width: 1px;"
-                            "}");
+                           "background-color: #B0B0B0;"
+                           "width: 1px;"
+                           "}");
 
     // 左侧导航栏
     auto sideBarWidget = new QWidget(this);
@@ -51,7 +51,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     auto style = sideBarWidget->style();
 
-    // auto item1 = new QListWidgetItem(QIcon::fromTheme("user-home"), "");
     auto item1 = new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_DesktopIcon)), "");
     item1->setToolTip("提示1");
     auto item2 = new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_ComputerIcon)), "");
@@ -71,40 +70,31 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     // 右侧区域
     auto rightWidget = new QWidget(this);
+    rightWidget->setObjectName("rightWidget");
     auto rightLayout = new QVBoxLayout(rightWidget);
+    rightLayout->setContentsMargins(0, 0, 0, 0);
+    rightLayout->setSpacing(0);
 
-    // 上方 Tab 区域
+    // Tab 区域
     auto tabWidget = new QTabWidget(this);
     auto tab1 = new QWidget();
     auto tab2 = new QWidget();
     auto tab3 = new QWidget();
-    tab1->setLayout(new QVBoxLayout());
-    tab1->layout()->addWidget(new QLabel("这是标签页 2 的内容"));
-    tab2->setLayout(new QVBoxLayout());
-    tab2->layout()->addWidget(new QLabel("这是标签页 2 的内容"));
-    tab3->setLayout(new QVBoxLayout());
-    tab3->layout()->addWidget(new QLabel("这是标签页 3 的内容"));
+    tab1->setLayout(new QGridLayout());
+    tab2->setLayout(new QGridLayout());
+    tab3->setLayout(new QGridLayout());
+    tab1->layout()->setContentsMargins(0, 0, 0, 0);
+    tab2->layout()->setContentsMargins(0, 0, 0, 0);
+    tab3->layout()->setContentsMargins(0, 0, 0, 0);
 
-    tabWidget->addTab(tab1, "Tab 1");
-    tabWidget->addTab(tab2, "Tab 2");
-    tabWidget->addTab(tab3, "Tab 3");
+    tabWidget->addTab(tab1, "Page 1");
+    tabWidget->addTab(tab2, "Page 2");
+    tabWidget->addTab(tab3, "Page 3");
 
     connect(tabWidget->tabBar(), &QTabBar::tabBarClicked, this, &MainWindow::onTabClicked);
 
-    // ==== 下方区域（可滚动） ====
-    bottomWidget = new QWidget(this);
-    gridLayout = new QGridLayout(bottomWidget);
-    gridLayout->setSpacing(0);
-    gridLayout->setContentsMargins(0, 0, 0, 0);
-
-    auto scrollArea = new QScrollArea(this);
-    scrollArea->setWidget(bottomWidget);
-    scrollArea->setWidgetResizable(true);
-    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-
-    rightLayout->addWidget(tabWidget, 2);
-    rightLayout->addWidget(scrollArea, 1);
+    rightLayout->addWidget(tabWidget, 1);
+    rightWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     splitter->addWidget(rightWidget);
     mainLayout->addWidget(splitter);
@@ -163,80 +153,127 @@ void MainWindow::onTabClicked(int index)
 
 void MainWindow::addItem(DeviceConnection* connection)
 {
+    auto rightWidget = findChild<QWidget*>("rightWidget");
+    if (!rightWidget) {
+        qDebugEx() << "Error: rightWidget not found";
+        return;
+    }
+    auto rightLayout = qobject_cast<QVBoxLayout*>(rightWidget->layout());
+    if (!rightLayout) {
+        qDebugEx() << "Error: rightLayout not found";
+        return;
+    }
+    auto tabWidget = rightWidget->findChild<QTabWidget*>();
+    if (!tabWidget) {
+        qDebugEx() << "Error: tabWidget not found";
+        return;
+    }
+
+    // 计算当前总设备数量
+    int totalCount = 0;
+    for (int i = 0; i < tabWidget->count(); ++i) {
+        auto tab = tabWidget->widget(i);
+        auto gridLayout = qobject_cast<QGridLayout*>(tab->layout());
+        for (int j = 0; j < gridLayout->count(); ++j) {
+            auto frame = qobject_cast<QFrame*>(gridLayout->itemAt(j)->widget());
+            if (frame) {
+                auto frameLayout = qobject_cast<QVBoxLayout*>(frame->layout());
+                if (frameLayout && frameLayout->count() > 0) {
+                    auto w = frameLayout->itemAt(0)->widget();
+                    if (qobject_cast<DeviceWidget*>(w)) {
+                        totalCount++;
+                    }
+                }
+            }
+        }
+    }
+
+    // 限制最多 100 个设备
+    if (totalCount >= 100) {
+        qDebugEx() << "已达到最大设备数量 (100)，无法添加更多设备";
+        return;
+    }
+
     auto deviceInfo = connection->deviceInfo;
     auto url = deviceInfo ? QString("tcp://%1:%2").arg(deviceInfo->localIp).arg(deviceInfo->videoPort) : nullptr;
 
     LiveStreamDevice* liveStreamDevice = nullptr;
-    
+
     if (connection->type == DeviceConnection::Usb)
     {
         liveStreamDevice = new LiveStreamDevice();
-
         auto manager = UsbDeviceManager::instance();
         auto ctx = manager->getContext(connection);
-
         manager->connectDevice(ctx->udid, deviceInfo->videoPort, [=](DeviceConnection* conn, const QByteArray& data){
             liveStreamDevice->appendData(data);
         });
     }
 
-    int count = gridLayout->count();
+    // 确定目标 Tab（每页 20 个设备）
+    int targetTabIndex = totalCount / 20;
+    if (targetTabIndex >= tabWidget->count()) {
+        auto newTab = new QWidget();
+        newTab->setLayout(new QGridLayout());
+        newTab->layout()->setContentsMargins(0, 0, 0, 0);
+        newTab->layout()->setSpacing(2);
+        tabWidget->addTab(newTab, QString("Page %1").arg(tabWidget->count() + 1));
+    }
 
-    if (url != nullptr) {
-        // 遍历查找第一个占位
-        for (int i = 0; i < count; i++) {
-            auto frame = qobject_cast<QFrame*>(gridLayout->itemAt(i)->widget());
-            if (!frame) continue;
-
+    auto targetTab = tabWidget->widget(targetTabIndex);
+    auto gridLayout = qobject_cast<QGridLayout*>(targetTab->layout());
+    int itemsPerTab = 0;
+    for (int i = 0; i < gridLayout->count(); ++i) {
+        auto frame = qobject_cast<QFrame*>(gridLayout->itemAt(i)->widget());
+        if (frame) {
             auto frameLayout = qobject_cast<QVBoxLayout*>(frame->layout());
-            if (!frameLayout || frameLayout->count() == 0) continue;
-
-            auto w = frameLayout->itemAt(0)->widget();
-
-            if (qobject_cast<DeviceWidget*>(w) == nullptr) {
-                qDebugEx() << "找到占位" << i;
-                delete w;
-                auto player = new DeviceWidget(connection, deviceInfo);
-                if (liveStreamDevice)
-                    player->setSourceDevice(liveStreamDevice);
-                else
-                    player->setSource(url);
-                frameLayout->addWidget(player);
-                bottomWidget->adjustSize();
-                return;
+            if (frameLayout && frameLayout->count() > 0) {
+                auto w = frameLayout->itemAt(0)->widget();
+                if (qobject_cast<DeviceWidget*>(w)) {
+                    itemsPerTab++;
+                }
             }
         }
     }
 
-    // 如果没有占位，说明要新开一行
+    // 固定列数为 6，防止动态调整导致错位
     int totalCols = 6;
-    int row = count / totalCols;
+    int row = itemsPerTab / totalCols;
+    int col = itemsPerTab % totalCols;
 
-    for (int i = 0; i < totalCols; i++) {
-        auto frame = new QFrame(bottomWidget);
-        frame->setFrameShape(QFrame::Box);
-
-        auto frameLayout = new QVBoxLayout(frame);
-        frameLayout->setContentsMargins(0, 0, 0, 0);
-
-        if (i == 0 && url != nullptr) {
-            qDebugEx() << "放在新行第一个" << url;
-            auto player = new DeviceWidget(connection, deviceInfo);
-            if (liveStreamDevice)
-                player->setSourceDevice(liveStreamDevice);
-            else
-                player->setSource(url);
-            frameLayout->addWidget(player);
-        } else {
-            // 其他先放占位
-            frameLayout->addWidget(new QWidget());
-        }
-
-        gridLayout->addWidget(frame, row, i);
+    // 验证位置是否有效
+    if (col >= totalCols) {
+        qDebugEx() << "Error: Column index out of range, col = " << col << ", resetting to 0";
+        col = 0;
+        row++;
     }
 
-    bottomWidget->adjustSize();
+    // 添加新设备
+    auto frame = new QFrame(rightWidget);
+    frame->setFrameShape(QFrame::Box);
+    auto frameLayout = new QVBoxLayout(frame);
+    frameLayout->setContentsMargins(0, 0, 0, 0);
 
-    if (bottomWidget->height() < 1000)
-        gridLayout->setRowMinimumHeight(row, bottomWidget->height());
+    if (url != nullptr) {
+        qDebugEx() << "Adding device at Tab " << targetTabIndex << ", row " << row << ", col " << col
+                   << ", totalCount = " << totalCount << ", itemsPerTab = " << itemsPerTab;
+        auto player = new DeviceWidget(connection, deviceInfo);
+        int minWidth = std::max(100, rightWidget->width() / totalCols - 10);
+        int minHeight = std::max(200, rightWidget->height() / (20 / totalCols) - 10);
+        player->setMinimumSize(minWidth, minHeight);
+        if (liveStreamDevice)
+            player->setSourceDevice(liveStreamDevice);
+        else
+            player->setSource(url);
+        frameLayout->addWidget(player);
+    } else {
+        frameLayout->addWidget(new QWidget()); // 占位
+    }
+
+    gridLayout->addWidget(frame, row, col);
+
+    // 强制更新布局
+    gridLayout->update();
+    targetTab->update();
+    rightWidget->adjustSize();
+    tabWidget->setCurrentIndex(targetTabIndex); // 切换到当前 Tab
 }
