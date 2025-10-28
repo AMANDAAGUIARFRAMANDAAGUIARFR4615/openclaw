@@ -64,12 +64,21 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     splitter->addWidget(sideBarList);
 
     auto tabWidget = new QTabWidget(this);
-    auto tab1 = new QWidget();
-    auto tab2 = new QWidget();
-    auto tab3 = new QWidget();
-    tab1->setLayout(new QGridLayout());
-    tab2->setLayout(new QGridLayout());
-    tab3->setLayout(new QGridLayout());
+
+    auto makeScrollTab = [this]() -> QWidget* {
+        auto scroll = new QScrollArea(this);
+        scroll->setWidgetResizable(true);
+        scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        auto content = new QWidget;
+        auto grid = new QGridLayout(content);
+        scroll->setWidget(content);
+        return scroll;
+    };
+
+    auto tab1 = makeScrollTab();
+    auto tab2 = makeScrollTab();
+    auto tab3 = makeScrollTab();
 
     tabWidget->addTab(tab1, "Page 1");
     tabWidget->addTab(tab2, "Page 2");
@@ -84,8 +93,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     EventHub::StartListening("deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         connection->deviceInfo = new DeviceInfo(data.toObject());
-        for(int i = 0; i < 50; i++)
-        addItem(connection);
+        for(int i = 0; i < 2; i++)
+            addItem(connection);
     });
 }
 
@@ -137,7 +146,10 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     auto tabWidget = findChild<QTabWidget*>();
     auto targetTab = tabWidget->widget(0);
-    auto gridLayout = qobject_cast<QGridLayout*>(targetTab->layout());
+    auto scrollArea = qobject_cast<QScrollArea*>(targetTab);
+    auto contentWidget = scrollArea->widget();
+    auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
+
     int itemsPerTab = 0;
     for (int i = 0; i < gridLayout->count(); ++i) {
         auto frame = qobject_cast<QFrame*>(gridLayout->itemAt(i)->widget());
@@ -152,9 +164,8 @@ void MainWindow::addItem(DeviceConnection* connection)
         }
     }
 
-    int tabWidth = tabWidget->width();
-    int tabHeight = tabWidget->height();
-
+    int tabWidth = scrollArea->viewport()->width();
+    int tabHeight = scrollArea->viewport()->height();
     int maxItemWidth = 200;
     int maxItemHeight = maxItemWidth * 1.7786;
     int spacing = 10;
@@ -173,7 +184,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     int row = itemsPerTab / totalCols;
     int col = itemsPerTab % totalCols;
 
-    auto frame = new QFrame(tabWidget);
+    auto frame = new QFrame(contentWidget);
     frame->setMinimumSize(maxItemWidth / 2, maxItemHeight / 2);
     frame->setMaximumSize(maxItemWidth, maxItemHeight);
     frame->setFrameShape(QFrame::Box);
@@ -182,5 +193,5 @@ void MainWindow::addItem(DeviceConnection* connection)
     frameLayout->addWidget(player);
 
     gridLayout->addWidget(frame, row, col);
-    gridLayout->update();
+    contentWidget->setMinimumHeight((row + 1) * (maxItemHeight + spacing) + spacing);
 }
