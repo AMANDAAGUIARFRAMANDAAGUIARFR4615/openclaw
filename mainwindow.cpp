@@ -23,12 +23,13 @@
 #include <QIcon>
 #include <QTimer>
 #include <cmath>
+#include <QScrollArea>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
     auto central = new QWidget(this);
     setCentralWidget(central);
-    
+
     auto mainLayout = new QHBoxLayout(central);
 
     auto splitter = new QSplitter(Qt::Horizontal, this);
@@ -79,11 +80,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     splitter->addWidget(tabWidget);
 
     QSize screenSize = QGuiApplication::primaryScreen()->size();
-    resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
+    resize(screenSize.width() * 0.4, screenSize.height() * 0.4);
 
     EventHub::StartListening("deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         connection->deviceInfo = new DeviceInfo(data.toObject());
-        for(int i = 0; i < 13; i++)
+        for(int i = 0; i < 50; i++)
         addItem(connection);
     });
 }
@@ -113,8 +114,6 @@ void MainWindow::onTabClicked(int index)
 
 void MainWindow::addItem(DeviceConnection* connection)
 {
-    auto tabWidget = findChild<QTabWidget*>();
-
     auto deviceInfo = connection->deviceInfo;
 
     auto player = new DeviceWidget(connection, deviceInfo);
@@ -136,6 +135,7 @@ void MainWindow::addItem(DeviceConnection* connection)
         player->setSource(url);
     }
 
+    auto tabWidget = findChild<QTabWidget*>();
     auto targetTab = tabWidget->widget(0);
     auto gridLayout = qobject_cast<QGridLayout*>(targetTab->layout());
     int itemsPerTab = 0;
