@@ -83,7 +83,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     EventHub::StartListening("deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         connection->deviceInfo = new DeviceInfo(data.toObject());
-        for(int i = 0; i < 2; i++)
+        for(int i = 0; i < 13; i++)
         addItem(connection);
     });
 }
@@ -116,18 +116,24 @@ void MainWindow::addItem(DeviceConnection* connection)
     auto tabWidget = findChild<QTabWidget*>();
 
     auto deviceInfo = connection->deviceInfo;
-    auto url = deviceInfo ? QString("tcp://%1:%2").arg(deviceInfo->localIp).arg(deviceInfo->videoPort) : nullptr;
 
-    LiveStreamDevice* liveStreamDevice = nullptr;
+    auto player = new DeviceWidget(connection, deviceInfo);
 
     if (connection->type == DeviceConnection::Usb)
     {
-        liveStreamDevice = new LiveStreamDevice();
+        auto liveStreamDevice = new LiveStreamDevice();
         auto manager = UsbDeviceManager::instance();
         auto ctx = manager->getContext(connection);
         manager->connectDevice(ctx->udid, deviceInfo->videoPort, [=](DeviceConnection* conn, const QByteArray& data){
             liveStreamDevice->appendData(data);
         });
+
+        player->setSourceDevice(liveStreamDevice);
+    }
+    else
+    {
+        auto url = QString("tcp://%1:%2").arg(deviceInfo->localIp).arg(deviceInfo->videoPort);
+        player->setSource(url);
     }
 
     auto targetTab = tabWidget->widget(0);
@@ -149,15 +155,14 @@ void MainWindow::addItem(DeviceConnection* connection)
     int tabWidth = tabWidget->width();
     int tabHeight = tabWidget->height();
 
-    int minItemWidth = 150;
-    int minItemHeight = 150;
+    int maxItemWidth = 200;
+    int maxItemHeight = maxItemWidth * 1.7786;
     int spacing = 10;
 
-    int totalCols = std::max(1, tabWidth / (minItemWidth + spacing));
-    int totalRows = std::max(1, tabHeight / (minItemHeight + spacing));
+    int totalCols = std::max(1, tabWidth / (maxItemWidth + spacing));
+    int totalRows = std::max(1, tabHeight / (maxItemHeight + spacing));
 
-    int totalItemsNeeded = totalCols * totalRows;
-    for (int r = itemsPerTab / totalCols; r < totalRows; ++r) {
+    for (int r = 0; r < totalRows; ++r) {
         for (int c = 0; c < totalCols; ++c) {
             if (gridLayout->itemAtPosition(r, c) == nullptr) {
                 gridLayout->addWidget(new QWidget(), r, c);
@@ -169,17 +174,11 @@ void MainWindow::addItem(DeviceConnection* connection)
     int col = itemsPerTab % totalCols;
 
     auto frame = new QFrame(tabWidget);
+    frame->setMinimumSize(maxItemWidth / 2, maxItemHeight / 2);
+    frame->setMaximumSize(maxItemWidth, maxItemHeight);
     frame->setFrameShape(QFrame::Box);
     auto frameLayout = new QVBoxLayout(frame);
     frameLayout->setContentsMargins(0, 0, 0, 0);
-
-    auto player = new DeviceWidget(connection, deviceInfo);
-
-    if (liveStreamDevice)
-        player->setSourceDevice(liveStreamDevice);
-    else
-        player->setSource(url);
-
     frameLayout->addWidget(player);
 
     gridLayout->addWidget(frame, row, col);
