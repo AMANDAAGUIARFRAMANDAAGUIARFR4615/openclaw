@@ -100,56 +100,19 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Escape)
-    {
         close();
-    }
     else
-    {
         QMainWindow::keyPressEvent(event);
-    }
 }
 
 void MainWindow::onTabClicked(int index)
 {
     qDebugEx() << "Clicked on Tab " << index + 1;
-    switch (index)
-    {
-    case 0:
-        qDebugEx() << "Tab 1 clicked: Video Player tab";
-        break;
-    case 1:
-        qDebugEx() << "Tab 2 clicked: Content for Tab 2";
-        break;
-    case 2:
-        qDebugEx() << "Tab 3 clicked: Content for Tab 3";
-        break;
-    default:
-        break;
-    }
 }
 
 void MainWindow::addItem(DeviceConnection* connection)
 {
     auto tabWidget = findChild<QTabWidget*>();
-
-    // 计算当前总设备数量
-    int totalCount = 0;
-    for (int i = 0; i < tabWidget->count(); ++i) {
-        auto tab = tabWidget->widget(i);
-        auto gridLayout = qobject_cast<QGridLayout*>(tab->layout());
-        for (int j = 0; j < gridLayout->count(); ++j) {
-            auto frame = qobject_cast<QFrame*>(gridLayout->itemAt(j)->widget());
-            if (frame) {
-                auto frameLayout = qobject_cast<QVBoxLayout*>(frame->layout());
-                if (frameLayout && frameLayout->count() > 0) {
-                    auto w = frameLayout->itemAt(0)->widget();
-                    if (qobject_cast<DeviceWidget*>(w)) {
-                        totalCount++;
-                    }
-                }
-            }
-        }
-    }
 
     auto deviceInfo = connection->deviceInfo;
     auto url = deviceInfo ? QString("tcp://%1:%2").arg(deviceInfo->localIp).arg(deviceInfo->videoPort) : nullptr;
@@ -196,7 +159,6 @@ void MainWindow::addItem(DeviceConnection* connection)
         auto minWidth = tabWidget->width() / totalCols - 10;
         auto minHeight = tabWidget->height() / ((50 + totalCols - 1) / totalCols) - 10;
         player->setMinimumSize(std::max(150, minWidth), std::max(150, minHeight));
-        // player->setMaximumSize(std::max(150, minWidth * 4), std::max(150, minHeight * 4));
         if (liveStreamDevice)
             player->setSourceDevice(liveStreamDevice);
         else
