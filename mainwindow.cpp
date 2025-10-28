@@ -93,7 +93,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     EventHub::StartListening("deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         connection->deviceInfo = new DeviceInfo(data.toObject());
-        // for(int i = 0; i < 2; i++)
         addItem(connection);
     });
 }
@@ -137,16 +136,9 @@ void MainWindow::relayoutDevices()
     auto contentWidget = scrollArea->widget();
     auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
 
-    QLayoutItem* item;
-    while ((item = gridLayout->takeAt(0)) != nullptr) {
-        gridLayout->removeWidget(item->widget());
-    }
-
     int tabWidth = scrollArea->viewport()->width();
-    int maxItemWidth = 200;
-    int spacing = 10;
 
-    int totalCols = std::max(1, tabWidth / (maxItemWidth + spacing));
+    int totalCols = std::max(1, tabWidth / (minItemWidth + spacing));
 
     for (int i = 0; i < devices.size(); ++i) {
         int row = i / totalCols;
@@ -184,12 +176,9 @@ void MainWindow::addItem(DeviceConnection* connection)
     auto contentWidget = scrollArea->widget();
     auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
 
-    int maxItemWidth = 200;
-    int maxItemHeight = maxItemWidth * 1.7786;
-
     auto frame = new QFrame(contentWidget);
-    frame->setMinimumSize(maxItemWidth / 2, maxItemHeight / 2);
-    frame->setMaximumSize(maxItemWidth, maxItemHeight);
+    frame->setMinimumSize(minItemWidth, minItemHeight);
+    frame->setMaximumSize(minItemWidth * 1.5, minItemHeight * 1.5);
     frame->setFrameShape(QFrame::Box);
     auto frameLayout = new QVBoxLayout(frame);
     frameLayout->setContentsMargins(0, 0, 0, 0);
@@ -197,6 +186,5 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     devices.append(frame);
 
-    // 直接调用统一布局函数
     relayoutDevices();
 }

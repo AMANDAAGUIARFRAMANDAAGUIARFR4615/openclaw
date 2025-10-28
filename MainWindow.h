@@ -24,4 +24,8 @@ protected:
     void onTabClicked(int index);
 
     QList<QFrame*> devices;
+
+    const int minItemWidth = 150;
+    const int minItemHeight = minItemWidth * 1.7786;
+    const int spacing = 10;
 };
