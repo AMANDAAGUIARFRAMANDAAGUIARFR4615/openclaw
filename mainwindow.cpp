@@ -59,12 +59,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     splitter->addWidget(sideBarList);
 
-    // 右侧区域
-    auto rightWidget = new QWidget(this);
-    rightWidget->setObjectName("rightWidget");
-    auto rightLayout = new QVBoxLayout(rightWidget);
-
-    // Tab 区域
     auto tabWidget = new QTabWidget(this);
     auto tab1 = new QWidget();
     auto tab2 = new QWidget();
@@ -79,10 +73,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     connect(tabWidget->tabBar(), &QTabBar::tabBarClicked, this, &MainWindow::onTabClicked);
 
-    rightLayout->addWidget(tabWidget, 1);
-    rightWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-    splitter->addWidget(rightWidget);
+    splitter->addWidget(tabWidget);
     mainLayout->addWidget(splitter);
 
     setCentralWidget(central);
@@ -92,8 +83,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     EventHub::StartListening("deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         connection->deviceInfo = new DeviceInfo(data.toObject());
-
-        for(int i = 0; i < 50; i++)
         addItem(connection);
     });
 }
@@ -141,21 +130,7 @@ void MainWindow::onTabClicked(int index)
 
 void MainWindow::addItem(DeviceConnection* connection)
 {
-    auto rightWidget = findChild<QWidget*>("rightWidget");
-    if (!rightWidget) {
-        qDebugEx() << "Error: rightWidget not found";
-        return;
-    }
-    auto rightLayout = qobject_cast<QVBoxLayout*>(rightWidget->layout());
-    if (!rightLayout) {
-        qDebugEx() << "Error: rightLayout not found";
-        return;
-    }
-    auto tabWidget = rightWidget->findChild<QTabWidget*>();
-    if (!tabWidget) {
-        qDebugEx() << "Error: tabWidget not found";
-        return;
-    }
+    auto tabWidget = findChild<QTabWidget*>();
 
     // 计算当前总设备数量
     int totalCount = 0;
@@ -225,7 +200,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     int row = itemsPerTab / totalCols;
     int col = itemsPerTab % totalCols;
 
-    auto frame = new QFrame(rightWidget);
+    auto frame = new QFrame(tabWidget);
     frame->setFrameShape(QFrame::Box);
     auto frameLayout = new QVBoxLayout(frame);
     frameLayout->setContentsMargins(0, 0, 0, 0);
@@ -252,6 +227,6 @@ void MainWindow::addItem(DeviceConnection* connection)
     // 强制更新布局
     gridLayout->update();
     targetTab->update();
-    rightWidget->adjustSize();
+    // rightWidget->adjustSize();
     tabWidget->setCurrentIndex(targetTabIndex); // 切换到当前 Tab
 }
