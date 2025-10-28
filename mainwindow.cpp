@@ -35,21 +35,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                            "width: 1px;"
                            "}");
 
-    // 左侧导航栏
-    auto sideBarWidget = new QWidget(this);
-    sideBarWidget->setFixedWidth(70);
-    sideBarWidget->setStyleSheet("background: transparent; border: none;");
-
-    auto sideBarLayout = new QVBoxLayout(sideBarWidget);
-
-    auto sideBarList = new QListWidget(sideBarWidget);
+    auto sideBarList = new QListWidget();
     sideBarList->setViewMode(QListView::ListMode);
     sideBarList->setIconSize(QSize(36, 36));
     sideBarList->setSpacing(5);
     sideBarList->setItemDelegate(new CenteredItemDelegate(this));
     sideBarList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    sideBarList->setFixedWidth(70);
 
-    auto style = sideBarWidget->style();
+    auto style = sideBarList->style();
 
     auto item1 = new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_DesktopIcon)), "");
     item1->setToolTip("提示1");
@@ -64,9 +58,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     sideBarList->addItem(item2);
     sideBarList->addItem(item3);
     sideBarList->addItem(item4);
-    sideBarLayout->addWidget(sideBarList);
 
-    splitter->addWidget(sideBarWidget);
+    splitter->addWidget(sideBarList);
 
     // 右侧区域
     auto rightWidget = new QWidget(this);
