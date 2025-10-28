@@ -36,11 +36,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                            "}");
 
     auto sideBarList = new QListWidget();
-    sideBarList->setViewMode(QListView::ListMode);
     sideBarList->setIconSize(QSize(36, 36));
     sideBarList->setSpacing(5);
     sideBarList->setItemDelegate(new CenteredItemDelegate(this));
-    sideBarList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     sideBarList->setFixedWidth(70);
 
     auto style = sideBarList->style();
