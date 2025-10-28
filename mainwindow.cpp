@@ -27,9 +27,12 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
     auto central = new QWidget(this);
+    setCentralWidget(central);
+    
     auto mainLayout = new QHBoxLayout(central);
 
     auto splitter = new QSplitter(Qt::Horizontal, this);
+    mainLayout->addWidget(splitter);
     splitter->setStyleSheet("QSplitter::handle {"
                            "background-color: #B0B0B0;"
                            "width: 1px;"
@@ -74,9 +77,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     connect(tabWidget->tabBar(), &QTabBar::tabBarClicked, this, &MainWindow::onTabClicked);
 
     splitter->addWidget(tabWidget);
-    mainLayout->addWidget(splitter);
-
-    setCentralWidget(central);
 
     QSize screenSize = QGuiApplication::primaryScreen()->size();
     resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
@@ -151,12 +151,6 @@ void MainWindow::addItem(DeviceConnection* connection)
         }
     }
 
-    // 限制最多 100 个设备
-    if (totalCount >= 100) {
-        qDebugEx() << "已达到最大设备数量 (100)，无法添加更多设备";
-        return;
-    }
-
     auto deviceInfo = connection->deviceInfo;
     auto url = deviceInfo ? QString("tcp://%1:%2").arg(deviceInfo->localIp).arg(deviceInfo->videoPort) : nullptr;
 
@@ -172,15 +166,7 @@ void MainWindow::addItem(DeviceConnection* connection)
         });
     }
 
-    int targetTabIndex = totalCount / 50;
-    if (targetTabIndex >= tabWidget->count()) {
-        auto newTab = new QWidget();
-        newTab->setLayout(new QGridLayout());
-        newTab->layout()->setSpacing(2);
-        tabWidget->addTab(newTab, QString("Page %1").arg(tabWidget->count() + 1));
-    }
-
-    auto targetTab = tabWidget->widget(targetTabIndex);
+    auto targetTab = tabWidget->widget(0);
     auto gridLayout = qobject_cast<QGridLayout*>(targetTab->layout());
     int itemsPerTab = 0;
     for (int i = 0; i < gridLayout->count(); ++i) {
@@ -206,8 +192,6 @@ void MainWindow::addItem(DeviceConnection* connection)
     frameLayout->setContentsMargins(0, 0, 0, 0);
 
     if (url != nullptr) {
-        qDebugEx() << "Adding device at Tab " << targetTabIndex << ", row " << row << ", col " << col
-                   << ", totalCount = " << totalCount << ", itemsPerTab = " << itemsPerTab;
         auto player = new DeviceWidget(connection, deviceInfo);
         auto minWidth = tabWidget->width() / totalCols - 10;
         auto minHeight = tabWidget->height() / ((50 + totalCols - 1) / totalCols) - 10;
@@ -224,9 +208,5 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     gridLayout->addWidget(frame, row, col);
 
-    // 强制更新布局
     gridLayout->update();
-    targetTab->update();
-    // rightWidget->adjustSize();
-    tabWidget->setCurrentIndex(targetTabIndex); // 切换到当前 Tab
 }
