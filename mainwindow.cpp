@@ -93,8 +93,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     EventHub::StartListening("deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         connection->deviceInfo = new DeviceInfo(data.toObject());
-        for(int i = 0; i < 2; i++)
-            addItem(connection);
+        // for(int i = 0; i < 2; i++)
+        addItem(connection);
     });
 }
 
@@ -119,6 +119,40 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 void MainWindow::onTabClicked(int index)
 {
     qDebugEx() << "Clicked on Tab " << index + 1;
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    QMainWindow::resizeEvent(event);
+    relayoutDevices();
+}
+
+void MainWindow::relayoutDevices()
+{
+    auto tabWidget = findChild<QTabWidget*>();
+
+    auto targetTab = tabWidget->widget(0);
+    auto scrollArea = qobject_cast<QScrollArea*>(targetTab);
+
+    auto contentWidget = scrollArea->widget();
+    auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
+
+    QLayoutItem* item;
+    while ((item = gridLayout->takeAt(0)) != nullptr) {
+        gridLayout->removeWidget(item->widget());
+    }
+
+    int tabWidth = scrollArea->viewport()->width();
+    int maxItemWidth = 200;
+    int spacing = 10;
+
+    int totalCols = std::max(1, tabWidth / (maxItemWidth + spacing));
+
+    for (int i = 0; i < devices.size(); ++i) {
+        int row = i / totalCols;
+        int col = i % totalCols;
+        gridLayout->addWidget(devices[i], row, col);
+    }
 }
 
 void MainWindow::addItem(DeviceConnection* connection)
@@ -150,39 +184,8 @@ void MainWindow::addItem(DeviceConnection* connection)
     auto contentWidget = scrollArea->widget();
     auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
 
-    int itemsPerTab = 0;
-    for (int i = 0; i < gridLayout->count(); ++i) {
-        auto frame = qobject_cast<QFrame*>(gridLayout->itemAt(i)->widget());
-        if (frame) {
-            auto frameLayout = qobject_cast<QVBoxLayout*>(frame->layout());
-            if (frameLayout && frameLayout->count() > 0) {
-                auto w = frameLayout->itemAt(0)->widget();
-                if (qobject_cast<DeviceWidget*>(w)) {
-                    itemsPerTab++;
-                }
-            }
-        }
-    }
-
-    int tabWidth = scrollArea->viewport()->width();
-    int tabHeight = scrollArea->viewport()->height();
     int maxItemWidth = 200;
     int maxItemHeight = maxItemWidth * 1.7786;
-    int spacing = 10;
-
-    int totalCols = std::max(1, tabWidth / (maxItemWidth + spacing));
-    int totalRows = std::max(1, tabHeight / (maxItemHeight + spacing));
-
-    for (int r = 0; r < totalRows; ++r) {
-        for (int c = 0; c < totalCols; ++c) {
-            if (gridLayout->itemAtPosition(r, c) == nullptr) {
-                gridLayout->addWidget(new QWidget(), r, c);
-            }
-        }
-    }
-
-    int row = itemsPerTab / totalCols;
-    int col = itemsPerTab % totalCols;
 
     auto frame = new QFrame(contentWidget);
     frame->setMinimumSize(maxItemWidth / 2, maxItemHeight / 2);
@@ -192,6 +195,8 @@ void MainWindow::addItem(DeviceConnection* connection)
     frameLayout->setContentsMargins(0, 0, 0, 0);
     frameLayout->addWidget(player);
 
-    gridLayout->addWidget(frame, row, col);
-    contentWidget->setMinimumHeight((row + 1) * (maxItemHeight + spacing) + spacing);
+    devices.append(frame);
+
+    // 直接调用统一布局函数
+    relayoutDevices();
 }

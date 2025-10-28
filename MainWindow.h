@@ -4,8 +4,7 @@
 #include "DeviceConnection.h"
 #include <QMainWindow>
 #include <QKeyEvent>
-#include <QGridLayout>
-#include <QTcpSocket>
+#include <QFrame>
 
 class MainWindow : public QMainWindow
 {
@@ -20,5 +19,9 @@ public:
 protected:
     void closeEvent(QCloseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+    void relayoutDevices();
     void onTabClicked(int index);
+
+    QList<QFrame*> devices;
 };
