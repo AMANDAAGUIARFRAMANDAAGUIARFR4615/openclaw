@@ -209,8 +209,7 @@ void MainWindow::addItem(DeviceConnection* connection)
         });
     }
 
-    // 确定目标 Tab（每页 20 个设备）
-    int targetTabIndex = totalCount / 20;
+    int targetTabIndex = totalCount / 50;
     if (targetTabIndex >= tabWidget->count()) {
         auto newTab = new QWidget();
         newTab->setLayout(new QGridLayout());
@@ -235,8 +234,7 @@ void MainWindow::addItem(DeviceConnection* connection)
         }
     }
 
-    // 固定列数为 6，防止动态调整导致错位
-    int totalCols = 6;
+    int totalCols = 10;
     int row = itemsPerTab / totalCols;
     int col = itemsPerTab % totalCols;
 
@@ -257,9 +255,9 @@ void MainWindow::addItem(DeviceConnection* connection)
         qDebugEx() << "Adding device at Tab " << targetTabIndex << ", row " << row << ", col " << col
                    << ", totalCount = " << totalCount << ", itemsPerTab = " << itemsPerTab;
         auto player = new DeviceWidget(connection, deviceInfo);
-        int minWidth = std::max(100, rightWidget->width() / totalCols - 10);
-        int minHeight = std::max(200, rightWidget->height() / (20 / totalCols) - 10);
-        player->setMinimumSize(minWidth, minHeight);
+        auto minWidth = tabWidget->width() / totalCols - 10;
+        auto minHeight = tabWidget->height() / ((50 + totalCols - 1) / totalCols) - 10;
+        player->setMinimumSize(std::max(150, minWidth), std::max(150, minHeight));
         if (liveStreamDevice)
             player->setSourceDevice(liveStreamDevice);
         else

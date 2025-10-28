@@ -80,9 +80,7 @@ void DeviceView::addOverlay(const QString &text)
     label->setText(text);
 
     overlay->show();
-    
-    layout()->removeWidget(overlay);
-    layout()->addWidget(overlay);
+    overlay->raise();
 }
 
 void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)

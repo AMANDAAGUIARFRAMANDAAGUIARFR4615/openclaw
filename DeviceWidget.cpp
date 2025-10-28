@@ -88,6 +88,13 @@ DeviceWidget::~DeviceWidget()
 
 }
 
+void DeviceWidget::addOverlay(const QString &text)
+{
+    DeviceView::addOverlay(text);
+
+    overlay->resize(size());
+}
+
 void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
 {
     QWidget::mouseDoubleClickEvent(event);
@@ -116,6 +123,6 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
     deviceWindow->setAttribute(Qt::WA_DeleteOnClose);
     deviceWindow->show();
 
-    videoFrameWidget = nullptr;
     addOverlay("设备控制中");
+    videoFrameWidget = nullptr;
 }
