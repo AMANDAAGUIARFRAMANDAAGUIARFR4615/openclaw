@@ -72,8 +72,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     auto rightWidget = new QWidget(this);
     rightWidget->setObjectName("rightWidget");
     auto rightLayout = new QVBoxLayout(rightWidget);
-    rightLayout->setContentsMargins(0, 0, 0, 0);
-    rightLayout->setSpacing(0);
 
     // Tab 区域
     auto tabWidget = new QTabWidget(this);
@@ -83,9 +81,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     tab1->setLayout(new QGridLayout());
     tab2->setLayout(new QGridLayout());
     tab3->setLayout(new QGridLayout());
-    tab1->layout()->setContentsMargins(0, 0, 0, 0);
-    tab2->layout()->setContentsMargins(0, 0, 0, 0);
-    tab3->layout()->setContentsMargins(0, 0, 0, 0);
 
     tabWidget->addTab(tab1, "Page 1");
     tabWidget->addTab(tab2, "Page 2");
@@ -106,6 +101,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     EventHub::StartListening("deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         connection->deviceInfo = new DeviceInfo(data.toObject());
+
+        for(int i = 0; i < 50; i++)
         addItem(connection);
     });
 }
@@ -213,7 +210,6 @@ void MainWindow::addItem(DeviceConnection* connection)
     if (targetTabIndex >= tabWidget->count()) {
         auto newTab = new QWidget();
         newTab->setLayout(new QGridLayout());
-        newTab->layout()->setContentsMargins(0, 0, 0, 0);
         newTab->layout()->setSpacing(2);
         tabWidget->addTab(newTab, QString("Page %1").arg(tabWidget->count() + 1));
     }
@@ -238,14 +234,6 @@ void MainWindow::addItem(DeviceConnection* connection)
     int row = itemsPerTab / totalCols;
     int col = itemsPerTab % totalCols;
 
-    // 验证位置是否有效
-    if (col >= totalCols) {
-        qDebugEx() << "Error: Column index out of range, col = " << col << ", resetting to 0";
-        col = 0;
-        row++;
-    }
-
-    // 添加新设备
     auto frame = new QFrame(rightWidget);
     frame->setFrameShape(QFrame::Box);
     auto frameLayout = new QVBoxLayout(frame);
@@ -258,6 +246,7 @@ void MainWindow::addItem(DeviceConnection* connection)
         auto minWidth = tabWidget->width() / totalCols - 10;
         auto minHeight = tabWidget->height() / ((50 + totalCols - 1) / totalCols) - 10;
         player->setMinimumSize(std::max(150, minWidth), std::max(150, minHeight));
+        // player->setMaximumSize(std::max(150, minWidth * 4), std::max(150, minHeight * 4));
         if (liveStreamDevice)
             player->setSourceDevice(liveStreamDevice);
         else
