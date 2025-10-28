@@ -83,6 +83,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     EventHub::StartListening("deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         connection->deviceInfo = new DeviceInfo(data.toObject());
+        for(int i = 0; i < 2; i++)
         addItem(connection);
     });
 }
@@ -145,7 +146,25 @@ void MainWindow::addItem(DeviceConnection* connection)
         }
     }
 
-    int totalCols = 10;
+    int tabWidth = tabWidget->width();
+    int tabHeight = tabWidget->height();
+
+    int minItemWidth = 150;
+    int minItemHeight = 150;
+    int spacing = 10;
+
+    int totalCols = std::max(1, tabWidth / (minItemWidth + spacing));
+    int totalRows = std::max(1, tabHeight / (minItemHeight + spacing));
+
+    int totalItemsNeeded = totalCols * totalRows;
+    for (int r = itemsPerTab / totalCols; r < totalRows; ++r) {
+        for (int c = 0; c < totalCols; ++c) {
+            if (gridLayout->itemAtPosition(r, c) == nullptr) {
+                gridLayout->addWidget(new QWidget(), r, c);
+            }
+        }
+    }
+
     int row = itemsPerTab / totalCols;
     int col = itemsPerTab % totalCols;
 
@@ -154,21 +173,15 @@ void MainWindow::addItem(DeviceConnection* connection)
     auto frameLayout = new QVBoxLayout(frame);
     frameLayout->setContentsMargins(0, 0, 0, 0);
 
-    if (url != nullptr) {
-        auto player = new DeviceWidget(connection, deviceInfo);
-        auto minWidth = tabWidget->width() / totalCols - 10;
-        auto minHeight = tabWidget->height() / ((50 + totalCols - 1) / totalCols) - 10;
-        player->setMinimumSize(std::max(150, minWidth), std::max(150, minHeight));
-        if (liveStreamDevice)
-            player->setSourceDevice(liveStreamDevice);
-        else
-            player->setSource(url);
-        frameLayout->addWidget(player);
-    } else {
-        frameLayout->addWidget(new QWidget()); // 占位
-    }
+    auto player = new DeviceWidget(connection, deviceInfo);
+
+    if (liveStreamDevice)
+        player->setSourceDevice(liveStreamDevice);
+    else
+        player->setSource(url);
+
+    frameLayout->addWidget(player);
 
     gridLayout->addWidget(frame, row, col);
-
     gridLayout->update();
 }
