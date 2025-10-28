@@ -89,7 +89,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     splitter->addWidget(tabWidget);
 
     QSize screenSize = QGuiApplication::primaryScreen()->size();
-    resize(screenSize.width() * 0.4, screenSize.height() * 0.4);
+    resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
 
     EventHub::StartListening("deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         connection->deviceInfo = new DeviceInfo(data.toObject());
