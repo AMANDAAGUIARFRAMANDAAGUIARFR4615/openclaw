@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceConnection.h"
+#include "ToastWidget.h"
 #include <QTreeView>
 #include <QFileSystemModel>
 #include <QSortFilterProxyModel>
@@ -25,12 +26,7 @@ public:
         QFileSystemModel *fileSystemModel = static_cast<QFileSystemModel *>(sourceModel());
         QFileInfo fileInfo = fileSystemModel->fileInfo(index);
 
-        if (fileInfo.isFile()) {
-            QStringList allowedExtensions = {"txt", "cpp", "h"};
-            return allowedExtensions.contains(fileInfo.suffix(), Qt::CaseInsensitive);
-        }
-
-        return true;
+        return fileInfo.isFile() ? fileInfo.suffix() == "recordx" : true;
     }
 };
 
@@ -40,7 +36,7 @@ class Recorder : public QWidget {
 public:
     Recorder(DeviceConnection* connection, QWidget *parent = nullptr)
         : connection(connection), QWidget(parent), isRecording(false), isPaused(false) {
-        QString recorderPath = QDir::currentPath() + "/recorder";
+        recorderPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/recorder";
 
         QDir dir;
         if (!dir.exists(recorderPath))
@@ -90,6 +86,29 @@ public:
         connect(btnResume, &QPushButton::clicked, this, &Recorder::onResume);
 
         updateButtonStates();
+
+        EventHub::StartListening("recorderReport", [this](const QJsonValue &data, DeviceConnection* connection) {
+            if (this->connection != connection)
+                return;
+
+            auto text = data.toString();
+            if (text == "") {
+                new ToastWidget("没有录制内容", this);
+                return;
+            }
+
+            QString timestamp = QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
+            
+            QFile file(QString("%1/%2_%3.recordx").arg(recorderPath).arg(connection->deviceInfo->deviceName).arg(timestamp));
+            if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+                new ToastWidget(file.errorString(), this);
+                return;
+            }
+            
+            QTextStream out(&file);
+            out << text;
+            file.close();
+        });
     }
 
 protected:
@@ -235,6 +254,7 @@ private:
 
 private:
     DeviceConnection* connection;
+    QString recorderPath;
 
     QPushButton *btnStart;
     QPushButton *btnStop;
