@@ -39,7 +39,6 @@ add_executable(${PROJECT_NAME}
     DeviceWidget.h DeviceWidget.cpp
     DeviceWindow.h DeviceWindow.cpp
     TcpServer.h TcpServer.cpp
-    # TcpClient.h TcpClient.cpp
     UdpTransport.h UdpTransport.cpp
     ToastWidget.h
     NetworkUtils.h
