@@ -3,6 +3,7 @@
 #include "DeviceConnection.h"
 #include "ToastWidget.h"
 #include "EventHub.h"
+#include "FileViewer.h"
 #include <QTreeView>
 #include <QFileSystemModel>
 #include <QSortFilterProxyModel>
@@ -206,6 +207,11 @@ protected:
 
         if (index.isValid()) {
             if (!fileInfo.isDir()) {
+                QAction *editAction = menu->addAction("编辑");
+                QObject::connect(editAction, &QAction::triggered, [=]() {
+                    new FileViewer(path, this);
+                });
+
                 if (!isPlaying) {
                     QAction *playAction = menu->addAction("开始回放");
                     QObject::connect(playAction, &QAction::triggered, [=]() {
