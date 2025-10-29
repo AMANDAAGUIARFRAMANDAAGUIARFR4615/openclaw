@@ -30,7 +30,7 @@ private:
 
         if (isTextFile(fileName)) {
             QFile file(fileName);
-            if (!file.open(QIODevice::Text)) {
+            if (!file.open(QIODevice::ReadOnly)) {
                 QMessageBox::error(this, "错误", "无法打开文本文件。");
                 return;
             }
