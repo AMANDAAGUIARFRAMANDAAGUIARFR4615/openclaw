@@ -36,8 +36,7 @@ class Recorder : public QWidget {
     Q_OBJECT
 
 public:
-    Recorder(DeviceConnection* connection, QWidget *parent = nullptr)
-        : connection(connection), QWidget(parent), isRecording(false), isPaused(false) {
+    Recorder(DeviceConnection* connection, QWidget *parent = nullptr) : connection(connection), QWidget(parent) {
         recorderPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/recorder";
 
         QDir dir;
@@ -48,15 +47,15 @@ public:
 
         QHBoxLayout *buttonLayout = new QHBoxLayout();
 
-        btnStart = new QPushButton("开始录制", this);
-        btnStop  = new QPushButton("停止录制", this);
-        btnPause = new QPushButton("暂停录制", this);
-        btnResume= new QPushButton("恢复录制", this);
+        startButton = new QPushButton("开始录制", this);
+        stopButton = new QPushButton("停止录制", this);
+        startPlaybackButton = new QPushButton("开始回放", this);
+        stopPlaybackButton = new QPushButton("停止回放", this);
 
-        buttonLayout->addWidget(btnStart);
-        buttonLayout->addWidget(btnStop);
-        buttonLayout->addWidget(btnPause);
-        buttonLayout->addWidget(btnResume);
+        buttonLayout->addWidget(startButton);
+        buttonLayout->addWidget(stopButton);
+        buttonLayout->addWidget(startPlaybackButton);
+        buttonLayout->addWidget(stopPlaybackButton);
         buttonLayout->addStretch();
 
         fileSystemModel = new QFileSystemModel();
@@ -82,24 +81,37 @@ public:
         treeView->setAcceptDrops(true);
         treeView->setDropIndicatorShown(true);
 
-        connect(btnStart,  &QPushButton::clicked, [=]() {
+        connect(startButton,  &QPushButton::clicked, [=]() {
             isRecording = true;
-            isPaused = false;
             updateButtonStates();
 
             connection->send("recorder", "start");
         });
 
-        connect(btnStop,   &QPushButton::clicked, [=]() {
+        connect(stopButton,   &QPushButton::clicked, [=]() {
             isRecording = false;
-            isPaused = false;
             updateButtonStates();
 
             connection->send("recorder", "stop");
         });
 
-        connect(btnPause,  &QPushButton::clicked, this, &Recorder::onPause);
-        connect(btnResume, &QPushButton::clicked, this, &Recorder::onResume);
+        connect(startPlaybackButton,  &QPushButton::clicked, [=]() {
+            auto currentIndex = treeView->currentIndex();
+            if (!currentIndex.isValid()) {
+                new ToastWidget("请先选择回放文件", this);
+                return;
+            }
+
+            auto srcIndex = filterModel->mapToSource(currentIndex);
+            auto fileInfo = fileSystemModel->fileInfo(srcIndex);
+            auto path = fileInfo.absoluteFilePath();
+            
+            onStartPlayback(path);
+        });
+
+        connect(stopPlaybackButton,  &QPushButton::clicked, [this]() {
+            onStopPlayback();
+        });
 
         updateButtonStates();
 
@@ -192,35 +204,20 @@ protected:
 
         QMenu *menu = new QMenu(treeView);
 
-        QAction *newFolderAction = menu->addAction("新建文件夹");
-        QObject::connect(newFolderAction, &QAction::triggered, [=]() {
-            bool ok;
-            QString folderName = QInputDialog::getText(nullptr, "新建文件夹",
-                                                       "文件夹名称：", QLineEdit::Normal,
-                                                       "新建文件夹", &ok);
-            if (ok && !folderName.isEmpty()) {
-                QDir dir(fileInfo.isDir() ? fileInfo.dir() : path);
-                if (!dir.mkdir(folderName))
-                    new ToastWidget("无法创建文件夹！", this);
-            }
-        });
-
         if (index.isValid()) {
             if (!fileInfo.isDir()) {
-                QAction *playAction = menu->addAction("开始回放");
-                QObject::connect(playAction, &QAction::triggered, [=]() {
-                    QJsonObject dataObject;
-                    dataObject["type"] = "start";
-                    dataObject["script"] = QString::fromUtf8(QFile(path).readAll());
-                    connection->send("playback", dataObject);
-                });
-
-                QAction *stopAction = menu->addAction("停止回放");
-                QObject::connect(stopAction, &QAction::triggered, [=]() {
-                    QJsonObject dataObject;
-                    dataObject["type"] = "stop";
-                    connection->send("playback", dataObject);
-                });
+                if (!isPlaying) {
+                    QAction *playAction = menu->addAction("开始回放");
+                    QObject::connect(playAction, &QAction::triggered, [=]() {
+                        onStartPlayback(path);
+                    });
+                }
+                else {
+                    QAction *stopAction = menu->addAction("停止回放");
+                    QObject::connect(stopAction, &QAction::triggered, [this]() {
+                        onStopPlayback();
+                    });
+                }
             }
 
             QAction *renameAction = menu->addAction("重命名");
@@ -250,48 +247,65 @@ protected:
             });
         }
 
+        QAction *newFolderAction = menu->addAction("新建文件夹");
+        QObject::connect(newFolderAction, &QAction::triggered, [=]() {
+            bool ok;
+            QString folderName = QInputDialog::getText(nullptr, "新建文件夹",
+                                                       "文件夹名称：", QLineEdit::Normal,
+                                                       "新建文件夹", &ok);
+            if (ok && !folderName.isEmpty()) {
+                QDir dir(fileInfo.isDir() ? fileInfo.dir() : path);
+                if (!dir.mkdir(folderName))
+                    new ToastWidget("无法创建文件夹！", this);
+            }
+        });
+
         menu->exec(treeView->viewport()->mapToGlobal(pos));
         delete menu;
     }
 
-private slots:
-    void onPause() {
-        isRecording = false;
-        isPaused = true;
-        updateButtonStates();
-
-        // connection->send("playback", "pause");
-        connection->send("playback", "stop");
-    }
-
-    void onResume() {
-        isRecording = false;
-        isPaused = false;
-        updateButtonStates();
-
-        // connection->send("playback", "resume");
-        connection->send("playback", "start");
-    }
-
-private:
     void updateButtonStates() {
-        btnStart->setEnabled(!isRecording);
-        btnStop->setEnabled(isRecording);
-        btnPause->setEnabled(isRecording && !isPaused);
-        btnResume->setEnabled(isRecording && isPaused);
+        startButton->setEnabled(!isRecording && !isPlaying);
+        stopButton->setEnabled(isRecording && !isPlaying);
+        startPlaybackButton->setEnabled(!isPlaying && !isRecording);
+        stopPlaybackButton->setEnabled(isPlaying && !isRecording);
     }
 
-private:
+    void onStartPlayback(QString path) {
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly)) {
+            qDebug() << "文件打开失败:" << file.errorString();
+            return;
+        }
+
+        QJsonObject dataObject;
+        dataObject["type"] = "start";
+        dataObject["script"] = QString::fromUtf8(file.readAll());
+        connection->send("playback", dataObject);
+
+        isPlaying = true;
+        updateButtonStates();
+    }
+
+    void onStopPlayback() {
+        QJsonObject dataObject;
+        dataObject["type"] = "stop";
+        connection->send("playback", dataObject);
+
+        isPlaying = false;
+        updateButtonStates();
+    }
+
     DeviceConnection* connection;
     QString recorderPath;
 
-    QPushButton *btnStart;
-    QPushButton *btnStop;
-    QPushButton *btnPause;
-    QPushButton *btnResume;
+    QPushButton *startButton;
+    QPushButton *stopButton;
+    QPushButton *startPlaybackButton;
+    QPushButton *stopPlaybackButton;
 
-    bool isRecording;
-    bool isPaused;
+    bool isRecording = false;
+    bool isPlaying = false;
 
     QFileSystemModel *fileSystemModel;
     FileFilterProxyModel *filterModel;
