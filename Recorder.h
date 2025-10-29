@@ -1,4 +1,6 @@
-#include <QApplication>
+#pragma once
+
+#include "DeviceConnection.h"
 #include <QTreeView>
 #include <QFileSystemModel>
 #include <QSortFilterProxyModel>
@@ -33,40 +35,47 @@ class Recorder : public QWidget {
     Q_OBJECT
 
 public:
-    Recorder(QWidget *parent = nullptr) : QWidget(parent) {
-        // 设置主界面布局
+    Recorder(DeviceConnection* connection, QWidget *parent = nullptr) : connection(connection), QWidget(parent) {
+        QString recorderPath = QDir::currentPath() + "/recorder";
+
+        QDir dir;
+        if (!dir.exists(recorderPath))
+            dir.mkpath(recorderPath);
+
         QVBoxLayout *layout = new QVBoxLayout(this);
 
-        // 创建文件系统模型
         fileSystemModel = new QFileSystemModel();
-        fileSystemModel->setRootPath(QDir::currentPath());
+        fileSystemModel->setRootPath(recorderPath);
 
-        // 创建过滤模型
         filterModel = new FileFilterProxyModel();
         filterModel->setSourceModel(fileSystemModel);
 
-        // 创建树形视图
         treeView = new QTreeView(this);
         treeView->setModel(filterModel);
-        QModelIndex rootIndex = fileSystemModel->index(QDir::currentPath());
+        QModelIndex rootIndex = fileSystemModel->index(recorderPath);
         treeView->setRootIndex(filterModel->mapFromSource(rootIndex));
         treeView->setColumnHidden(2, true);
 
         layout->addWidget(treeView);
         setLayout(layout);
-        resize(800, 600);
-        setWindowTitle("文件浏览器");
 
         treeView->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(treeView, &QTreeView::customContextMenuRequested, this, &Recorder::showContextMenu);
 
-        // 启用拖放功能
         treeView->setDragEnabled(true);
         treeView->setAcceptDrops(true);
         treeView->setDropIndicatorShown(true);
     }
 
 protected:
+    void keyPressEvent(QKeyEvent *event) override
+    {
+        if (event->key() == Qt::Key_Escape)
+            close();
+        else
+            QWidget::keyPressEvent(event);
+    }
+
     void dragEnterEvent(QDragEnterEvent *event) override {
         if (event->mimeData()->hasUrls()) {
             event->acceptProposedAction();
@@ -107,7 +116,6 @@ protected:
         QWidget::dropEvent(event);
     }
 
-private slots:
     void showContextMenu(const QPoint &pos) {
         QModelIndex index = treeView->indexAt(pos);
         if (!index.isValid())
@@ -159,7 +167,7 @@ private slots:
         }
     }
 
-private:
+    DeviceConnection* connection;
     QFileSystemModel *fileSystemModel;
     FileFilterProxyModel *filterModel;
     QTreeView *treeView;

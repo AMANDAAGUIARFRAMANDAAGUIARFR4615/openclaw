@@ -122,9 +122,7 @@ void DeviceView::onFileClicked()
 
 void DeviceView::onRecorderClicked()
 {
-    // connection->send("appList");
-
-    Recorder *recorder = new Recorder();
+    Recorder *recorder = new Recorder(connection);
 
     recorder->resize(920, 400);
     recorder->show();
