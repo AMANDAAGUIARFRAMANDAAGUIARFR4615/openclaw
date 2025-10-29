@@ -129,9 +129,10 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 void MainWindow::relayoutDevices()
 {
     auto tabWidget = findChild<QTabWidget*>();
+    if (tabWidget->currentIndex() != 0)
+        return;
 
-    auto targetTab = tabWidget->widget(0);
-    auto scrollArea = qobject_cast<QScrollArea*>(targetTab);
+    auto scrollArea = qobject_cast<QScrollArea*>(tabWidget->currentWidget());
 
     auto contentWidget = scrollArea->widget();
     auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());

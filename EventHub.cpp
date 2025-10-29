@@ -19,7 +19,7 @@ void EventHub::StopListening(const QString& eventName, std::function<void(QJsonV
     {
         auto& actions = listeners[eventName];
 
-        if (listener == nullptr)
+        if (!listener)
         {
             actions.clear();
         }
