@@ -19,7 +19,9 @@ public:
     explicit FileViewer(const QString &filePath, QWidget *parent = nullptr) : QWidget(parent)
     {
         setWindowTitle("文件预览器");
-        resize(parent ? parent->size() : size(800, 600));
+        resize(parent ? parent->size() : QSize(800, 600));
+        show();
+
         openFile(filePath);
     }
 
@@ -31,7 +33,7 @@ private:
         if (isTextFile(fileName)) {
             QFile file(fileName);
             if (!file.open(QIODevice::ReadOnly)) {
-                QMessageBox::error(this, "错误", "无法打开文本文件。");
+                QMessageBox::warning(this, "错误", "无法打开文本文件。");
                 return;
             }
 
@@ -42,7 +44,7 @@ private:
         else if (isImageFile(fileName)) {
             QPixmap pixmap(fileName);
             if (pixmap.isNull()) {
-                QMessageBox::error(this, "错误", "无法加载图片。");
+                QMessageBox::warning(this, "错误", "无法加载图片。");
                 return;
             }
 
