@@ -12,6 +12,9 @@
 #include <QMimeData>
 #include <QDropEvent>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QPushButton>
+#include <QWidget>
 
 class FileFilterProxyModel : public QSortFilterProxyModel {
 public:
@@ -35,14 +38,28 @@ class Recorder : public QWidget {
     Q_OBJECT
 
 public:
-    Recorder(DeviceConnection* connection, QWidget *parent = nullptr) : connection(connection), QWidget(parent) {
+    Recorder(DeviceConnection* connection, QWidget *parent = nullptr)
+        : connection(connection), QWidget(parent), isRecording(false), isPaused(false) {
         QString recorderPath = QDir::currentPath() + "/recorder";
 
         QDir dir;
         if (!dir.exists(recorderPath))
             dir.mkpath(recorderPath);
 
-        QVBoxLayout *layout = new QVBoxLayout(this);
+        QVBoxLayout *mainLayout = new QVBoxLayout(this);
+
+        QHBoxLayout *buttonLayout = new QHBoxLayout();
+
+        btnStart = new QPushButton("开始录制", this);
+        btnStop  = new QPushButton("停止录制", this);
+        btnPause = new QPushButton("暂停录制", this);
+        btnResume= new QPushButton("恢复录制", this);
+
+        buttonLayout->addWidget(btnStart);
+        buttonLayout->addWidget(btnStop);
+        buttonLayout->addWidget(btnPause);
+        buttonLayout->addWidget(btnResume);
+        buttonLayout->addStretch();
 
         fileSystemModel = new QFileSystemModel();
         fileSystemModel->setRootPath(recorderPath);
@@ -54,10 +71,11 @@ public:
         treeView->setModel(filterModel);
         QModelIndex rootIndex = fileSystemModel->index(recorderPath);
         treeView->setRootIndex(filterModel->mapFromSource(rootIndex));
-        treeView->setColumnHidden(2, true);
+        treeView->setColumnHidden(2, true);  // 隐藏“类型”列
 
-        layout->addWidget(treeView);
-        setLayout(layout);
+        mainLayout->addLayout(buttonLayout);
+        mainLayout->addWidget(treeView);
+        setLayout(mainLayout);
 
         treeView->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(treeView, &QTreeView::customContextMenuRequested, this, &Recorder::showContextMenu);
@@ -65,11 +83,17 @@ public:
         treeView->setDragEnabled(true);
         treeView->setAcceptDrops(true);
         treeView->setDropIndicatorShown(true);
+
+        connect(btnStart,  &QPushButton::clicked, this, &Recorder::onStart);
+        connect(btnStop,   &QPushButton::clicked, this, &Recorder::onStop);
+        connect(btnPause,  &QPushButton::clicked, this, &Recorder::onPause);
+        connect(btnResume, &QPushButton::clicked, this, &Recorder::onResume);
+
+        updateButtonStates();
     }
 
 protected:
-    void keyPressEvent(QKeyEvent *event) override
-    {
+    void keyPressEvent(QKeyEvent *event) override {
         if (event->key() == Qt::Key_Escape)
             close();
         else
@@ -77,11 +101,10 @@ protected:
     }
 
     void dragEnterEvent(QDragEnterEvent *event) override {
-        if (event->mimeData()->hasUrls()) {
+        if (event->mimeData()->hasUrls())
             event->acceptProposedAction();
-        } else {
+        else
             event->ignore();
-        }
     }
 
     void dragMoveEvent(QDragMoveEvent *event) override {
@@ -92,34 +115,35 @@ protected:
         QModelIndex index = treeView->indexAt(event->pos());
         if (!index.isValid()) return;
 
-        QFileSystemModel *fileSystemModel = static_cast<QFileSystemModel *>(treeView->model());
-        QModelIndex srcIndex = static_cast<FileFilterProxyModel *>(treeView->model())->mapToSource(index);
+        // 注意：这里使用 proxy model，需要映射到 source model
+        QSortFilterProxyModel *proxy = static_cast<QSortFilterProxyModel *>(treeView->model());
+        QModelIndex srcIndex = proxy->mapToSource(index);
         QFileInfo targetDir = fileSystemModel->fileInfo(srcIndex);
         QString targetPath = targetDir.absoluteFilePath();
 
         if (targetDir.isDir()) {
             QList<QUrl> urls = event->mimeData()->urls();
-            foreach (const QUrl &url, urls) {
+            for (const QUrl &url : urls) {
                 QString sourcePath = url.toLocalFile();
                 if (QFile::exists(sourcePath)) {
                     QFileInfo sourceFile(sourcePath);
                     QString destinationPath = targetPath + QDir::separator() + sourceFile.fileName();
+
                     if (QFile::rename(sourcePath, destinationPath)) {
-                        QMessageBox::information(this, "成功", QString("文件已移动到 %1").arg(targetPath));
+                        QMessageBox::information(this, "成功",
+                                                 QString("文件已移动到 %1").arg(targetPath));
                     } else {
                         QMessageBox::warning(this, "错误", "无法移动文件！");
                     }
                 }
             }
         }
-
         QWidget::dropEvent(event);
     }
 
     void showContextMenu(const QPoint &pos) {
         QModelIndex index = treeView->indexAt(pos);
-        if (!index.isValid())
-            return;
+        if (!index.isValid()) return;
 
         QModelIndex srcIndex = filterModel->mapToSource(index);
         QFileInfo fileInfo = fileSystemModel->fileInfo(srcIndex);
@@ -127,8 +151,8 @@ protected:
 
         QMenu menu;
         QAction *newFolderAction = menu.addAction("新建文件夹");
-        QAction *renameAction = menu.addAction("重命名");
-        QAction *deleteAction = menu.addAction("删除");
+        QAction *renameAction    = menu.addAction("重命名");
+        QAction *deleteAction    = menu.addAction("删除");
 
         QAction *selectedAction = menu.exec(treeView->viewport()->mapToGlobal(pos));
         if (!selectedAction) return;
@@ -158,7 +182,8 @@ protected:
             }
         } else if (selectedAction == deleteAction) {
             if (QMessageBox::question(this, "确认删除",
-                                      QString("确定删除 “%1” 吗？").arg(fileInfo.fileName())) == QMessageBox::Yes) {
+                                      QString("确定删除 “%1” 吗？").arg(fileInfo.fileName()))
+                == QMessageBox::Yes) {
                 if (fileInfo.isDir())
                     QDir(path).removeRecursively();
                 else
@@ -167,7 +192,51 @@ protected:
         }
     }
 
+private slots:
+    void onStart() {
+        isRecording = true;
+        isPaused = false;
+        updateButtonStates();
+        
+    }
+
+    void onStop() {
+        isRecording = false;
+        isPaused = false;
+        updateButtonStates();
+    }
+
+    void onPause() {
+        isRecording = false;
+        isPaused = true;
+        updateButtonStates();
+    }
+
+    void onResume() {
+        isRecording = false;
+        isPaused = false;
+        updateButtonStates();
+    }
+
+private:
+    void updateButtonStates() {
+        btnStart->setEnabled(!isRecording);
+        btnStop->setEnabled(isRecording);
+        btnPause->setEnabled(isRecording && !isPaused);
+        btnResume->setEnabled(isRecording && isPaused);
+    }
+
+private:
     DeviceConnection* connection;
+
+    QPushButton *btnStart;
+    QPushButton *btnStop;
+    QPushButton *btnPause;
+    QPushButton *btnResume;
+
+    bool isRecording;
+    bool isPaused;
+
     QFileSystemModel *fileSystemModel;
     FileFilterProxyModel *filterModel;
     QTreeView *treeView;
