@@ -198,24 +198,31 @@ private slots:
         isPaused = false;
         updateButtonStates();
         
+        connection->send("recorder", "start");
     }
 
     void onStop() {
         isRecording = false;
         isPaused = false;
         updateButtonStates();
+
+        connection->send("recorder", "stop");
     }
 
     void onPause() {
         isRecording = false;
         isPaused = true;
         updateButtonStates();
+
+        connection->send("recorder", "pause");
     }
 
     void onResume() {
         isRecording = false;
         isPaused = false;
         updateButtonStates();
+
+        connection->send("recorder", "resume");
     }
 
 private:
