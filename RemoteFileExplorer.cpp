@@ -508,7 +508,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
                 return;
             }
 
-            new FileViewer(localPath, this);
+            new FileViewer(localPath);
         });
         viewAction->setEnabled(selectedCount == 1);
 

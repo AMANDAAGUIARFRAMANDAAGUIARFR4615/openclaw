@@ -10,6 +10,7 @@
 #include <QVBoxLayout>
 #include <QPixmap>
 #include <QFileInfo>
+#include <QKeyEvent>
 
 class FileViewer : public QWidget
 {
@@ -25,7 +26,14 @@ public:
         openFile(filePath);
     }
 
-private:
+protected:
+    void keyPressEvent(QKeyEvent *event) override {
+        if (event->key() == Qt::Key_Escape)
+            close();
+        else
+            QWidget::keyPressEvent(event);
+    }
+
     void openFile(const QString &fileName)
     {
         QVBoxLayout *layout = new QVBoxLayout(this);
