@@ -162,53 +162,70 @@ protected:
 
     void showContextMenu(const QPoint &pos) {
         QModelIndex index = treeView->indexAt(pos);
-        if (!index.isValid()) return;
+        QFileInfo fileInfo;
+        QString path;
 
-        QModelIndex srcIndex = filterModel->mapToSource(index);
-        QFileInfo fileInfo = fileSystemModel->fileInfo(srcIndex);
-        QString path = fileInfo.absoluteFilePath();
+        if (index.isValid()) {
+            QModelIndex srcIndex = filterModel->mapToSource(index);
+            fileInfo = fileSystemModel->fileInfo(srcIndex);
+            path = fileInfo.absoluteFilePath();
+        } else {
+            fileInfo = QFileInfo(recorderPath);
+            path = recorderPath;
+        }
 
-        QMenu menu;
-        QAction *newFolderAction = menu.addAction("新建文件夹");
-        QAction *renameAction    = menu.addAction("重命名");
-        QAction *deleteAction    = menu.addAction("删除");
+        QMenu *menu = new QMenu(treeView);
 
-        QAction *selectedAction = menu.exec(treeView->viewport()->mapToGlobal(pos));
-        if (!selectedAction) return;
-
-        if (selectedAction == newFolderAction) {
+        QAction *newFolderAction = menu->addAction("新建文件夹");
+        QObject::connect(newFolderAction, &QAction::triggered, [=]() {
             bool ok;
             QString folderName = QInputDialog::getText(nullptr, "新建文件夹",
-                                                       "文件夹名称：", QLineEdit::Normal,
-                                                       "新建文件夹", &ok);
+                                                    "文件夹名称：", QLineEdit::Normal,
+                                                    "新建文件夹", &ok);
             if (ok && !folderName.isEmpty()) {
-                QDir dir(path);
-                if (!fileInfo.isDir())
-                    dir = fileInfo.dir();
+                QDir dir(fileInfo.isDir() ? fileInfo.dir() : path);
                 if (!dir.mkdir(folderName))
-                    QMessageBox::warning(this, "错误", "无法创建文件夹！");
+                    new ToastWidget("无法创建文件夹！", this);
             }
-        } else if (selectedAction == renameAction) {
-            bool ok;
-            QString newName = QInputDialog::getText(nullptr, "重命名",
-                                                    "新名称：", QLineEdit::Normal,
-                                                    fileInfo.fileName(), &ok);
-            if (ok && !newName.isEmpty()) {
-                QDir dir = fileInfo.dir();
-                QString newPath = dir.filePath(newName);
-                if (!QFile::rename(path, newPath))
-                    QMessageBox::warning(this, "错误", "无法重命名文件！");
+        });
+
+        if (index.isValid()) {
+            if (!fileInfo.isDir()) {
+                QAction *playAction = menu->addAction("播放");
+                QObject::connect(playAction, &QAction::triggered, [=]() {
+                    connection->send("playback", "start");
+                });
             }
-        } else if (selectedAction == deleteAction) {
-            if (QMessageBox::question(this, "确认删除",
-                                      QString("确定删除 “%1” 吗？").arg(fileInfo.fileName()))
-                == QMessageBox::Yes) {
-                if (fileInfo.isDir())
-                    QDir(path).removeRecursively();
-                else
-                    QFile::remove(path);
-            }
+
+            QAction *renameAction = menu->addAction("重命名");
+            QObject::connect(renameAction, &QAction::triggered, [=]() {
+                bool ok;
+                QString newName = QInputDialog::getText(nullptr, "重命名",
+                                                        "新名称：", QLineEdit::Normal,
+                                                        fileInfo.fileName(), &ok);
+                if (ok && !newName.isEmpty()) {
+                    QDir dir = fileInfo.dir();
+                    QString newPath = dir.filePath(newName);
+                    if (!QFile::rename(path, newPath))
+                        new ToastWidget("无法重命名文件！", this);
+                }
+            });
+
+            QAction *deleteAction = menu->addAction("删除");
+            QObject::connect(deleteAction, &QAction::triggered, [=]() {
+                if (QMessageBox::question(nullptr, "确认删除",
+                                        QString("确定删除 “%1” 吗？").arg(fileInfo.fileName()))
+                    == QMessageBox::Yes) {
+                    if (fileInfo.isDir())
+                        QDir(path).removeRecursively();
+                    else
+                        QFile::remove(path);
+                }
+            });
         }
+
+        menu->exec(treeView->viewport()->mapToGlobal(pos));
+        delete menu;
     }
 
 private slots:
@@ -233,7 +250,8 @@ private slots:
         isPaused = true;
         updateButtonStates();
 
-        connection->send("recorder", "pause");
+        // connection->send("playback", "pause");
+        connection->send("playback", "stop");
     }
 
     void onResume() {
@@ -241,7 +259,8 @@ private slots:
         isPaused = false;
         updateButtonStates();
 
-        connection->send("recorder", "resume");
+        // connection->send("playback", "resume");
+        connection->send("playback", "start");
     }
 
 private:

@@ -490,7 +490,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
     }
     else
     {
-        auto localPath = QDir::homePath() + "/Desktop/" + connection->deviceInfo->uniqueName() + "/" + QFileInfo(targetPath).fileName();
+        auto localPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/" + connection->deviceInfo->uniqueName() + "/" + QFileInfo(targetPath).fileName();
 
         QString dirPath = QFileInfo(localPath).absolutePath();
 
