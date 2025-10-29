@@ -21,6 +21,7 @@
 #include <QSpinBox>
 #include <QWidget>
 #include <QStandardPaths>
+#include <QCheckBox>
 
 class FileFilterProxyModel : public QSortFilterProxyModel {
 public:
@@ -66,6 +67,9 @@ public:
         playbackTimesSpinBox->setValue(1);
         buttonLayout->addWidget(playbackTimesSpinBox);
 
+        infiniteCheckBox = new QCheckBox("无限", this);
+        buttonLayout->addWidget(infiniteCheckBox);
+
         buttonLayout->addStretch();
 
         fileSystemModel = new QFileSystemModel();
@@ -90,6 +94,10 @@ public:
         treeView->setDragEnabled(true);
         treeView->setAcceptDrops(true);
         treeView->setDropIndicatorShown(true);
+
+        connect(infiniteCheckBox, &QCheckBox::toggled, this, [=](bool checked) {
+            playbackTimesSpinBox->setEnabled(!checked);
+        });
 
         connect(startButton,  &QPushButton::clicked, [=]() {
             isRecording = true;
@@ -295,7 +303,7 @@ protected:
         QJsonObject dataObject;
         dataObject["type"] = "start";
         dataObject["script"] = QString::fromUtf8(file.readAll());
-        dataObject["repeat"] = playbackTimesSpinBox->value();
+        dataObject["repeat"] = infiniteCheckBox->isChecked() ? -1 : playbackTimesSpinBox->value();
 
         connection->send("playback", dataObject);
 
@@ -320,6 +328,7 @@ protected:
     QPushButton *startPlaybackButton;
     QPushButton *stopPlaybackButton;
     QSpinBox *playbackTimesSpinBox;
+    QCheckBox *infiniteCheckBox;
 
     bool isRecording = false;
     bool isPlaying = false;
