@@ -5,6 +5,7 @@
 #include "Tools.h"
 #include "FileTransfer.h"
 #include "ToastWidget.h"
+#include "FileViewer.h"
 #include <QVBoxLayout>
 #include <QNetworkReply>
 #include <QJsonDocument>
@@ -507,13 +508,7 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
                 return;
             }
 
-            QFile file(localPath);
-            if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                auto textEdit = new QTextEdit();
-                textEdit->resize(size());
-                textEdit->setPlainText(QString::fromUtf8(file.readAll()));
-                textEdit->show();
-            }
+            new FileViewer(localPath, this);
         });
         viewAction->setEnabled(selectedCount == 1);
 
