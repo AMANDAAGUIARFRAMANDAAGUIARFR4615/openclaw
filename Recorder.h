@@ -17,6 +17,8 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
+#include <QLabel>
+#include <QSpinBox>
 #include <QWidget>
 #include <QStandardPaths>
 
@@ -57,6 +59,13 @@ public:
         buttonLayout->addWidget(stopButton);
         buttonLayout->addWidget(startPlaybackButton);
         buttonLayout->addWidget(stopPlaybackButton);
+
+        buttonLayout->addWidget(new QLabel("回放次数:", this));
+        playbackTimesSpinBox = new QSpinBox(this);
+        playbackTimesSpinBox->setRange(1, 999);
+        playbackTimesSpinBox->setValue(1);
+        buttonLayout->addWidget(playbackTimesSpinBox);
+
         buttonLayout->addStretch();
 
         fileSystemModel = new QFileSystemModel();
@@ -69,7 +78,7 @@ public:
         treeView->setModel(filterModel);
         QModelIndex rootIndex = fileSystemModel->index(recorderPath);
         treeView->setRootIndex(filterModel->mapFromSource(rootIndex));
-        treeView->setColumnHidden(2, true);  // 隐藏“类型”列
+        treeView->setColumnHidden(2, true);
 
         mainLayout->addLayout(buttonLayout);
         mainLayout->addWidget(treeView);
@@ -163,7 +172,6 @@ protected:
         QModelIndex index = treeView->indexAt(event->pos());
         if (!index.isValid()) return;
 
-        // 注意：这里使用 proxy model，需要映射到 source model
         QSortFilterProxyModel *proxy = static_cast<QSortFilterProxyModel *>(treeView->model());
         QModelIndex srcIndex = proxy->mapToSource(index);
         QFileInfo targetDir = fileSystemModel->fileInfo(srcIndex);
@@ -287,6 +295,8 @@ protected:
         QJsonObject dataObject;
         dataObject["type"] = "start";
         dataObject["script"] = QString::fromUtf8(file.readAll());
+        dataObject["repeat"] = playbackTimesSpinBox->value();
+
         connection->send("playback", dataObject);
 
         isPlaying = true;
@@ -309,6 +319,7 @@ protected:
     QPushButton *stopButton;
     QPushButton *startPlaybackButton;
     QPushButton *stopPlaybackButton;
+    QSpinBox *playbackTimesSpinBox;
 
     bool isRecording = false;
     bool isPlaying = false;
