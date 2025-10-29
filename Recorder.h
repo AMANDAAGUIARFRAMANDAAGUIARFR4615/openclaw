@@ -2,6 +2,7 @@
 
 #include "DeviceConnection.h"
 #include "ToastWidget.h"
+#include "EventHub.h"
 #include <QTreeView>
 #include <QFileSystemModel>
 #include <QSortFilterProxyModel>
@@ -16,6 +17,7 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QWidget>
+#include <QStandardPaths>
 
 class FileFilterProxyModel : public QSortFilterProxyModel {
 public:
@@ -80,8 +82,22 @@ public:
         treeView->setAcceptDrops(true);
         treeView->setDropIndicatorShown(true);
 
-        connect(btnStart,  &QPushButton::clicked, this, &Recorder::onStart);
-        connect(btnStop,   &QPushButton::clicked, this, &Recorder::onStop);
+        connect(btnStart,  &QPushButton::clicked, [=]() {
+            isRecording = true;
+            isPaused = false;
+            updateButtonStates();
+
+            connection->send("recorder", "start");
+        });
+
+        connect(btnStop,   &QPushButton::clicked, [=]() {
+            isRecording = false;
+            isPaused = false;
+            updateButtonStates();
+
+            connection->send("recorder", "stop");
+        });
+
         connect(btnPause,  &QPushButton::clicked, this, &Recorder::onPause);
         connect(btnResume, &QPushButton::clicked, this, &Recorder::onResume);
 
@@ -98,13 +114,13 @@ public:
             }
 
             QString timestamp = QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
-            
+
             QFile file(QString("%1/%2_%3.recordx").arg(recorderPath).arg(connection->deviceInfo->deviceName).arg(timestamp));
             if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
                 new ToastWidget(file.errorString(), this);
                 return;
             }
-            
+
             QTextStream out(&file);
             out << text;
             file.close();
@@ -180,8 +196,8 @@ protected:
         QObject::connect(newFolderAction, &QAction::triggered, [=]() {
             bool ok;
             QString folderName = QInputDialog::getText(nullptr, "新建文件夹",
-                                                    "文件夹名称：", QLineEdit::Normal,
-                                                    "新建文件夹", &ok);
+                                                       "文件夹名称：", QLineEdit::Normal,
+                                                       "新建文件夹", &ok);
             if (ok && !folderName.isEmpty()) {
                 QDir dir(fileInfo.isDir() ? fileInfo.dir() : path);
                 if (!dir.mkdir(folderName))
@@ -191,9 +207,19 @@ protected:
 
         if (index.isValid()) {
             if (!fileInfo.isDir()) {
-                QAction *playAction = menu->addAction("播放");
+                QAction *playAction = menu->addAction("开始回放");
                 QObject::connect(playAction, &QAction::triggered, [=]() {
-                    connection->send("playback", "start");
+                    QJsonObject dataObject;
+                    dataObject["type"] = "start";
+                    dataObject["script"] = QString::fromUtf8(QFile(path).readAll());
+                    connection->send("playback", dataObject);
+                });
+
+                QAction *stopAction = menu->addAction("停止回放");
+                QObject::connect(stopAction, &QAction::triggered, [=]() {
+                    QJsonObject dataObject;
+                    dataObject["type"] = "stop";
+                    connection->send("playback", dataObject);
                 });
             }
 
@@ -214,7 +240,7 @@ protected:
             QAction *deleteAction = menu->addAction("删除");
             QObject::connect(deleteAction, &QAction::triggered, [=]() {
                 if (QMessageBox::question(nullptr, "确认删除",
-                                        QString("确定删除 “%1” 吗？").arg(fileInfo.fileName()))
+                                          QString("确定删除 “%1” 吗？").arg(fileInfo.fileName()))
                     == QMessageBox::Yes) {
                     if (fileInfo.isDir())
                         QDir(path).removeRecursively();
@@ -229,22 +255,6 @@ protected:
     }
 
 private slots:
-    void onStart() {
-        isRecording = true;
-        isPaused = false;
-        updateButtonStates();
-        
-        connection->send("recorder", "start");
-    }
-
-    void onStop() {
-        isRecording = false;
-        isPaused = false;
-        updateButtonStates();
-
-        connection->send("recorder", "stop");
-    }
-
     void onPause() {
         isRecording = false;
         isPaused = true;
