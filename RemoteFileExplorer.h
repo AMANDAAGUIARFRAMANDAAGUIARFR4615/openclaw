@@ -56,7 +56,8 @@ protected:
     void onDirectoryExpanded(const QModelIndex &index);
     void startFileTransfer(int type, const QString &localPath, const QString &remotePath, int size);
     void keyPressEvent(QKeyEvent *event) override;
-    void contextMenuEvent(QContextMenuEvent *event) override;
+    void showTreeContextMenu(const QPoint &pos);
+    void showTableContextMenu(const QPoint &pos);
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dragMoveEvent(QDragMoveEvent *event) override;
     void dropEvent(QDropEvent *event) override;

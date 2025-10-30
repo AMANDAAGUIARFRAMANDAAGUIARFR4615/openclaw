@@ -235,26 +235,26 @@ protected:
         if (index.isValid()) {
             if (!fileInfo.isDir()) {
                 QAction *editAction = menu->addAction("编辑");
-                QObject::connect(editAction, &QAction::triggered, [=]() {
+                connect(editAction, &QAction::triggered, [=]() {
                     new FileViewer(path);
                 });
 
                 if (!isPlaying) {
                     QAction *playAction = menu->addAction("开始回放");
-                    QObject::connect(playAction, &QAction::triggered, [=]() {
+                    connect(playAction, &QAction::triggered, [=]() {
                         onStartPlayback(path);
                     });
                 }
                 else {
                     QAction *stopAction = menu->addAction("停止回放");
-                    QObject::connect(stopAction, &QAction::triggered, [this]() {
+                    connect(stopAction, &QAction::triggered, [this]() {
                         onStopPlayback();
                     });
                 }
             }
 
             QAction *renameAction = menu->addAction("重命名");
-            QObject::connect(renameAction, &QAction::triggered, [=]() {
+            connect(renameAction, &QAction::triggered, [=]() {
                 bool ok;
                 QString newName = QInputDialog::getText(nullptr, "重命名",
                                                         "新名称：", QLineEdit::Normal,
@@ -268,7 +268,7 @@ protected:
             });
 
             QAction *deleteAction = menu->addAction("删除");
-            QObject::connect(deleteAction, &QAction::triggered, [=]() {
+            connect(deleteAction, &QAction::triggered, [=]() {
                 if (QMessageBox::question(nullptr, "确认删除",
                                           QString("确定删除 “%1” 吗？").arg(fileInfo.fileName()))
                     == QMessageBox::Yes) {
@@ -281,7 +281,7 @@ protected:
         }
 
         QAction *newFolderAction = menu->addAction("新建文件夹");
-        QObject::connect(newFolderAction, &QAction::triggered, [=]() {
+        connect(newFolderAction, &QAction::triggered, [=]() {
             bool ok;
             QString folderName = QInputDialog::getText(nullptr, "新建文件夹",
                                                        "文件夹名称：", QLineEdit::Normal,

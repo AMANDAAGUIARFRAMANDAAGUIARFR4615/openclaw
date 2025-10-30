@@ -30,6 +30,7 @@
 #include <QTextEdit>
 #include <QClipboard>
 #include <QPushButton>
+#include <QDesktopServices>
 
 RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath, QWidget *parent) 
     : connection(connection), rootPath(rootPath), QWidget(parent)
@@ -106,6 +107,8 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     treeView->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     treeView->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
     treeView->header()->setStretchLastSection(false);
+    treeView->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(treeView, &QTreeView::customContextMenuRequested, this, &RemoteFileExplorer::showTreeContextMenu);
 
     loadFavorites();
     refreshQuickAccessList();
@@ -127,6 +130,8 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     transferTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     transferTable->setFixedHeight(180);
     transferTable->setAlternatingRowColors(true);
+    transferTable->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(transferTable, &QTableWidget::customContextMenuRequested, this, &RemoteFileExplorer::showTableContextMenu);
 
     for (int i = 0; i < transferTable->columnCount(); i++) {
         if (i == 0 || i == 4 || i == 5)
@@ -407,15 +412,8 @@ void RemoteFileExplorer::keyPressEvent(QKeyEvent *event)
     QWidget::keyPressEvent(event);
 }
 
-void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
+void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
 {
-    QPoint localPos = treeView->viewport()->mapFromGlobal(event->globalPos());
-    if (!treeView->viewport()->rect().contains(localPos)) {
-        // 不在 treeView 区域，忽略上下文菜单
-        event->ignore();
-        return;
-    }
-
     QMenu contextMenu(this);
 
     QModelIndexList selectedIndexes = treeView->selectionModel()->selectedIndexes();
@@ -579,7 +577,45 @@ void RemoteFileExplorer::contextMenuEvent(QContextMenuEvent *event)
         clipboard->setText(targetPath);
     });
 
-    contextMenu.exec(event->globalPos());
+    contextMenu.exec(treeView->viewport()->mapToGlobal(pos));
+}
+
+void RemoteFileExplorer::showTableContextMenu(const QPoint &pos)
+{
+    QModelIndex index = transferTable->indexAt(pos);
+    if (!index.isValid())
+        return;
+
+    QString filePath = transferTable->item(index.row(), 4)->text();
+
+    QMenu menu(this);
+
+    QAction *viewAction = menu.addAction("查看");
+    connect(viewAction, &QAction::triggered, [=]() {
+        new FileViewer(filePath);
+    });
+
+    QAction *dirAction = menu.addAction("打开所在文件夹");
+    connect(dirAction, &QAction::triggered, [=]() {
+#if defined(Q_OS_WIN)
+        QStringList args;
+        args << "/select," << QDir::toNativeSeparators(filePath);
+        QProcess::startDetached("explorer.exe", args);
+#elif defined(Q_OS_MAC)
+        QString escapedFilePath = filePath;
+        escapedFilePath.replace(" ", "\\ ");  // Escape spaces in path
+        
+        QStringList scriptArgs;
+        scriptArgs << "-e"
+                   << QString("tell application \"Finder\" to reveal POSIX file \"%1\"").arg(escapedFilePath);
+        QProcess::execute("/usr/bin/osascript", scriptArgs);
+        QProcess::execute("/usr/bin/osascript", QStringList() << "-e" << "tell application \"Finder\" to activate");
+#else
+        QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
+#endif
+    });
+
+    menu.exec(transferTable->viewport()->mapToGlobal(pos));
 }
 
 void RemoteFileExplorer::dragEnterEvent(QDragEnterEvent *event)
