@@ -5,7 +5,6 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QList>
-#include <QDebug>
 
 class DeviceInfo {
 public:
@@ -17,7 +16,8 @@ public:
     const int videoPort;
     const int jbType;
     const QString localIp;
-    const QString platform;
+    const QString model;
+    const QString systemVersion;
     const int screenWidth;
     const int screenHeight;
     const QString version;
@@ -26,10 +26,7 @@ public:
     bool lockedStatus;
     float scaleFactor = 1;
 
-    QString toString() const;
     QString uniqueName() const;
-
-    friend QDebug operator<<(QDebug dbg, const DeviceInfo* deviceInfo);
 
 private:
     static QList<DeviceInfo*> allDevices;

@@ -11,12 +11,9 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
 {
     auto layout = new QVBoxLayout;
 
-    auto deviceInfoText = QString("%1 - %2  | %3 | %4 x %5")
+    auto deviceInfoText = QString("%1 - %2")
         .arg(deviceInfo->deviceName)
-        .arg(deviceInfo->platform)
-        .arg(connection->type == DeviceConnection::Usb ? "USB" : "WIFI")
-        .arg(deviceInfo->screenWidth)
-        .arg(deviceInfo->screenHeight);
+        .arg(connection->type == DeviceConnection::Usb ? "USB" : "WIFI");
 
     auto deviceInfoLabel = new QLabel(deviceInfoText, this);
     deviceInfoLabel->setAlignment(Qt::AlignCenter);
