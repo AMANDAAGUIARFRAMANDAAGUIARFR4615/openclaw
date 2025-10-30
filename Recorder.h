@@ -236,7 +236,7 @@ protected:
             if (!fileInfo.isDir()) {
                 QAction *editAction = menu->addAction("编辑");
                 connect(editAction, &QAction::triggered, [=]() {
-                    new FileViewer(path);
+                    new FileViewer(path, this);
                 });
 
                 if (!isPlaying) {

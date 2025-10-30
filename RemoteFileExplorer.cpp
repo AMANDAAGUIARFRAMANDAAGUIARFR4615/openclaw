@@ -506,7 +506,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
                 return;
             }
 
-            new FileViewer(localPath);
+            new FileViewer(localPath, this);
         });
         viewAction->setEnabled(selectedCount == 1);
 
@@ -592,7 +592,7 @@ void RemoteFileExplorer::showTableContextMenu(const QPoint &pos)
 
     QAction *viewAction = menu.addAction("查看");
     connect(viewAction, &QAction::triggered, [=]() {
-        new FileViewer(filePath);
+        new FileViewer(filePath, this);
     });
 
     QAction *dirAction = menu.addAction("打开所在文件夹");

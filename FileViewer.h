@@ -17,10 +17,11 @@ class FileViewer : public QWidget
     Q_OBJECT
 
 public:
-    explicit FileViewer(const QString &filePath, QWidget *parent = nullptr) : QWidget(parent), filePath(filePath)
+    explicit FileViewer(const QString &filePath, QWidget *parent) : filePath(filePath)
     {
-        setWindowTitle("文件预览器");
-        resize(parent ? parent->size() : QSize(800, 600));
+        setWindowTitle(QFileInfo(filePath).fileName());
+        resize(parent->size());
+        move(parent->pos());
         show();
 
         openFile(filePath);
