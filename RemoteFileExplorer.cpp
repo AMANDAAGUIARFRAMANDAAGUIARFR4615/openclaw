@@ -103,6 +103,16 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         updateDirectoryView(path, list);
     });
 
+    EventHub::StartListening("transferStatus", [this](QJsonValue data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
+
+        // auto id = data["id"].toString();
+        // auto code = data["code"].toInt();
+        // auto msg = data["msg"].toString();
+        // updateDirectoryView(path, list);
+    });
+
     treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
     treeView->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     treeView->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
