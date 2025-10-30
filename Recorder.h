@@ -22,6 +22,7 @@
 #include <QWidget>
 #include <QStandardPaths>
 #include <QCheckBox>
+#include <QMap>
 
 class FileFilterProxyModel : public QSortFilterProxyModel {
 public:
@@ -40,7 +41,17 @@ class Recorder : public QWidget {
     Q_OBJECT
 
 public:
-    Recorder(DeviceConnection* connection, QWidget *parent = nullptr) : connection(connection), QWidget(parent) {
+    Recorder(DeviceConnection* connection, QWidget *parent = nullptr) : QWidget(parent) {
+        if (instanceMap.contains(connection)) {
+            Recorder* existing = instanceMap.value(connection);
+            existing->setParent(parent);
+            this->deleteLater();
+            return;
+        }
+
+        instanceMap[connection] = this;
+        this->connection = connection;
+
         recorderPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/recorder";
 
         QDir dir;
@@ -336,4 +347,6 @@ protected:
     QFileSystemModel *fileSystemModel;
     FileFilterProxyModel *filterModel;
     QTreeView *treeView;
+
+    static QMap<DeviceConnection*, Recorder*> instanceMap;
 };
