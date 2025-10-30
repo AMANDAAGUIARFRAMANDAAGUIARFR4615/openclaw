@@ -24,7 +24,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 
     overlay = new QWidget(this);
     overlay->setStyleSheet("background-color: black;");
-    QLabel *label = new QLabel("设备已锁定", overlay);
+    QLabel *label = new QLabel("----------------", overlay);
     label->setStyleSheet("color: white; font-size: 20px;");
     label->setAlignment(Qt::AlignCenter);
 
