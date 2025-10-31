@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceView.h"
+#include <QResizeEvent>
 
 class DeviceWidget;
 
@@ -23,6 +24,19 @@ protected:
     void inputMethodEvent(QInputMethodEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
 
+    void resizeEvent(QResizeEvent *event) override
+    {
+        auto deviceInfo = connection->deviceInfo;
+        double aspectRatio = 1.0 * deviceInfo->screenHeight / deviceInfo->screenWidth;
+
+        resize(videoFrameWidget->size().width() + buttonContainer->size().width(), videoFrameWidget->size().width() * aspectRatio);
+        setFixedHeight(videoFrameWidget->size().width() * aspectRatio);
+     
+        // resize(videoFrameWidget->size().height() / aspectRatio + buttonContainer->size().width(), videoFrameWidget->size().height());
+        // setFixedWidth(videoFrameWidget->size().height() / aspectRatio + buttonContainer->size().width());
+    }
+
+    QWidget *buttonContainer;
     QTimer *wheelTimer = nullptr;
     QPoint currentPos;
     int accumulatedDelta = 0;

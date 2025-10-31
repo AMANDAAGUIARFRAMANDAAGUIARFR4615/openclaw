@@ -43,7 +43,7 @@ public:
             QString className = parentWidget()->metaObject()->className();
 
             if (className == "DeviceWindow")
-                setFixedSize(height, width);
+                resize(height, width);
         }
 
         update();

@@ -23,7 +23,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     videoFrameWidget = deviceWidget->getVideoFrameWidget();
 
     QHBoxLayout *layout = new QHBoxLayout(this);
-    layout->setSizeConstraint(QLayout::SetFixedSize);
+    // layout->setSizeConstraint(QLayout::SetFixedSize);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
@@ -79,8 +79,9 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     
     buttonLayout->addStretch();
 
-    QWidget *buttonContainer = new QWidget(this);
+    buttonContainer = new QWidget(this);
     buttonContainer->setLayout(buttonLayout);
+    buttonContainer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Ignored);
 
     layout->addWidget(buttonContainer);
 
@@ -129,8 +130,7 @@ void DeviceWindow::closeEvent(QCloseEvent *event)
     if (!videoFrameWidget)
         return;
 
-    videoFrameWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    videoFrameWidget->setFixedSize(deviceWidget->videoFrameWidgetSize);
+    videoFrameWidget->resize(deviceWidget->videoFrameWidgetSize);
     deviceWidget->addVideoFrameWidget(videoFrameWidget);
     videoFrameWidget = nullptr;
 }
@@ -293,7 +293,7 @@ void DeviceWindow::inputMethodEvent(QInputMethodEvent *event)
         connection->send("inputText", commitText);
     }
 
-    QWidget::inputMethodEvent(event);
+    DeviceView::inputMethodEvent(event);
 }
 
 void DeviceWindow::wheelEvent(QWheelEvent *event)
