@@ -49,7 +49,7 @@ protected:
     void setStatusMessage(const QString &message);
     void fetchDirectoryContents(const QString &path);
     void fetchDirectoryContents(const QModelIndex &index);
-    void addItemToTreeView(QStandardItem* parentItem, const QString& fullPath, const QString& type, const QString& date, int size, const QString& symbolicLink = "");
+    void addItemToTreeView(const QString& fullPath, const QString& type, const QString& date, int size, const QString& symbolicLink = "");
     void updateDirectoryView(const QString &path, const QJsonArray &list);
     void onDirectoryExpanded(const QModelIndex &index);
     void startFileTransfer(int type, const QString &localPath, const QString &remotePath, int size);

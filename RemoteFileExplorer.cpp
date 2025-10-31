@@ -111,10 +111,11 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         auto code = data["code"].toInt();
         if (code == 0) {
             auto result = data["result"];
-            auto path = result["path"].toString();
+            auto fullPath = result["path"].toString();
             auto date = result["date"].toString();
             auto size = result["size"].toInteger();
 
+            addItemToTreeView(fullPath, "NSFileTypeRegular", date, size);
             return;
         }
 
@@ -244,16 +245,27 @@ void RemoteFileExplorer::fetchDirectoryContents(const QModelIndex &index)
 
 void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArray &list)
 {
-    QStandardItem* parentItem = nullptr;
+    if (path == rootPath) {
+        pathToItem.clear();
+        pathToItem[rootPath] = model->invisibleRootItem();
+    }
 
-    if (path == rootPath)
-        parentItem = model->invisibleRootItem();
-    else
-        parentItem = pathToItem.value(path);
+    QStandardItem* parentItem = pathToItem.value(path);
 
     if (!parentItem) {
         setStatusMessage("目录加载失败: " + path);
         return;
+    }
+
+    qDebugEx() << "updateDirectoryView" << path << parentItem->rowCount();
+
+    for (int i = 0; i < parentItem->rowCount(); i++) {
+        auto childItem = parentItem->child(i);
+        if (!childItem)
+            continue;
+
+        auto childPath = path + "/" + childItem->text();
+        pathToItem.remove(childPath);
     }
 
     parentItem->removeRows(0, parentItem->rowCount());
@@ -277,27 +289,43 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
         auto date = isDirectory ? "" : obj["date"].toString();
         auto size = isDirectory ? -1 : obj["size"].toInteger();
 
-        addItemToTreeView(parentItem, fullPath, type, date, size, symbolicLink);
+        addItemToTreeView(fullPath, type, date, size, symbolicLink);
     }
 }
 
-void RemoteFileExplorer::addItemToTreeView(QStandardItem* parentItem, const QString& fullPath, const QString& type, const QString& date, int size, const QString& symbolicLink)
+void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QString& type, const QString& date, int size, const QString& symbolicLink)
 {
-    static QFileIconProvider iconProvider;
+    auto parentPath = fullPath.left(fullPath.lastIndexOf('/'));
+    auto parentItem = pathToItem[parentPath.isEmpty() ? "/" : parentPath];
+    
+    if (!parentItem) {
+        qCriticalEx() << parentPath << "不存在";
+        return;
+    }
 
     auto name = QFileInfo(fullPath).fileName();
+    auto& item = pathToItem[fullPath];
 
-    bool isDirectory = type == "NSFileTypeDirectory" || type == "NSFileTypeSymbolicLink";
+    if (item) {
+        int row = item->row();
+        model->setData(model->index(row, 1), date);
+        model->setData(model->index(row, 2), Tools::formatByteSize(size));
+        return;
+    }
+    
+    static QFileIconProvider iconProvider;
 
-    QStandardItem* item = new QStandardItem(name);
+    auto isDirectory = type == "NSFileTypeDirectory" || type == "NSFileTypeSymbolicLink";
+
+    item = new QStandardItem(name);
     item->setData(fullPath, Qt::UserRole);
     pathToItem[fullPath] = item;
 
     if (isDirectory) {
         item->setIcon(QIcon(symbolicLink.isEmpty() ? ":/icons/folder.png" : ":/icons/folder_link.png"));
     } else {
-        QString suffix = name.section('.', -1).toLower();
-        QString iconPath = ":/icons/" + suffix + ".png";
+        auto suffix = name.section('.', -1).toLower();
+        auto iconPath = ":/icons/" + suffix + ".png";
         QIcon fileIcon;
 
         if (QFile::exists(iconPath)) {
@@ -318,8 +346,8 @@ void RemoteFileExplorer::addItemToTreeView(QStandardItem* parentItem, const QStr
 
     if (isDirectory) item->setChild(0, nullptr);
 
-    QStandardItem* dateItem = new QStandardItem(date);
-    QStandardItem* sizeItem = new QStandardItem(Tools::formatByteSize(size));
+    auto dateItem = new QStandardItem(date);
+    auto sizeItem = new QStandardItem(Tools::formatByteSize(size));
     sizeItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
     parentItem->appendRow({item, dateItem, sizeItem});
