@@ -11,6 +11,7 @@
 #include <QPixmap>
 #include <QFileInfo>
 #include <QKeyEvent>
+#include <QDesktopServices>
 
 class FileViewer : public QWidget
 {
@@ -24,7 +25,39 @@ public:
         move(parent->pos());
         show();
 
-        openFile(filePath);
+        QVBoxLayout *layout = new QVBoxLayout(this);
+
+        if (isTextFile()) {
+            QFile file(filePath);
+            if (!file.open(QIODevice::ReadOnly)) {
+                QMessageBox::warning(this, "错误", "无法打开文本文件。");
+                return;
+            }
+
+            textEdit = new QTextEdit;
+            textEdit->setPlainText(QString::fromUtf8(file.readAll()));
+            textEdit->document()->setModified(false);
+            layout->addWidget(textEdit);
+        }
+        else if (isImageFile()) {
+            QPixmap pixmap(filePath);
+            if (pixmap.isNull()) {
+                QMessageBox::warning(this, "错误", "无法加载图片。");
+                return;
+            }
+
+            QLabel *imageLabel = new QLabel;
+            imageLabel->setAlignment(Qt::AlignCenter);
+            imageLabel->setPixmap(pixmap.scaled(size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            layout->addWidget(imageLabel);
+        }
+        else {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
+            deleteLater();
+            return;
+        }
+
+        setLayout(layout);
     }
 
 protected:
@@ -58,42 +91,6 @@ protected:
             event->accept();
     }
 
-    void openFile(const QString &fileName)
-    {
-        QVBoxLayout *layout = new QVBoxLayout(this);
-
-        if (isTextFile(fileName)) {
-            QFile file(fileName);
-            if (!file.open(QIODevice::ReadOnly)) {
-                QMessageBox::warning(this, "错误", "无法打开文本文件。");
-                return;
-            }
-
-            textEdit = new QTextEdit;
-            textEdit->setPlainText(QString::fromUtf8(file.readAll()));
-            textEdit->document()->setModified(false);
-            layout->addWidget(textEdit);
-        }
-        else if (isImageFile(fileName)) {
-            QPixmap pixmap(fileName);
-            if (pixmap.isNull()) {
-                QMessageBox::warning(this, "错误", "无法加载图片。");
-                return;
-            }
-
-            QLabel *imageLabel = new QLabel;
-            imageLabel->setAlignment(Qt::AlignCenter);
-            imageLabel->setPixmap(pixmap.scaled(size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-            layout->addWidget(imageLabel);
-        }
-        else {
-            QMessageBox::information(this, "不支持的文件", "不支持该文件类型。");
-            return;
-        }
-
-        setLayout(layout);
-    }
-
     void saveFile() {
         if (!textEdit) return;
         QFile file(filePath);
@@ -106,16 +103,16 @@ protected:
         textEdit->document()->setModified(false);
     }
 
-    bool isTextFile(const QString &fileName)
+    bool isTextFile()
     {
         static const QStringList textExtensions = {"txt", "cpp", "h", "json", "md", "ini", "log", "csv", "recordx"};
-        return textExtensions.contains(QFileInfo(fileName).suffix().toLower());
+        return textExtensions.contains(QFileInfo(filePath).suffix().toLower());
     }
 
-    bool isImageFile(const QString &fileName)
+    bool isImageFile()
     {
         static const QStringList imageExtensions = {"jpg", "jpeg", "png", "bmp", "gif", "webp"};
-        return imageExtensions.contains(QFileInfo(fileName).suffix().toLower());
+        return imageExtensions.contains(QFileInfo(filePath).suffix().toLower());
     }
 
     QString filePath;
