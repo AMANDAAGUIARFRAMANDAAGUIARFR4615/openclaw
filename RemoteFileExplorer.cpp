@@ -107,19 +107,29 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         if (this->connection != connection)
             return;
 
-        auto id = data["id"].toString();
         auto code = data["code"].toInt();
-        if (code == 0) {
-            auto result = data["result"];
-            auto fullPath = result["path"].toString();
-            auto date = result["date"].toString();
-            auto size = result["size"].toInteger();
-
-            addItemToTreeView(fullPath, "NSFileTypeRegular", date, size);
+        if (code != 0) {
+            setStatusMessage("传输失败: " + data["msg"].toString());
             return;
         }
 
-        auto msg = data["msg"].toString();
+        auto result = data["result"];
+        auto fullPath = result["path"].toString();
+        auto date = result["date"].toString();
+        auto size = result["size"].toInteger();
+
+        addItemToTreeView(fullPath, "NSFileTypeRegular", date, size);
+    });
+
+    EventHub::StartListening("extractArchiveStatus", [this](QJsonValue data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
+
+        auto code = data["code"].toInt();
+        if (code != 0) {
+            setStatusMessage("解压失败: " + data["msg"].toString());
+            return;
+        }
     });
 
     treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
@@ -550,7 +560,6 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
                 setStatusMessage("解压: " + targetPath);
 
                 connection->send("extractArchive", targetPath);
-                fetchDirectoryContents(index.parent());
             });
             extractAction->setEnabled(selectedCount == 1);
         }
