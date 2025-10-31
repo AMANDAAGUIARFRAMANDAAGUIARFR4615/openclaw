@@ -107,10 +107,18 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         if (this->connection != connection)
             return;
 
-        // auto id = data["id"].toString();
-        // auto code = data["code"].toInt();
-        // auto msg = data["msg"].toString();
-        // updateDirectoryView(path, list);
+        auto id = data["id"].toString();
+        auto code = data["code"].toInt();
+        if (code == 0) {
+            auto result = data["result"];
+            auto path = result["path"].toString();
+            auto date = result["date"].toString();
+            auto size = result["size"].toInteger();
+
+            return;
+        }
+
+        auto msg = data["msg"].toString();
     });
 
     treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
@@ -238,11 +246,10 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
 {
     QStandardItem* parentItem = nullptr;
 
-    if (path == rootPath) {
+    if (path == rootPath)
         parentItem = model->invisibleRootItem();
-    } else {
-        parentItem = findItemByPath(path);
-    }
+    else
+        parentItem = pathToItem.value(path);
 
     if (!parentItem) {
         setStatusMessage("目录加载失败: " + path);
@@ -256,8 +263,6 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
         return;
     }
 
-    QFileIconProvider iconProvider;
-
     for (const auto &value : list) {
         auto obj = value.toObject();
         auto name = obj["name"].toString();
@@ -266,76 +271,58 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
         auto isDirectory = type == "NSFileTypeDirectory" || type == "NSFileTypeSymbolicLink";
 
         auto symbolicLink = obj["symbolicLink"].toString();
-        auto myPath = path + '/' + name;
-        if (path.endsWith('/')) myPath = path + name;
+        auto fullPath = path + '/' + name;
+        if (path.endsWith('/')) fullPath = path + name;
 
         auto date = isDirectory ? "" : obj["date"].toString();
         auto size = isDirectory ? -1 : obj["size"].toInteger();
 
-        auto item = new QStandardItem(name);
-        item->setData(myPath, Qt::UserRole);
+        addItemToTreeView(parentItem, fullPath, type, date, size, symbolicLink);
+    }
+}
 
-        if (isDirectory) {
-            item->setIcon(QIcon(symbolicLink.isEmpty() ? ":/icons/folder.png" : ":/icons/folder_link.png"));
+void RemoteFileExplorer::addItemToTreeView(QStandardItem* parentItem, const QString& fullPath, const QString& type, const QString& date, int size, const QString& symbolicLink)
+{
+    static QFileIconProvider iconProvider;
+
+    auto name = QFileInfo(fullPath).fileName();
+
+    bool isDirectory = type == "NSFileTypeDirectory" || type == "NSFileTypeSymbolicLink";
+
+    QStandardItem* item = new QStandardItem(name);
+    item->setData(fullPath, Qt::UserRole);
+    pathToItem[fullPath] = item;
+
+    if (isDirectory) {
+        item->setIcon(QIcon(symbolicLink.isEmpty() ? ":/icons/folder.png" : ":/icons/folder_link.png"));
+    } else {
+        QString suffix = name.section('.', -1).toLower();
+        QString iconPath = ":/icons/" + suffix + ".png";
+        QIcon fileIcon;
+
+        if (QFile::exists(iconPath)) {
+            fileIcon = QIcon(iconPath);
         } else {
-            QString suffix = name.section('.', -1).toLower();
-            QString iconPath = ":/icons/" + suffix + ".png";
-
-            QIcon fileIcon;
-            if (QFile::exists(iconPath)) {
-                fileIcon = QIcon(iconPath);
-            } else {
-                if (symbolicLink.isEmpty())
-                    fileIcon = QFileIconProvider().icon(QFileInfo(name));
-                else
-                    fileIcon = QIcon(":/icons/file_link.png");
-            }
-            item->setIcon(fileIcon);
+            if (symbolicLink.isEmpty())
+                fileIcon = iconProvider.icon(QFileInfo(name));
+            else
+                fileIcon = QIcon(":/icons/file_link.png");
         }
 
-        item->setEditable(false);
-
-        if (name.startsWith('.')) {
-            item->setData(true, Qt::UserRole + 1);
-        }
-
-        item->setData(isDirectory, Qt::UserRole + 2);
-
-        if (isDirectory) item->setChild(0, nullptr);
-
-        QStandardItem* dateItem = new QStandardItem(date);
-        QStandardItem* sizeItem = new QStandardItem(Tools::formatByteSize(size));
-        sizeItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-
-        parentItem->appendRow({item, dateItem, sizeItem});
-    }
-}
-
-QStandardItem* RemoteFileExplorer::findItemByPath(const QString &path)
-{
-    QString relativePath = path;
-    if (path.startsWith(rootPath)) {
-        relativePath = path.mid(rootPath.length());
-        if (relativePath.startsWith('/')) relativePath = relativePath.mid(1);
+        item->setIcon(fileIcon);
     }
 
-    QStringList pathParts = relativePath.split('/', Qt::SkipEmptyParts);
+    item->setEditable(false);
 
-    return findItemByPathRecursive(model->invisibleRootItem(), pathParts);
-}
+    item->setData(isDirectory, Qt::UserRole + 2);
 
-QStandardItem* RemoteFileExplorer::findItemByPathRecursive(QStandardItem* parentItem, const QStringList &pathParts)
-{
-    if (pathParts.isEmpty()) return parentItem;
+    if (isDirectory) item->setChild(0, nullptr);
 
-    auto currentPart = pathParts.first();
-    for (int row = 0; row < parentItem->rowCount(); ++row) {
-        auto item = parentItem->child(row);
-        if (currentPart == item->text())
-            return findItemByPathRecursive(item, pathParts.mid(1));
-    }
+    QStandardItem* dateItem = new QStandardItem(date);
+    QStandardItem* sizeItem = new QStandardItem(Tools::formatByteSize(size));
+    sizeItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
-    return nullptr;
+    parentItem->appendRow({item, dateItem, sizeItem});
 }
 
 void RemoteFileExplorer::onDirectoryExpanded(const QModelIndex &index)
@@ -493,7 +480,6 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             setStatusMessage("新建文件夹: " + name);
 
             connection->send("createDirectory", targetPath + "/" + name);
-            fetchDirectoryContents(index);
         });
         createAction->setEnabled(selectedCount == 1);
     }
@@ -700,7 +686,6 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
         startFileTransfer(2, localPath, dir + QString("/") + QFileInfo(localPath).fileName(), size);
     }
 
-    fetchDirectoryContents(index);
     event->accept();
 }
 

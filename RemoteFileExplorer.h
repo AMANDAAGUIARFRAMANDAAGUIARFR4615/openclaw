@@ -23,8 +23,7 @@ public:
 
         QStyleOptionViewItem modifiedOption = option;
 
-        // 获取自定义数据标记，判断是否为隐藏文件
-        bool isHidden = index.data(Qt::UserRole + 1).toBool();
+        bool isHidden = index.data(Qt::DisplayRole).toString().startsWith('.');
 
         if (isHidden) {
             modifiedOption.palette.setColor(QPalette::Text, QColor(150, 150, 150));
@@ -50,9 +49,8 @@ protected:
     void setStatusMessage(const QString &message);
     void fetchDirectoryContents(const QString &path);
     void fetchDirectoryContents(const QModelIndex &index);
+    void addItemToTreeView(QStandardItem* parentItem, const QString& fullPath, const QString& type, const QString& date, int size, const QString& symbolicLink = "");
     void updateDirectoryView(const QString &path, const QJsonArray &list);
-    QStandardItem* findItemByPath(const QString &path);
-    QStandardItem* findItemByPathRecursive(QStandardItem* parentItem, const QStringList &pathParts);
     void onDirectoryExpanded(const QModelIndex &index);
     void startFileTransfer(int type, const QString &localPath, const QString &remotePath, int size);
     void keyPressEvent(QKeyEvent *event) override;
@@ -66,6 +64,7 @@ protected:
     QTreeView *treeView;
     QStandardItemModel *model;
     QString rootPath;
+    QHash<QString, QStandardItem*> pathToItem;
     QStatusBar *statusBar;
     QPoint m_dragStartPos;
 
