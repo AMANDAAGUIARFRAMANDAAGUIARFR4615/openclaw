@@ -85,13 +85,6 @@ DeviceWidget::~DeviceWidget()
 
 }
 
-void DeviceWidget::addOverlay(const QString &text)
-{
-    DeviceView::addOverlay(text);
-
-    overlay->resize(size());
-}
-
 void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
 {
     QWidget::mouseDoubleClickEvent(event);

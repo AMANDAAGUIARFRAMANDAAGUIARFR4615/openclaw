@@ -12,7 +12,6 @@ public:
     ~DeviceWidget();
 
 protected:
-    void addOverlay(const QString &text) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
 
     DeviceWindow* deviceWindow = nullptr;
