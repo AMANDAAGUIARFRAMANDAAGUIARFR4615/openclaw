@@ -35,21 +35,6 @@ public:
 
     void orientationChanged(int orientation)
     {
-        switch (orientation) {
-            case 1: // Portrait
-                setProperty("rotation", 0);
-                break;
-            case 2: // PortraitUpsideDown
-                setProperty("rotation", 180);
-                break;
-            case 3: // LandscapeRight
-                setProperty("rotation", -90);
-                break;
-            case 4: // LandscapeLeft
-                setProperty("rotation", 90);
-                break;
-        }
-
         auto width = size().width();
         auto height = size().height();
 
