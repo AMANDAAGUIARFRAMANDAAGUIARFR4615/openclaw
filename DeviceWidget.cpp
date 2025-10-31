@@ -107,7 +107,8 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
         deviceWindow = nullptr;
     });
 
-    videoFrameWidget->resize(deviceInfo->screenWidth * deviceInfo->scaleFactor * 0.5, deviceInfo->screenHeight * deviceInfo->scaleFactor * 0.5);
+    videoFrameWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    videoFrameWidget->setFixedSize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
     videoFrameWidget->orientationChanged(deviceInfo->orientation);
     deviceWindow->setAttribute(Qt::WA_DeleteOnClose);
     deviceWindow->show();
