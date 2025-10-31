@@ -86,6 +86,9 @@ void DeviceView::addOverlay(const QString &text)
     overlay->resize(videoFrameWidget->size());
 
     connect(videoFrameWidget, &VideoFrameWidget::resized, [this]() {
+        if (!videoFrameWidget)
+            return;
+
         overlay->move(videoFrameWidget->pos());
         overlay->resize(videoFrameWidget->size());
     });
