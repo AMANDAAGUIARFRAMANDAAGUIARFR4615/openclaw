@@ -596,23 +596,24 @@ void RemoteFileExplorer::showTableContextMenu(const QPoint &pos)
     if (!index.isValid())
         return;
 
-    QString filePath = transferTable->item(index.row(), 4)->text();
+    QString localPath = transferTable->item(index.row(), 4)->text();
+    QString remotePath = transferTable->item(index.row(), 5)->text();
 
     QMenu menu(this);
 
     QAction *viewAction = menu.addAction("查看");
     connect(viewAction, &QAction::triggered, [=]() {
-        new FileViewer(filePath, this);
+        new FileViewer(localPath, this);
     });
 
-    QAction *dirAction = menu.addAction("打开所在文件夹");
-    connect(dirAction, &QAction::triggered, [=]() {
+    QAction *openFolderAction = menu.addAction("打开所在文件夹");
+    connect(openFolderAction, &QAction::triggered, [=]() {
 #if defined(Q_OS_WIN)
         QStringList args;
-        args << "/select," << QDir::toNativeSeparators(filePath);
+        args << "/select," << QDir::toNativeSeparators(localPath);
         QProcess::startDetached("explorer.exe", args);
 #elif defined(Q_OS_MAC)
-        QString escapedFilePath = filePath;
+        QString escapedFilePath = localPath;
         escapedFilePath.replace(" ", "\\ ");  // Escape spaces in path
         
         QStringList scriptArgs;
@@ -621,8 +622,20 @@ void RemoteFileExplorer::showTableContextMenu(const QPoint &pos)
         QProcess::execute("/usr/bin/osascript", scriptArgs);
         QProcess::execute("/usr/bin/osascript", QStringList() << "-e" << "tell application \"Finder\" to activate");
 #else
-        QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
+        QDesktopServices::openUrl(QUrl::fromLocalFile(localPath));
 #endif
+    });
+
+    QAction *copyLocalPathAction = menu.addAction("复制本地路径");
+    connect(copyLocalPathAction, &QAction::triggered, [=]() {
+        QClipboard *clipboard = QApplication::clipboard();
+        clipboard->setText(localPath);
+    });
+
+    QAction *copyRemotePathAction = menu.addAction("复制远程路径");
+    connect(copyRemotePathAction, &QAction::triggered, [=]() {
+        QClipboard *clipboard = QApplication::clipboard();
+        clipboard->setText(remotePath);
     });
 
     menu.exec(transferTable->viewport()->mapToGlobal(pos));
