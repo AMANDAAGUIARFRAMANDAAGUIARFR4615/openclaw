@@ -59,11 +59,20 @@ public:
 
             if (className == "DeviceWindow")
                 setFixedSize(height, width);
-            else
-                resize(height, width);
         }
+
         update();
     }
 
     QMediaPlayer* const mediaPlayer;
+
+signals:
+    void resized();
+    
+protected:
+    void resizeEvent(QResizeEvent *event) override
+    {
+        QVideoWidget::resizeEvent(event);
+        emit resized();
+    }
 };
