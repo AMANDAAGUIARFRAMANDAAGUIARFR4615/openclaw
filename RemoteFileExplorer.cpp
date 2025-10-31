@@ -246,13 +246,6 @@ void RemoteFileExplorer::fetchDirectoryContents(const QString &path)
     connection->send("fileList", path);
 }
 
-void RemoteFileExplorer::fetchDirectoryContents(const QModelIndex &index)
-{
-    bool isDir = index.data(Qt::UserRole + 2).toBool();
-    QString targetPath = (isDir ? index : index.parent()).data(Qt::UserRole).toString();
-    fetchDirectoryContents(targetPath);
-}
-
 void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArray &list)
 {
     if (path == rootPath) {
@@ -581,7 +574,11 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         dataObject["toPath"] = name;
 
         connection->send("renameItem", dataObject);
-        fetchDirectoryContents(index.parent());
+        model->setData(index, name);
+
+        auto toPath = targetPath.left(targetPath.lastIndexOf('/') + 1) + name;
+        pathToItem[toPath] = pathToItem[targetPath];
+        pathToItem.remove(targetPath);
     });
     renameAction->setEnabled(selectedCount == 1);
 
@@ -599,7 +596,10 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         for (const QString& path : paths)
         {
             connection->send("removeItem", path);
-            fetchDirectoryContents(index.parent());
+            auto index = model->indexFromItem(pathToItem[path]);
+            qDebugEx() << path << index.row();
+            model->removeRows(index.row(), 1, index.parent());
+            pathToItem.remove(path);
         }
     });
 
