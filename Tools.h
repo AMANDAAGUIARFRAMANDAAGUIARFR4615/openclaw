@@ -57,6 +57,37 @@ public:
         return QString::number(size / (1024.0 * 1024 * 1024), 'f', 2) + " GB";
     }
 
+    static qint64 parseByteSize(const QString &text)
+    {
+        QString str = text.trimmed().toUpper();
+
+        if (str.isEmpty())
+            return -1;
+
+        static const QRegularExpression regex(
+            R"(^\s*([0-9]*\.?[0-9]+)\s*([KMGT]?B)?\s*$)"
+        );
+        QRegularExpressionMatch match = regex.match(str);
+        if (!match.hasMatch())
+            return -1;
+
+        double value = match.captured(1).toDouble();
+        QString unit = match.captured(2);
+
+        if (unit == "B" || unit.isEmpty())
+            return static_cast<qint64>(value);
+        else if (unit == "KB")
+            return static_cast<qint64>(value * 1024);
+        else if (unit == "MB")
+            return static_cast<qint64>(value * 1024 * 1024);
+        else if (unit == "GB")
+            return static_cast<qint64>(value * 1024 * 1024 * 1024);
+        else if (unit == "TB")
+            return static_cast<qint64>(value * 1024 * 1024 * 1024 * 1024);
+
+        return -1;
+    }
+
     static QString imageToBase64(const QImage &image) {
         QByteArray byteArray;
         QBuffer buffer(&byteArray);

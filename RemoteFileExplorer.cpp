@@ -121,6 +121,20 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         addItemToTreeView(fullPath, "NSFileTypeRegular", date, size);
     });
 
+    EventHub::StartListening("compressArchiveStatus", [this](QJsonValue data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
+
+        auto code = data["code"].toInt();
+        if (code != 0) {
+            setStatusMessage("压缩失败: " + data["msg"].toString());
+            return;
+        }
+
+        auto result = data["result"];
+        addItemToTreeView(result["path"].toString(), "NSFileTypeRegular", result["date"].toString(), result["size"].toInteger());
+    });
+
     EventHub::StartListening("extractArchiveStatus", [this](QJsonValue data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
@@ -130,6 +144,62 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
             setStatusMessage("解压失败: " + data["msg"].toString());
             return;
         }
+
+        auto result = data["result"];
+        addItemToTreeView(result["path"].toString(), "NSFileTypeDirectory", result["date"].toString(), -1);
+    });
+
+    EventHub::StartListening("createDirectoryStatus", [this](QJsonValue data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
+
+        auto code = data["code"].toInt();
+        if (code != 0) {
+            setStatusMessage("新建文件夹失败: " + data["msg"].toString());
+            return;
+        }
+
+        addItemToTreeView(data["path"].toString(), "NSFileTypeDirectory", "", -1);
+    });
+
+    EventHub::StartListening("renameItemStatus", [this](QJsonValue data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
+
+        auto code = data["code"].toInt();
+        if (code != 0) {
+            setStatusMessage("重命名失败: " + data["msg"].toString());
+            return;
+        }
+
+        auto atPath = data["atPath"].toString();
+        auto name = data["toPath"].toString();
+        auto toPath = atPath.left(atPath.lastIndexOf('/') + 1) + name;
+
+        auto index = pathToItem[atPath]->index();
+        auto date = model->index(index.row(), 1, index.parent()).data().toString();
+        auto size = model->index(index.row(), 2, index.parent()).data().toString();
+        model->removeRows(index.row(), 1, index.parent());
+        pathToItem.remove(atPath);
+
+        bool isDir = index.data(Qt::UserRole + 2).toBool();
+        addItemToTreeView(toPath, isDir ? "NSFileTypeDirectory" : "NSFileTypeRegular", date, Tools::parseByteSize(size));
+    });
+
+    EventHub::StartListening("removeItemStatus", [this](QJsonValue data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
+
+        auto code = data["code"].toInt();
+        if (code != 0) {
+            setStatusMessage("删除失败: " + data["msg"].toString());
+            return;
+        }
+
+        auto path = data["path"].toString();
+        auto index = pathToItem[path]->index();
+        model->removeRows(index.row(), 1, index.parent());
+        pathToItem.remove(path);
     });
 
     treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
@@ -283,16 +353,11 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
         auto name = obj["name"].toString();
         auto type = obj["type"].toString();
 
-        auto isDirectory = type == "NSFileTypeDirectory" || type == "NSFileTypeSymbolicLink";
-
         auto symbolicLink = obj["symbolicLink"].toString();
         auto fullPath = path + '/' + name;
         if (path.endsWith('/')) fullPath = path + name;
 
-        auto date = isDirectory ? "" : obj["date"].toString();
-        auto size = isDirectory ? -1 : obj["size"].toInteger();
-
-        addItemToTreeView(fullPath, type, date, size, symbolicLink);
+        addItemToTreeView(fullPath, type, obj["date"].toString(), obj["size"].toInteger(), symbolicLink);
     }
 }
 
@@ -311,8 +376,9 @@ void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QStrin
 
     if (item) {
         int row = item->row();
-        model->setData(model->index(row, 1), date);
-        model->setData(model->index(row, 2), Tools::formatByteSize(size));
+        auto parent = item->index().parent();
+        model->setData(model->index(row, 1, parent), date);
+        model->setData(model->index(row, 2, parent), Tools::formatByteSize(size));
         return;
     }
     
@@ -350,7 +416,7 @@ void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QStrin
     if (isDirectory) item->setChild(0, nullptr);
 
     auto dateItem = new QStandardItem(date);
-    auto sizeItem = new QStandardItem(Tools::formatByteSize(size));
+    auto sizeItem = new QStandardItem(Tools::formatByteSize(isDirectory ? -1 : size));
     sizeItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
     parentItem->appendRow({item, dateItem, sizeItem});
@@ -574,11 +640,6 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         dataObject["toPath"] = name;
 
         connection->send("renameItem", dataObject);
-        model->setData(index, name);
-
-        auto toPath = targetPath.left(targetPath.lastIndexOf('/') + 1) + name;
-        pathToItem[toPath] = pathToItem[targetPath];
-        pathToItem.remove(targetPath);
     });
     renameAction->setEnabled(selectedCount == 1);
 
@@ -591,15 +652,10 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         if (reply != QMessageBox::Yes)
             return;
 
-        setStatusMessage("删除: " + paths.join(", "));
+        qDebugEx() << "删除: " + paths.join(", ");
         
-        for (const QString& path : paths)
-        {
+        for (const QString& path : paths) {
             connection->send("removeItem", path);
-            auto index = model->indexFromItem(pathToItem[path]);
-            qDebugEx() << path << index.row();
-            model->removeRows(index.row(), 1, index.parent());
-            pathToItem.remove(path);
         }
     });
 
