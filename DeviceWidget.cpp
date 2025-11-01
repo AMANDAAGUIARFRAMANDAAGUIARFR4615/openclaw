@@ -87,7 +87,7 @@ DeviceWidget::~DeviceWidget()
 
 void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    QWidget::mouseDoubleClickEvent(event);
+    DeviceView::mouseDoubleClickEvent(event);
 
     if (deviceWindow) {
         deviceWindow->activateWindow();

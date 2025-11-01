@@ -137,7 +137,7 @@ void DeviceWindow::closeEvent(QCloseEvent *event)
 
 void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    QWidget::mouseDoubleClickEvent(event);
+    DeviceView::mouseDoubleClickEvent(event);
 
     qDebugEx() << "双击" << event->button();
 
@@ -186,12 +186,12 @@ bool DeviceWindow::event(QEvent *event)
         connection->send("mouse", dataObject);
     }
 
-    return QWidget::event(event);
+    return DeviceView::event(event);
 }
 
 void DeviceWindow::keyPressEvent(QKeyEvent *event)
 {
-    QWidget::keyPressEvent(event);
+    DeviceView::keyPressEvent(event);
 
     if (event->key() == Qt::Key_Escape)
     {
@@ -281,7 +281,7 @@ void DeviceWindow::keyReleaseEvent(QKeyEvent *event)
 
     qDebugEx() << "Key Released:" << keyText;
 
-    QWidget::keyReleaseEvent(event);
+    DeviceView::keyReleaseEvent(event);
 }
 
 void DeviceWindow::inputMethodEvent(QInputMethodEvent *event)
@@ -293,7 +293,7 @@ void DeviceWindow::inputMethodEvent(QInputMethodEvent *event)
         connection->send("inputText", commitText);
     }
 
-    QWidget::inputMethodEvent(event);
+    DeviceView::inputMethodEvent(event);
 }
 
 void DeviceWindow::wheelEvent(QWheelEvent *event)
