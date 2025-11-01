@@ -181,54 +181,44 @@ void DeviceView::onVolumeDownClicked()
 
 void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 {
-    QMenu contextMenu(this);
+    QMenu menu(this);
 
-    auto homeAction = new QAction(QIcon(":/icons/home.png"), "主屏幕", this);
+    auto homeAction = menu.addAction(QIcon(":/icons/home.png"), "主屏幕");
     connect(homeAction, &QAction::triggered, this, &DeviceView::onHomeScreenClicked);
-    contextMenu.addAction(homeAction);
 
-    auto killAllAppAction = new QAction(QIcon(":/icons/kill.png"), "清理应用", this);
+    auto killAllAppAction = menu.addAction(QIcon(":/icons/kill.png"), "清理应用");
     connect(killAllAppAction, &QAction::triggered, this, &DeviceView::onKillAllAppClicked);
-    contextMenu.addAction(killAllAppAction);
 
-    auto fileAction = new QAction(QIcon(":/icons/file_move.png"), "文件管理", this);
+    auto fileAction = menu.addAction(QIcon(":/icons/file_move.png"), "文件管理");
     connect(fileAction, &QAction::triggered, this, &DeviceView::onFileClicked);
-    contextMenu.addAction(fileAction);
 
-    auto recorderAction = new QAction(QIcon(":/icons/screen_record.png"), "录屏", this);
+    auto recorderAction = menu.addAction(QIcon(":/icons/screen_record.png"), "录屏");
     connect(recorderAction, &QAction::triggered, this, &DeviceView::onRecorderClicked);
-    contextMenu.addAction(recorderAction);
 
-    auto appListAction = new QAction(QIcon(":/icons/apps.png"), "应用列表", this);
+    auto appListAction = menu.addAction(QIcon(":/icons/apps.png"), "应用列表");
     connect(appListAction, &QAction::triggered, this, &DeviceView::onAppListClicked);
-    contextMenu.addAction(appListAction);
 
     if (deviceInfo->lockedStatus)
     {
-        auto unlockAction = new QAction(QIcon(":/icons/unlock.png"), "解锁", this);
+        auto unlockAction = menu.addAction(QIcon(":/icons/unlock.png"), "解锁");
         connect(unlockAction, &QAction::triggered, this, &DeviceView::onUnlockClicked);
-        contextMenu.addAction(unlockAction);
     }
     else
     {
-        auto lockAction = new QAction(QIcon(":/icons/lock.png"), "锁屏", this);
+        auto lockAction = menu.addAction(QIcon(":/icons/lock.png"), "锁屏");
         connect(lockAction, &QAction::triggered, this, &DeviceView::onLockClicked);
-        contextMenu.addAction(lockAction);
     }
 
-    auto rebootAction = new QAction(QIcon(":/icons/restart.png"), "重启", this);
+    auto rebootAction = menu.addAction(QIcon(":/icons/restart.png"), "重启");
     connect(rebootAction, &QAction::triggered, this, &DeviceView::onRebootClicked);
-    contextMenu.addAction(rebootAction);
 
-    auto volumeUpAction = new QAction(QIcon(":/icons/volume_up.png"), "加音", this);
+    auto volumeUpAction = menu.addAction(QIcon(":/icons/volume_up.png"), "加音");
     connect(volumeUpAction, &QAction::triggered, this, &DeviceView::onVolumeUpClicked);
-    contextMenu.addAction(volumeUpAction);
 
-    auto volumeDownAction = new QAction(QIcon(":/icons/volume_down.png"), "减音", this);
+    auto volumeDownAction = menu.addAction(QIcon(":/icons/volume_down.png"), "减音");
     connect(volumeDownAction, &QAction::triggered, this, &DeviceView::onVolumeDownClicked);
-    contextMenu.addAction(volumeDownAction);
 
-    contextMenu.exec(event->globalPos());
+    menu.exec(event->globalPos());
 }
 
 void DeviceView::dragEnterEvent(QDragEnterEvent *event)
