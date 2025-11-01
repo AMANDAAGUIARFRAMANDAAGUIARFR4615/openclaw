@@ -176,13 +176,14 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         auto name = data["toPath"].toString();
         auto toPath = atPath.left(atPath.lastIndexOf('/') + 1) + name;
         auto item = pathToItem[atPath];
-        removeItemPaths(item);
 
         auto index = item->index();
         auto date = model->index(index.row(), 1, index.parent()).data().toString();
         auto size = model->index(index.row(), 2, index.parent()).data().toString();
 
         bool isDir = index.data(Qt::UserRole + 2).toBool();
+
+        removeItemPaths(item);
         addItemToTreeView(toPath, isDir ? "NSFileTypeDirectory" : "NSFileTypeRegular", date, Tools::parseByteSize(size));
     });
 
@@ -327,7 +328,10 @@ void RemoteFileExplorer::removeItemPaths(QStandardItem* item) {
 
     pathToItem.remove(fullPath);
 
-    item->parent()->removeRow(item->row());
+    if (item->parent())
+        item->parent()->removeRow(item->row());
+    else
+        model->removeRow(item->row());
 }
 
 void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArray &list)
