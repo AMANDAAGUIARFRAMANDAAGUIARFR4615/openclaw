@@ -60,7 +60,7 @@ public:
 
     ~FileTransfer() {
         delete tcpServer;
-        delete connection;
+        delete transferConnection;
     }
 
     const QString id;
@@ -102,6 +102,12 @@ protected:
     {
         if (type == 1)
         {
+            QString dirPath = QFileInfo(path).absolutePath();
+
+            static QDir dir;
+            if (!dir.exists(dirPath))
+                dir.mkpath(dirPath);
+
             recvFile.setFileName(path);
 
             if (!recvFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
