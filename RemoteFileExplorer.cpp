@@ -645,6 +645,10 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             }
         });
 
+        connect(menu.addAction("在文件资源管理器中显示"), &QAction::triggered, [=]() {
+            Tools::showInFileExplorer(localPath);
+        });
+
         connect(menu.addAction("复制本地路径"), &QAction::triggered, this, [=]() {
             QStringList list;
             for (const QString& remotePath : paths) {

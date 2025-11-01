@@ -7,6 +7,8 @@
 #include <QCryptographicHash>
 #include <QImage>
 #include <QBuffer>
+#include <QProcess>
+#include <QDir>
 
 class Tools {
 public:
