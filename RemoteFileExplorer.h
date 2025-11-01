@@ -52,6 +52,7 @@ protected:
     void removeItemPaths(QStandardItem* item);
     void updateDirectoryView(const QString &path, const QJsonArray &list);
     void onDirectoryExpanded(const QModelIndex &index);
+    QString getLocalPath(const QString& remotePath);
     void startFileTransfer(int type, const QString &localPath, const QString &remotePath, int size);
     void keyPressEvent(QKeyEvent *event) override;
     void showTreeContextMenu(const QPoint &pos);

@@ -457,6 +457,10 @@ void RemoteFileExplorer::onDirectoryExpanded(const QModelIndex &index)
     fetchDirectoryContents(path);
 }
 
+QString RemoteFileExplorer::getLocalPath(const QString& remotePath) {
+    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/" + connection->deviceInfo->uniqueName() + "/" + QFileInfo(remotePath).fileName();
+}
+
 void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, const QString &remotePath, int size)
 {
     auto transfer = new FileTransfer(connection, type, localPath, size);
@@ -496,6 +500,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
 
         if (transferred == total) {
             transferTable->item(row, 1)->setText(type == 1 ? "接收完成" : "发送完成");
+            transfer->deleteLater();
         }
     });
 
@@ -559,6 +564,8 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
     int selectedCount = paths.count();
 
     if (selectedCount > 0) {
+        auto localPath = getLocalPath(remotePath);
+
         if (isDir)
         {
             if (favorites.contains(remotePath)) {
@@ -574,7 +581,6 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             }
 
             QAction *compressAction = menu.addAction("压缩");
-            menu.addAction(compressAction);
             connect(compressAction, &QAction::triggered, this, [=]() {
                 connection->send("compressArchive", remotePath);
             });
@@ -583,16 +589,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         }
         else
         {
-            auto localPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/" + connection->deviceInfo->uniqueName() + "/" + QFileInfo(remotePath).fileName();
-
-            QString dirPath = QFileInfo(localPath).absolutePath();
-
-            QDir dir;
-            if (!dir.exists(dirPath))
-                dir.mkpath(dirPath);
-
             QAction *viewAction = menu.addAction("查看");
-            menu.addAction(viewAction);
             connect(viewAction, &QAction::triggered, this, [=]() {
                 if (!QFile::exists(localPath))
                 {
@@ -604,18 +601,15 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             });
             viewAction->setEnabled(selectedCount == 1);
 
-            QAction *downloadAction = menu.addAction("下载");
-            menu.addAction(downloadAction);
-            connect(downloadAction, &QAction::triggered, this, [=]() {
-                qDebugEx() << localPath << "<=" << remotePath;
-
-                startFileTransfer(1, localPath, remotePath, 0);
+            connect(menu.addAction("下载"), &QAction::triggered, this, [=]() {
+                for (const QString &remotePath : paths) {
+                    auto localPath = getLocalPath(remotePath);
+                    startFileTransfer(1, localPath, remotePath, 0);
+                }
             });
-            downloadAction->setEnabled(selectedCount == 1);
 
             if (remotePath.endsWith(".zip") || remotePath.endsWith(".rar")) {
                 QAction *extractAction = menu.addAction("解压");
-                menu.addAction(extractAction);
                 connect(extractAction, &QAction::triggered, this, [=]() {
                     setStatusMessage("解压: " + remotePath);
 
@@ -626,7 +620,6 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         }
 
         QAction *renameAction = menu.addAction("重命名");
-        menu.addAction(renameAction);
         connect(renameAction, &QAction::triggered, this, [=]() {
             bool ok;
             auto name = QInputDialog::getText(this, "重命名", "请输入名称:", QLineEdit::Normal, "", &ok);
@@ -644,9 +637,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         });
         renameAction->setEnabled(selectedCount == 1);
 
-        QAction *deleteAction = menu.addAction("删除");
-        menu.addAction(deleteAction);
-        connect(deleteAction, &QAction::triggered, this, [=]() {
+        connect(menu.addAction("删除"), &QAction::triggered, this, [=]() {
             auto description = paths.count() > 1 ? QString("%1项").arg(paths.count()) : QFileInfo(remotePath).fileName();
             auto reply = QMessageBox::question(this, "确认删除", "你确定要删除【" + description + "】吗？", QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
@@ -660,11 +651,44 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             }
         });
 
-        QAction *copyPathAction = menu.addAction("复制路径");
-        menu.addAction(copyPathAction);
-        connect(copyPathAction, &QAction::triggered, this, [=]() {
+        connect(menu.addAction("复制本地路径"), &QAction::triggered, this, [=]() {
+            QClipboard *clipboard = QApplication::clipboard();
+            clipboard->setText(localPath);
+        });
+
+        connect(menu.addAction("复制远程路径"), &QAction::triggered, this, [=]() {
             QClipboard *clipboard = QApplication::clipboard();
             clipboard->setText(remotePath);
+        });
+
+        connect(menu.addAction("复制文件"), &QAction::triggered, this, [=]() {
+            QMimeData *mimeData = new QMimeData();
+            QList<QUrl> urlList;
+            QList<QString> pendingDownloadPaths;
+            for (const QString &remotePath : paths) {
+                auto localPath = getLocalPath(remotePath);
+                if (!QFileInfo::exists(localPath)) 
+                    pendingDownloadPaths << remotePath;
+
+                urlList << QUrl::fromLocalFile(localPath);
+            }
+            mimeData->setUrls(urlList);
+  
+            QClipboard *clipboard = QApplication::clipboard();
+            clipboard->setMimeData(mimeData, QClipboard::Clipboard);
+
+            if (pendingDownloadPaths.count() == 0)
+                return;
+
+            auto reply = QMessageBox::question(this, "下载提示", QString("有%1个文件还未下载不能复制，是否下载？"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+            if (reply != QMessageBox::Yes)
+                return;
+
+            for (const QString &remotePath : pendingDownloadPaths) {
+                auto localPath = getLocalPath(remotePath);
+                startFileTransfer(1, localPath, remotePath, 0);
+            }
         });
     }
 
