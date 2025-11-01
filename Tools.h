@@ -88,6 +88,25 @@ public:
         return -1;
     }
 
+    static void showInFileExplorer(const QString& path) {
+#if defined(Q_OS_WIN)
+        QStringList args;
+        args << "/select," << QDir::toNativeSeparators(path);
+        QProcess::startDetached("explorer.exe", args);
+#elif defined(Q_OS_MAC)
+        QString escapedFilePath = path;
+        escapedFilePath.replace(" ", "\\ ");  // Escape spaces in path
+        
+        QStringList scriptArgs;
+        scriptArgs << "-e"
+                   << QString("tell application \"Finder\" to reveal POSIX file \"%1\"").arg(escapedFilePath);
+        QProcess::execute("/usr/bin/osascript", scriptArgs);
+        QProcess::execute("/usr/bin/osascript", QStringList() << "-e" << "tell application \"Finder\" to activate");
+#else
+        QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+#endif
+    }
+
     static QString imageToBase64(const QImage &image) {
         QByteArray byteArray;
         QBuffer buffer(&byteArray);

@@ -726,22 +726,7 @@ void RemoteFileExplorer::showTableContextMenu(const QPoint &pos)
     });
 
     connect(menu.addAction("在文件资源管理器中显示"), &QAction::triggered, [=]() {
-#if defined(Q_OS_WIN)
-        QStringList args;
-        args << "/select," << QDir::toNativeSeparators(localPath);
-        QProcess::startDetached("explorer.exe", args);
-#elif defined(Q_OS_MAC)
-        QString escapedFilePath = localPath;
-        escapedFilePath.replace(" ", "\\ ");  // Escape spaces in path
-        
-        QStringList scriptArgs;
-        scriptArgs << "-e"
-                   << QString("tell application \"Finder\" to reveal POSIX file \"%1\"").arg(escapedFilePath);
-        QProcess::execute("/usr/bin/osascript", scriptArgs);
-        QProcess::execute("/usr/bin/osascript", QStringList() << "-e" << "tell application \"Finder\" to activate");
-#else
-        QDesktopServices::openUrl(QUrl::fromLocalFile(localPath));
-#endif
+        Tools::showInFileExplorer(localPath);
     });
 
     connect(menu.addAction("复制本地路径"), &QAction::triggered, [=]() {
