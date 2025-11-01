@@ -361,11 +361,14 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
 
     for (int i = parentItem->rowCount() - 1; i >= 0; i--) {
         auto childItem = parentItem->child(i);
-
-        if (childItem)
-            removeItemPaths(childItem);
-        else
+        if (!childItem) {
             parentItem->removeRow(i);
+            continue;
+        }
+
+        auto childName = childItem->text();
+        if (!currentPaths.contains(childName))
+            removeItemPaths(childItem);
     }
 
     if (list.count() == 0) {
