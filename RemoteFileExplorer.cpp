@@ -332,16 +332,29 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
 
     qDebugEx() << "updateDirectoryView" << path << parentItem->rowCount();
 
-    for (int i = 0; i < parentItem->rowCount(); i++) {
-        auto childItem = parentItem->child(i);
-        if (!childItem)
-            continue;
-
-        auto childPath = path + "/" + childItem->text();
-        pathToItem.remove(childPath);
+    QSet<QString> currentPaths;
+    for (const auto &value : list) {
+        auto obj = value.toObject();
+        auto name = obj["name"].toString();
+        currentPaths.insert(name);
     }
 
-    parentItem->removeRows(0, parentItem->rowCount());
+    qDebugEx() << "currentPaths" << currentPaths;
+
+    for (int i = parentItem->rowCount() - 1; i >= 0; i--) {
+        auto childItem = parentItem->child(i);
+        if (!childItem) {
+            parentItem->removeRow(i);
+            continue;
+        }
+
+        auto childName = childItem->text();
+        if (!currentPaths.contains(childName)) {
+            qDebugEx() << "删除不存在的文件项:" << childName;
+            pathToItem.remove(path + "/" + childName);
+            parentItem->removeRow(i);
+        }
+    }
 
     if (list.count() == 0) {
         setStatusMessage("目录为空: " + path);
