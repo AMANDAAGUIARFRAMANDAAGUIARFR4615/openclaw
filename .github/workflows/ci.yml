@@ -210,6 +210,7 @@ jobs:
             cp C:/Windows/System32/msvcp140_1.dll .
             cp C:/Windows/System32/msvcp140_2.dll .
             cp C:/Windows/System32/libcrypto-3-x64.dll .
+            cp C:/Windows/System32/libssl-3-x64.dll .
             cp ../mingw64/libimobiledevice/bin/libimobiledevice-1.0.dll .
             cp ../mingw64/libplist/bin/libplist-2.0.dll .
             cp ../mingw64/libusbmuxd/bin/libusbmuxd-2.0.dll .
