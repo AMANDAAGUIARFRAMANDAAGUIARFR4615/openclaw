@@ -175,12 +175,12 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         auto atPath = data["atPath"].toString();
         auto name = data["toPath"].toString();
         auto toPath = atPath.left(atPath.lastIndexOf('/') + 1) + name;
+        auto item = pathToItem[atPath];
+        removeItemPaths(item);
 
-        auto index = pathToItem[atPath]->index();
+        auto index = item->index();
         auto date = model->index(index.row(), 1, index.parent()).data().toString();
         auto size = model->index(index.row(), 2, index.parent()).data().toString();
-        model->removeRows(index.row(), 1, index.parent());
-        pathToItem.remove(atPath);
 
         bool isDir = index.data(Qt::UserRole + 2).toBool();
         addItemToTreeView(toPath, isDir ? "NSFileTypeDirectory" : "NSFileTypeRegular", date, Tools::parseByteSize(size));
@@ -197,9 +197,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         }
 
         auto path = data["path"].toString();
-        auto index = pathToItem[path]->index();
-        model->removeRows(index.row(), 1, index.parent());
-        pathToItem.remove(path);
+        removeItemPaths(pathToItem[path]);
     });
 
     treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
@@ -316,6 +314,22 @@ void RemoteFileExplorer::fetchDirectoryContents(const QString &path)
     connection->send("fileList", path);
 }
 
+void RemoteFileExplorer::removeItemPaths(QStandardItem* item) {
+    for (int i = item->rowCount() - 1; i >= 0; i--) {
+        auto childItem = item->child(i);
+        if (!childItem)
+            continue;
+
+        removeItemPaths(childItem);
+    }
+
+    QString fullPath = item->data(Qt::UserRole).toString();
+
+    pathToItem.remove(fullPath);
+
+    item->parent()->removeRow(item->row());
+}
+
 void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArray &list)
 {
     if (path == rootPath) {
@@ -343,17 +357,11 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
 
     for (int i = parentItem->rowCount() - 1; i >= 0; i--) {
         auto childItem = parentItem->child(i);
-        if (!childItem) {
-            parentItem->removeRow(i);
-            continue;
-        }
 
-        auto childName = childItem->text();
-        if (!currentPaths.contains(childName)) {
-            qDebugEx() << "删除不存在的文件项:" << childName;
-            pathToItem.remove(path + "/" + childName);
+        if (childItem)
+            removeItemPaths(childItem);
+        else
             parentItem->removeRow(i);
-        }
     }
 
     if (list.count() == 0) {
