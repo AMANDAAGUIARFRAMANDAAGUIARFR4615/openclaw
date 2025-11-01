@@ -538,161 +538,152 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
 {
     QMenu contextMenu(this);
 
+    QModelIndex index = treeView->indexAt(pos);
+    if (index.column() != 0)
+        index = index.sibling(index.row(), 0);
+
+    auto remotePath = index.isValid() ? index.data(Qt::UserRole).toString() : rootPath;
+    bool isDir = index.isValid() ? index.data(Qt::UserRole + 2).toBool() : true;
+
     QModelIndexList selectedIndexes = treeView->selectionModel()->selectedIndexes();
-    if (selectedIndexes.isEmpty()) {
-        qDebugEx() << "没有选中任何项";
-        return;
-    }
 
     QStringList paths;
 
     for (const QModelIndex &index : selectedIndexes) {
         if (index.column() == 0)
-        {
-            QString targetPath = index.data(Qt::UserRole).toString();
-            paths.append(targetPath);
-        }
+            paths.append(index.data(Qt::UserRole).toString());
     }
 
     qDebugEx() << paths;
 
     int selectedCount = paths.count();
 
-    QModelIndex index = treeView->selectionModel()->currentIndex();
+    if (selectedCount > 0) {
+        if (isDir)
+        {
+            QAction *favoriteAction = nullptr;
+            if (favorites.contains(remotePath)) {
+                favoriteAction = new QAction("从快速访问移除", &contextMenu);
+                connect(favoriteAction, &QAction::triggered, this, [=]() {
+                    removeFromFavorites(remotePath);
+                });
+            } else {
+                favoriteAction = new QAction("添加到快速访问", &contextMenu);
+                connect(favoriteAction, &QAction::triggered, this, [=]() {
+                    addToFavorites(remotePath);
+                });
+            }
+            contextMenu.addAction(favoriteAction);
 
-    auto targetPath = index.data(Qt::UserRole).toString();
-    if (targetPath == "")
-    {
-        new ToastWidget("路径错误", this);
-        return;
-    }
-
-    bool isDir = index.data(Qt::UserRole + 2).toBool();
-
-    if (isDir)
-    {
-        QAction *favoriteAction = nullptr;
-        if (favorites.contains(targetPath)) {
-            favoriteAction = new QAction("从快速访问移除", &contextMenu);
-            connect(favoriteAction, &QAction::triggered, this, [=]() {
-                removeFromFavorites(targetPath);
+            QAction *compressAction = new QAction("压缩", &contextMenu);
+            contextMenu.addAction(compressAction);
+            connect(compressAction, &QAction::triggered, this, [=]() {
+                connection->send("compressArchive", remotePath);
             });
-        } else {
-            favoriteAction = new QAction("添加到快速访问", &contextMenu);
-            connect(favoriteAction, &QAction::triggered, this, [=]() {
-                addToFavorites(targetPath);
-            });
+
+            compressAction->setEnabled(selectedCount == 1);
         }
-        contextMenu.addAction(favoriteAction);
+        else
+        {
+            auto localPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/" + connection->deviceInfo->uniqueName() + "/" + QFileInfo(remotePath).fileName();
 
-        QAction *compressAction = new QAction("压缩", &contextMenu);
-        contextMenu.addAction(compressAction);
-        connect(compressAction, &QAction::triggered, this, [=]() {
-            connection->send("compressArchive", targetPath);
-        });
+            QString dirPath = QFileInfo(localPath).absolutePath();
 
-        compressAction->setEnabled(selectedCount == 1);
+            QDir dir;
+            if (!dir.exists(dirPath))
+                dir.mkpath(dirPath);
 
-        QAction *createAction = new QAction("新建文件夹", &contextMenu);
-        contextMenu.addAction(createAction);
-        connect(createAction, &QAction::triggered, this, [=]() {
+            QAction *viewAction = new QAction("查看", &contextMenu);
+            contextMenu.addAction(viewAction);
+            connect(viewAction, &QAction::triggered, this, [=]() {
+                if (!QFile::exists(localPath))
+                {
+                    new ToastWidget("文件不存在，请先下载", this);
+                    return;
+                }
+
+                new FileViewer(localPath, this);
+            });
+            viewAction->setEnabled(selectedCount == 1);
+
+            QAction *downloadAction = new QAction("下载", &contextMenu);
+            contextMenu.addAction(downloadAction);
+            connect(downloadAction, &QAction::triggered, this, [=]() {
+                qDebugEx() << localPath << "<=" << remotePath;
+
+                startFileTransfer(1, localPath, remotePath, 0);
+            });
+            downloadAction->setEnabled(selectedCount == 1);
+
+            if (remotePath.endsWith(".zip") || remotePath.endsWith(".rar")) {
+                QAction *extractAction = new QAction("解压", &contextMenu);
+                contextMenu.addAction(extractAction);
+                connect(extractAction, &QAction::triggered, this, [=]() {
+                    setStatusMessage("解压: " + remotePath);
+
+                    connection->send("extractArchive", remotePath);
+                });
+                extractAction->setEnabled(selectedCount == 1);
+            }
+        }
+
+        QAction *renameAction = new QAction("重命名", &contextMenu);
+        contextMenu.addAction(renameAction);
+        connect(renameAction, &QAction::triggered, this, [=]() {
             bool ok;
-            auto name = QInputDialog::getText(this, "新建文件夹", "请输入名称:", QLineEdit::Normal, "", &ok);
+            auto name = QInputDialog::getText(this, "重命名", "请输入名称:", QLineEdit::Normal, "", &ok);
             
             if (!ok || name.isEmpty())
                 return;
 
-            setStatusMessage("新建文件夹: " + name);
+            setStatusMessage("重命名: " + name);
 
-            connection->send("createDirectory", targetPath + "/" + name);
+            QJsonObject dataObject;
+            dataObject["atPath"] = remotePath;
+            dataObject["toPath"] = name;
+
+            connection->send("renameItem", dataObject);
         });
-        createAction->setEnabled(selectedCount == 1);
-    }
-    else
-    {
-        auto localPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/" + connection->deviceInfo->uniqueName() + "/" + QFileInfo(targetPath).fileName();
+        renameAction->setEnabled(selectedCount == 1);
 
-        QString dirPath = QFileInfo(localPath).absolutePath();
+        QAction *deleteAction = new QAction("删除", &contextMenu);
+        contextMenu.addAction(deleteAction);
+        connect(deleteAction, &QAction::triggered, this, [=]() {
+            auto description = paths.count() > 1 ? QString("%1项").arg(paths.count()) : QFileInfo(remotePath).fileName();
+            auto reply = QMessageBox::question(this, "确认删除", "你确定要删除【" + description + "】吗？", QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
-        QDir dir;
-        if (!dir.exists(dirPath))
-            dir.mkpath(dirPath);
-
-        QAction *viewAction = new QAction("查看", &contextMenu);
-        contextMenu.addAction(viewAction);
-        connect(viewAction, &QAction::triggered, this, [=]() {
-            if (!QFile::exists(localPath))
-            {
-                new ToastWidget("文件不存在，请先下载", this);
+            if (reply != QMessageBox::Yes)
                 return;
+
+            qDebugEx() << "删除: " + paths.join(", ");
+            
+            for (const QString& path : paths) {
+                connection->send("removeItem", path);
             }
-
-            new FileViewer(localPath, this);
         });
-        viewAction->setEnabled(selectedCount == 1);
 
-        QAction *downloadAction = new QAction("下载", &contextMenu);
-        contextMenu.addAction(downloadAction);
-        connect(downloadAction, &QAction::triggered, this, [=]() {
-            qDebugEx() << localPath << "<=" << targetPath;
-
-            startFileTransfer(1, localPath, targetPath, 0);
+        QAction *copyPathAction = new QAction("复制路径", &contextMenu);
+        contextMenu.addAction(copyPathAction);
+        connect(copyPathAction, &QAction::triggered, this, [=]() {
+            QClipboard *clipboard = QApplication::clipboard();
+            clipboard->setText(remotePath);
         });
-        downloadAction->setEnabled(selectedCount == 1);
-
-        if (targetPath.endsWith(".zip") || targetPath.endsWith(".rar")) {
-            QAction *extractAction = new QAction("解压", &contextMenu);
-            contextMenu.addAction(extractAction);
-            connect(extractAction, &QAction::triggered, this, [=]() {
-                setStatusMessage("解压: " + targetPath);
-
-                connection->send("extractArchive", targetPath);
-            });
-            extractAction->setEnabled(selectedCount == 1);
-        }
     }
 
-    QAction *renameAction = new QAction("重命名", &contextMenu);
-    contextMenu.addAction(renameAction);
-    connect(renameAction, &QAction::triggered, this, [=]() {
+    QAction *newFolderAction = contextMenu.addAction("新建文件夹");
+    connect(newFolderAction, &QAction::triggered, [=]() {
         bool ok;
-        auto name = QInputDialog::getText(this, "重命名", "请输入名称:", QLineEdit::Normal, "", &ok);
+        auto name = QInputDialog::getText(this, "新建文件夹", "请输入名称:", QLineEdit::Normal, "", &ok);
         
         if (!ok || name.isEmpty())
             return;
 
-        setStatusMessage("重命名: " + name);
+        setStatusMessage("新建文件夹: " + name);
 
-        QJsonObject dataObject;
-        dataObject["atPath"] = targetPath;
-        dataObject["toPath"] = name;
-
-        connection->send("renameItem", dataObject);
+        auto dir = isDir ? remotePath : remotePath.left(remotePath.lastIndexOf('/'));
+        connection->send("createDirectory", dir + "/" + name);
     });
-    renameAction->setEnabled(selectedCount == 1);
-
-    QAction *deleteAction = new QAction("删除", &contextMenu);
-    contextMenu.addAction(deleteAction);
-    connect(deleteAction, &QAction::triggered, this, [=]() {
-        auto description = paths.count() > 1 ? QString("%1项").arg(paths.count()) : QFileInfo(targetPath).fileName();
-        auto reply = QMessageBox::question(this, "确认删除", "你确定要删除【" + description + "】吗？", QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-
-        if (reply != QMessageBox::Yes)
-            return;
-
-        qDebugEx() << "删除: " + paths.join(", ");
-        
-        for (const QString& path : paths) {
-            connection->send("removeItem", path);
-        }
-    });
-
-    QAction *copyPathAction = new QAction("复制路径", &contextMenu);
-    contextMenu.addAction(copyPathAction);
-    connect(copyPathAction, &QAction::triggered, this, [=]() {
-        QClipboard *clipboard = QApplication::clipboard();
-        clipboard->setText(targetPath);
-    });
+    newFolderAction->setEnabled(selectedCount == 1 || (selectedCount == 0 && rootPath != "/"));
 
     contextMenu.exec(treeView->viewport()->mapToGlobal(pos));
 }
