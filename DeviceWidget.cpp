@@ -100,6 +100,8 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
         return;
     }
 
+    addOverlay("设备控制中");
+
     videoFrameWidgetSize = videoFrameWidget->size();
 
     deviceWindow = new DeviceWindow(connection, deviceInfo, this);
@@ -113,6 +115,5 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
     deviceWindow->setAttribute(Qt::WA_DeleteOnClose);
     deviceWindow->show();
 
-    addOverlay("设备控制中");
     videoFrameWidget = nullptr;
 }
