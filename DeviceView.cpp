@@ -273,7 +273,7 @@ void DeviceView::dropEvent(QDropEvent *event)
         dataObject["id"] = transfer->id;
         dataObject["type"] = type;
         dataObject["port"] = transfer->serverPort();
-        dataObject["name"] = QFileInfo(localPath).fileName();
+        dataObject["name"] = localPath.section('/', -1);
         dataObject["size"] = size;
 
         connection->send("transferFile", dataObject);
