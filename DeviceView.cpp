@@ -53,20 +53,12 @@ DeviceView::~DeviceView()
 void DeviceView::setSource(const QUrl &source)
 {
     addVideoFrameWidget(new VideoFrameWidget(this));
-
-    if (deviceInfo->lockedStatus)
-        addOverlay("设备已锁定");
-
     videoFrameWidget->mediaPlayer->setSource(source);
 }
 
 void DeviceView::setSourceDevice(QIODevice *device, const QUrl &sourceUrl)
 {
     addVideoFrameWidget(new VideoFrameWidget(this));
-
-    if (deviceInfo->lockedStatus)
-        addOverlay("设备已锁定");
-        
     videoFrameWidget->mediaPlayer->setSourceDevice(device);
     // 要多设置一次才能播放
     QTimer::singleShot(2000, [=]() {
@@ -81,30 +73,24 @@ void DeviceView::addOverlay(const QString &text)
 
     overlay->show();
     overlay->raise();
-
-    overlay->move(videoFrameWidget->pos());
-    overlay->resize(videoFrameWidget->size());
-
-    connect(videoFrameWidget, &VideoFrameWidget::resized, this, [this]() {
-        if (sender()->parent() != this)
-            return;
-
-        if (!videoFrameWidget || !overlay->isVisible())
-            return;
-
-        overlay->move(videoFrameWidget->pos());
-        overlay->resize(videoFrameWidget->size());
-    });
 }
 
 void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
 {
-    overlay->hide();
-
     videoFrameWidget = widget;
-    layout()->addWidget(widget);
+    
+    QBoxLayout* boxLayout = qobject_cast<QBoxLayout*>(layout());
+    if (qobject_cast<QHBoxLayout*>(boxLayout))
+        boxLayout->insertWidget(0, widget);
+    else
+        boxLayout->insertWidget(1, widget);
     
     videoFrameWidget->orientationChanged(deviceInfo->orientation);
+
+    if (deviceInfo->lockedStatus)
+        addOverlay("设备已锁定");
+    else
+        overlay->hide();
 }
 
 void DeviceView::onHomeScreenClicked()
@@ -273,4 +259,14 @@ void DeviceView::dropEvent(QDropEvent *event)
     }
 
     event->accept();
+}
+
+void DeviceView::resizeEvent(QResizeEvent *event)
+{
+    if (videoFrameWidget) {
+        overlay->move(videoFrameWidget->pos());
+        overlay->resize(videoFrameWidget->size());
+    }
+
+    QWidget::resizeEvent(event);
 }

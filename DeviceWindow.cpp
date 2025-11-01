@@ -20,14 +20,10 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 {
     setAttribute(Qt::WA_InputMethodEnabled, true);
 
-    videoFrameWidget = deviceWidget->getVideoFrameWidget();
-
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setSizeConstraint(QLayout::SetFixedSize);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
-
-    layout->addWidget(videoFrameWidget);
 
     auto buttonLayout = new QVBoxLayout();
     buttonLayout->setContentsMargins(5, 5, 5, 5);
@@ -126,13 +122,11 @@ QPointF DeviceWindow::getTransformedPosition(QMouseEvent *event) {
 
 void DeviceWindow::closeEvent(QCloseEvent *event)
 {
-    if (!videoFrameWidget)
-        return;
-
     videoFrameWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     videoFrameWidget->setFixedSize(deviceWidget->videoFrameWidgetSize);
     deviceWidget->addVideoFrameWidget(videoFrameWidget);
     videoFrameWidget = nullptr;
+    DeviceView::closeEvent(event);
 }
 
 void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)

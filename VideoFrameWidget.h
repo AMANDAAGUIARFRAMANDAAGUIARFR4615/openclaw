@@ -50,14 +50,4 @@ public:
     }
 
     QMediaPlayer* const mediaPlayer;
-
-signals:
-    void resized();
-    
-protected:
-    void resizeEvent(QResizeEvent *event) override
-    {
-        QVideoWidget::resizeEvent(event);
-        emit resized();
-    }
 };

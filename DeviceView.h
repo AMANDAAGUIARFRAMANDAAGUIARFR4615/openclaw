@@ -15,7 +15,6 @@ public:
     explicit DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWidget *parent = nullptr);
     ~DeviceView();
 
-    VideoFrameWidget* getVideoFrameWidget() { return videoFrameWidget; }
     void setSource(const QUrl &source);
     void setSourceDevice(QIODevice *device, const QUrl &sourceUrl = QUrl());
 
@@ -39,6 +38,7 @@ public:
     void contextMenuEvent(QContextMenuEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 protected:
 
