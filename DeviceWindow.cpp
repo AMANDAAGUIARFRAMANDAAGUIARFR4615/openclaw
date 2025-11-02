@@ -151,7 +151,7 @@ void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)
 
 bool DeviceWindow::event(QEvent *event)
 {
-    auto mouseEvent = qobject_cast<QMouseEvent *>(event);
+    auto mouseEvent = dynamic_cast<QMouseEvent *>(event);
     if (!mouseEvent)
         return DeviceView::event(event);
 
