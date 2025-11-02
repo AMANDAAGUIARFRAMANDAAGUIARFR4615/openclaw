@@ -151,6 +151,10 @@ void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)
 
 bool DeviceWindow::event(QEvent *event)
 {
+    auto mouseEvent = static_cast<QMouseEvent *>(event);
+    if (!mouseEvent)
+        return DeviceView::event(event);
+
     int type = 0;
 
     switch (event->type())
@@ -166,13 +170,10 @@ bool DeviceWindow::event(QEvent *event)
         break;
     }
 
-    if (type == 1) {
-        auto mouseEvent = static_cast<QMouseEvent *>(event);
+    if (type == 1)
         pressedButtons |= mouseEvent->button();
-    }
 
     if (type != 0 && (pressedButtons & Qt::LeftButton)) {
-        auto mouseEvent = static_cast<QMouseEvent *>(event);
         QPoint globalPos = mapToGlobal(mouseEvent->pos());
         QPoint localPos = videoFrameWidget->mapFromGlobal(globalPos);
         auto pos = getTransformedPosition(localPos);
@@ -185,10 +186,8 @@ bool DeviceWindow::event(QEvent *event)
         connection->send("mouse", dataObject);
     }
 
-    if (type == 2) {
-        auto mouseEvent = static_cast<QMouseEvent *>(event);
+    if (type == 2)
         pressedButtons &= ~mouseEvent->button();
-    }
 
     return DeviceView::event(event);
 }
