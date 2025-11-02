@@ -156,7 +156,7 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     if (connection->type == DeviceConnection::Usb)
     {
-        auto liveStreamDevice = new LiveStreamDevice();
+        auto liveStreamDevice = new LiveStreamDevice(nullptr, 0, this);
         auto manager = UsbDeviceManager::instance();
         auto ctx = manager->getContext(connection);
         manager->connectDevice(ctx->udid, deviceInfo->videoPort, [=](DeviceConnection* conn, const QByteArray& data){
@@ -167,8 +167,11 @@ void MainWindow::addItem(DeviceConnection* connection)
     }
     else
     {
-        auto url = QString("tcp://%1:%2").arg(deviceInfo->localIp).arg(deviceInfo->videoPort);
-        player->setSource(url);
+        // auto url = QString("tcp://%1:%2").arg(deviceInfo->localIp).arg(deviceInfo->videoPort);
+        // player->setSource(url);
+
+        auto liveStreamDevice = new LiveStreamDevice(deviceInfo->localIp, deviceInfo->videoPort, this);
+        player->setSourceDevice(liveStreamDevice);
     }
 
     auto tabWidget = findChild<QTabWidget*>();

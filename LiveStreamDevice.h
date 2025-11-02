@@ -1,15 +1,31 @@
 #pragma once
 
+#include "Logger.h"
 #include <QIODevice>
 #include <QMutex>
 #include <QWaitCondition>
 #include <QByteArray>
+#include <QTcpSocket>
 
 class LiveStreamDevice : public QIODevice {
     Q_OBJECT
 public:
-    explicit LiveStreamDevice(QObject *parent = nullptr)
-        : QIODevice(parent), m_eof(false) {}
+    explicit LiveStreamDevice(const QString &hostName = nullptr, quint16 port = 0, QObject *parent = nullptr)
+        : QIODevice(parent) {
+        if (!port)
+            return;
+
+        auto socket = new QTcpSocket();
+        connect(socket, &QTcpSocket::errorOccurred, this, [=](QAbstractSocket::SocketError socketError) {
+            qCriticalEx() << "errorOccurred" << socketError << socket->errorString();
+        });
+        
+        connect(socket, &QTcpSocket::readyRead, this, [=]() {
+            appendData(socket->readAll());
+        });
+
+        socket->connectToHost(hostName, port);
+    }
 
     bool isSequential() const override { return true; }
 
@@ -68,9 +84,8 @@ protected:
         return m_eof && m_buffer.isEmpty();
     }
 
-private:
     QByteArray m_buffer;
     mutable QMutex m_mutex;
     QWaitCondition m_dataAvailable;
-    bool m_eof;
+    bool m_eof = false;
 };
