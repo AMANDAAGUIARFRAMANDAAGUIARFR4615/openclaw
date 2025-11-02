@@ -30,7 +30,7 @@ public:
 
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override {
         QModelIndex index = sourceModel()->index(source_row, 0, source_parent);
-        QFileSystemModel *fileSystemModel = static_cast<QFileSystemModel *>(sourceModel());
+        QFileSystemModel *fileSystemModel = qobject_cast<QFileSystemModel *>(sourceModel());
         QFileInfo fileInfo = fileSystemModel->fileInfo(index);
 
         return fileInfo.isFile() ? fileInfo.suffix() == "recordx" : true;
@@ -191,7 +191,7 @@ protected:
         QModelIndex index = treeView->indexAt(event->pos());
         if (!index.isValid()) return;
 
-        QSortFilterProxyModel *proxy = static_cast<QSortFilterProxyModel *>(treeView->model());
+        QSortFilterProxyModel *proxy = qobject_cast<QSortFilterProxyModel *>(treeView->model());
         QModelIndex srcIndex = proxy->mapToSource(index);
         QFileInfo targetDir = fileSystemModel->fileInfo(srcIndex);
         QString targetPath = targetDir.absoluteFilePath();
