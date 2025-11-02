@@ -8,6 +8,7 @@
 #include "EventHub.h"
 #include "UsbDeviceManager.h"
 #include <QApplication>
+#include <QNetworkProxy>
 #include <QLoggingCategory>
 #include <QShortcut>
 #include <QHostInfo>
@@ -41,6 +42,8 @@ void onError(QTcpSocket* socket, QAbstractSocket::SocketError socketError) {
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+
+    QNetworkProxy::setApplicationProxy(QNetworkProxy::NoProxy);
 
     // qputenv("QT_FFMPEG_DEBUG", "1");
 
