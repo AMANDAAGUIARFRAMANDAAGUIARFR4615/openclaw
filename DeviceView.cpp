@@ -53,7 +53,7 @@ DeviceView::~DeviceView()
 void DeviceView::setSourceDevice(QIODevice *device, const QUrl &sourceUrl)
 {
     addVideoFrameWidget(new VideoFrameWidget(this));
-    
+
     auto mediaPlayer = videoFrameWidget->mediaPlayer;
     mediaPlayer->setSourceDevice(device);
     mediaPlayer->play();
@@ -170,40 +170,34 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu menu(this);
 
-    auto homeAction = menu.addAction(QIcon(":/icons/home.png"), "主屏幕");
-    connect(homeAction, &QAction::triggered, this, &DeviceView::onHomeScreenClicked);
-
-    auto killAllAppAction = menu.addAction(QIcon(":/icons/kill.png"), "清理应用");
-    connect(killAllAppAction, &QAction::triggered, this, &DeviceView::onKillAllAppClicked);
-
-    auto fileAction = menu.addAction(QIcon(":/icons/file_move.png"), "文件管理");
-    connect(fileAction, &QAction::triggered, this, &DeviceView::onFileClicked);
-
-    auto recorderAction = menu.addAction(QIcon(":/icons/screen_record.png"), "录屏");
-    connect(recorderAction, &QAction::triggered, this, &DeviceView::onRecorderClicked);
-
-    auto appListAction = menu.addAction(QIcon(":/icons/apps.png"), "应用列表");
-    connect(appListAction, &QAction::triggered, this, &DeviceView::onAppListClicked);
+    connect(menu.addAction(QIcon(":/icons/home.png"), "主屏幕"), &QAction::triggered, this, &DeviceView::onHomeScreenClicked);
+    connect(menu.addAction(QIcon(":/icons/kill.png"), "清理应用"), &QAction::triggered, this, &DeviceView::onKillAllAppClicked);
+    connect(menu.addAction(QIcon(":/icons/file_move.png"), "文件管理"), &QAction::triggered, this, &DeviceView::onFileClicked);
+    connect(menu.addAction(QIcon(":/icons/screen_record.png"), "录屏"), &QAction::triggered, this, &DeviceView::onRecorderClicked);
+    connect(menu.addAction(QIcon(":/icons/apps.png"), "应用列表"), &QAction::triggered, this, &DeviceView::onAppListClicked);
 
     if (deviceInfo->lockedStatus)
-    {
-        auto unlockAction = menu.addAction(QIcon(":/icons/unlock.png"), "解锁");
-        connect(unlockAction, &QAction::triggered, this, &DeviceView::onUnlockClicked);
-    }
+        connect(menu.addAction(QIcon(":/icons/unlock.png"), "解锁"), &QAction::triggered, this, &DeviceView::onUnlockClicked);
     else
-    {
-        auto lockAction = menu.addAction(QIcon(":/icons/lock.png"), "锁屏");
-        connect(lockAction, &QAction::triggered, this, &DeviceView::onLockClicked);
-    }
+        connect(menu.addAction(QIcon(":/icons/lock.png"), "锁屏"), &QAction::triggered, this, &DeviceView::onLockClicked);
 
-    auto rebootAction = menu.addAction(QIcon(":/icons/restart.png"), "重启");
-    connect(rebootAction, &QAction::triggered, this, &DeviceView::onRebootClicked);
+    connect(menu.addAction(QIcon(":/icons/restart.png"), "重启"), &QAction::triggered, this, &DeviceView::onRebootClicked);
+    connect(menu.addAction(QIcon(":/icons/volume_up.png"), "加音"), &QAction::triggered, this, &DeviceView::onVolumeUpClicked);
+    connect(menu.addAction(QIcon(":/icons/volume_down.png"), "减音"), &QAction::triggered, this, &DeviceView::onVolumeDownClicked);
 
-    auto volumeUpAction = menu.addAction(QIcon(":/icons/volume_up.png"), "加音");
-    connect(volumeUpAction, &QAction::triggered, this, &DeviceView::onVolumeUpClicked);
-
-    auto volumeDownAction = menu.addAction(QIcon(":/icons/volume_down.png"), "减音");
-    connect(volumeDownAction, &QAction::triggered, this, &DeviceView::onVolumeDownClicked);
+    auto subMenu = menu.addMenu(QIcon(":/icons/high_quality.png"), "清晰度");
+    connect(subMenu->addAction("低清"), &QAction::triggered, this, [this]() {
+        connection->send("setVideoQuality", 1);
+    });
+    connect(subMenu->addAction("标清"), &QAction::triggered, this, [this]() {
+        connection->send("setVideoQuality", 2);
+    });
+    connect(subMenu->addAction("高清"), &QAction::triggered, this, [this]() {
+        connection->send("setVideoQuality", 3);
+    });
+    connect(subMenu->addAction("超清"), &QAction::triggered, this, [this]() {
+        connection->send("setVideoQuality", 4);
+    });
 
     menu.exec(event->globalPos());
 }

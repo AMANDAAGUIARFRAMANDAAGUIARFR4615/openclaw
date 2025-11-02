@@ -19,5 +19,6 @@
         <file>icons/kill.png</file>
         <file>icons/apps.png</file>
         <file>icons/screen_record.png</file>
+        <file>icons/high_quality.png</file>
     </qresource>
 </RCC>
