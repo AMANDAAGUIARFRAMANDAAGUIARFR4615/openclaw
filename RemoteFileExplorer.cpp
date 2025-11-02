@@ -498,10 +498,8 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
         transferTable->item(row, 6)->setText(Tools::formatByteSize(transferred / elapsed) + "/s");
         transferTable->item(row, 7)->setText(QString::number(elapsed, 'f', 2) + " s");
 
-        if (transferred == total) {
+        if (transferred == total)
             transferTable->item(row, 1)->setText(type == 1 ? "接收完成" : "发送完成");
-            transfer->deleteLater();
-        }
     });
 
     QJsonObject dataObject;

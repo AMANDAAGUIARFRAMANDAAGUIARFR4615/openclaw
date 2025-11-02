@@ -60,7 +60,7 @@ public:
 
     ~FileTransfer() {
         delete tcpServer;
-        delete transferConnection;
+        transferConnection->close();
     }
 
     const QString id;
@@ -113,7 +113,7 @@ protected:
             if (!recvFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
             {
                 qCritical() << "文件保存失败:" << recvFile.errorString();
-                transferConnection->close();
+                deleteLater();
             }
 
             return;
@@ -169,7 +169,7 @@ protected:
 
             if (recvFile.size() == size) {
                 recvFile.close();
-                transferConnection->close();
+                deleteLater();
                 qDebugEx() << path << "接收完成断开连接";
             }
         } else {
@@ -181,7 +181,7 @@ protected:
                 emit progressUpdated(transferredBytes, size);
 
                 if (bytesSent == size) {
-                    transferConnection->close();
+                    deleteLater();
                     qDebugEx() << path << "发送完成断开连接";
                 }
             }
