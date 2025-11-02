@@ -61,8 +61,9 @@ void DeviceView::setSourceDevice(QIODevice *device, const QUrl &sourceUrl)
     addVideoFrameWidget(new VideoFrameWidget(this));
     videoFrameWidget->mediaPlayer->setSourceDevice(device);
     // 要多设置一次才能播放
+    auto mediaPlayer = videoFrameWidget->mediaPlayer;
     QTimer::singleShot(2000, [=]() {
-        videoFrameWidget->mediaPlayer->setSourceDevice(device);
+        mediaPlayer->setSourceDevice(device);
     });
 }
 
