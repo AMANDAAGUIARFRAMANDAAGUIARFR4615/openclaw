@@ -15,7 +15,6 @@ public:
     explicit DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWidget *parent = nullptr);
     ~DeviceView();
 
-    void setSource(const QUrl &source);
     void setSourceDevice(QIODevice *device, const QUrl &sourceUrl = QUrl());
 
     void onHomeScreenClicked();
