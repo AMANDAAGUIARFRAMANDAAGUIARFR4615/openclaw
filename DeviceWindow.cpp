@@ -73,7 +73,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     QPushButton *lockButton = new QPushButton(QIcon(":/icons/lock.png"), "锁屏", this);
     connect(lockButton, &QPushButton::clicked, this, &DeviceView::onLockClicked);
     buttonLayout->addWidget(lockButton);
-    
+
     buttonLayout->addStretch();
 
     QWidget *buttonContainer = new QWidget(this);
@@ -152,26 +152,27 @@ void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)
 bool DeviceWindow::event(QEvent *event)
 {
     int type = 0;
-    Qt::MouseButton button = Qt::NoButton;
 
     switch (event->type())
     {
     case QEvent::MouseButtonPress:
         type = 1;
-        button = static_cast<QMouseEvent *>(event)->button();
         break;
     case QEvent::MouseButtonRelease:
         type = 2;
-        button = static_cast<QMouseEvent *>(event)->button();
         break;
     case QEvent::MouseMove:
         type = 3;
         break;
     }
 
-    if ((type == 1 || type == 2) && button == Qt::LeftButton || type == 3)
-    {
-        auto pos = this->getTransformedPosition(static_cast<QMouseEvent *>(event));
+    if (type == 1) {
+        auto *mouseEvent = static_cast<QMouseEvent *>(event);
+        pressedButtons |= mouseEvent->button();
+    }
+
+    if (type != 0 && (pressedButtons & Qt::LeftButton)) {
+        auto pos = getTransformedPosition(static_cast<QMouseEvent *>(event));
 
         QJsonObject dataObject;
         dataObject["type"] = type;
@@ -179,6 +180,11 @@ bool DeviceWindow::event(QEvent *event)
         dataObject["y"] = pos.y();
 
         connection->send("mouse", dataObject);
+    }
+
+    if (type == 2) {
+        auto *mouseEvent = static_cast<QMouseEvent *>(event);
+        pressedButtons &= ~mouseEvent->button();
     }
 
     return DeviceView::event(event);

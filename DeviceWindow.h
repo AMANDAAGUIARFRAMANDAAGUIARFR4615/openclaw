@@ -23,6 +23,7 @@ protected:
     void inputMethodEvent(QInputMethodEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
 
+    Qt::MouseButtons pressedButtons = Qt::NoButton;
     QTimer *wheelTimer = nullptr;
     QPoint currentPos;
     int accumulatedDelta = 0;
