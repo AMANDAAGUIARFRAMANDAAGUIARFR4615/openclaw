@@ -14,7 +14,7 @@ public:
     DeviceWidget* const deviceWidget;
 
 protected:
-    QPointF getTransformedPosition(QMouseEvent *event);
+    QPoint getTransformedPosition(QPoint pos);
     void closeEvent(QCloseEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     bool event(QEvent *event) override;

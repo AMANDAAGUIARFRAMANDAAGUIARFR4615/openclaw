@@ -101,23 +101,23 @@ DeviceWindow::~DeviceWindow()
 
 }
 
-QPointF DeviceWindow::getTransformedPosition(QMouseEvent *event) {
-    auto x = event->pos().x() / deviceInfo->scaleFactor;
-    auto y = event->pos().y() / deviceInfo->scaleFactor;
+QPoint DeviceWindow::getTransformedPosition(QPoint pos) {
+    auto x = pos.x() / deviceInfo->scaleFactor;
+    auto y = pos.y() / deviceInfo->scaleFactor;
     auto width = this->width() / deviceInfo->scaleFactor;
     auto height = this->height() / deviceInfo->scaleFactor;
 
     switch (deviceInfo->orientation) {
         case 1: // Portrait
-            return QPointF(x, y);
+            return QPoint(x, y);
         case 2: // PortraitUpsideDown
-            return QPointF(width - x, height - y);
+            return QPoint(width - x, height - y);
         case 3: // LandscapeRight
-            return QPointF(height - y, x);
+            return QPoint(height - y, x);
         case 4: // LandscapeLeft
-            return QPointF(y, width - x);
+            return QPoint(y, width - x);
         default:
-            return QPointF(x, y);
+            return QPoint(x, y);
     }
 }
 
@@ -167,12 +167,15 @@ bool DeviceWindow::event(QEvent *event)
     }
 
     if (type == 1) {
-        auto *mouseEvent = static_cast<QMouseEvent *>(event);
+        auto mouseEvent = static_cast<QMouseEvent *>(event);
         pressedButtons |= mouseEvent->button();
     }
 
     if (type != 0 && (pressedButtons & Qt::LeftButton)) {
-        auto pos = getTransformedPosition(static_cast<QMouseEvent *>(event));
+        auto mouseEvent = static_cast<QMouseEvent *>(event);
+        QPoint globalPos = mapToGlobal(mouseEvent->pos());
+        QPoint localPos = videoFrameWidget->mapFromGlobal(globalPos);
+        auto pos = getTransformedPosition(localPos);
 
         QJsonObject dataObject;
         dataObject["type"] = type;
@@ -183,7 +186,7 @@ bool DeviceWindow::event(QEvent *event)
     }
 
     if (type == 2) {
-        auto *mouseEvent = static_cast<QMouseEvent *>(event);
+        auto mouseEvent = static_cast<QMouseEvent *>(event);
         pressedButtons &= ~mouseEvent->button();
     }
 
