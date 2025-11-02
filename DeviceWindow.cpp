@@ -309,7 +309,7 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
     currentPos = event->position().toPoint();
 
     if (!event->pixelDelta().isNull()) {
-        auto *moveEvent = new QMouseEvent(
+        auto moveEvent = new QMouseEvent(
             QEvent::MouseMove,
             currentPos,
             Qt::LeftButton,
@@ -328,7 +328,7 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
     wheelTimer = new QTimer(this);
     stepCount = 0;
 
-    auto *pressEvent = new QMouseEvent(
+    auto pressEvent = new QMouseEvent(
         QEvent::MouseButtonPress,
         currentPos,
         Qt::LeftButton,
@@ -349,7 +349,7 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
         accumulatedDelta -= stepDelta;
         stepCount++;
 
-        auto *moveEvent = new QMouseEvent(
+        auto moveEvent = new QMouseEvent(
             QEvent::MouseMove,
             currentPos,
             Qt::LeftButton,
@@ -359,7 +359,7 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
         QApplication::postEvent(this, moveEvent);
 
         if (stepCount >= maxSteps) {
-            auto *releaseEvent = new QMouseEvent(
+            auto releaseEvent = new QMouseEvent(
                 QEvent::MouseButtonRelease,
                 currentPos,
                 Qt::LeftButton,
