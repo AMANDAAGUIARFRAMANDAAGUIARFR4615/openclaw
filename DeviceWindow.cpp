@@ -18,6 +18,7 @@
 
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(connection, deviceInfo), deviceWidget(deviceWidget)
 {
+    setFocus();
     setAttribute(Qt::WA_InputMethodEnabled, true);
 
     QHBoxLayout *layout = new QHBoxLayout(this);
