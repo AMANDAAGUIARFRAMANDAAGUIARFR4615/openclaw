@@ -215,6 +215,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         QString path = item->text();
         setStatusMessage("打开收藏路径: " + path);
         this->rootPath = path;
+        model->removeRows(0, model->rowCount());
         fetchDirectoryContents(path);
     });
 
