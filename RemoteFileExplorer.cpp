@@ -687,7 +687,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             if (pendingDownloadPaths.count() == 0)
                 return;
 
-            auto reply = QMessageBox::question(this, "下载提示", QString("有%1个文件还未下载不能复制，是否下载？"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+            auto reply = QMessageBox::question(this, "下载提示", QString("有%1个文件还未下载不能复制，是否下载？").arg(pendingDownloadPaths.count()), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
             if (reply != QMessageBox::Yes)
                 return;
