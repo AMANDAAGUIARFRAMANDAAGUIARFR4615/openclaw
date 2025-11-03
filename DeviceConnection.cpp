@@ -43,8 +43,7 @@ void DeviceConnection::send(const QString& event, const QJsonValue &jsonValue)
 
     quint64 identifier = 0xc6e8f3de9a654d6b;
 
-    QJsonDocument doc(jsonObject);
-    QByteArray jsonData = doc.toJson();
+    QByteArray jsonData = QJsonDocument(jsonObject).toJson();
 
     quint32 jsonDataLength = jsonData.size();
 
