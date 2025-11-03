@@ -27,20 +27,19 @@ public:
 
         qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &message) {
             QMetaObject::invokeMethod(logWindow, [=]() {
-                QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
-                QString formattedMessage = QString("[%1] %2").arg(time, message);
+                QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss.zzz");
+                QString formattedMessage = QString("[%1] %2 | %3").arg(time).arg(type).arg(message);
 
-                if (type == QtCriticalMsg || type == QtFatalMsg || type == QtWarningMsg) {
-                    logWindow->appendWithLimit(QString("<span style='color:red;'>%1</span>").arg(formattedMessage));
-                } else {
-                    logWindow->appendWithLimit(QString("<span style='color:black;'>%1</span>").arg(formattedMessage));
-                }
+                QString htmlMessage = (type == QtCriticalMsg || type == QtFatalMsg || type == QtWarningMsg) ?
+                                      QString("<span style='color:red;'>%1</span>").arg(formattedMessage) :
+                                      QString("<span style='color:black;'>%1</span>").arg(formattedMessage);
 
-                if (logWindow->logFile.isOpen()) {
-                    QTextStream out(&logWindow->logFile);
-                    out << formattedMessage << "\n";
-                    out.flush();
-                }
+                logWindow->allLogs.append(htmlMessage);
+                logWindow->appendWithLimit(htmlMessage);
+
+                QTextStream out(&logWindow->logFile);
+                out << formattedMessage << "\n";
+                out.flush();
             });
         });
     }
@@ -58,7 +57,21 @@ protected:
 
         connect(menu->addAction("清空日志"), &QAction::triggered, this, [this]() {
             clear();
+            allLogs.clear();
             logFile.resize(0);
+        });
+
+        QAction *filterAction = menu->addAction("只显示错误日志");
+        filterAction->setCheckable(true);
+        filterAction->setChecked(showOnlyErrors);
+
+        connect(filterAction, &QAction::toggled, this, [this](bool checked) {
+            showOnlyErrors = checked;
+            
+            clear();
+            for (const QString &msg : allLogs) {
+                appendWithLimit(msg);
+            }
         });
 
         menu->exec(event->globalPos());
@@ -68,6 +81,8 @@ protected:
 private:
     inline static LogWindow* logWindow;
     QFile logFile;
+    bool showOnlyErrors = false;
+    QStringList allLogs;
 
     void appendWithLimit(const QString& message)
     {
@@ -78,6 +93,7 @@ private:
             cursor.removeSelectedText();
         }
 
-        append(message);
+        if (!showOnlyErrors || message.contains("color:red"))
+            append(message);
     }
 };
