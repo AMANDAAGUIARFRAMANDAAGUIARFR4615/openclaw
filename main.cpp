@@ -67,11 +67,11 @@ int main(int argc, char *argv[])
         auto manager = UsbDeviceManager::instance();
 
         QObject::connect(manager, &UsbDeviceManager::deviceConnected, [](DeviceConnection* conn){
-            qDebug() << "✅ 设备已连接:" << conn;
+            qDebugEx() << "✅ 设备已连接:" << conn;
         });
 
         QObject::connect(manager, &UsbDeviceManager::deviceDisconnected, [](DeviceConnection* conn){
-            qDebug() << "❌ 设备已断开:" << conn;
+            qDebugEx() << "❌ 设备已断开:" << conn;
         });
 
         QObject::connect(manager, &UsbDeviceManager::dataReceived, [](DeviceConnection* conn, const QJsonObject& data){
