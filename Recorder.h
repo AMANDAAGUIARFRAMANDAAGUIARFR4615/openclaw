@@ -319,7 +319,7 @@ protected:
     void onStartPlayback(QString path) {
         QFile file(path);
         if (!file.open(QIODevice::ReadOnly)) {
-            qDebug() << "文件打开失败:" << file.errorString();
+            qCriticalEx() << "文件打开失败:" << file.errorString();
             return;
         }
 

@@ -15,7 +15,7 @@ AppListWidget::AppListWidget(DeviceConnection* connection, QWidget *parent)
     : connection(connection), QWidget(parent)
 {
     setAttribute(Qt::WA_DeleteOnClose);
-    
+
     table = new QTableWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->addWidget(table);
@@ -95,7 +95,7 @@ void AppListWidget::addApp(const QString &iconBase64, const QString &appName, co
     QByteArray byteArray = QByteArray::fromBase64(iconBase64.toUtf8());
     QPixmap pix;
     if (!pix.loadFromData(byteArray)) {
-        qDebug() << "图标加载失败";
+        qCriticalEx() << "图标加载失败";
     }
 
     int rowHeight = table->rowHeight(table->rowCount() - 1);

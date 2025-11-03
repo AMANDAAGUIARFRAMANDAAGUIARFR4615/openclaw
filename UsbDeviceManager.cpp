@@ -19,13 +19,13 @@ UsbDeviceManager::UsbDeviceManager(QObject* parent)
 }
 
 void UsbDeviceManager::start() {
-    qDebug() << "🚀 启动设备管理器...";
+    qDebugEx() << "🚀 启动设备管理器...";
     pollDevices();
     timer->start(2000);
 }
 
 void UsbDeviceManager::stop() {
-    qDebug() << "🛑 停止设备管理器...";
+    qDebugEx() << "🛑 停止设备管理器...";
     for (const QString& key : devices.keys())
         disconnectDevice(key);
 }
@@ -85,7 +85,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
 
     devices.insert(key, ctx);
     connToContext.insert(ctx->handler, ctx);
-    qDebug() << "✅ 已连接设备:" << key;
+    qDebugEx() << "✅ 已连接设备:" << key;
     emit deviceConnected(ctx->handler);
     return ctx->handler;
 }
@@ -94,7 +94,7 @@ void UsbDeviceManager::disconnectDevice(const QString& key) {
     if (!devices.contains(key)) return;
 
     UsbDeviceContext* ctx = devices[key];
-    qDebug() << "❌ 断开设备:" << key;
+    qDebugEx() << "❌ 断开设备:" << key;
 
     if (ctx->notifier) ctx->notifier->deleteLater();
     if (ctx->handler) {
@@ -142,7 +142,7 @@ void UsbDeviceManager::handlePollFinished() {
 
     for (const QString& udid : currentDevices) {
         if (!previousDevices.contains(udid)) {
-            qDebug() << "📱 检测到新设备:" << udid;
+            qDebugEx() << "📱 检测到新设备:" << udid;
             connectDevice(udid, 32839);
         }
     }
@@ -150,7 +150,7 @@ void UsbDeviceManager::handlePollFinished() {
     // 检测设备拔出
     for (const QString& udid : previousDevices) {
         if (!currentDevices.contains(udid)) {
-            qDebug() << "❌ 检测到设备拔出:" << udid;
+            qDebugEx() << "❌ 检测到设备拔出:" << udid;
             auto keys = devices.keys();
             for (const QString& key : keys) {
                 if (key.startsWith(udid + ":"))
