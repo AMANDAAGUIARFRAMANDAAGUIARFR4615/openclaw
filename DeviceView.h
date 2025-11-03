@@ -26,6 +26,7 @@ public:
     void onAppListClicked();
     void onScreenshotClicked();
     void onRebootClicked();
+    void onDeleteAllPhotosClicked();
     void onLockClicked();
     void onUnlockClicked();
     void onVolumeUpClicked();

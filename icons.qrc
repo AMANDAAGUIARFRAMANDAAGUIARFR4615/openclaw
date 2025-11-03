@@ -20,5 +20,6 @@
         <file>icons/apps.png</file>
         <file>icons/screen_record.png</file>
         <file>icons/high_quality.png</file>
+        <file>icons/photo.png</file>
     </qresource>
 </RCC>

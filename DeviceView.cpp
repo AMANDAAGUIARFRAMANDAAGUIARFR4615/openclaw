@@ -144,6 +144,11 @@ void DeviceView::onRebootClicked()
     connection->send("reboot");
 }
 
+void DeviceView::onDeleteAllPhotosClicked()
+{
+    connection->send("deleteAllPhotos");
+}
+
 void DeviceView::onLockClicked()
 {
     connection->send("changeScreenLockedStatus", 1);
@@ -180,6 +185,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         connect(menu.addAction(QIcon(":/icons/lock.png"), "锁屏"), &QAction::triggered, this, &DeviceView::onLockClicked);
 
     connect(menu.addAction(QIcon(":/icons/restart.png"), "重启"), &QAction::triggered, this, &DeviceView::onRebootClicked);
+    connect(menu.addAction(QIcon(":/icons/photo.png"), "清空相册"), &QAction::triggered, this, &DeviceView::onDeleteAllPhotosClicked);
     connect(menu.addAction(QIcon(":/icons/volume_up.png"), "音量+"), &QAction::triggered, this, &DeviceView::onVolumeUpClicked);
     connect(menu.addAction(QIcon(":/icons/volume_down.png"), "音量-"), &QAction::triggered, this, &DeviceView::onVolumeDownClicked);
 
