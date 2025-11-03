@@ -1,5 +1,5 @@
 #include "MainWindow.h"
-#include "Logger.h"
+#include "Tools.h"
 #include "CenteredItemDelegate.h"
 #include "RemoteFileExplorer.h"
 #include "EventHub.h"
@@ -60,6 +60,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     sideBarList->addItem(item2);
     sideBarList->addItem(item3);
     sideBarList->addItem(item4);
+
+    connect(sideBarList, &QListWidget::itemClicked, this, [=](QListWidgetItem *item) {
+        if (item == item1) {
+            auto img = Tools::generateQrImage(QString("abcd1234"));
+
+            QLabel *label = new QLabel;
+            label->setPixmap(QPixmap::fromImage(img));
+            label->setWindowTitle("扫码连接");
+            label->resize(img.width(), img.height());
+            label->setAttribute(Qt::WA_DeleteOnClose);
+            label->show();
+        }
+    });
 
     splitter->addWidget(sideBarList);
 
