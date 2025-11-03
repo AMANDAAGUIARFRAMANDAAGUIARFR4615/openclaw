@@ -41,22 +41,28 @@ class Recorder : public QWidget {
     Q_OBJECT
 
 public:
-    Recorder(DeviceConnection* connection, QWidget *parent = nullptr) : QWidget(parent) {
-        if (instanceMap.contains(connection)) {
-            Recorder* existing = instanceMap.value(connection);
-            existing->setParent(parent);
-            this->deleteLater();
-            return;
+    static Recorder* open(DeviceConnection* connection) {
+        auto existing = instanceMap.value(connection);
+        if (existing) {
+            existing->activateWindow();
+            return existing;
         }
 
+        auto recorder = new Recorder(connection);
+        recorder->resize(920, 400);
+        recorder->show();
+        return recorder;
+    }
+
+private:
+    Recorder(DeviceConnection* connection) : connection(connection), QWidget() {
         instanceMap[connection] = this;
-        this->connection = connection;
 
         setAttribute(Qt::WA_DeleteOnClose);
 
         recorderPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/recorder";
 
-        QDir dir;
+        static QDir dir;
         if (!dir.exists(recorderPath))
             dir.mkpath(recorderPath);
 
@@ -168,6 +174,10 @@ public:
             out << text;
             file.close();
         });
+    }
+
+    ~Recorder() {
+        instanceMap.remove(connection);
     }
 
 protected:
