@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QStandardPaths>
 #include <QMenu>
+#include <magic_enum/magic_enum.hpp>
 
 class LogWindow : public QTextBrowser
 {
@@ -28,7 +29,7 @@ public:
         qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &message) {
             QMetaObject::invokeMethod(logWindow, [=]() {
                 QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss.zzz");
-                QString formattedMessage = QString("[%1] %2 | %3").arg(time).arg(type).arg(message);
+                QString formattedMessage = QString("[%1] %2 | %3").arg(time).arg(magic_enum::enum_name(type)).arg(message);
 
                 QString htmlMessage = (type == QtCriticalMsg || type == QtFatalMsg || type == QtWarningMsg) ?
                                       QString("<span style='color:red;'>%1</span>").arg(formattedMessage) :

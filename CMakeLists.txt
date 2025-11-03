@@ -5,6 +5,8 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Network Concurrent Multimedia Multi
 
 qt_standard_project_setup()
 
+include_directories(include)
+
 if(APPLE)
     set(PLATFORM_DIR "macOS") 
 else()
