@@ -186,7 +186,7 @@ protected:
 
                 if (bytesSent == size) {
                     deleteLater();
-                    qDebugEx() << path << "发送完成断开连接";
+                    qDebugEx() << path << "发送完成断开连接" << size;
                 }
             }
         }
