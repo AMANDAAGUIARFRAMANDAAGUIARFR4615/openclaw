@@ -104,7 +104,7 @@ public:
 
         QHostAddress networkAddress(localIP);
         if (networkAddress.isNull()) {
-            qWarning() << "无效的子网地址";
+            qCriticalEx() << "无效的子网地址";
             return ipList;
         }
 

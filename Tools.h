@@ -19,13 +19,13 @@ public:
     static QString getFileMd5(const QString &filePath) {
         QFile file(filePath);
         if (!file.open(QIODevice::ReadOnly)) {
-            qWarning() << "无法打开文件: " << filePath;
+            qCriticalEx() << "无法打开文件: " << filePath;
             return QString();
         }
 
         QCryptographicHash hash(QCryptographicHash::Md5);
         if (!hash.addData(&file)) {
-            qWarning() << "无法读取文件数据: " << filePath;
+            qCriticalEx() << "无法读取文件数据: " << filePath;
             return QString();
         }
 
@@ -43,8 +43,8 @@ public:
     static qint64 getFileSize(const QString &filePath) {
         QFile file(filePath);
         if (!file.exists()) {
-            qWarning() << "文件不存在: " << filePath;
-            return -1;  // 文件不存在时返回 -1
+            qCriticalEx() << "文件不存在: " << filePath;
+            return -1;
         }
 
         return file.size();

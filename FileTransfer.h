@@ -30,7 +30,7 @@ public:
 
             if (!tcpServer->listen(QHostAddress::Any, 0))
             {
-                qWarningEx() << "Server failed to start";
+                qCriticalEx() << "Server failed to start";
             }
             else
             {
@@ -116,7 +116,7 @@ protected:
 
             if (!recvFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
             {
-                qCritical() << "文件保存失败:" << recvFile.errorString();
+                qCriticalEx() << "文件保存失败:" << recvFile.errorString();
                 deleteLater();
             }
 

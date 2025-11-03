@@ -289,7 +289,7 @@ bool RemoteFileExplorer::eventFilter(QObject* obj, QEvent* event)
                     tempFile.write("");  // 创建一个空文件占位
                     tempFile.close();
                 } else {
-                    qWarning() << "无法创建临时文件：" << tempPath;
+                    qCriticalEx() << "无法创建临时文件：" << tempPath;
                     return false;
                 }
             }

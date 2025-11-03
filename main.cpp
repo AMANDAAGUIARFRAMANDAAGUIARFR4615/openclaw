@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
         });
 
         QObject::connect(manager, &UsbDeviceManager::errorOccurred, [](DeviceConnection* conn, const QString& msg){
-            qWarning() << "⚠️ 设备错误:" << msg;
+            qCriticalEx() << "⚠️ 设备错误:" << msg;
         });
 
         manager->start();

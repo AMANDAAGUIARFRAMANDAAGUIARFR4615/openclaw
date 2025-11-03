@@ -67,7 +67,7 @@ void DeviceConnection::write(const QByteArray &byteArray)
         uint32_t sent = 0;
         idevice_error_t error = idevice_connection_send(usbConnection, byteArray.constData(), byteArray.size(), &sent);
         if (error != IDEVICE_E_SUCCESS)
-            qDebugEx() << "发送失败" << error << byteArray.size() << sent;
+            qCriticalEx() << "发送失败" << error << byteArray.size() << sent;
     }
 }
 

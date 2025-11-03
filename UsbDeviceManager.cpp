@@ -78,7 +78,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
                 deviceBuffers[key].append(data);
                 processBufferedData(key, ctx->handler);
             } else if (err != IDEVICE_E_SUCCESS) {
-                // emitError(ctx->handler, QString("设备通信错误: %1").arg(err));
+                emitError(ctx->handler, QString("设备通信错误: %1").arg(err));
             }
         });
     }
@@ -120,7 +120,7 @@ void UsbDeviceManager::pollDevices() {
         int count = 0;
 
         if (idevice_get_device_list(&deviceList, &count) != IDEVICE_E_SUCCESS) {
-            qWarning() << "⚠️ 获取设备列表失败";
+            qCriticalEx() << "⚠️ 获取设备列表失败";
             return {};
         }
 
@@ -163,7 +163,7 @@ void UsbDeviceManager::handlePollFinished() {
 }
 
 void UsbDeviceManager::emitError(DeviceConnection* conn, const QString& msg) {
-    qWarning() << "⚠️ UsbDeviceManager 错误:" << msg;
+    qCriticalEx() << "⚠️ UsbDeviceManager 错误:" << msg;
     emit errorOccurred(conn, msg);
 }
 
@@ -173,7 +173,7 @@ void UsbDeviceManager::processBufferedData(const QString& key, DeviceConnection*
     while (buffer.size() >= static_cast<int>(sizeof(quint64) + sizeof(quint32))) {
         auto identifier = *reinterpret_cast<const quint64*>(buffer.constData());
         if (identifier != 0xb7c2e0f542a39a3e) {
-            qCritical() << "识别码不匹配，清空缓冲区";
+            qCriticalEx() << "识别码不匹配，清空缓冲区";
             buffer.clear();
             return;
         }
@@ -189,7 +189,7 @@ void UsbDeviceManager::processBufferedData(const QString& key, DeviceConnection*
         if (!doc.isNull()) {
             emit dataReceived(handler, doc.object());
         } else {
-            qCritical() << "JSON 解析失败，丢弃数据";
+            qCriticalEx() << "JSON 解析失败，丢弃数据";
         }
     }
 }
