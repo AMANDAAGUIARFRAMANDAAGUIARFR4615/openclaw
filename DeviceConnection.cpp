@@ -65,31 +65,9 @@ void DeviceConnection::write(const QByteArray &byteArray)
     else
     {
         uint32_t sent = 0;
-        idevice_error_t error = IDEVICE_E_UNKNOWN_ERROR;
-
-        int retryCount = 0;
-        const int maxRetries = 10;
-
-        do {
-            error = idevice_connection_send(usbConnection, byteArray.constData(), byteArray.size(), &sent);
-            if (error == IDEVICE_E_SUCCESS && sent == (uint32_t)byteArray.size())
-                break;
-
-            qDebugEx() << "发送失败, 尝试次数:" << (retryCount + 1)
-                    << "错误码:" << error
-                    << "已发送:" << sent
-                    << "总大小:" << byteArray.size();
-
-            retryCount++;
-            QThread::msleep(100);
-        } while (retryCount < maxRetries);
-
-        if (error != IDEVICE_E_SUCCESS) {
-            qDebugEx() << "发送最终失败，共尝试" << retryCount << "次";
-        } else {
-            if (retryCount > 0)
-                qDebugEx() << "发送成功，共尝试" << (retryCount + 1) << "次";
-        }
+        idevice_error_t error = idevice_connection_send(usbConnection, byteArray.constData(), byteArray.size(), &sent);
+        if (error != IDEVICE_E_SUCCESS)
+            qDebugEx() << "发送失败" << error << byteArray.size() << sent;
     }
 }
 
