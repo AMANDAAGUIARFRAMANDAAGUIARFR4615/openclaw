@@ -5,6 +5,7 @@
 #include "EventHub.h"
 #include "LiveStreamDevice.h"
 #include "UsbDeviceManager.h"
+#include "TcpServer.h"
 #include <QTabWidget>
 #include <QWidget>
 #include <QVBoxLayout>
@@ -68,7 +69,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 return;
             }
 
-            auto img = Tools::generateQrImage("abcd1234");
+            auto img = Tools::generateQrImage(QJsonDocument(TcpServer::getInstance()->getHostInfo()).toJson().toBase64());
 
             qrDialog = new QDialog(this);
             qrDialog->setWindowTitle("扫码连接");

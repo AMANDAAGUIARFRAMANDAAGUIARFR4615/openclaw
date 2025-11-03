@@ -19,6 +19,9 @@ public:
               const std::function<void(QTcpSocket*, QAbstractSocket::SocketError)> &onError,
               quint16 port = 0);
 
+    static TcpServer* getInstance() {return instance;}
+    QJsonObject getHostInfo(const QString& ip = nullptr);
+
 private slots:
     void onNewConnection();
     void onReadyRead();
@@ -26,6 +29,8 @@ private slots:
     void onErrorOccurred(QAbstractSocket::SocketError socketError);
 
 private:
+    static TcpServer* instance;
+
     QMap<QTcpSocket*, QByteArray> clientBuffers; // 保存每个客户端的缓冲区
     std::function<void(QTcpSocket*)> onClientConnectedCallback;
     std::function<void(QTcpSocket*, const QJsonObject&)> onDataReceivedCallback;

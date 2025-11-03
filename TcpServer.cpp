@@ -1,7 +1,10 @@
 #include "TcpServer.h"
 #include "Logger.h"
-#include <QDebug>
+#include "NetworkUtils.h"
 #include <QJsonDocument>
+#include <QHostInfo>
+
+TcpServer* TcpServer::instance;
 
 TcpServer::TcpServer(const std::function<void(QTcpSocket*)> &onClientConnected,
                      const std::function<void(QTcpSocket*, const QJsonObject&)> &onDataReceived,
@@ -13,6 +16,8 @@ TcpServer::TcpServer(const std::function<void(QTcpSocket*)> &onClientConnected,
       onClientDisconnectedCallback(onClientDisconnected),
       onErrorCallback(onError)
 {
+    instance = this;
+
     connect(this, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
 
     if (!this->listen(QHostAddress::AnyIPv4, port)) {
@@ -20,7 +25,11 @@ TcpServer::TcpServer(const std::function<void(QTcpSocket*)> &onClientConnected,
         return;
     }
 
-    qDebugEx() << "服务器已启动,监听端口:" << this->serverPort();
+    qDebugEx() << "服务器已启动,监听端口:" << serverPort();
+}
+
+QJsonObject TcpServer::getHostInfo(const QString& ip) {
+    return QJsonObject{{"ip", ip != nullptr ? ip : NetworkUtils::getLocalIP()}, {"port", serverPort()}, {"remoteDeviceName", QHostInfo::localHostName()}};
 }
 
 void TcpServer::onNewConnection() {

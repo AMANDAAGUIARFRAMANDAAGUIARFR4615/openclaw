@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
     QList<QHostAddress> subnetIPs = NetworkUtils::getSubnetIPs(localIP);
     for (const QHostAddress &ip : subnetIPs) {
         // qDebugEx() << "同子网IP: " << ip.toString();
-        udpTransport.sendData(QJsonObject{{"ip", localIP}, {"port", server.serverPort()}, {"remoteDeviceName", QHostInfo::localHostName()}}, ip, 32838);
+        udpTransport.sendData(server.getHostInfo(localIP), ip, 32838);
     }
 
     QScreen *screen = QApplication::primaryScreen();
