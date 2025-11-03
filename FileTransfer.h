@@ -59,8 +59,12 @@ public:
     }
 
     ~FileTransfer() {
-        delete tcpServer;
         transferConnection->close();
+
+        if (tcpServer) {
+            delete tcpServer;
+            delete transferConnection;
+        }
     }
 
     const QString id;
