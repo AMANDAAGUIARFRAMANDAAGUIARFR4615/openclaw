@@ -9,6 +9,7 @@
 #include <QDateTime>
 #include <QDir>
 #include <QStandardPaths>
+#include <QMenu>
 
 class LogWindow : public QTextBrowser
 {
@@ -49,13 +50,28 @@ public:
         setVisible(!isVisible());
     }
 
+protected:
+    void contextMenuEvent(QContextMenuEvent *event) override
+    {
+        QMenu *menu = createStandardContextMenu();
+        menu->addSeparator();
+
+        connect(menu->addAction("清空日志"), &QAction::triggered, this, [this]() {
+            clear();
+            logFile.resize(0);
+        });
+
+        menu->exec(event->globalPos());
+        delete menu;
+    }
+
 private:
     inline static LogWindow* logWindow;
     QFile logFile;
 
     void appendWithLimit(const QString& message)
     {
-        if (document()->blockCount() > 500) {
+        if (document()->blockCount() > 5000) {
             QTextBlock firstBlock = document()->firstBlock();
             QTextCursor cursor(firstBlock);
             cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor, 1);
