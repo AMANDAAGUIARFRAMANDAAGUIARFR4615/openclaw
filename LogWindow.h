@@ -7,7 +7,6 @@
 #include <QFile>
 #include <QTextStream>
 #include <QDateTime>
-#include <QDir>
 #include <QStandardPaths>
 #include <QMenu>
 #include <magic_enum/magic_enum.hpp>
@@ -31,9 +30,11 @@ public:
                 QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss.zzz");
                 QString formattedMessage = QString("[%1] %2 | %3").arg(time).arg(magic_enum::enum_name(type)).arg(message);
 
-                QString htmlMessage = (type == QtCriticalMsg || type == QtFatalMsg || type == QtWarningMsg) ?
-                                      QString("<span style='color:red;'>%1</span>").arg(formattedMessage) :
-                                      QString("<span style='color:black;'>%1</span>").arg(formattedMessage);
+                QString color = (type == QtCriticalMsg || type == QtFatalMsg) ? "red" : (type == QtWarningMsg) ? "orange" : "black";
+
+                QString htmlMessage = QString("<span style='color:%1;'>%2</span>")
+                    .arg(color)
+                    .arg(formattedMessage);
 
                 logWindow->allLogs.append(htmlMessage);
                 logWindow->appendWithLimit(htmlMessage);
