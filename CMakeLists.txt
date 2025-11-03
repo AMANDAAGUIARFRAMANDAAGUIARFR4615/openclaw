@@ -45,6 +45,7 @@ add_executable(${PROJECT_NAME}
     RemoteFileExplorer.h RemoteFileExplorer.cpp FileTransfer.h
     AppListWidget.h AppListWidget.cpp
     FileViewer.h Recorder.h
+    qrcodegen.hpp qrcodegen.cpp
     Statics.cpp
     ${RESOURCE_SOURCES}
 )

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "TcpServer.h"
-
+#include "Logger.h"
+#include "qrcodegen.hpp"
 #include <QJsonObject>
 #include <QFile>
 #include <QCryptographicHash>
@@ -9,6 +9,9 @@
 #include <QBuffer>
 #include <QProcess>
 #include <QDir>
+#include <QPainter>
+
+using namespace qrcodegen;
 
 class Tools {
 public:
@@ -117,5 +120,32 @@ public:
         image.save(&buffer, "PNG");
 
         return byteArray.toBase64();
+    }
+
+    static QImage generateQrImage(const QString& text, int scale = 10, int border = 4) {
+        qDebugEx() << "generateQrImage" << text;
+
+        QrCode qr = QrCode::encodeText(text.toStdString().c_str(), QrCode::Ecc::MEDIUM);
+
+        int qrSize = qr.getSize();
+        int size = (qrSize + border * 2) * scale;
+        QImage image(size, size, QImage::Format_RGB888);
+        image.fill(Qt::white);  // 白底
+
+        QPainter painter(&image);
+        painter.setBrush(Qt::black);
+        painter.setPen(Qt::NoPen);
+
+        for (int y = 0; y < qrSize; y++) {
+            for (int x = 0; x < qrSize; x++) {
+                if (qr.getModule(x, y)) {
+                    int rx = (x + border) * scale;
+                    int ry = (y + border) * scale;
+                    painter.drawRect(rx, ry, scale, scale);
+                }
+            }
+        }
+        
+        return image;
     }
 };
