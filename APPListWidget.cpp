@@ -14,6 +14,8 @@
 AppListWidget::AppListWidget(DeviceConnection* connection, QWidget *parent)
     : connection(connection), QWidget(parent)
 {
+    setAttribute(Qt::WA_DeleteOnClose);
+    
     table = new QTableWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->addWidget(table);

@@ -35,6 +35,7 @@
 RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath, QWidget *parent) 
     : connection(connection), rootPath(rootPath), QWidget(parent)
 {
+    setAttribute(Qt::WA_DeleteOnClose);
     setAcceptDrops(true);
 
     // 初始化收藏功能

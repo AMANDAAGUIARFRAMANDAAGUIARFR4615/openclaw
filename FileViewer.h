@@ -20,6 +20,8 @@ class FileViewer : public QWidget
 public:
     explicit FileViewer(const QString &filePath, QWidget *parent) : filePath(filePath)
     {
+        setAttribute(Qt::WA_DeleteOnClose);
+        
         setWindowTitle(QFileInfo(filePath).fileName());
         resize(parent->size());
         move(parent->pos());

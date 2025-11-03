@@ -52,6 +52,8 @@ public:
         instanceMap[connection] = this;
         this->connection = connection;
 
+        setAttribute(Qt::WA_DeleteOnClose);
+
         recorderPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/recorder";
 
         QDir dir;

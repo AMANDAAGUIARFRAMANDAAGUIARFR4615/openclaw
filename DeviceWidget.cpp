@@ -112,7 +112,6 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
     videoFrameWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     videoFrameWidget->setFixedSize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
     deviceWindow->addVideoFrameWidget(videoFrameWidget);
-    deviceWindow->setAttribute(Qt::WA_DeleteOnClose);
     deviceWindow->show();
 
     videoFrameWidget = nullptr;

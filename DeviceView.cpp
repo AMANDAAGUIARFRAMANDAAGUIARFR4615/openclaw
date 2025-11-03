@@ -20,6 +20,7 @@
 DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWidget *parent)
     : connection(connection), deviceInfo(deviceInfo), QWidget(parent)
 {
+    setAttribute(Qt::WA_DeleteOnClose);
     setAcceptDrops(true);
 
     overlay = new QWidget(this);
