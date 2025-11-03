@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <QKeyEvent>
 #include <QFrame>
+#include <QDialog>
 
 class MainWindow : public QMainWindow
 {
@@ -28,4 +29,6 @@ protected:
     const int minItemWidth = 150;
     const int minItemHeight = minItemWidth * 1.7786;
     const int spacing = 10;
+
+    QDialog *qrDialog = nullptr;
 };

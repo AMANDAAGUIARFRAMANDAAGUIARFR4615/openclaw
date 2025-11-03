@@ -63,14 +63,29 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     connect(sideBarList, &QListWidget::itemClicked, this, [=](QListWidgetItem *item) {
         if (item == item1) {
-            auto img = Tools::generateQrImage(QString("abcd1234"));
+            if (qrDialog) {
+                qrDialog->activateWindow();
+                return;
+            }
 
-            QLabel *label = new QLabel;
+            auto img = Tools::generateQrImage("abcd1234");
+
+            qrDialog = new QDialog(this);
+            qrDialog->setWindowTitle("扫码连接");
+            qrDialog->setAttribute(Qt::WA_DeleteOnClose);
+
+            QLabel *label = new QLabel(qrDialog);
             label->setPixmap(QPixmap::fromImage(img));
-            label->setWindowTitle("扫码连接");
-            label->resize(img.width(), img.height());
-            label->setAttribute(Qt::WA_DeleteOnClose);
-            label->show();
+
+            auto *layout = new QVBoxLayout(qrDialog);
+            layout->addWidget(label);
+            qrDialog->resize(img.width(), img.height());
+
+            connect(qrDialog, &QDialog::finished, this, [this]() {
+                qrDialog = nullptr;
+            });
+
+            qrDialog->show();
         }
     });
 
