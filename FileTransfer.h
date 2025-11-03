@@ -174,7 +174,7 @@ protected:
             if (recvFile.size() == size) {
                 recvFile.close();
                 deleteLater();
-                qDebugEx() << path << "接收完成断开连接";
+                qDebugEx() << path << "接收完成断开连接" << size;
             }
         } else {
             while (buffer.size() >= 8) {
