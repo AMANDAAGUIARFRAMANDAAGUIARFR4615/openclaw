@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include <QMediaPlayer>
 #include <QVideoWidget>
+#include <QEvent>
 
 class VideoFrameWidget : public QVideoWidget
 {
@@ -26,6 +27,13 @@ public:
         connect(mediaPlayer, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error error, const QString &errorString) {
             qCriticalEx() << "errorOccurred" << errorString;
         });
+
+        QMetaObject::invokeMethod(this, [this]() {
+            if (auto child = findChildWidget())
+                child->installEventFilter(this);
+            else
+                qCriticalEx() << "QWindowContainer not found!";
+        }, Qt::QueuedConnection);
     }
 
     void orientationChanged(int orientation)
@@ -45,4 +53,27 @@ public:
     }
 
     QMediaPlayer* const mediaPlayer;
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        switch (event->type()) {
+        case QEvent::DragEnter:
+        case QEvent::DragMove:
+        case QEvent::Drop:
+            return true;
+        }
+
+        return QVideoWidget::eventFilter(obj, event);
+    }
+
+    QWidget* findChildWidget() const
+    {
+        for (QWidget *child : findChildren<QWidget*>()) {
+            if (child->metaObject()->className() == QString("QWindowContainer"))
+                return child;
+        }
+
+        return nullptr;
+    }
 };
