@@ -20,7 +20,7 @@ public:
         setVisible(false);
 
         logFile.setFileName(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/app_log.txt");
-        if (!logFile.open(QIODevice::Append | QIODevice::Text)) {
+        if (!logFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
             append("<span style='color:red;'>无法打开日志文件！</span>");
         }
 
