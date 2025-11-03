@@ -180,8 +180,8 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         connect(menu.addAction(QIcon(":/icons/lock.png"), "锁屏"), &QAction::triggered, this, &DeviceView::onLockClicked);
 
     connect(menu.addAction(QIcon(":/icons/restart.png"), "重启"), &QAction::triggered, this, &DeviceView::onRebootClicked);
-    connect(menu.addAction(QIcon(":/icons/volume_up.png"), "加音"), &QAction::triggered, this, &DeviceView::onVolumeUpClicked);
-    connect(menu.addAction(QIcon(":/icons/volume_down.png"), "减音"), &QAction::triggered, this, &DeviceView::onVolumeDownClicked);
+    connect(menu.addAction(QIcon(":/icons/volume_up.png"), "音量+"), &QAction::triggered, this, &DeviceView::onVolumeUpClicked);
+    connect(menu.addAction(QIcon(":/icons/volume_down.png"), "音量-"), &QAction::triggered, this, &DeviceView::onVolumeDownClicked);
 
     auto subMenu = menu.addMenu(QIcon(":/icons/high_quality.png"), "清晰度");
     connect(subMenu->addAction("低清"), &QAction::triggered, this, [this]() {
