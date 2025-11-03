@@ -78,7 +78,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
                 deviceBuffers[key].append(data);
                 processBufferedData(key, ctx->handler);
             } else if (err != IDEVICE_E_SUCCESS) {
-                emitError(ctx->handler, QString("设备通信错误: %1").arg(err));
+                // emitError(ctx->handler, QString("设备通信错误: %1").arg(err));
             }
         });
     }
