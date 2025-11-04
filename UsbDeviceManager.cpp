@@ -1,6 +1,6 @@
 #include "UsbDeviceManager.h"
 #include <QJsonDocument>
-#include <QDebug>
+#include <magic_enum/magic_enum.hpp>
 
 Q_GLOBAL_STATIC(UsbDeviceManager, s_usbDeviceManager)
 
@@ -38,13 +38,13 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
     ctx->port = port;
 
     if (IDEVICE_E_SUCCESS != idevice_new(&ctx->device, udid.toUtf8().constData())) {
-        emitError(nullptr, QString("无法创建 idevice: %1").arg(udid));
+        emit errorOccurred(nullptr, QString("无法创建 idevice: %1").arg(udid));
         delete ctx;
         return nullptr;
     }
 
     if (idevice_connect(ctx->device, port, &ctx->connection) != IDEVICE_E_SUCCESS) {
-        emitError(nullptr, QString("无法连接端口 %1 的设备: %2").arg(port).arg(udid));
+        emit errorOccurred(nullptr, QString("无法连接端口 %1 的设备: %2").arg(port).arg(udid));
         idevice_free(ctx->device);
         delete ctx;
         return nullptr;
@@ -78,7 +78,8 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
                 deviceBuffers[key].append(data);
                 processBufferedData(key, ctx->handler);
             } else if (err != IDEVICE_E_SUCCESS) {
-                emitError(ctx->handler, QString("设备通信错误: %1").arg(err));
+                emit errorOccurred(ctx->handler, QString("%1端口通信错误: %2").arg(port).arg(magic_enum::enum_name(err)));
+                ctx->notifier->deleteLater();
             }
         });
     }
@@ -160,11 +161,6 @@ void UsbDeviceManager::handlePollFinished() {
     }
 
     previousDevices = currentDevices;
-}
-
-void UsbDeviceManager::emitError(DeviceConnection* conn, const QString& msg) {
-    qCriticalEx() << "⚠️ UsbDeviceManager 错误:" << msg;
-    emit errorOccurred(conn, msg);
 }
 
 void UsbDeviceManager::processBufferedData(const QString& key, DeviceConnection* handler) {

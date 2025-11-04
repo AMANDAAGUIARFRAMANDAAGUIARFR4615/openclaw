@@ -47,7 +47,6 @@ private slots:
 
 private:
     void pollDevices();
-    void emitError(DeviceConnection* conn, const QString& msg);
     void processBufferedData(const QString& key, DeviceConnection* handler);
 
     QTimer* timer = nullptr;
