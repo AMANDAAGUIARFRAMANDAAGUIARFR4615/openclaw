@@ -1,23 +1,31 @@
 #pragma once
-
-#include "DeviceConnection.h"
-#include <QCoreApplication>
-#include <QJsonDocument>
-#include <QJsonValue>
 #include <QMap>
 #include <QList>
+#include <QJsonValue>
 #include <functional>
-#include <QString>
-#include <memory>
-#include <algorithm>
+#include <QDebug>
 
-class EventHub
-{
+class DeviceConnection;
+
+class EventHub {
 public:
-    static void StartListening(const QString& eventName, std::function<void(QJsonValue, DeviceConnection*)> listener, int priority = 0);
-    static void StopListening(const QString& eventName, std::function<void(QJsonValue, DeviceConnection*)> listener = nullptr);
-    static void TriggerEvent(const QString& eventName, const QJsonValue& data = QJsonValue(), DeviceConnection* connection = nullptr);
+    using Callback = std::function<void(const QJsonValue&, DeviceConnection*)>;
+    using Handle   = std::size_t;
+
+    static Handle on(const QString& event, Callback cb, int priority = 0);
+    static bool   off(const QString& event, Handle h);
+    static void   off(const QString& event);
+    static void   trigger(const QString& event, const QJsonValue& data = {}, DeviceConnection* conn = nullptr);
+    static Handle once(const QString& event, Callback cb, int priority = 0);
 
 private:
-    static QMap<QString, QList<std::pair<std::function<void(QJsonValue, DeviceConnection*)>, int>>> listeners;
+    struct Item {
+        Handle   id;
+        Callback cb;
+        int      priority;
+        bool     once = false;
+    };
+
+    static QMap<QString, QList<Item>> events;
+    static Handle nextId;
 };

@@ -152,7 +152,7 @@ private:
 
         updateButtonStates();
 
-        EventHub::StartListening("recorderReport", [this](const QJsonValue &data, DeviceConnection* connection) {
+        EventHub::on("recorderReport", [this](const QJsonValue &data, DeviceConnection* connection) {
             if (this->connection != connection)
                 return;
 

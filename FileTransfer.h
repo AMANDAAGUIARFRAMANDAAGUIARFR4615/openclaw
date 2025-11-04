@@ -39,7 +39,7 @@ public:
         }
         else
         {
-            EventHub::StartListening("transferPort", [=](const QJsonValue &data, DeviceConnection* connection) {
+            EventHub::on("transferPort", [=](const QJsonValue &data, DeviceConnection* connection) {
                 if (this->connection != connection)
                     return;
 
