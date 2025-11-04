@@ -1,5 +1,6 @@
 #include "DeviceConnection.h"
 #include "UsbDeviceManager.h"
+#include <magic_enum/magic_enum.hpp>
 
 QHash<QTcpSocket*, DeviceConnection*> DeviceConnection::tcpSocketToDevice;
 QHash<idevice_connection_t, DeviceConnection*> DeviceConnection::usbConnectionToDevice;
@@ -64,10 +65,15 @@ void DeviceConnection::write(const QByteArray &byteArray)
     }
     else
     {
+        if (!usbConnection)
+            return;
+
         uint32_t sent = 0;
         idevice_error_t error = idevice_connection_send(usbConnection, byteArray.constData(), byteArray.size(), &sent);
-        if (error != IDEVICE_E_SUCCESS)
-            qCriticalEx() << "发送失败" << error << byteArray.size() << sent;
+        if (error != IDEVICE_E_SUCCESS) {
+            qCriticalEx() << "发送失败" << magic_enum::enum_name(error) << byteArray.size() << sent;
+            usbConnection = nullptr;
+        }
     }
 }
 
