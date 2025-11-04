@@ -53,12 +53,19 @@ public:
                     handleDataRead(data);
                 });
 
+                if (!transferConnection) {
+                    qCriticalEx() << "连接设备失败" << ctx->udid << data["port"];
+                    return;
+                }
+
                 handleNewConnection();
             });
         }
     }
 
     ~FileTransfer() {
+        connection = nullptr;
+
         transferConnection->close();
 
         if (tcpServer) {
@@ -192,7 +199,7 @@ protected:
         }
     }
 
-    DeviceConnection* const connection;
+    DeviceConnection* connection;
     const int type;
     const QString path;
     quint64 size;
