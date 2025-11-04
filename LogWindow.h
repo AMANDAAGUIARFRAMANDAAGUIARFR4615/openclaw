@@ -3,7 +3,6 @@
 #include <QTextBrowser>
 #include <QMetaObject>
 #include <QMessageLogContext>
-#include <QTextBlock>
 #include <QFile>
 #include <QTextStream>
 #include <QDateTime>
@@ -37,7 +36,7 @@ public:
                     .arg(formattedMessage);
 
                 logWindow->allLogs.append(htmlMessage);
-                logWindow->appendWithLimit(htmlMessage);
+                logWindow->appendLog(htmlMessage);
 
                 QTextStream out(&logWindow->logFile);
                 out << formattedMessage << "\n";
@@ -72,7 +71,7 @@ protected:
             
             clear();
             for (const QString &msg : allLogs) {
-                appendWithLimit(msg);
+                appendLog(msg);
             }
         });
 
@@ -86,15 +85,8 @@ private:
     bool showOnlyErrors = false;
     QStringList allLogs;
 
-    void appendWithLimit(const QString& message)
+    void appendLog(const QString& message)
     {
-        if (document()->blockCount() > 5000) {
-            QTextBlock firstBlock = document()->firstBlock();
-            QTextCursor cursor(firstBlock);
-            cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor, 1);
-            cursor.removeSelectedText();
-        }
-
         if (!showOnlyErrors || message.contains("color:red"))
             append(message);
     }
