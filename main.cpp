@@ -6,6 +6,7 @@
 #include "LogWindow.h"
 #include "DeviceInfo.h"
 #include "EventHub.h"
+#include "DeviceWindow.h"
 #include "UsbDeviceManager.h"
 #include <QApplication>
 #include <QNetworkProxy>
@@ -42,6 +43,17 @@ void onError(QTcpSocket* socket, QAbstractSocket::SocketError socketError) {
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+
+    QObject::connect(&app, &QApplication::focusChanged, [](QWidget *old, QWidget *now) {
+        qDebugEx() << "焦点从" << old << "变为" << now;
+
+        if (!now || now->isWindow())
+            return;
+
+        auto window = qobject_cast<DeviceWindow*>(now->window());
+        if (window)
+            window->setFocus();
+    });
 
     QNetworkProxy::setApplicationProxy(QNetworkProxy::NoProxy);
 
