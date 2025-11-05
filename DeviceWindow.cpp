@@ -5,6 +5,7 @@
 #include "EventHub.h"
 #include "ToastWidget.h"
 #include "Tools.h"
+#include "LiveStreamDevice.h"
 #include <QStyle>
 #include <QElapsedTimer>
 #include <QVBoxLayout>
@@ -18,7 +19,6 @@
 
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(connection, deviceInfo), deviceWidget(deviceWidget)
 {
-    setFocus();
     setAttribute(Qt::WA_InputMethodEnabled, true);
 
     QHBoxLayout *layout = new QHBoxLayout(this);
@@ -94,6 +94,16 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         else
             overlay->hide();
     });
+
+    auto title = windowTitle(); 
+
+    auto timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, [=]() {
+        auto *ioDevice = videoFrameWidget->mediaPlayer->sourceDevice();
+        auto device = qobject_cast<LiveStreamDevice*>(const_cast<QIODevice*>(ioDevice));
+        this->setWindowTitle(title + " " + Tools::formatByteSize(device->speedBps()) + " / s");
+    });
+    timer->start(1000);
 }
 
 DeviceWindow::~DeviceWindow()

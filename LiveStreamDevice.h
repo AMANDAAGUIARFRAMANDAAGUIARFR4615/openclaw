@@ -6,6 +6,7 @@
 #include <QWaitCondition>
 #include <QByteArray>
 #include <QTcpSocket>
+#include <QDateTime>
 
 class LiveStreamDevice : public QIODevice {
     Q_OBJECT
@@ -47,6 +48,15 @@ public:
     void appendData(const QByteArray &data) {
         QMutexLocker locker(&m_mutex);
         m_buffer.append(data);
+
+        quint64 sec = QDateTime::currentSecsSinceEpoch();
+        if (sec != m_lastSec) {
+            m_prevSecBytes = m_curSecBytes;
+            m_curSecBytes = 0;
+            m_lastSec = sec;
+        }
+        m_curSecBytes += data.size();
+
         m_dataAvailable.wakeAll();
     }
 
@@ -54,6 +64,11 @@ public:
         QMutexLocker locker(&m_mutex);
         m_eof = true;
         m_dataAvailable.wakeAll();
+    }
+
+    qint64 speedBps() const {
+        QMutexLocker locker(&m_mutex);
+        return m_prevSecBytes;
     }
 
 protected:
@@ -88,4 +103,8 @@ protected:
     mutable QMutex m_mutex;
     QWaitCondition m_dataAvailable;
     bool m_eof = false;
+
+    qint64 m_curSecBytes = 0;
+    qint64 m_prevSecBytes = 0;
+    quint64 m_lastSec = 0;
 };
