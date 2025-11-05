@@ -33,7 +33,9 @@ public:
     bool open(OpenMode mode) override {
         if (!(mode & ReadOnly))
             return false;
+
         m_eof = false;
+        m_firstThresholdReached = false;
         return QIODevice::open(mode);
     }
 
@@ -56,14 +58,10 @@ public:
             m_lastSec = sec;
         }
         m_curSecBytes += data.size();
-
-        m_dataAvailable.wakeAll();
-    }
-
-    void endStream() {
-        QMutexLocker locker(&m_mutex);
-        m_eof = true;
-        m_dataAvailable.wakeAll();
+        if (m_firstThresholdReached || m_buffer.size() >= 2048) {
+            m_firstThresholdReached = true;
+            m_dataAvailable.wakeAll();
+        }
     }
 
     qint64 speedBps() const {
@@ -75,8 +73,7 @@ protected:
     qint64 readData(char *data, qint64 maxSize) override {
         QMutexLocker locker(&m_mutex);
 
-        // 若无数据且未结束，等待
-        while (m_buffer.isEmpty() && !m_eof) {
+        while ((m_buffer.isEmpty() || !m_firstThresholdReached) && !m_eof) {
             m_dataAvailable.wait(&m_mutex);
         }
 
@@ -103,7 +100,7 @@ protected:
     mutable QMutex m_mutex;
     QWaitCondition m_dataAvailable;
     bool m_eof = false;
-
+    bool m_firstThresholdReached = false;
     qint64 m_curSecBytes = 0;
     qint64 m_prevSecBytes = 0;
     quint64 m_lastSec = 0;
