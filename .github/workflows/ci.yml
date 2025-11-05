@@ -170,7 +170,6 @@ jobs:
           cd qtmultimedia
 
           # QT_ROOT_DIR=/d/Qt/6.10.0/mingw_64
-          export QT_MEDIA_BACKEND=ffmpeg
           cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR -DCMAKE_INSTALL_PREFIX=$QTMULTIMEDIA_DIR
           cmake --build build --config Release --target install --parallel
 
@@ -184,6 +183,7 @@ jobs:
       - name: cp qtmultimedia
         shell: bash
         run: |
+          # 先安装到临时目录再复制是为了缓存
           cp -r $QTMULTIMEDIA_DIR/* $QT_ROOT_DIR
 
       - name: Upload qtmultimedia cache
