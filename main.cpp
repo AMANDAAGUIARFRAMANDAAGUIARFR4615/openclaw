@@ -58,6 +58,7 @@ int main(int argc, char *argv[])
     QNetworkProxy::setApplicationProxy(QNetworkProxy::NoProxy);
 
     // qputenv("QT_FFMPEG_DEBUG", "1");
+    qputenv("QT_MEDIA_BACKEND", "ffmpeg");
 
     // QLoggingCategory::setFilterRules("qt.multimedia.*=true");
 
