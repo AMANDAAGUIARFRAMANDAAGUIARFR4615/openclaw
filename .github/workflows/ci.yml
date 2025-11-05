@@ -160,7 +160,7 @@ jobs:
         id: cache-qtmultimedia
         uses: actions/cache/restore@v4
         with:
-          key: ${{ runner.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}
+          key: ${{ runner.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}
           path: ${{ env.QTMULTIMEDIA_DIR }}
 
       - name: Build qtmultimedia
@@ -177,7 +177,7 @@ jobs:
         if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
-          key: ${{ runner.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}
+          key: ${{ runner.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}
           path: ${{ env.QTMULTIMEDIA_DIR }}
 
       - name: cp qtmultimedia
@@ -189,7 +189,7 @@ jobs:
         # if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ runner.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}
+          name: ${{ runner.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}
           path: ${{ env.QTMULTIMEDIA_DIR }}
 
       - name: Build for ${{ matrix.os }}
