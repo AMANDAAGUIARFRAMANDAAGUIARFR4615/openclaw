@@ -75,3 +75,10 @@ endif()
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Concurrent Qt6::Multimedia Qt6::MultimediaWidgets Qt6::Sql ${THIRD_PARTY_LIBS})
 
 add_definitions(-DPROJECT_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\")
+
+file(GLOB_RECURSE DEBUG_SOURCES
+    "${CMAKE_SOURCE_DIR}/../qtmultimedia/*.cpp"
+    "${CMAKE_SOURCE_DIR}/../qtmultimedia/*.h"
+)
+
+add_custom_target(DebugSources SOURCES ${DEBUG_SOURCES})
