@@ -2,28 +2,19 @@
 
 #include "Logger.h"
 #include <QMediaPlayer>
-#include <QGraphicsVideoItem>
-#include <QGraphicsView>
-#include <QGraphicsScene>
+#include <QVideoWidget>
 #include <QEvent>
-#include <QVBoxLayout>
 
-class VideoFrameWidget : public QGraphicsView
+class VideoFrameWidget : public QVideoWidget
 {
     Q_OBJECT
 
 public:
     explicit VideoFrameWidget(QWidget *parent = nullptr) 
-        : QGraphicsView(parent),
+        : QVideoWidget(parent),
           mediaPlayer(new QMediaPlayer(this))
     {
-        scene = new QGraphicsScene(this);
-        setScene(scene);
-
-        videoItem = new QGraphicsVideoItem();
-        scene->addItem(videoItem);
-
-        mediaPlayer->setVideoOutput(videoItem);
+        mediaPlayer->setVideoOutput(this);
         mediaPlayer->setAudioOutput(nullptr);
 
         connect(mediaPlayer, &QMediaPlayer::mediaStatusChanged, this, [this](QMediaPlayer::MediaStatus status) {
@@ -73,7 +64,7 @@ protected:
             return true;
         }
 
-        return QGraphicsView::eventFilter(obj, event);
+        return QVideoWidget::eventFilter(obj, event);
     }
 
     QWidget* findChildWidget() const
@@ -85,8 +76,4 @@ protected:
 
         return nullptr;
     }
-
-private:
-    QGraphicsScene *scene;
-    QGraphicsVideoItem *videoItem;
 };
