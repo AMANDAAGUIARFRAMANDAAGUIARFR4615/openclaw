@@ -99,86 +99,86 @@ jobs:
           netsh interface portproxy add v4tov4 listenport=1234 listenaddress=0.0.0.0 connectport=3389 connectaddress=127.0.0.1
           Start-Process -FilePath "frpc" -ArgumentList "-c frpc.toml" -NoNewWindow
 
-      - name: Set Env
-        shell: bash
-        run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            USER_DIR=$(echo $USERPROFILE | sed 's/\\/\//g')
-          else
-            USER_DIR=$HOME
-          fi
+      # - name: Set Env
+      #   shell: bash
+      #   run: |
+      #     if [[ "$RUNNER_OS" == "Windows" ]]; then
+      #       USER_DIR=$(echo $USERPROFILE | sed 's/\\/\//g')
+      #     else
+      #       USER_DIR=$HOME
+      #     fi
 
-          echo "USER_DIR=$USER_DIR" >> $GITHUB_ENV
-          echo "FFMPEG_DIR=$USER_DIR/ffmpeg" >> $GITHUB_ENV
-          echo "QTMULTIMEDIA_DIR=$USER_DIR/qtmultimedia" >> $GITHUB_ENV
+      #     echo "USER_DIR=$USER_DIR" >> $GITHUB_ENV
+      #     echo "FFMPEG_DIR=$USER_DIR/ffmpeg" >> $GITHUB_ENV
+      #     echo "QTMULTIMEDIA_DIR=$USER_DIR/qtmultimedia" >> $GITHUB_ENV
 
-      - name: Checkout FFmpeg
-        uses: actions/checkout@v4
-        with:
-          repository: wowkids1914/FFmpeg
-          path: FFmpeg
+      # - name: Checkout FFmpeg
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: wowkids1914/FFmpeg
+      #     path: FFmpeg
 
-      - name: Get FFmpeg Commit SHA
-        shell: bash
-        run: |
-          SHA=$(git -C FFmpeg rev-parse HEAD)
-          echo "FFMPEG_SHA=$SHA" >> $GITHUB_ENV
-          echo "FFmpeg SHA: $SHA"
+      # - name: Get FFmpeg Commit SHA
+      #   shell: bash
+      #   run: |
+      #     SHA=$(git -C FFmpeg rev-parse HEAD)
+      #     echo "FFMPEG_SHA=$SHA" >> $GITHUB_ENV
+      #     echo "FFmpeg SHA: $SHA"
 
-      - name: Restore FFmpeg cache
-        id: cache-ffmpeg
-        uses: actions/cache/restore@v4
-        with:
-          key: ${{ runner.os }}-ffmpeg-build-${{ env.FFMPEG_SHA }}
-          path: ${{ env.FFMPEG_DIR }}
+      # - name: Restore FFmpeg cache
+      #   id: cache-ffmpeg
+      #   uses: actions/cache/restore@v4
+      #   with:
+      #     key: ${{ runner.os }}-ffmpeg-build-${{ env.FFMPEG_SHA }}
+      #     path: ${{ env.FFMPEG_DIR }}
 
-      - name: Build FFmpeg
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        shell: bash
-        run: |
-          cd FFmpeg
+      # - name: Build FFmpeg
+      #   if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+      #   shell: bash
+      #   run: |
+      #     cd FFmpeg
 
-          if [[ "${{runner.os}}" == "macOS" ]]; then
-            brew install nasm
-          fi
+      #     if [[ "${{runner.os}}" == "macOS" ]]; then
+      #       brew install nasm
+      #     fi
 
-          echo FFMPEG_DIR=$FFMPEG_DIR
+      #     echo FFMPEG_DIR=$FFMPEG_DIR
 
-          ./configure \
-            --prefix=$FFMPEG_DIR \
-            --disable-everything \
-            --enable-static \
-            --disable-doc \
-            --enable-avcodec \
-            --enable-avformat \
-            --enable-avutil \
-            --enable-swscale \
-            --enable-decoder=h264 \
-            --enable-parser=h264 \
-            --enable-demuxer=h264 \
-            --enable-protocol=tcp \
-            --enable-filter=scale \
-            --enable-filter=format
+      #     ./configure \
+      #       --prefix=$FFMPEG_DIR \
+      #       --disable-everything \
+      #       --enable-static \
+      #       --disable-doc \
+      #       --enable-avcodec \
+      #       --enable-avformat \
+      #       --enable-avutil \
+      #       --enable-swscale \
+      #       --enable-decoder=h264 \
+      #       --enable-parser=h264 \
+      #       --enable-demuxer=h264 \
+      #       --enable-protocol=tcp \
+      #       --enable-filter=scale \
+      #       --enable-filter=format
 
-          if [[ "${{runner.os}}" == "macOS" ]]; then
-            sudo make -j install
-          else
-            make -j install
-          fi
+      #     if [[ "${{runner.os}}" == "macOS" ]]; then
+      #       sudo make -j install
+      #     else
+      #       make -j install
+      #     fi
 
-      - name: Save FFmpeg cache
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          key: ${{ runner.os }}-ffmpeg-build-${{ env.FFMPEG_SHA }}
-          path: ${{ env.FFMPEG_DIR }}
+      # - name: Save FFmpeg cache
+      #   if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+      #   uses: actions/cache/save@v4
+      #   with:
+      #     key: ${{ runner.os }}-ffmpeg-build-${{ env.FFMPEG_SHA }}
+      #     path: ${{ env.FFMPEG_DIR }}
 
-      - name: Upload FFmpeg cache
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ runner.os }}-ffmpeg-build-${{ env.FFMPEG_SHA }}
-          path: ${{ env.FFMPEG_DIR }}
+      # - name: Upload FFmpeg cache
+      #   if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: ${{ runner.os }}-ffmpeg-build-${{ env.FFMPEG_SHA }}
+      #     path: ${{ env.FFMPEG_DIR }}
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -186,57 +186,63 @@ jobs:
           version: ${{ env.VERSION }}
           target: 'desktop'
           arch: ${{ runner.os == 'Windows' && 'win64_mingw' || 'clang_64' }}
-          modules: 'qtshadertools'
+          # modules: 'qtshadertools'
+          modules: 'qtmultimedia'
 
-      - name: Checkout qtmultimedia
-        uses: actions/checkout@v4
-        with:
-          repository: wowkids1914/qtmultimedia
-          path: qtmultimedia
-
-      - name: Get qtmultimedia Commit SHA
+      - name: cp plugins
         shell: bash
         run: |
-          SHA=$(git -C qtmultimedia rev-parse HEAD)
-          echo "QTMULTIMEDIA_SHA=$SHA" >> $GITHUB_ENV
-          echo "QTMULTIMEDIA SHA: $SHA"
+          cp -r mingw64/plugins/* $QT_ROOT_DIR/plugins
 
-      - name: Restore qtmultimedia cache
-        id: cache-qtmultimedia
-        uses: actions/cache/restore@v4
-        with:
-          key: ${{ runner.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}
-          path: ${{ env.QTMULTIMEDIA_DIR }}
+      # - name: Checkout qtmultimedia
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: wowkids1914/qtmultimedia
+      #     path: qtmultimedia
 
-      - name: Build qtmultimedia
-        if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
-        shell: bash
-        run: |
-          cd qtmultimedia
+      # - name: Get qtmultimedia Commit SHA
+      #   shell: bash
+      #   run: |
+      #     SHA=$(git -C qtmultimedia rev-parse HEAD)
+      #     echo "QTMULTIMEDIA_SHA=$SHA" >> $GITHUB_ENV
+      #     echo "QTMULTIMEDIA SHA: $SHA"
 
-          # QT_ROOT_DIR=/d/Qt/6.10.0/mingw_64
-          cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR -DCMAKE_INSTALL_PREFIX=$QTMULTIMEDIA_DIR
-          cmake --build build --config Release --target install --parallel
+      # - name: Restore qtmultimedia cache
+      #   id: cache-qtmultimedia
+      #   uses: actions/cache/restore@v4
+      #   with:
+      #     key: ${{ runner.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}
+      #     path: ${{ env.QTMULTIMEDIA_DIR }}
 
-      - name: Save qtmultimedia cache
-        if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          key: ${{ runner.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}
-          path: ${{ env.QTMULTIMEDIA_DIR }}
+      # - name: Build qtmultimedia
+      #   if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
+      #   shell: bash
+      #   run: |
+      #     cd qtmultimedia
 
-      - name: cp qtmultimedia
-        shell: bash
-        run: |
-          # 先安装到临时目录再复制是为了缓存
-          cp -r $QTMULTIMEDIA_DIR/* $QT_ROOT_DIR
+      #     # QT_ROOT_DIR=/d/Qt/6.10.0/mingw_64
+      #     cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR -DCMAKE_INSTALL_PREFIX=$QTMULTIMEDIA_DIR
+      #     cmake --build build --config Release --target install --parallel
 
-      - name: Upload qtmultimedia cache
-        # if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ runner.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}
-          path: ${{ env.QTMULTIMEDIA_DIR }}
+      # - name: Save qtmultimedia cache
+      #   if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
+      #   uses: actions/cache/save@v4
+      #   with:
+      #     key: ${{ runner.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}
+      #     path: ${{ env.QTMULTIMEDIA_DIR }}
+
+      # - name: cp qtmultimedia
+      #   shell: bash
+      #   run: |
+      #     # 先安装到临时目录再复制是为了缓存
+      #     cp -r $QTMULTIMEDIA_DIR/* $QT_ROOT_DIR
+
+      # - name: Upload qtmultimedia cache
+      #   # if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: ${{ runner.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}
+      #     path: ${{ env.QTMULTIMEDIA_DIR }}
 
       - name: Build for ${{ matrix.os }}
         shell: bash
