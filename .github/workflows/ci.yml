@@ -45,8 +45,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os: [macos-13, windows-latest]
-        os: [windows-latest]
+        os: [macos-13, windows-latest]
+        # os: [windows-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -192,7 +192,11 @@ jobs:
       - name: cp plugins
         shell: bash
         run: |
-          cp -r mingw64/plugins/* $QT_ROOT_DIR/plugins
+          if [[ "${{runner.os}}" == "macOS" ]]; then
+            cp -r macOS/plugins/* $QT_ROOT_DIR/plugins
+          else
+            cp -r mingw64/plugins/* $QT_ROOT_DIR/plugins
+          fi
 
       # - name: Checkout qtmultimedia
       #   uses: actions/checkout@v4
