@@ -60,6 +60,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     });
 
     treeView = new QTreeView(this);
+    treeView->setMinimumHeight(200);
     QFont font = treeView->font();
     font.setPointSize(16);
     treeView->setFont(font);
