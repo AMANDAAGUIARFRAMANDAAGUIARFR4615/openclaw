@@ -23,7 +23,25 @@ class AppListWidget : public QWidget
     Q_OBJECT
 
 public:
+    static AppListWidget* open(DeviceConnection* connection) {
+        auto existing = instanceMap.value(connection);
+        if (existing) {
+            existing->activateWindow();
+            return existing;
+        }
+
+        connection->send("appList");
+        
+        AppListWidget *appList = new AppListWidget(connection);
+        appList->resize(920, 400);
+        appList->show();
+        return appList;
+    }
+
+private:
     explicit AppListWidget(DeviceConnection* connection, QWidget *parent = nullptr) : connection(connection), QWidget(parent) {
+        instanceMap[connection] = this;
+
         setAttribute(Qt::WA_DeleteOnClose);
 
         table = new QTableWidget(this);
@@ -76,6 +94,7 @@ public:
     ~AppListWidget() {
         EventHub::off(this, "appList");
         EventHub::off(this, "appOperation");
+        instanceMap.remove(connection);
     }
 
     void addApp(const QString &iconBase64, const QString &appName, const QString &packageName) {
@@ -241,4 +260,6 @@ private:
 
     DeviceConnection* const connection;
     QTableWidget *table;
+
+    static QMap<DeviceConnection*, AppListWidget*> instanceMap;
 };

@@ -126,12 +126,7 @@ void DeviceView::onRecorderClicked()
 
 void DeviceView::onAppListClicked()
 {
-    connection->send("appList");
-
-    AppListWidget *list = new AppListWidget(connection);
-
-    list->resize(920, 400);
-    list->show();
+    AppListWidget::open(connection);
 }
 
 void DeviceView::onScreenshotClicked()
