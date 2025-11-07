@@ -45,8 +45,7 @@ add_executable(${PROJECT_NAME}
     ToastWidget.h
     NetworkUtils.h
     RemoteFileExplorer.h RemoteFileExplorer.cpp FileTransfer.h
-    AppListWidget.h AppListWidget.cpp
-    FileViewer.h Recorder.h
+    AppListWidget.h FileViewer.h Recorder.h
     qrcodegen.hpp qrcodegen.cpp
     Statics.cpp
     ${RESOURCE_SOURCES}
