@@ -4,55 +4,55 @@
 
 QMap<QString, QList<EventHub::Item>> EventHub::events;
 
-void EventHub::on(QObject* owner, const QString& event, Callback cb) {
-    if (!owner) {
-        qCriticalEx() << "EventHub::on - owner is null for event" << event;
+void EventHub::on(QObject* listener, const QString& event, Callback cb) {
+    if (!listener) {
+        qCriticalEx() << "EventHub::on - listener is null for event" << event;
         return;
     }
 
     auto& list = events[event];
 
-    auto exists = std::any_of(list.cbegin(), list.cend(), [owner](const Item& i){ return i.owner == owner; });
+    auto exists = std::any_of(list.cbegin(), list.cend(), [listener](const Item& i){ return i.listener == listener; });
     if (exists) {
-        qCriticalEx() << "EventHub::on - owner already registered for event" << event;
+        qCriticalEx() << "EventHub::on - listener already registered for event" << event;
         return;
     }
 
-    list.append({owner, std::move(cb), false});
+    list.append({listener, std::move(cb), false});
 }
 
-void EventHub::once(QObject* owner, const QString& event, Callback cb) {
-    if (!owner) {
-        qCriticalEx() << "EventHub::once - owner is null for event" << event;
+void EventHub::once(QObject* listener, const QString& event, Callback cb) {
+    if (!listener) {
+        qCriticalEx() << "EventHub::once - listener is null for event" << event;
         return;
     }
 
     auto& list = events[event];
 
-    auto exists = std::any_of(list.cbegin(), list.cend(), [owner](const Item& i){ return i.owner == owner; });
+    auto exists = std::any_of(list.cbegin(), list.cend(), [listener](const Item& i){ return i.listener == listener; });
     if (exists) {
-        qCriticalEx() << "EventHub::once - owner already registered for event" << event;
+        qCriticalEx() << "EventHub::once - listener already registered for event" << event;
         return;
     }
 
     // 包装回调，使其在执行后自行解绑
-    QObject* ownerCopy = owner;
+    QObject* ownerCopy = listener;
     Callback wrapper = [cb = std::move(cb), ownerCopy, event](const QJsonValue& d, DeviceConnection* c) mutable {
         cb(d, c);
         EventHub::off(ownerCopy, event);
     };
 
-    list.append({owner, std::move(wrapper), true});
+    list.append({listener, std::move(wrapper), true});
 }
 
-void EventHub::off(QObject* owner, const QString& event) {
-    if (!owner) return;
+void EventHub::off(QObject* listener, const QString& event) {
+    if (!listener) return;
     auto it = events.find(event);
     if (it == events.end()) return;
 
     auto& list = *it;
     list.erase(std::remove_if(list.begin(), list.end(),
-                              [owner](const Item& i){ return i.owner == owner; }),
+                              [listener](const Item& i){ return i.listener == listener; }),
                list.end());
     if (list.isEmpty()) events.remove(event);
 }
