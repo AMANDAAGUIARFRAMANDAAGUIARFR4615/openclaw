@@ -100,7 +100,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
 
     fetchDirectoryContents(rootPath);
 
-    EventHub::on("fileList", [this](QJsonValue data, DeviceConnection* connection) {
+    EventHub::on(this, "fileList", [this](QJsonValue data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 
@@ -109,7 +109,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         updateDirectoryView(path, list);
     });
 
-    EventHub::on("transferStatus", [this](QJsonValue data, DeviceConnection* connection) {
+    EventHub::on(this, "transferStatus", [this](QJsonValue data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 
@@ -127,7 +127,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         addItemToTreeView(fullPath, "NSFileTypeRegular", date, size);
     });
 
-    EventHub::on("compressArchiveStatus", [this](QJsonValue data, DeviceConnection* connection) {
+    EventHub::on(this, "compressArchiveStatus", [this](QJsonValue data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 
@@ -141,7 +141,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         addItemToTreeView(result["path"].toString(), "NSFileTypeRegular", result["date"].toString(), result["size"].toInteger());
     });
 
-    EventHub::on("extractArchiveStatus", [this](QJsonValue data, DeviceConnection* connection) {
+    EventHub::on(this, "extractArchiveStatus", [this](QJsonValue data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 
@@ -155,7 +155,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         addItemToTreeView(result["path"].toString(), "NSFileTypeDirectory", result["date"].toString(), -1);
     });
 
-    EventHub::on("createDirectoryStatus", [this](QJsonValue data, DeviceConnection* connection) {
+    EventHub::on(this, "createDirectoryStatus", [this](QJsonValue data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 
@@ -168,7 +168,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         addItemToTreeView(data["path"].toString(), "NSFileTypeDirectory", "", -1);
     });
 
-    EventHub::on("renameItemStatus", [this](QJsonValue data, DeviceConnection* connection) {
+    EventHub::on(this, "renameItemStatus", [this](QJsonValue data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 
@@ -193,7 +193,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         addItemToTreeView(toPath, isDir ? "NSFileTypeDirectory" : "NSFileTypeRegular", date, Tools::parseByteSize(size));
     });
 
-    EventHub::on("removeItemStatus", [this](QJsonValue data, DeviceConnection* connection) {
+    EventHub::on(this, "removeItemStatus", [this](QJsonValue data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 

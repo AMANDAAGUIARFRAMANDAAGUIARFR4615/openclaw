@@ -83,7 +83,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 
     setLayout(layout);
 
-    EventHub::on("lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
+    EventHub::on(this, "lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 

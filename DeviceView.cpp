@@ -35,7 +35,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
     layout->addStretch();
     overlay->setLayout(layout);
 
-    EventHub::on("orientation", [this](const QJsonValue &data, DeviceConnection* connection) {
+    EventHub::on(this, "orientation", [this](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 

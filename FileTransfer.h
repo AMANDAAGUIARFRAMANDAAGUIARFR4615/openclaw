@@ -39,7 +39,7 @@ public:
         }
         else
         {
-            listenId = EventHub::on("transferPort", [=](const QJsonValue &data, DeviceConnection* connection) {
+            EventHub::on(this, "transferPort", [=](const QJsonValue &data, DeviceConnection* connection) {
                 if (this->connection != connection)
                     return;
 
@@ -64,7 +64,7 @@ public:
     }
 
     ~FileTransfer() {
-        EventHub::off("transferPort", listenId);
+        EventHub::off(this, "transferPort");
 
         connection = nullptr;
 
@@ -214,6 +214,4 @@ protected:
 
     QElapsedTimer timer;
     quint64 transferredBytes = 0;
-
-    int listenId = 0;
 };

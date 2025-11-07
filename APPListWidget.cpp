@@ -25,7 +25,7 @@ AppListWidget::AppListWidget(DeviceConnection* connection, QWidget *parent)
     setupTable();
     applyStyle();
 
-    EventHub::on("appList", [this](const QJsonValue &data, DeviceConnection* connection) {
+    EventHub::on(this, "appList", [this](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 
@@ -43,7 +43,7 @@ AppListWidget::AppListWidget(DeviceConnection* connection, QWidget *parent)
         }
     });
 
-    EventHub::on("appOperation", [this](const QJsonValue &data, DeviceConnection* connection) {
+    EventHub::on(this, "appOperation", [this](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 

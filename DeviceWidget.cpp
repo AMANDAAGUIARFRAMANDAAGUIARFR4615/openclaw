@@ -30,7 +30,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     layout->addWidget(deviceInfoLabel);
     setLayout(layout);
 
-    EventHub::on("clipboard", [this](const QJsonValue &data, DeviceConnection* connection) {
+    EventHub::on(this, "clipboard", [this](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 
@@ -63,7 +63,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
         new ToastWidget("此类型暂不支持", this);
     });
 
-    EventHub::on("lockedStatus", [=](const QJsonValue &data, DeviceConnection* connection) {
+    EventHub::on(this, "lockedStatus", [=](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 
