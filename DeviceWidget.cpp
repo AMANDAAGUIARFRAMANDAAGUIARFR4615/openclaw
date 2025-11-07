@@ -82,7 +82,8 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
 
 DeviceWidget::~DeviceWidget()
 {
-
+    EventHub::off(this, "clipboard");
+    EventHub::off(this, "lockedStatus");
 }
 
 void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)

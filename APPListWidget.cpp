@@ -63,6 +63,11 @@ AppListWidget::AppListWidget(DeviceConnection* connection, QWidget *parent)
     });
 }
 
+AppListWidget::~AppListWidget() {
+    EventHub::off(this, "appList");
+    EventHub::off(this, "appOperation");
+}
+
 void AppListWidget::setupTable()
 {
     table->setColumnCount(4);

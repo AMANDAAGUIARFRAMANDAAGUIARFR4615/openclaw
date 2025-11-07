@@ -108,7 +108,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 
 DeviceWindow::~DeviceWindow()
 {
-
+    EventHub::off(this, "lockedStatus");
 }
 
 QPoint DeviceWindow::getTransformedPosition(QPoint pos) {

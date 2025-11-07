@@ -48,7 +48,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 
 DeviceView::~DeviceView()
 {
-
+    EventHub::off(this, "orientation");
 }
 
 void DeviceView::setSourceDevice(QIODevice *device, const QUrl &sourceUrl)

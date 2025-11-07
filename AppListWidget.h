@@ -13,6 +13,7 @@ class AppListWidget : public QWidget
 
 public:
     explicit AppListWidget(DeviceConnection* connection, QWidget *parent = nullptr);
+    ~AppListWidget();
 
     void addApp(const QString &iconPath, const QString &appName, const QString &packageName);
 

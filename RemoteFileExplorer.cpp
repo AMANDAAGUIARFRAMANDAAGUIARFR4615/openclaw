@@ -256,7 +256,13 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
 
 RemoteFileExplorer::~RemoteFileExplorer()
 {
-    
+    EventHub::off(this, "fileList");
+    EventHub::off(this, "transferStatus");
+    EventHub::off(this, "compressArchiveStatus");
+    EventHub::off(this, "extractArchiveStatus");
+    EventHub::off(this, "createDirectoryStatus");
+    EventHub::off(this, "renameItemStatus");
+    EventHub::off(this, "removeItemStatus");
 }
 
 bool RemoteFileExplorer::eventFilter(QObject* obj, QEvent* event)

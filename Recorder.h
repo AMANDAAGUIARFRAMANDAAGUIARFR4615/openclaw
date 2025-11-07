@@ -177,6 +177,7 @@ private:
     }
 
     ~Recorder() {
+        EventHub::off(this, "recorderReport");
         instanceMap.remove(connection);
     }
 

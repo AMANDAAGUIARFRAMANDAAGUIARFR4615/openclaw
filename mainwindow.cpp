@@ -128,7 +128,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
 MainWindow::~MainWindow()
 {
-    EventHub::off("deviceInfo");
+    EventHub::off(this, "deviceInfo");
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
