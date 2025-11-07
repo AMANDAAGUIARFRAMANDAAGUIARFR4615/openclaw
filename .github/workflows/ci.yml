@@ -275,7 +275,18 @@ jobs:
           else
             $QT_ROOT_DIR/bin/macdeployqt RemotePro.app
             cp ../macOS/libimobiledevice/lib/libimobiledevice-1.0.6.dylib RemotePro.app/Contents/Frameworks/
-            cp ../macOS/libplist/lib/libplist-2.0.dylib RemotePro.app/Contents/Frameworks/
+            cp ../macOS/libplist/lib/libplist-2.0.4.dylib RemotePro.app/Contents/Frameworks/
+            
+            sudo install_name_tool -change \
+              /usr/local/lib/libimobiledevice-1.0.6.dylib \
+              @executable_path/../Frameworks/libimobiledevice-1.0.6.dylib \
+              RemotePro.app/Contents/MacOS/RemotePro
+
+            sudo install_name_tool -change \
+              /usr/local/lib/libplist-2.0.4.dylib \
+              @executable_path/../Frameworks/libplist-2.0.4.dylib \
+              RemotePro.app/Contents/MacOS/RemotePro
+
             zip -r RemotePro.zip RemotePro.app
           fi
 
