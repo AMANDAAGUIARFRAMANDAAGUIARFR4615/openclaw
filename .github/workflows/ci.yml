@@ -193,10 +193,12 @@ jobs:
         shell: bash
         run: |
           if [[ "${{runner.os}}" == "macOS" ]]; then
-            cp -r macOS/plugins/* $QT_ROOT_DIR/plugins
+            cp -r -v macOS/plugins/* $QT_ROOT_DIR/plugins
           else
-            cp -r mingw64/plugins/* $QT_ROOT_DIR/plugins
+            cp -r -v mingw64/plugins/* $QT_ROOT_DIR/plugins
           fi
+
+          ls $QT_ROOT_DIR/plugins/multimedia
 
       # - name: Checkout qtmultimedia
       #   uses: actions/checkout@v4
@@ -274,24 +276,51 @@ jobs:
             7z a RemotePro.zip . -x!.* -x!CMakeFiles -x!*_autogen -x!build.ninja -x!cmake_install.cmake -x!CMakeCache.txt
           else
             $QT_ROOT_DIR/bin/macdeployqt RemotePro.app
-            cp ../macOS/libimobiledevice/lib/libimobiledevice-1.0.6.dylib RemotePro.app/Contents/Frameworks/
-            cp ../macOS/libplist/lib/libplist-2.0.4.dylib RemotePro.app/Contents/Frameworks/
-            cp ../macOS/libusbmuxd/lib/libusbmuxd-2.0.7.dylib RemotePro.app/Contents/Frameworks/
+            
+            APP=RemotePro.app
+            FRAMEWORKS=$APP/Contents/Frameworks
 
-            sudo install_name_tool -change \
-              /usr/local/lib/libimobiledevice-1.0.6.dylib \
-              @rpath/libimobiledevice-1.0.6.dylib \
-              RemotePro.app/Contents/MacOS/RemotePro
+            # 1️⃣ 拷贝所有相关库
+            cp ../macOS/libimobiledevice/lib/libimobiledevice-1.0.6.dylib $FRAMEWORKS/
+            cp ../macOS/libplist/lib/libplist-2.0.4.dylib $FRAMEWORKS/
+            cp ../macOS/libusbmuxd/lib/libusbmuxd-2.0.7.dylib $FRAMEWORKS/
+            cp ../macOS/libimobiledevice-glue/lib/libimobiledevice-glue-1.0.0.dylib $FRAMEWORKS/
 
-            sudo install_name_tool -change \
-              /usr/local/lib/libplist-2.0.4.dylib \
+            # 2️⃣ 修正库自身的 install_name（设置内部引用路径）
+            install_name_tool -id @rpath/libimobiledevice-1.0.6.dylib $FRAMEWORKS/libimobiledevice-1.0.6.dylib
+            install_name_tool -id @rpath/libplist-2.0.4.dylib $FRAMEWORKS/libplist-2.0.4.dylib
+            install_name_tool -id @rpath/libusbmuxd-2.0.7.dylib $FRAMEWORKS/libusbmuxd-2.0.7.dylib
+            install_name_tool -id @rpath/libimobiledevice-glue-1.0.0.dylib $FRAMEWORKS/libimobiledevice-glue-1.0.0.dylib
+
+            # 3️⃣ 修正依赖关系（libimobiledevice 依赖 libplist、libusbmuxd、libimobiledevice-glue）
+            install_name_tool -change /usr/local/lib/libplist-2.0.4.dylib \
               @rpath/libplist-2.0.4.dylib \
-              RemotePro.app/Contents/MacOS/RemotePro
+              $FRAMEWORKS/libimobiledevice-1.0.6.dylib
 
-            sudo install_name_tool -change \
-              /usr/local/lib/libusbmuxd-2.0.7.dylib \
+            install_name_tool -change /usr/local/lib/libusbmuxd-2.0.7.dylib \
               @rpath/libusbmuxd-2.0.7.dylib \
-              RemotePro.app/Contents/MacOS/RemotePro
+              $FRAMEWORKS/libimobiledevice-1.0.6.dylib
+
+            install_name_tool -change /usr/local/lib/libimobiledevice-glue-1.0.0.dylib \
+              @rpath/libimobiledevice-glue-1.0.0.dylib \
+              $FRAMEWORKS/libimobiledevice-1.0.6.dylib
+
+            # 4️⃣ 修正主程序的依赖路径
+            install_name_tool -change /usr/local/lib/libimobiledevice-1.0.6.dylib \
+              @rpath/libimobiledevice-1.0.6.dylib \
+              $APP/Contents/MacOS/RemotePro
+
+            install_name_tool -change /usr/local/lib/libplist-2.0.4.dylib \
+              @rpath/libplist-2.0.4.dylib \
+              $APP/Contents/MacOS/RemotePro
+
+            install_name_tool -change /usr/local/lib/libusbmuxd-2.0.7.dylib \
+              @rpath/libusbmuxd-2.0.7.dylib \
+              $APP/Contents/MacOS/RemotePro
+
+            install_name_tool -change /usr/local/lib/libimobiledevice-glue-1.0.0.dylib \
+              @rpath/libimobiledevice-glue-1.0.0.dylib \
+              $APP/Contents/MacOS/RemotePro
 
             zip -r RemotePro.zip RemotePro.app
           fi
