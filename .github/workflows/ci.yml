@@ -192,11 +192,11 @@ jobs:
       - name: cp plugins
         shell: bash
         run: |
-          if [[ "${{runner.os}}" == "macOS" ]]; then
-            cp -r -v macOS/plugins/* $QT_ROOT_DIR/plugins
-          else
-            cp -r -v mingw64/plugins/* $QT_ROOT_DIR/plugins
-          fi
+          # if [[ "${{runner.os}}" == "macOS" ]]; then
+          #   cp -r -v macOS/plugins/* $QT_ROOT_DIR/plugins
+          # else
+          #   cp -r -v mingw64/plugins/* $QT_ROOT_DIR/plugins
+          # fi
 
           ls $QT_ROOT_DIR/plugins/multimedia
 
