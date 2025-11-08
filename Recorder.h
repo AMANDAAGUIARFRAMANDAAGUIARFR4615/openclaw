@@ -23,6 +23,7 @@
 #include <QStandardPaths>
 #include <QCheckBox>
 #include <QMap>
+#include <QStatusBar>
 
 class FileFilterProxyModel : public QSortFilterProxyModel {
 public:
@@ -104,8 +105,11 @@ private:
         treeView->setRootIndex(filterModel->mapFromSource(rootIndex));
         treeView->setColumnHidden(2, true);
 
+        statusBar = new QStatusBar(this);
+
         mainLayout->addLayout(buttonLayout);
         mainLayout->addWidget(treeView);
+        mainLayout->addWidget(statusBar);
         setLayout(mainLayout);
 
         treeView->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -181,6 +185,7 @@ private:
                 return;
 
             auto code = data["code"].toInt();
+            setStatusMessage(data["msg"].toString());
             isPlaying = code != 5;
             updateButtonStates();
         });
@@ -356,6 +361,12 @@ protected:
         updateButtonStates();
     }
 
+    void setStatusMessage(const QString &message)
+    {
+        auto timestamp = QTime::currentTime().toString("HH:mm:ss");
+        statusBar->showMessage("[" + timestamp + "] " + message);
+    }
+
     DeviceConnection* connection;
     QString recorderPath;
 
@@ -372,6 +383,7 @@ protected:
     QFileSystemModel *fileSystemModel;
     FileFilterProxyModel *filterModel;
     QTreeView *treeView;
+    QStatusBar *statusBar;
 
     static QMap<DeviceConnection*, Recorder*> instanceMap;
 };
