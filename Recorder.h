@@ -24,6 +24,7 @@
 #include <QCheckBox>
 #include <QMap>
 #include <QStatusBar>
+#include <QHeaderView>
 
 class FileFilterProxyModel : public QSortFilterProxyModel {
 public:
@@ -104,6 +105,10 @@ private:
         QModelIndex rootIndex = fileSystemModel->index(recorderPath);
         treeView->setRootIndex(filterModel->mapFromSource(rootIndex));
         treeView->setColumnHidden(2, true);
+        treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+        treeView->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+        treeView->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+        treeView->header()->setStretchLastSection(false);
 
         statusBar = new QStatusBar(this);
 
