@@ -41,7 +41,24 @@ class RemoteFileExplorer : public QWidget
     Q_OBJECT
 
 public:
-    explicit RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath = "/", QWidget *parent = nullptr);
+    static RemoteFileExplorer* open(DeviceConnection* connection, const QString& rootPath = "/") {
+        auto existing = instanceMap.value(connection);
+        if (existing) {
+            existing->fetchDirectoryContents(rootPath);
+            existing->activateWindow();
+            return existing;
+        }
+
+        auto explorer = new RemoteFileExplorer(connection, rootPath);
+        explorer->setWindowTitle(connection->displayName());
+        auto deviceInfo = connection->deviceInfo;
+        explorer->resize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
+        explorer->show();
+        return explorer;
+    }
+
+private:
+    explicit RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath = "/");
     ~RemoteFileExplorer();
 
 protected:
@@ -80,4 +97,6 @@ protected:
     void removeFromFavorites(const QString& path);
 
     QTableWidget* transferTable = nullptr;
+
+    static QMap<DeviceConnection*, RemoteFileExplorer*> instanceMap;
 };

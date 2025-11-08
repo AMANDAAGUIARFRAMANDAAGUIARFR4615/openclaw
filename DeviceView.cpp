@@ -114,9 +114,7 @@ void DeviceView::onAppSwitcherClicked()
 
 void DeviceView::onFileClicked()
 {
-    auto window = new RemoteFileExplorer(connection);
-    window->resize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
-    window->show();
+    RemoteFileExplorer::open(connection);
 }
 
 void DeviceView::onRecorderClicked()

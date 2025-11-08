@@ -32,9 +32,11 @@
 #include <QPushButton>
 #include <QDesktopServices>
 
-RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath, QWidget *parent) 
-    : connection(connection), rootPath(rootPath), QWidget(parent)
+RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath) 
+    : connection(connection), rootPath(rootPath), QWidget()
 {
+    instanceMap[connection] = this;
+    
     setAttribute(Qt::WA_DeleteOnClose);
     setAcceptDrops(true);
 
@@ -264,6 +266,8 @@ RemoteFileExplorer::~RemoteFileExplorer()
     EventHub::off(this, "createDirectoryStatus");
     EventHub::off(this, "renameItemStatus");
     EventHub::off(this, "removeItemStatus");
+
+    instanceMap.remove(connection);
 }
 
 bool RemoteFileExplorer::eventFilter(QObject* obj, QEvent* event)

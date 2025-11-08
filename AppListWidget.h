@@ -40,7 +40,7 @@ public:
     }
 
 private:
-    explicit AppListWidget(DeviceConnection* connection, QWidget *parent = nullptr) : connection(connection), QWidget(parent) {
+    explicit AppListWidget(DeviceConnection* connection) : connection(connection), QWidget() {
         instanceMap[connection] = this;
 
         setAttribute(Qt::WA_DeleteOnClose);
@@ -85,10 +85,7 @@ private:
                 return;
             }
 
-            auto window = new RemoteFileExplorer(connection, path);
-            window->setWindowTitle(QString("%1 -> %2").arg(name).arg(path));
-            window->resize(size());
-            window->show();
+            RemoteFileExplorer::open(connection, path);
         });
     }
 
