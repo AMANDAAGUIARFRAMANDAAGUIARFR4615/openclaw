@@ -15,10 +15,10 @@
 #include <QButtonGroup>
 #include <QFrame>
 
-class DeviceManagerUI : public QWidget {
+class DeviceManager : public QWidget {
     Q_OBJECT
 public:
-    DeviceManagerUI(QWidget *parent = nullptr) : QWidget(parent) {
+    DeviceManager(QWidget *parent = nullptr) : QWidget(parent) {
         setWindowTitle("设备管理系统");
         resize(1150, 700);
 
@@ -100,8 +100,8 @@ public:
         addDevice("设备D", "仅USB");
 
         // === 信号槽 ===
-        connect(addGroupBtn, &QPushButton::clicked, this, &DeviceManagerUI::onAddGroupClicked);
-        connect(removeGroupBtn, &QPushButton::clicked, this, &DeviceManagerUI::onRemoveGroupClicked);
+        connect(addGroupBtn, &QPushButton::clicked, this, &DeviceManager::onAddGroupClicked);
+        connect(removeGroupBtn, &QPushButton::clicked, this, &DeviceManager::onRemoveGroupClicked);
     }
 
 private:
