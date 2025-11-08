@@ -175,10 +175,24 @@ private:
             out << text;
             file.close();
         });
+
+        EventHub::on(this, "playbackStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
+            if (this->connection != connection)
+                return;
+
+            auto code = data["code"].toInt();
+            if (code != 5)
+                return;
+
+            isPlaying = false;
+            updateButtonStates();
+        });
     }
 
     ~Recorder() {
         EventHub::off(this, "recorderReport");
+        EventHub::off(this, "playbackStatus");
+
         instanceMap.remove(connection);
     }
 
