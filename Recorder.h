@@ -25,7 +25,6 @@
 #include <QMap>
 #include <QStatusBar>
 #include <QHeaderView>
-#include <QRadioButton>
 
 class FileFilterProxyModel : public QSortFilterProxyModel {
 public:
@@ -71,9 +70,7 @@ private:
             dir.mkpath(recorderPath);
 
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
-        setLayout(mainLayout);
 
-        // 第一行：按钮区
         QHBoxLayout *buttonLayout = new QHBoxLayout();
 
         startButton = new QPushButton("开始录制", this);
@@ -97,26 +94,6 @@ private:
 
         buttonLayout->addStretch();
 
-        mainLayout->addLayout(buttonLayout);
-
-        // 第二行：分类过滤单选框
-        QHBoxLayout *filterLayout = new QHBoxLayout();
-        filterLayout->addWidget(new QLabel("分类:", this));
-
-        QRadioButton *localRadio = new QRadioButton("本机", this);
-        QRadioButton *sameModelRadio = new QRadioButton("同型号", this);
-        QRadioButton *sameResolutionRadio = new QRadioButton("同分辨率", this);
-        QRadioButton *allRadio = new QRadioButton("全部", this);
-        allRadio->setChecked(true);
-
-        filterLayout->addWidget(localRadio);
-        filterLayout->addWidget(sameModelRadio);
-        filterLayout->addWidget(sameResolutionRadio);
-        filterLayout->addWidget(allRadio);
-        filterLayout->addStretch();
-
-        mainLayout->addLayout(filterLayout);
-
         fileSystemModel = new QFileSystemModel();
         fileSystemModel->setRootPath(recorderPath);
 
@@ -132,10 +109,13 @@ private:
         treeView->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
         treeView->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
         treeView->header()->setStretchLastSection(false);
-        mainLayout->addWidget(treeView);
 
         statusBar = new QStatusBar(this);
+
+        mainLayout->addLayout(buttonLayout);
+        mainLayout->addWidget(treeView);
         mainLayout->addWidget(statusBar);
+        setLayout(mainLayout);
 
         treeView->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(treeView, &QTreeView::customContextMenuRequested, this, &Recorder::showContextMenu);
