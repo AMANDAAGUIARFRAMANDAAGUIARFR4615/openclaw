@@ -35,7 +35,8 @@
 RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath) 
     : connection(connection), rootPath(rootPath), QWidget()
 {
-    instanceMap[connection] = this;
+    QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(rootPath);
+    instanceMap[key] = this;
     
     setAttribute(Qt::WA_DeleteOnClose);
     setAcceptDrops(true);
@@ -267,7 +268,8 @@ RemoteFileExplorer::~RemoteFileExplorer()
     EventHub::off(this, "renameItemStatus");
     EventHub::off(this, "removeItemStatus");
 
-    instanceMap.remove(connection);
+    QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(rootPath);
+    instanceMap.remove(key);
 }
 
 bool RemoteFileExplorer::eventFilter(QObject* obj, QEvent* event)

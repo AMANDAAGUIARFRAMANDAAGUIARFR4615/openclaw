@@ -42,9 +42,9 @@ class RemoteFileExplorer : public QWidget
 
 public:
     static RemoteFileExplorer* open(DeviceConnection* connection, const QString& rootPath = "/") {
-        auto existing = instanceMap.value(connection);
+        QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(rootPath);
+        auto existing = instanceMap.value(key);
         if (existing) {
-            existing->fetchDirectoryContents(rootPath);
             existing->activateWindow();
             return existing;
         }
@@ -98,5 +98,5 @@ protected:
 
     QTableWidget* transferTable = nullptr;
 
-    static QMap<DeviceConnection*, RemoteFileExplorer*> instanceMap;
+    static QMap<QString, RemoteFileExplorer*> instanceMap;
 };
