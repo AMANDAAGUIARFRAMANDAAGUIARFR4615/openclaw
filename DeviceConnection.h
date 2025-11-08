@@ -33,6 +33,10 @@ public:
 
     DeviceInfo* deviceInfo;
 
+    QString displayName() {
+        return QString("%1 - %2").arg(deviceInfo->deviceName).arg(type == DeviceConnection::Usb ? "USB" : "WIFI");
+    }
+
 private:
     QTcpSocket *tcpSocket;
     idevice_connection_t usbConnection;

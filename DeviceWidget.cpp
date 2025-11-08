@@ -11,11 +11,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
 {
     auto layout = new QVBoxLayout;
 
-    auto deviceInfoText = QString("%1 - %2")
-        .arg(deviceInfo->deviceName)
-        .arg(connection->type == DeviceConnection::Usb ? "USB" : "WIFI");
-
-    auto deviceInfoLabel = new QLabel(deviceInfoText, this);
+    auto deviceInfoLabel = new QLabel(connection->displayName(), this);
     deviceInfoLabel->setAlignment(Qt::AlignCenter);
     deviceInfoLabel->setStyleSheet(
         "font-size: 12px; "

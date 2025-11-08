@@ -49,6 +49,7 @@ public:
         }
 
         auto recorder = new Recorder(connection);
+        recorder->setWindowTitle(connection->displayName());
         recorder->resize(920, 400);
         recorder->show();
         return recorder;

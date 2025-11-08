@@ -31,8 +31,9 @@ public:
         }
 
         connection->send("appList");
-        
+
         AppListWidget *appList = new AppListWidget(connection);
+        appList->setWindowTitle(connection->displayName());
         appList->resize(920, 400);
         appList->show();
         return appList;
