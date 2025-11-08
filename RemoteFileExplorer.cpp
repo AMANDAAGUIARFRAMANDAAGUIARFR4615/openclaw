@@ -416,6 +416,7 @@ void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QStrin
     
     if (!parentItem) {
         qCriticalEx() << parentPath << "不存在";
+        new ToastWidget("路径不存在");
         return;
     }
 
