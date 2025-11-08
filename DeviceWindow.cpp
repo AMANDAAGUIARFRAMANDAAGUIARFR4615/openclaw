@@ -74,6 +74,12 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     connect(lockButton, &QPushButton::clicked, this, &DeviceView::onLockClicked);
     buttonLayout->addWidget(lockButton);
 
+    QPushButton *audioButton = new QPushButton(QIcon(":/icons/audio.png"), "音频", this);
+    connect(audioButton, &QPushButton::clicked, this, [=]() {
+        connection->send("audioPort", 0);
+    });
+    buttonLayout->addWidget(audioButton);
+
     buttonLayout->addStretch();
 
     QWidget *buttonContainer = new QWidget(this);
