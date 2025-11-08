@@ -181,10 +181,7 @@ private:
                 return;
 
             auto code = data["code"].toInt();
-            if (code != 5)
-                return;
-
-            isPlaying = false;
+            isPlaying = code != 5;
             updateButtonStates();
         });
     }
