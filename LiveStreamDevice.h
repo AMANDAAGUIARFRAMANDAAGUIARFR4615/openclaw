@@ -29,6 +29,8 @@ public:
     }
 
     ~LiveStreamDevice() {
+        close();
+
         if (m_socket) {
             m_socket->disconnectFromHost();
             m_socket->deleteLater();
