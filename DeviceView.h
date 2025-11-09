@@ -32,15 +32,15 @@ public:
     void onVolumeUpClicked();
     void onVolumeDownClicked();
 
-    virtual void addOverlay(const QString &text);
-    virtual void addVideoFrameWidget(VideoFrameWidget* videoFrameWidget);
+    void addVideoFrameWidget(VideoFrameWidget* videoFrameWidget);
+
+protected:
+    void addOverlay(const QString &text);
 
     void contextMenuEvent(QContextMenuEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
-
-protected:
 
     DeviceConnection* const connection;
     DeviceInfo* const deviceInfo;
