@@ -118,16 +118,14 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
                 device->appendData(data);
             });
 
-            auto player = new QMediaPlayer;
-            player->setAudioOutput(new QAudioOutput);
+            auto player = new QMediaPlayer(this);
+            player->setAudioOutput(new QAudioOutput(this));
 
             player->setSourceDevice(device);
             player->play();
 
             connect(this, &QObject::destroyed, [=]() {
-                delete player;
-                // delete deviceConnection;
-                // delete device;
+                deviceConnection->close();
             });
         }
         else
