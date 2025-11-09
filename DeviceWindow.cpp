@@ -6,6 +6,7 @@
 #include "ToastWidget.h"
 #include "Tools.h"
 #include "LiveStreamDevice.h"
+#include "UsbDeviceManager.h"
 #include <QStyle>
 #include <QElapsedTimer>
 #include <QVBoxLayout>
@@ -16,6 +17,7 @@
 #include <QPushButton>
 #include <QOperatingSystemVersion>
 #include <QApplication>
+#include <QAudioOutput>
 
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(connection, deviceInfo), deviceWidget(deviceWidget)
 {
@@ -101,6 +103,40 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
             overlay->hide();
     });
 
+    EventHub::on(this, "audioPort", [this](const QJsonValue &data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
+
+        auto port = data["port"].toInt();
+        if (connection->type == DeviceConnection::Usb)
+        {
+            auto device = new LiveStreamDevice(nullptr, 0, this);
+            
+            auto manager = UsbDeviceManager::instance();
+            auto ctx = manager->getContext(connection);
+            auto deviceConnection = manager->connectDevice(ctx->udid, port, [=](DeviceConnection* conn, const QByteArray& data){
+                device->appendData(data);
+            });
+
+            auto player = new QMediaPlayer;
+            player->setAudioOutput(new QAudioOutput);
+
+            player->setSourceDevice(device);
+            player->play();
+
+            connect(this, &QObject::destroyed, [=]() {
+                delete player;
+                // delete deviceConnection;
+                // delete device;
+            });
+        }
+        else
+        {
+            // auto device = new LiveStreamDevice(deviceInfo->localIp, deviceInfo->videoPort, this);
+            // player->setSourceDevice(device);
+        }
+    });
+
     auto title = windowTitle(); 
 
     auto timer = new QTimer(this);
@@ -115,6 +151,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 DeviceWindow::~DeviceWindow()
 {
     EventHub::off(this, "lockedStatus");
+    EventHub::off(this, "audioPort");
 }
 
 QPoint DeviceWindow::getTransformedPosition(QPoint pos) {

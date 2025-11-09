@@ -25,7 +25,7 @@ public:
         });
 
         connect(mediaPlayer, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error error, const QString &errorString) {
-            qCriticalEx() << "errorOccurred" << errorString;
+            qCriticalEx() << "errorOccurred" << error << errorString;
         });
 
         QMetaObject::invokeMethod(this, [this]() {
