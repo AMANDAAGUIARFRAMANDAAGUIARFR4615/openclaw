@@ -16,21 +16,30 @@ public:
         if (!port)
             return;
 
-        auto socket = new QTcpSocket();
-        connect(socket, &QTcpSocket::errorOccurred, this, [=](QAbstractSocket::SocketError socketError) {
-            qCriticalEx() << "errorOccurred" << socketError << socket->errorString();
+        m_socket = new QTcpSocket();
+        connect(m_socket, &QTcpSocket::errorOccurred, this, [=](QAbstractSocket::SocketError socketError) {
+            qCriticalEx() << "errorOccurred" << socketError << m_socket->errorString();
         });
         
-        connect(socket, &QTcpSocket::readyRead, this, [=]() {
-            appendData(socket->readAll());
+        connect(m_socket, &QTcpSocket::readyRead, this, [=]() {
+            appendData(m_socket->readAll());
         });
 
-        socket->connectToHost(hostName, port);
+        m_socket->connectToHost(hostName, port);
+    }
+
+    ~LiveStreamDevice() {
+        if (m_socket) {
+            m_socket->disconnectFromHost();
+            m_socket->deleteLater();
+        }
     }
 
     bool isSequential() const override { return true; }
 
     bool open(OpenMode mode) override {
+        QMutexLocker locker(&m_mutex);
+
         if (!(mode & ReadOnly))
             return false;
 
@@ -96,6 +105,7 @@ protected:
         return m_eof && m_buffer.isEmpty();
     }
 
+    QTcpSocket* m_socket = nullptr;
     QByteArray m_buffer;
     mutable QMutex m_mutex;
     QWaitCondition m_dataAvailable;
