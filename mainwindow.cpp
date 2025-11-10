@@ -34,7 +34,7 @@
 #include <QFormLayout>
 #include <QInputDialog>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
+MainWindow::MainWindow(QWidget *parent) : settings(QSettings("MyApp", "MainWindow", this)), QMainWindow(parent)
 {
     auto central = new QWidget(this);
     setCentralWidget(central);
@@ -271,7 +271,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
         );
         if (ok && !newName.trimmed().isEmpty()) {
             QWidget *newTab = new QWidget();
-            tabWidget->insertTab(index + 1, nullptr, newName.trimmed());
+            tabWidget->insertTab(index + 1, newTab, newName.trimmed());
         }
     });
 
