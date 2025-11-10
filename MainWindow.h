@@ -23,6 +23,7 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
     void relayoutDevices();
     void onTabClicked(int index);
+    void showTabManager(const QPoint &pos);
 
     QList<QFrame*> devices;
 
@@ -30,5 +31,6 @@ protected:
     const int minItemHeight = minItemWidth * 1.7786;
     const int spacing = 10;
 
+    QTabWidget* tabWidget;
     QDialog *qrDialog = nullptr;
 };

@@ -102,9 +102,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     splitter->addWidget(sideBarList);
 
-    tabWidget = new QTabWidget(this); // 保存到成员变量
+    tabWidget = new QTabWidget(this);
     tabWidget->tabBar()->setMovable(true);
     tabWidget->tabBar()->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    connect(tabWidget, &QTabWidget::tabBarClicked, this, &MainWindow::onTabClicked);
+    connect(tabWidget->tabBar(), &QWidget::customContextMenuRequested, this, &MainWindow::showTabManager);
+
+    splitter->addWidget(tabWidget);
 
     auto makeScrollTab = [this]() -> QWidget* {
         auto scroll = new QScrollArea(this);
@@ -122,11 +127,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         auto tab = makeScrollTab();
         tabWidget->addTab(tab, QString("Page %1").arg(i+1));
     }
-
-    connect(tabWidget, &QTabWidget::tabBarClicked, this, &MainWindow::onTabClicked);
-    connect(tabWidget->tabBar(), &QWidget::customContextMenuRequested, this, &MainWindow::showTabManager);
-
-    splitter->addWidget(tabWidget);
 
     QSize screenSize = QGuiApplication::primaryScreen()->size();
     resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
