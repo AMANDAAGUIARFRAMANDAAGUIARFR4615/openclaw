@@ -129,7 +129,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     auto content = new QWidget;
     auto gridLayout = new QGridLayout(content);
-    gridLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     scrollArea->setWidget(content);
 
     tabWidget->addTab(scrollArea, "默认分组");
@@ -183,6 +182,8 @@ void MainWindow::relayoutDevices()
 
     if (devices.count() >= totalCols)
         gridLayout->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
+    else
+        gridLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
     for (int i = 0; i < devices.size(); ++i) {
         int row = i / totalCols;
