@@ -13,13 +13,14 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
 
     auto deviceInfoLabel = new QLabel(connection->displayName(), this);
     deviceInfoLabel->setAlignment(Qt::AlignCenter);
-    deviceInfoLabel->setStyleSheet(
-        "font-size: 12px; "
-        "font-weight: bold; "
-        "padding: 5px; "
-        "background-color: rgba(0, 0, 0, 50%); "
-        "color: white; "
-        "border-radius: 5px;");
+    deviceInfoLabel->setStyleSheet(R"(
+        font-size: 12px;
+        font-weight: bold;
+        padding: 5px;
+        background-color: rgba(0, 0, 0, 50%);
+        color: white;
+        border-radius: 5px;
+    )");
     
     deviceInfoLabel->setFixedHeight(24);
     
