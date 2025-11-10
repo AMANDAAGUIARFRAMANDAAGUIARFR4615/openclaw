@@ -93,6 +93,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     splitter->addWidget(sideBarList);
 
     auto tabWidget = new QTabWidget(this);
+    tabWidget->tabBar()->setMovable(true);
 
     auto makeScrollTab = [this]() -> QWidget* {
         auto scroll = new QScrollArea(this);
@@ -101,6 +102,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         auto content = new QWidget;
         auto grid = new QGridLayout(content);
+        grid->setAlignment(Qt::AlignLeft | Qt::AlignTop);
         scroll->setWidget(content);
         return scroll;
     };
