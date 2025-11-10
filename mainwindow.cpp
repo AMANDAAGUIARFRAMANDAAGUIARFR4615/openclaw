@@ -26,6 +26,12 @@
 #include <QTimer>
 #include <cmath>
 #include <QScrollArea>
+#include <QMenu>
+#include <QDialog>
+#include <QCheckBox>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QFormLayout>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
@@ -96,8 +102,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     splitter->addWidget(sideBarList);
 
-    auto tabWidget = new QTabWidget(this);
+    tabWidget = new QTabWidget(this); // 保存到成员变量
     tabWidget->tabBar()->setMovable(true);
+    tabWidget->tabBar()->setContextMenuPolicy(Qt::CustomContextMenu);
 
     auto makeScrollTab = [this]() -> QWidget* {
         auto scroll = new QScrollArea(this);
@@ -111,15 +118,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         return scroll;
     };
 
-    auto tab1 = makeScrollTab();
-    auto tab2 = makeScrollTab();
-    auto tab3 = makeScrollTab();
+    for (int i = 0; i < 3; ++i) {
+        auto tab = makeScrollTab();
+        tabWidget->addTab(tab, QString("Page %1").arg(i+1));
+    }
 
-    tabWidget->addTab(tab1, "Page 1");
-    tabWidget->addTab(tab2, "Page 2");
-    tabWidget->addTab(tab3, "Page 3");
-
-    connect(tabWidget->tabBar(), &QTabBar::tabBarClicked, this, &MainWindow::onTabClicked);
+    connect(tabWidget, &QTabWidget::tabBarClicked, this, &MainWindow::onTabClicked);
+    connect(tabWidget->tabBar(), &QWidget::customContextMenuRequested, this, &MainWindow::showTabManager);
 
     splitter->addWidget(tabWidget);
 
@@ -212,7 +217,6 @@ void MainWindow::addItem(DeviceConnection* connection)
         player->setSourceDevice(device);
     }
 
-    auto tabWidget = findChild<QTabWidget*>();
     auto targetTab = tabWidget->widget(0);
     auto scrollArea = qobject_cast<QScrollArea*>(targetTab);
     auto contentWidget = scrollArea->widget();
@@ -229,4 +233,44 @@ void MainWindow::addItem(DeviceConnection* connection)
     devices.append(frame);
 
     relayoutDevices();
+}
+
+void MainWindow::showTabManager(const QPoint &pos)
+{
+    QDialog dlg(this);
+    dlg.setWindowTitle("管理 Tabs");
+    auto layout = new QVBoxLayout(&dlg);
+
+    QList<QLineEdit*> nameEdits;
+    QList<QCheckBox*> visibilityChecks;
+
+    int count = std::min(tabWidget->count(), 32); // 最大32个
+    for (int i = 0; i < count; ++i) {
+        QWidget *tab = tabWidget->widget(i);
+        QString tabName = tabWidget->tabText(i);
+
+        QHBoxLayout *hLayout = new QHBoxLayout();
+        QLineEdit *nameEdit = new QLineEdit(tabName);
+        QCheckBox *check = new QCheckBox("显示");
+        check->setChecked(!tabWidget->isTabEnabled(i));
+
+        hLayout->addWidget(nameEdit);
+        hLayout->addWidget(check);
+        layout->addLayout(hLayout);
+
+        nameEdits.append(nameEdit);
+        visibilityChecks.append(check);
+    }
+
+    QPushButton *okBtn = new QPushButton("确定");
+    layout->addWidget(okBtn);
+    connect(okBtn, &QPushButton::clicked, &dlg, [&]() {
+        for (int i = 0; i < nameEdits.size(); ++i) {
+            tabWidget->setTabText(i, nameEdits[i]->text());
+            tabWidget->setTabEnabled(i, visibilityChecks[i]->isChecked());
+        }
+        dlg.accept();
+    });
+
+    dlg.exec();
 }
