@@ -6,6 +6,8 @@
 #include <QKeyEvent>
 #include <QFrame>
 #include <QDialog>
+#include <QScrollArea>
+#include <QGridLayout>
 
 class MainWindow : public QMainWindow
 {
@@ -32,5 +34,7 @@ protected:
     const int spacing = 10;
 
     QTabWidget* tabWidget;
+    QScrollArea* scrollArea;
+    QGridLayout* gridLayout;
     QDialog *qrDialog = nullptr;
 };

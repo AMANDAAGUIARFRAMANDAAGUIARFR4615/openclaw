@@ -123,22 +123,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     splitter->addWidget(tabWidget);
 
-    auto makeScrollTab = [this]() -> QWidget* {
-        auto scroll = new QScrollArea(this);
-        scroll->setWidgetResizable(true);
-        scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        auto content = new QWidget;
-        auto grid = new QGridLayout(content);
-        grid->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-        scroll->setWidget(content);
-        return scroll;
-    };
+    scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    auto content = new QWidget;
+    gridLayout = new QGridLayout(content);
+    gridLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    scrollArea->setWidget(content);
 
-    for (int i = 0; i < 3; ++i) {
-        auto tab = makeScrollTab();
-        tabWidget->addTab(tab, QString("Page %1").arg(i+1));
-    }
+    tabWidget->addTab(scrollArea, "默认分组");
 
     QSize screenSize = QGuiApplication::primaryScreen()->size();
     resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
@@ -180,14 +174,8 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 void MainWindow::relayoutDevices()
 {
-    auto tabWidget = findChild<QTabWidget*>();
-    if (tabWidget->currentIndex() != 0)
-        return;
-
-    auto scrollArea = qobject_cast<QScrollArea*>(tabWidget->currentWidget());
-
-    auto contentWidget = scrollArea->widget();
-    auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
+    // auto contentWidget = scrollArea->widget();
+    // auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
 
     int tabWidth = scrollArea->viewport()->width();
 
@@ -229,12 +217,7 @@ void MainWindow::addItem(DeviceConnection* connection)
         player->setSourceDevice(device);
     }
 
-    auto targetTab = tabWidget->widget(0);
-    auto scrollArea = qobject_cast<QScrollArea*>(targetTab);
-    auto contentWidget = scrollArea->widget();
-    auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
-
-    auto frame = new QFrame(contentWidget);
+    auto frame = new QFrame(this);
     frame->setMinimumSize(minItemWidth, minItemHeight);
     frame->setMaximumSize(minItemWidth * 1.5, minItemHeight * 1.5);
     frame->setFrameShape(QFrame::Box);
