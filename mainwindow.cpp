@@ -128,7 +128,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     auto content = new QWidget;
-    gridLayout = new QGridLayout(content);
+    auto gridLayout = new QGridLayout(content);
     gridLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     scrollArea->setWidget(content);
 
@@ -174,8 +174,8 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 void MainWindow::relayoutDevices()
 {
-    // auto contentWidget = scrollArea->widget();
-    // auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
+    auto contentWidget = scrollArea->widget();
+    auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
 
     int tabWidth = scrollArea->viewport()->width();
 
