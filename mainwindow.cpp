@@ -285,7 +285,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
             QWidget *newTab = new QWidget();
             tabWidget->insertTab(index + 1, newTab, newName.trimmed());
             TabInfo newTabInfo{newId, newName.trimmed()};
-            tabs.append(newTabInfo);
+            tabs.insert(index + 1, newTabInfo);
         }
     });
 
@@ -319,7 +319,7 @@ void MainWindow::addTab(int id, const QString &name)
     qDebugEx() << "addTab" << id << name;
 
     QWidget *newTab = id == 0 ? scrollArea : new QWidget();
-    tabWidget->insertTab(id, newTab, name);
+    tabWidget->addTab(newTab, name);
     TabInfo newTabInfo{id, name};
     tabs.append(newTabInfo);
 }
