@@ -172,6 +172,9 @@ void MainWindow::relayoutDevices()
 
     int totalCols = std::max(1, tabWidth / (minItemWidth + spacing));
 
+    if (devices.count() >= totalCols)
+        gridLayout->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
+
     for (int i = 0; i < devices.size(); ++i) {
         int row = i / totalCols;
         int col = i % totalCols;
