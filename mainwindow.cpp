@@ -42,10 +42,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     auto splitter = new QSplitter(Qt::Horizontal, this);
     mainLayout->addWidget(splitter);
-    splitter->setStyleSheet("QSplitter::handle {"
-                           "background-color: #B0B0B0;"
-                           "width: 1px;"
-                           "}");
+    splitter->setStyleSheet("QSplitter::handle {background-color: #B0B0B0;width: 1px;}");
 
     auto sideBarList = new QListWidget();
     sideBarList->setViewMode(QListView::IconMode);
@@ -114,28 +111,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     splitter->addWidget(sideBarList);
 
-    // auto sideBarList2 = new QListWidget();
-    // sideBarList2->setViewMode(QListView::IconMode);
-    // sideBarList2->setFixedWidth(60);
-    // sideBarList2->setStyleSheet("QListWidget::item { margin-top: 10px; margin-bottom: 10px; }");
-
-    // sideBarList2->addItem(new QListWidgetItem(QIcon(":/icons/unlock.png"), "解锁"));
-    // sideBarList2->addItem(new QListWidgetItem(QIcon(":/icons/lock.png"), "锁屏"));
-    // sideBarList2->addItem(new QListWidgetItem(QIcon(":/icons/restart.png"), "重启"));
-    // sideBarList2->addItem(new QListWidgetItem(QIcon(":/icons/kill.png"), "清理应用"));
-
-    // for (int i = 0; i < sideBarList2->count(); i++) {
-    //     sideBarList2->item(i)->setSizeHint(QSize(sideBarList2->width() - 4, 70));
-    // }
-
-    // splitter->addWidget(sideBarList2);
-
     tabWidget = new QTabWidget(this);
-    tabWidget->tabBar()->setMovable(true);
-    tabWidget->tabBar()->setContextMenuPolicy(Qt::CustomContextMenu);
+    auto tabBar = tabWidget->tabBar();
+    tabBar->setMovable(true);
+    tabBar->setToolTip("右键点击可修改分组");
+    tabBar->setContextMenuPolicy(Qt::CustomContextMenu);
 
     connect(tabWidget, &QTabWidget::tabBarClicked, this, &MainWindow::onTabClicked);
-    connect(tabWidget->tabBar(), &QWidget::customContextMenuRequested, this, &MainWindow::showTabManager);
+    connect(tabBar, &QWidget::customContextMenuRequested, this, &MainWindow::showTabManager);
 
     splitter->addWidget(tabWidget);
 
