@@ -262,7 +262,6 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
         QWidget *page = tabWidget->widget(index);
         tabWidget->removeTab(index);
         delete page;
-        releaseTabId(tabs[index].id);
         tabs.remove(index);
     });
     connect(menu.addAction("添加"), &QAction::triggered, this, [=]() {
@@ -326,23 +325,16 @@ void MainWindow::addTab(int id, const QString &name)
 
 int MainWindow::findAvailableTabId()
 {
-    for (int id = 0; id <= 31; ++id) {
-        bool used = false;
-        for (const auto &tab : tabs) {
-            if (tab.id == id) {
-                used = true;
-                break;
-            }
-        }
-        if (!used) {
+    QSet<int> usedIds;
+    for (const auto &tab : tabs) {
+        usedIds.insert(tab.id);
+    }
+
+    for (int id = 0; id < 32; ++id) {
+        if (!usedIds.contains(id)) {
             return id;
         }
     }
-    return -1;  // No available IDs
-}
-
-void MainWindow::releaseTabId(int id)
-{
-    // In case you want to free up an ID when a tab is deleted.
-    // Currently, IDs are not reclaimed, but you can implement this if needed.
+    
+    return -1;
 }

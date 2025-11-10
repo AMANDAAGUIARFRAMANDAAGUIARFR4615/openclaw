@@ -29,7 +29,6 @@ protected:
     void saveTabs();
     void addTab(int id, const QString &name);
     int findAvailableTabId();
-    void releaseTabId(int id);
 
     struct TabInfo {
         int id;
