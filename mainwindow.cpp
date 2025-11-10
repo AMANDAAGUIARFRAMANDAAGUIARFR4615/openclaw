@@ -8,7 +8,7 @@
 #include "TcpServer.h"
 #include "DeviceWidget.h"
 #include "DeviceManager.h"
-#include <QTabWidget>
+#include <QTabBar>
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QGridLayout>
@@ -17,7 +17,6 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QApplication>
-#include <QTabBar>
 #include <QSplitter>
 #include <QListWidget>
 #include <QListWidgetItem>
@@ -112,32 +111,28 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     splitter->addWidget(sideBarList);
 
-    tabWidget = new QTabWidget(this);
-    auto tabBar = tabWidget->tabBar();
+    tabBar = new QTabBar(this);
     tabBar->setMovable(true);
     tabBar->setToolTip("右键点击可修改分组");
     tabBar->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    connect(tabWidget, &QTabWidget::tabBarClicked, this, &MainWindow::onTabClicked);
+    connect(tabBar, &QTabBar::tabBarClicked, this, &MainWindow::onTabClicked);
     connect(tabBar, &QWidget::customContextMenuRequested, this, &MainWindow::showTabBarContextMenu);
 
-    splitter->addWidget(tabWidget);
+    splitter->addWidget(tabBar);
 
-    auto makeScrollTab = [this]() -> QWidget* {
-        auto scroll = new QScrollArea(this);
-        scroll->setWidgetResizable(true);
-        scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        auto content = new QWidget;
-        auto grid = new QGridLayout(content);
-        grid->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-        scroll->setWidget(content);
-        return scroll;
-    };
+    scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    auto content = new QWidget;
+    auto grid = new QGridLayout(content);
+    grid->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    scrollArea->setWidget(content);
+    splitter->addWidget(scrollArea);
 
     for (int i = 0; i < 3; ++i) {
-        auto tab = makeScrollTab();
-        tabWidget->addTab(tab, QString("Page %1").arg(i+1));
+        tabBar->addTab(QString("Page %1").arg(i+1));
     }
 
     QSize screenSize = QGuiApplication::primaryScreen()->size();
@@ -180,14 +175,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 void MainWindow::relayoutDevices()
 {
-    auto tabWidget = findChild<QTabWidget*>();
-    if (tabWidget->currentIndex() != 0)
-        return;
-
-    auto scrollArea = qobject_cast<QScrollArea*>(tabWidget->currentWidget());
-
-    auto contentWidget = scrollArea->widget();
-    auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
+    auto gridLayout = qobject_cast<QGridLayout*>(scrollArea->widget()->layout());
 
     int tabWidth = scrollArea->viewport()->width();
 
@@ -222,19 +210,11 @@ void MainWindow::addItem(DeviceConnection* connection)
     }
     else
     {
-        // auto url = QString("tcp://%1:%2").arg(deviceInfo->localIp).arg(deviceInfo->videoPort);
-        // player->setSource(url);
-
         auto device = new LiveStreamDevice(deviceInfo->localIp, deviceInfo->videoPort, this);
         player->setSourceDevice(device);
     }
 
-    auto targetTab = tabWidget->widget(0);
-    auto scrollArea = qobject_cast<QScrollArea*>(targetTab);
-    auto contentWidget = scrollArea->widget();
-    auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
-
-    auto frame = new QFrame(contentWidget);
+    auto frame = new QFrame(scrollArea->widget());
     frame->setMinimumSize(minItemWidth, minItemHeight);
     frame->setMaximumSize(minItemWidth * 1.5, minItemHeight * 1.5);
     frame->setFrameShape(QFrame::Box);
@@ -249,7 +229,7 @@ void MainWindow::addItem(DeviceConnection* connection)
 
 void MainWindow::showTabBarContextMenu(const QPoint &pos)
 {
-    int index = tabWidget->tabBar()->tabAt(pos);
+    int index = tabBar->tabAt(pos);
     if (index < 0)
         return;
 
@@ -257,7 +237,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
 
     connect(menu.addAction("重命名"), &QAction::triggered, this, [=]() {
         bool ok = false;
-        QString currentText = tabWidget->tabText(index);
+        QString currentText = tabBar->tabText(index);
         QString newName = QInputDialog::getText(
             this,
             "重命名分组",
@@ -267,13 +247,15 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
             &ok
         );
         if (ok && !newName.trimmed().isEmpty()) {
-            tabWidget->setTabText(index, newName.trimmed());
+            tabBar->setTabText(index, newName.trimmed());
         }
     });
     connect(menu.addAction("删除"), &QAction::triggered, this, [=]() {
-        QWidget *page = tabWidget->widget(index);
-        tabWidget->removeTab(index);
-        delete page;
+        tabBar->removeTab(index);
+        // 清理内容
+        QWidget *page = scrollArea->widget();
+        auto gridLayout = qobject_cast<QGridLayout*>(page->layout());
+        // gridLayout->clear();
     });
     connect(menu.addAction("添加"), &QAction::triggered, this, [=]() {
         bool ok = false;
@@ -286,10 +268,9 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
             &ok
         );
         if (ok && !newName.trimmed().isEmpty()) {
-            QWidget *newTab = new QWidget();
-            tabWidget->insertTab(index + 1, nullptr, newName.trimmed());
+            tabBar->insertTab(index + 1, newName.trimmed());
         }
     });
 
-    menu.exec(tabWidget->tabBar()->mapToGlobal(pos));
+    menu.exec(tabBar->mapToGlobal(pos));
 }

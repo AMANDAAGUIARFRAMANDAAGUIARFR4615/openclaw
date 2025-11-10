@@ -6,6 +6,7 @@
 #include <QKeyEvent>
 #include <QFrame>
 #include <QDialog>
+#include <QScrollArea>
 
 class MainWindow : public QMainWindow
 {
@@ -31,6 +32,8 @@ protected:
     const int minItemHeight = minItemWidth * 1.7786;
     const int spacing = 10;
 
-    QTabWidget* tabWidget;
+    // QTabWidget* tabWidget;
+    QTabBar* tabBar;
+    QScrollArea* scrollArea;
     QDialog *qrDialog = nullptr;
 };
