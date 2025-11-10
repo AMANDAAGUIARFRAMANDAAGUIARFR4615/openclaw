@@ -32,6 +32,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QFormLayout>
+#include <QInputDialog>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
@@ -118,7 +119,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     tabBar->setContextMenuPolicy(Qt::CustomContextMenu);
 
     connect(tabWidget, &QTabWidget::tabBarClicked, this, &MainWindow::onTabClicked);
-    connect(tabBar, &QWidget::customContextMenuRequested, this, &MainWindow::showTabManager);
+    connect(tabBar, &QWidget::customContextMenuRequested, this, &MainWindow::showTabBarContextMenu);
 
     splitter->addWidget(tabWidget);
 
@@ -246,57 +247,49 @@ void MainWindow::addItem(DeviceConnection* connection)
     relayoutDevices();
 }
 
-uint32_t tabVisibleBits = 0xFFFFFFFF; // 默认全部显示，32位
-
-void MainWindow::showTabManager(const QPoint &pos)
+void MainWindow::showTabBarContextMenu(const QPoint &pos)
 {
-    QDialog *dlg = new QDialog(this);
-    dlg->setWindowTitle("管理 Tabs");
-    dlg->resize(400, 500);
+    int index = tabWidget->tabBar()->tabAt(pos);
+    if (index < 0)
+        return;
 
-    QVBoxLayout *mainLayout = new QVBoxLayout(dlg);
+    QMenu menu(this);
 
-    QScrollArea *scroll = new QScrollArea(dlg);
-    scroll->setWidgetResizable(true);
-    mainLayout->addWidget(scroll);
-
-    QWidget *container = new QWidget;
-    QVBoxLayout *vLayout = new QVBoxLayout(container);
-    vLayout->setAlignment(Qt::AlignTop);
-    scroll->setWidget(container);
-
-    // 保存每行控件，方便确定按钮读取
-    struct TabRow { QLineEdit* nameEdit; QCheckBox* check; };
-    QList<TabRow> rows;
-
-    int count = std::min(tabWidget->count(), 32);
-    for (int i = 0; i < count; ++i) {
-        QWidget *rowWidget = new QWidget;
-        QHBoxLayout *hLayout = new QHBoxLayout(rowWidget);
-        hLayout->setContentsMargins(5, 2, 5, 2);
-
-        QLineEdit *nameEdit = new QLineEdit(tabWidget->tabText(i));
-        QCheckBox *check = new QCheckBox("显示");
-        check->setChecked(tabWidget->isTabEnabled(i));
-
-        hLayout->addWidget(nameEdit);
-        hLayout->addWidget(check);
-        vLayout->addWidget(rowWidget);
-
-        rows.append({nameEdit, check});
-    }
-
-    QPushButton *okBtn = new QPushButton("确定");
-    mainLayout->addWidget(okBtn);
-
-    connect(okBtn, &QPushButton::clicked, dlg, [this, dlg, rows]() {
-        for (int i = 0; i < rows.size(); ++i) {
-            tabWidget->setTabText(i, rows[i].nameEdit->text());
-            tabWidget->setTabEnabled(i, rows[i].check->isChecked());
+    connect(menu.addAction("重命名"), &QAction::triggered, this, [=]() {
+        bool ok = false;
+        QString currentText = tabWidget->tabText(index);
+        QString newName = QInputDialog::getText(
+            this,
+            "重命名分组",
+            "请输入新的分组名称：",
+            QLineEdit::Normal,
+            currentText,
+            &ok
+        );
+        if (ok && !newName.trimmed().isEmpty()) {
+            tabWidget->setTabText(index, newName.trimmed());
         }
-        dlg->accept();
+    });
+    connect(menu.addAction("删除"), &QAction::triggered, this, [=]() {
+        QWidget *page = tabWidget->widget(index);
+        tabWidget->removeTab(index);
+        delete page;
+    });
+    connect(menu.addAction("添加"), &QAction::triggered, this, [=]() {
+        bool ok = false;
+        QString newName = QInputDialog::getText(
+            this,
+            "添加分组",
+            "请输入新分组名称：",
+            QLineEdit::Normal,
+            "新分组",
+            &ok
+        );
+        if (ok && !newName.trimmed().isEmpty()) {
+            QWidget *newTab = new QWidget();
+            tabWidget->insertTab(index + 1, nullptr, newName.trimmed());
+        }
     });
 
-    dlg->exec();
-    delete dlg;
+    menu.exec(tabWidget->tabBar()->mapToGlobal(pos));
 }

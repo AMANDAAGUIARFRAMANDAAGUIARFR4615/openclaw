@@ -23,7 +23,7 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
     void relayoutDevices();
     void onTabClicked(int index);
-    void showTabManager(const QPoint &pos);
+    void showTabBarContextMenu(const QPoint &pos);
 
     QList<QFrame*> devices;
 
