@@ -87,7 +87,7 @@ protected:
     QPoint m_dragStartPos;
 
     QListWidget* quickAccessList = nullptr;
-    QSettings* settings;
+    QSettings settings;
     QStringList favorites;
 
     void loadFavorites();

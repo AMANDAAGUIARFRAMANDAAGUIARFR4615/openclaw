@@ -33,16 +33,13 @@
 #include <QDesktopServices>
 
 RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath) 
-    : connection(connection), rootPath(rootPath), QWidget()
+    : connection(connection), rootPath(rootPath), QWidget(), settings(QSettings("MyApp", "RemoteFileExplorer", this))
 {
     QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(rootPath);
     instanceMap[key] = this;
     
     setAttribute(Qt::WA_DeleteOnClose);
     setAcceptDrops(true);
-
-    // 初始化收藏功能
-    settings = new QSettings("MyApp", "RemoteFileExplorer", this);
 
     QLabel* quickAccessLabel = new QLabel("⭐ 快速访问", this);
     quickAccessLabel->setStyleSheet("font-weight: bold; padding: 4px;");
@@ -828,11 +825,11 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
 }
 
 void RemoteFileExplorer::loadFavorites() {
-    favorites = settings->value("favorites").toStringList();
+    favorites = settings.value("favorites").toStringList();
 }
 
 void RemoteFileExplorer::saveFavorites() {
-    settings->setValue("favorites", favorites);
+    settings.setValue("favorites", favorites);
 }
 
 void RemoteFileExplorer::refreshQuickAccessList() {
