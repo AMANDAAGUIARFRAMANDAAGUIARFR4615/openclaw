@@ -6,6 +6,8 @@
 #include "LiveStreamDevice.h"
 #include "UsbDeviceManager.h"
 #include "TcpServer.h"
+#include "DeviceWidget.h"
+#include "DeviceManager.h"
 #include <QTabWidget>
 #include <QWidget>
 #include <QVBoxLayout>
@@ -16,7 +18,6 @@
 #include <QScreen>
 #include <QApplication>
 #include <QTabBar>
-#include "DeviceWidget.h"
 #include <QSplitter>
 #include <QListWidget>
 #include <QListWidgetItem>
@@ -41,29 +42,25 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                            "}");
 
     auto sideBarList = new QListWidget();
-    sideBarList->setIconSize(QSize(36, 36));
-    sideBarList->setSpacing(5);
-    sideBarList->setItemDelegate(new CenteredItemDelegate(this));
-    sideBarList->setFixedWidth(70);
+    sideBarList->setViewMode(QListView::IconMode);
+    sideBarList->setFixedWidth(80);
+    sideBarList->setStyleSheet("QListWidget::item { margin-top: 10px; margin-bottom: 10px; }");
 
     auto style = sideBarList->style();
 
-    auto item1 = new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_DesktopIcon)), "");
-    item1->setToolTip("提示1");
-    auto item2 = new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_ComputerIcon)), "");
-    item2->setToolTip("提示2");
-    auto item3 = new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_BrowserReload)), "");
-    item3->setToolTip("提示3");
-    auto item4 = new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_FileIcon)), "");
-    item4->setToolTip("提示4");
+    sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_DesktopIcon)), "设备连接"));
+    sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_ComputerIcon)), "分组操作"));
+    sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_BrowserReload)), "分组设置"));
+    sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_FileIcon)), "关于"));
 
-    sideBarList->addItem(item1);
-    sideBarList->addItem(item2);
-    sideBarList->addItem(item3);
-    sideBarList->addItem(item4);
+    for (int i = 0; i < sideBarList->count(); i++) {
+        sideBarList->item(i)->setSizeHint(QSize(sideBarList->width() - 2, 70));
+    }
 
     connect(sideBarList, &QListWidget::itemClicked, this, [=](QListWidgetItem *item) {
-        if (item == item1) {
+        QString text = item->text();
+
+        if (text == "设备连接") {
             if (qrDialog) {
                 qrDialog->activateWindow();
                 return;
@@ -87,6 +84,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             });
 
             qrDialog->show();
+            return;
+        }
+
+        if (text == "分组设置") {
+            auto window = new DeviceManager();
+            window->show();
+            return;
         }
     });
 
