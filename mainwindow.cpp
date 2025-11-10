@@ -60,7 +60,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_FileIcon)), "关于"));
 
     for (int i = 0; i < sideBarList->count(); i++) {
-        sideBarList->item(i)->setSizeHint(QSize(sideBarList->width() - 2, 70));
+        sideBarList->item(i)->setSizeHint(QSize(sideBarList->width() - 4, 70));
     }
 
     connect(sideBarList, &QListWidget::itemClicked, this, [=](QListWidgetItem *item) {
@@ -93,6 +93,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
         }
 
+        if (text == "分组操作") {
+            QMenu *menu = new QMenu(this);
+            menu->addAction("选项 1");
+            menu->addAction("选项 2");
+            menu->addAction("选项 3");
+            QRect rect = sideBarList->visualItemRect(item);
+            QPoint globalPos = sideBarList->viewport()->mapToGlobal(rect.topRight());
+            menu->exec(globalPos);
+            delete menu;
+            return;
+        }
+
         if (text == "分组设置") {
             auto window = new DeviceManager();
             window->show();
@@ -101,6 +113,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     });
 
     splitter->addWidget(sideBarList);
+
+    // auto sideBarList2 = new QListWidget();
+    // sideBarList2->setViewMode(QListView::IconMode);
+    // sideBarList2->setFixedWidth(60);
+    // sideBarList2->setStyleSheet("QListWidget::item { margin-top: 10px; margin-bottom: 10px; }");
+
+    // sideBarList2->addItem(new QListWidgetItem(QIcon(":/icons/unlock.png"), "解锁"));
+    // sideBarList2->addItem(new QListWidgetItem(QIcon(":/icons/lock.png"), "锁屏"));
+    // sideBarList2->addItem(new QListWidgetItem(QIcon(":/icons/restart.png"), "重启"));
+    // sideBarList2->addItem(new QListWidgetItem(QIcon(":/icons/kill.png"), "清理应用"));
+
+    // for (int i = 0; i < sideBarList2->count(); i++) {
+    //     sideBarList2->item(i)->setSizeHint(QSize(sideBarList2->width() - 4, 70));
+    // }
+
+    // splitter->addWidget(sideBarList2);
 
     tabWidget = new QTabWidget(this);
     tabWidget->tabBar()->setMovable(true);
@@ -235,42 +263,57 @@ void MainWindow::addItem(DeviceConnection* connection)
     relayoutDevices();
 }
 
+uint32_t tabVisibleBits = 0xFFFFFFFF; // 默认全部显示，32位
+
 void MainWindow::showTabManager(const QPoint &pos)
 {
-    QDialog dlg(this);
-    dlg.setWindowTitle("管理 Tabs");
-    auto layout = new QVBoxLayout(&dlg);
+    QDialog *dlg = new QDialog(this);
+    dlg->setWindowTitle("管理 Tabs");
+    dlg->resize(400, 500);
 
-    QList<QLineEdit*> nameEdits;
-    QList<QCheckBox*> visibilityChecks;
+    QVBoxLayout *mainLayout = new QVBoxLayout(dlg);
 
-    int count = std::min(tabWidget->count(), 32); // 最大32个
+    QScrollArea *scroll = new QScrollArea(dlg);
+    scroll->setWidgetResizable(true);
+    mainLayout->addWidget(scroll);
+
+    QWidget *container = new QWidget;
+    QVBoxLayout *vLayout = new QVBoxLayout(container);
+    vLayout->setAlignment(Qt::AlignTop);
+    scroll->setWidget(container);
+
+    // 保存每行控件，方便确定按钮读取
+    struct TabRow { QLineEdit* nameEdit; QCheckBox* check; };
+    QList<TabRow> rows;
+
+    int count = std::min(tabWidget->count(), 32);
     for (int i = 0; i < count; ++i) {
-        QWidget *tab = tabWidget->widget(i);
-        QString tabName = tabWidget->tabText(i);
+        QWidget *rowWidget = new QWidget;
+        QHBoxLayout *hLayout = new QHBoxLayout(rowWidget);
+        hLayout->setContentsMargins(5, 2, 5, 2);
 
-        QHBoxLayout *hLayout = new QHBoxLayout();
-        QLineEdit *nameEdit = new QLineEdit(tabName);
+        QLineEdit *nameEdit = new QLineEdit(tabWidget->tabText(i));
         QCheckBox *check = new QCheckBox("显示");
-        check->setChecked(!tabWidget->isTabEnabled(i));
+        check->setChecked(tabWidget->isTabEnabled(i));
 
         hLayout->addWidget(nameEdit);
         hLayout->addWidget(check);
-        layout->addLayout(hLayout);
+        vLayout->addWidget(rowWidget);
 
-        nameEdits.append(nameEdit);
-        visibilityChecks.append(check);
+        rows.append({nameEdit, check});
     }
 
     QPushButton *okBtn = new QPushButton("确定");
-    layout->addWidget(okBtn);
-    connect(okBtn, &QPushButton::clicked, &dlg, [&]() {
-        for (int i = 0; i < nameEdits.size(); ++i) {
-            tabWidget->setTabText(i, nameEdits[i]->text());
-            tabWidget->setTabEnabled(i, visibilityChecks[i]->isChecked());
+    mainLayout->addWidget(okBtn);
+
+    connect(okBtn, &QPushButton::clicked, dlg, [this, dlg, rows]() {
+        for (int i = 0; i < rows.size(); ++i) {
+            tabWidget->setTabText(i, rows[i].nameEdit->text());
+            tabWidget->setTabEnabled(i, rows[i].check->isChecked());
         }
-        dlg.accept();
+        dlg->accept();
     });
 
-    dlg.exec();
+    dlg->exec();
+    delete dlg;
 }
