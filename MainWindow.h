@@ -25,6 +25,18 @@ protected:
     void relayoutDevices();
     void onTabClicked(int index);
     void showTabBarContextMenu(const QPoint &pos);
+    void loadTabs();
+    void saveTabs();
+    void addTab(int id, const QString &name);
+    int findAvailableTabId();
+    void releaseTabId(int id);
+
+    struct TabInfo {
+        int id;
+        QString name;
+    };
+
+    QList<TabInfo> tabs;
 
     QList<QFrame*> devices;
 

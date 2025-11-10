@@ -8,6 +8,7 @@
 #include "TcpServer.h"
 #include "DeviceWidget.h"
 #include "DeviceManager.h"
+#include "ToastWidget.h"
 #include <QTabWidget>
 #include <QWidget>
 #include <QVBoxLayout>
@@ -33,8 +34,12 @@
 #include <QPushButton>
 #include <QFormLayout>
 #include <QInputDialog>
+#include <QJsonObject>
+#include <QSettings>
 
-MainWindow::MainWindow(QWidget *parent) : settings(QSettings("MyApp", "MainWindow", this)), QMainWindow(parent)
+MainWindow::MainWindow(QWidget *parent) 
+    : settings(QSettings("MyApp", "MainWindow", this)), 
+      QMainWindow(parent)
 {
     auto central = new QWidget(this);
     setCentralWidget(central);
@@ -131,8 +136,6 @@ MainWindow::MainWindow(QWidget *parent) : settings(QSettings("MyApp", "MainWindo
     auto gridLayout = new QGridLayout(content);
     scrollArea->setWidget(content);
 
-    tabWidget->addTab(scrollArea, "默认分组");
-
     QSize screenSize = QGuiApplication::primaryScreen()->size();
     resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
 
@@ -140,6 +143,8 @@ MainWindow::MainWindow(QWidget *parent) : settings(QSettings("MyApp", "MainWindo
         connection->deviceInfo = new DeviceInfo(data.toObject());
         addItem(connection);
     });
+
+    loadTabs();
 }
 
 MainWindow::~MainWindow()
@@ -149,6 +154,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    saveTabs();
     QApplication::quit();
 }
 
@@ -211,9 +217,6 @@ void MainWindow::addItem(DeviceConnection* connection)
     }
     else
     {
-        // auto url = QString("tcp://%1:%2").arg(deviceInfo->localIp).arg(deviceInfo->videoPort);
-        // player->setSource(url);
-
         auto device = new LiveStreamDevice(deviceInfo->localIp, deviceInfo->videoPort, this);
         player->setSourceDevice(device);
     }
@@ -252,14 +255,23 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
         );
         if (ok && !newName.trimmed().isEmpty()) {
             tabWidget->setTabText(index, newName.trimmed());
+            tabs[index].name = newName.trimmed();
         }
     });
     connect(menu.addAction("删除"), &QAction::triggered, this, [=]() {
         QWidget *page = tabWidget->widget(index);
         tabWidget->removeTab(index);
         delete page;
+        releaseTabId(tabs[index].id);
+        tabs.remove(index);
     });
     connect(menu.addAction("添加"), &QAction::triggered, this, [=]() {
+        int newId = findAvailableTabId();
+        if (newId == -1) {
+            new ToastWidget("已达到最大分组数", this);
+            return;
+        }
+
         bool ok = false;
         QString newName = QInputDialog::getText(
             this,
@@ -272,8 +284,65 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
         if (ok && !newName.trimmed().isEmpty()) {
             QWidget *newTab = new QWidget();
             tabWidget->insertTab(index + 1, newTab, newName.trimmed());
+            TabInfo newTabInfo{newId, newName.trimmed()};
+            tabs.append(newTabInfo);
         }
     });
 
     menu.exec(tabWidget->tabBar()->mapToGlobal(pos));
+}
+
+void MainWindow::loadTabs()
+{
+    int tabCount = settings.value("tabCount", 0).toInt();
+    for (int i = 0; i < tabCount; ++i) {
+        int tabId = settings.value(QString("tab%1/id").arg(i)).toInt();
+        QString tabName = settings.value(QString("tab%1/name").arg(i)).toString();
+        addTab(tabId, tabName);
+    }
+
+    if (tabWidget->count() == 0)
+        addTab(0, "默认分组");
+}
+
+void MainWindow::saveTabs()
+{
+    settings.setValue("tabCount", tabs.size());
+    for (int i = 0; i < tabs.size(); ++i) {
+        settings.setValue(QString("tab%1/id").arg(i), tabs[i].id);
+        settings.setValue(QString("tab%1/name").arg(i), tabs[i].name);
+    }
+}
+
+void MainWindow::addTab(int id, const QString &name)
+{
+    qDebugEx() << "addTab" << id << name;
+
+    QWidget *newTab = id == 0 ? scrollArea : new QWidget();
+    tabWidget->insertTab(id, newTab, name);
+    TabInfo newTabInfo{id, name};
+    tabs.append(newTabInfo);
+}
+
+int MainWindow::findAvailableTabId()
+{
+    for (int id = 0; id <= 31; ++id) {
+        bool used = false;
+        for (const auto &tab : tabs) {
+            if (tab.id == id) {
+                used = true;
+                break;
+            }
+        }
+        if (!used) {
+            return id;
+        }
+    }
+    return -1;  // No available IDs
+}
+
+void MainWindow::releaseTabId(int id)
+{
+    // In case you want to free up an ID when a tab is deleted.
+    // Currently, IDs are not reclaimed, but you can implement this if needed.
 }
