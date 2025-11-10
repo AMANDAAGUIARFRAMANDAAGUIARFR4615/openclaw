@@ -123,8 +123,8 @@ MainWindow::MainWindow(QWidget *parent)
     tabBar->setToolTip("右键点击可修改分组");
     tabBar->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    connect(tabWidget, &QTabWidget::tabBarClicked, this, &MainWindow::onTabClicked);
-    connect(tabWidget, &QTabWidget::tabMoved, this, &MainWindow::onTabMoved);
+    connect(tabBar, &QTabBar::tabBarClicked, this, &MainWindow::onTabClicked);
+    connect(tabBar, &QTabBar::tabMoved, this, &MainWindow::onTabMoved);
     connect(tabBar, &QWidget::customContextMenuRequested, this, &MainWindow::showTabBarContextMenu);
 
     splitter->addWidget(tabWidget);
