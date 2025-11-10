@@ -11,9 +11,6 @@ class ToastWidget : public QWidget {
 public:
     explicit ToastWidget(const QString &message, QWidget *parent = nullptr) : QWidget(parent) {
         setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint);
-        setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
-                      "stop:0 rgba(0, 0, 0, 180), stop:1 rgba(0, 0, 0, 255));"
-                      "border-radius: 12px;");
 
         QLabel *label = new QLabel(message, this);
         label->setStyleSheet("color: white; font-size: 16px; font-weight: bold; padding: 15px;");
