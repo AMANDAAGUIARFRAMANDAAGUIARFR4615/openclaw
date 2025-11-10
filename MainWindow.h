@@ -24,6 +24,7 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
     void relayoutDevices();
     void onTabClicked(int index);
+    void onTabMoved(int fromIndex, int toIndex);
     void showTabBarContextMenu(const QPoint &pos);
     void loadTabs();
     void saveTabs();

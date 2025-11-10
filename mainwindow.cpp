@@ -124,6 +124,7 @@ MainWindow::MainWindow(QWidget *parent)
     tabBar->setContextMenuPolicy(Qt::CustomContextMenu);
 
     connect(tabWidget, &QTabWidget::tabBarClicked, this, &MainWindow::onTabClicked);
+    connect(tabWidget, &QTabWidget::tabMoved, this, &MainWindow::onTabMoved);
     connect(tabBar, &QWidget::customContextMenuRequested, this, &MainWindow::showTabBarContextMenu);
 
     splitter->addWidget(tabWidget);
@@ -169,6 +170,19 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 void MainWindow::onTabClicked(int index)
 {
     qDebugEx() << "Clicked on Tab " << index + 1;
+}
+
+void MainWindow::onTabMoved(int fromIndex, int toIndex)
+{
+    qDebugEx() << "onTabMoved" << fromIndex << toIndex;
+    
+    if (fromIndex == toIndex)
+        return;
+
+    TabInfo movedTab = tabs.takeAt(fromIndex);
+    tabs.insert(toIndex, movedTab);
+
+    saveTabs();
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
@@ -335,6 +349,6 @@ int MainWindow::findAvailableTabId()
             return id;
         }
     }
-    
+
     return -1;
 }
