@@ -110,6 +110,7 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
     videoFrameWidget->setFixedSize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
     deviceWindow->addVideoFrameWidget(videoFrameWidget);
     deviceWindow->show();
+    qobject_cast<QBoxLayout*>(layout())->addStretch();
 
     videoFrameWidget = nullptr;
 }
