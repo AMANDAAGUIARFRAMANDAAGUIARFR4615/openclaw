@@ -2,6 +2,8 @@
 #include <QJsonDocument>
 #include <magic_enum/magic_enum.hpp>
 
+UsbDeviceManager* g_usbDeviceManager = new UsbDeviceManager();
+
 UsbDeviceManager::UsbDeviceManager(QObject* parent)
     : QObject(parent)
 {

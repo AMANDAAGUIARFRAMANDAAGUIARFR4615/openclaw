@@ -15,8 +15,6 @@ class UsbDeviceManager : public QObject {
     Q_OBJECT
 
 public:
-    static UsbDeviceManager* instance();
-
     void start();
     void stop();
 
@@ -58,4 +56,4 @@ private:
     QFutureWatcher<QSet<QString>>* watcher = nullptr;
 };
 
-Q_GLOBAL_STATIC(UsbDeviceManager, g_usbDeviceManager)
+extern UsbDeviceManager* g_usbDeviceManager;

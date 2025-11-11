@@ -14,8 +14,6 @@
 #include <QShortcut>
 #include <QHostInfo>
 
-MainWindow* mainWindow;
-
 void onClientConnected(QTcpSocket* socket) {
     // qDebugEx() << "有新的客户端连接！";
 }
@@ -62,10 +60,9 @@ int main(int argc, char *argv[])
 
     // QLoggingCategory::setFilterRules("qt.multimedia.*=true");
 
-    mainWindow = new MainWindow;
-    auto logWindow = new LogWindow(mainWindow);
-    logWindow->resize(mainWindow->size().width(), 400);
-    auto shortcut = new QShortcut(QKeySequence(Qt::Key_F5), mainWindow);
+    auto logWindow = new LogWindow(g_mainWindow);
+    logWindow->resize(g_mainWindow->size().width(), 400);
+    auto shortcut = new QShortcut(QKeySequence(Qt::Key_F5), g_mainWindow);
     QObject::connect(shortcut, &QShortcut::activated, logWindow, &LogWindow::toggleVisibility);
 
     TcpServer server(onClientConnected, [](QTcpSocket* socket, const QJsonObject &jsonObject) {
@@ -118,11 +115,11 @@ int main(int argc, char *argv[])
     QScreen *screen = QApplication::primaryScreen();
     QRect screenGeometry = screen->availableGeometry();
 
-    int x = (screenGeometry.width() - mainWindow->width()) / 2;
-    int y = (screenGeometry.height() - mainWindow->height()) / 2;
-    mainWindow->move(x, y);
+    int x = (screenGeometry.width() - g_mainWindow->width()) / 2;
+    int y = (screenGeometry.height() - g_mainWindow->height()) / 2;
+    g_mainWindow->move(x, y);
 
-    mainWindow->show();
+    g_mainWindow->show();
 
     return app.exec();
 }
