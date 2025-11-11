@@ -37,15 +37,20 @@ public:
         deviceTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
         deviceTable->setStyleSheet(R"(
             QTableWidget {
-                selection-background-color: #cbe8ff;
-                gridline-color: #ccc;
+                background: #ffffff;
+                alternate-background-color: #f7f7f7;
+                gridline-color: #dcdcdc;
+                border: 1px solid #cccccc;
                 font-size: 14px;
             }
             QHeaderView::section {
-                background-color: #f2f2f2;
+                background: #f0f0f0;
+                padding: 4px;
+                border: 1px solid #d0d0d0;
                 font-weight: bold;
-                border: 1px solid #ddd;
-                padding: 6px;
+            }
+            QRadioButton, QCheckBox {
+                font-size: 13px;
             }
         )");
 
