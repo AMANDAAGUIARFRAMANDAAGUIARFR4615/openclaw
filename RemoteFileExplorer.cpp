@@ -253,6 +253,30 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     layout->addWidget(statusBar);
 
     setStatusMessage("就绪");
+
+    QVariantList history = settings.value("transferHistory/" + connection->deviceInfo->deviceId).toList();
+    for (const QVariant &v : history) {
+        QJsonObject obj = v.toJsonObject();
+        int row = transferTable->rowCount();
+        transferTable->insertRow(row);
+        QStringList texts = {
+            obj["name"].toString(),
+            obj["type"].toInt() == 1 ? "接收完成" : "发送完成",
+            "100%",
+            obj["size"].toString(),
+            obj["local"].toString(),
+            obj["remote"].toString(),
+            obj["speed"].toString(),
+            obj["time"].toString()
+        };
+        for (int col = 0; col < texts.size(); ++col) {
+            auto item = new QTableWidgetItem(texts[col]);
+            item->setTextAlignment(Qt::AlignCenter);
+            if (col == 0 || col == 4 || col == 5)
+                item->setToolTip(texts[col]);
+            transferTable->setItem(row, col, item);
+        }
+    }
 }
 
 RemoteFileExplorer::~RemoteFileExplorer()
@@ -516,8 +540,24 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
         transferTable->item(row, 6)->setText(Tools::formatByteSize(transferred / elapsed) + "/s");
         transferTable->item(row, 7)->setText(QString::number(elapsed, 'f', 2) + " s");
 
-        if (transferred == total)
-            transferTable->item(row, 1)->setText(type == 1 ? "接收完成" : "发送完成");
+        if (transferred == total) {
+            QString finalStatus = type == 1 ? "接收完成" : "发送完成";
+            transferTable->item(row, 1)->setText(finalStatus);
+
+            QJsonObject obj;
+            obj["name"]   = transferTable->item(row, 0)->text();
+            obj["type"]   = type;
+            obj["size"]   = transferTable->item(row, 3)->text();
+            obj["local"]  = localPath;
+            obj["remote"] = remotePath;
+            obj["speed"]  = transferTable->item(row, 6)->text();
+            obj["time"]   = transferTable->item(row, 7)->text();
+
+            QString key = "transferHistory/" + connection->deviceInfo->deviceId;
+            QVariantList history = settings.value(key).toList();
+            history.append(QJsonDocument(obj).toJson());
+            settings.setValue(key, history);
+        }
     });
 
     QJsonObject dataObject;
