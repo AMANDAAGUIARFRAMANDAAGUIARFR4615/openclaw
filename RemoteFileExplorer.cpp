@@ -500,7 +500,7 @@ void RemoteFileExplorer::onDirectoryExpanded(const QModelIndex &index)
 }
 
 QString RemoteFileExplorer::getLocalPath(const QString& remotePath) {
-    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/" + connection->deviceInfo->uniqueName() + "/" + QFileInfo(remotePath).fileName();
+    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/" + connection->deviceInfo->deviceId + "/" + QFileInfo(remotePath).fileName();
 }
 
 void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, const QString &remotePath, int size)
@@ -555,7 +555,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
 
             QString key = "transferHistory/" + connection->deviceInfo->deviceId;
             QVariantList history = settings.value(key).toList();
-            history.append(QJsonDocument(obj).toJson());
+            history.append(obj);
             settings.setValue(key, history);
         }
     });
