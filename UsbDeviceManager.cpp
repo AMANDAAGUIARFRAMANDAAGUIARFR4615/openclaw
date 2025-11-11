@@ -64,7 +64,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
         ctx->notifier = new QSocketNotifier(fd, QSocketNotifier::Read, this);
         connect(ctx->notifier, &QSocketNotifier::activated, this, [=](int) {
             char buffer[1024 * 1024];
-            uint32_t bytes = 0;
+            quint32 bytes = 0;
             idevice_error_t err = idevice_connection_receive(ctx->connection, buffer, sizeof(buffer), &bytes);
             if (err == IDEVICE_E_SUCCESS && bytes > 0) {
                 QByteArray data(buffer, bytes);

@@ -148,7 +148,7 @@ private:
     QStringList groupNames;
 
     // 添加设备：名称、连接方式、32位分组掩码
-    void addDevice(const QString &deviceName, const QString &connectionMode, uint32_t groupMask)
+    void addDevice(const QString &deviceName, const QString &connectionMode, quint32 groupMask)
     {
         int row = deviceTable->rowCount();
         deviceTable->insertRow(row);
@@ -191,7 +191,7 @@ private:
 
         connect(groupLabel, &QLabel::linkActivated, this, [this, groupLabel]() {
             int row = groupLabel->property("row").toInt();
-            uint32_t currentMask = groupLabel->property("mask").toUInt();
+            quint32 currentMask = groupLabel->property("mask").toUInt();
             showGroupEditor(row, currentMask, groupLabel);
         });
 
@@ -200,20 +200,20 @@ private:
     }
 
     // 计算分组数量文本
-    static QString getGroupCountText(uint32_t mask)
+    static QString getGroupCountText(quint32 mask)
     {
         int count = __builtin_popcount(mask);
         return QString("<b>%1</b> 个分组").arg(count);
     }
 
     // 更新分组标签显示
-    void updateGroupLabel(QLabel *label, uint32_t mask)
+    void updateGroupLabel(QLabel *label, quint32 mask)
     {
         label->setText(QString("<a href='#'>%1</a>").arg(getGroupCountText(mask)));
         label->setProperty("mask", QVariant(mask));
     }
 
-    void showGroupEditor(int row, uint32_t currentMask, QLabel *label)
+    void showGroupEditor(int row, quint32 currentMask, QLabel *label)
     {
         QVector<BitMaskEditorDialog::Item> items;
         QVector<int> bits = {0, 2, 5, 7, 15};

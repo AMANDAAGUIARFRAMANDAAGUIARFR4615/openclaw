@@ -68,7 +68,7 @@ void DeviceConnection::write(const QByteArray &byteArray)
         if (!usbConnection)
             return;
 
-        uint32_t sent = 0;
+        quint32 sent = 0;
         idevice_error_t error = idevice_connection_send(usbConnection, byteArray.constData(), byteArray.size(), &sent);
         if (error != IDEVICE_E_SUCCESS) {
             qCriticalEx() << "发送失败" << magic_enum::enum_name(error) << byteArray.size() << sent;

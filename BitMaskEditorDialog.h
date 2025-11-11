@@ -81,6 +81,6 @@ private:
     }
 
     const QVector<Item> m_items;
-    uint32_t& m_maskRef;
+    quint32& m_maskRef;
     QVector<QCheckBox*> m_checkBoxes;
 };
