@@ -96,9 +96,15 @@ MainWindow::MainWindow(QWidget *parent)
 
         if (text == "分组群控") {
             QMenu *menu = new QMenu(this);
-            menu->addAction("选项 1");
-            menu->addAction("选项 2");
-            menu->addAction("选项 3");
+            menu->addAction("锁屏");
+            menu->addAction("解锁");
+            menu->addAction("重启");
+            menu->addAction("静音");
+            menu->addAction("取消静音");
+            menu->addAction("安装应用");
+            menu->addAction("投屏清晰度");
+            menu->addAction("屏幕截图");
+            menu->addAction("屏幕录制")->setEnabled(false);
             QRect rect = sideBarList->visualItemRect(item);
             QPoint globalPos = sideBarList->viewport()->mapToGlobal(rect.topRight());
             menu->exec(globalPos);
