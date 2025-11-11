@@ -84,7 +84,7 @@ MainWindow::MainWindow(QWidget *parent)
             QLabel *label = new QLabel(qrDialog);
             label->setPixmap(QPixmap::fromImage(img));
 
-            auto *layout = new QVBoxLayout(qrDialog);
+            auto layout = new QVBoxLayout(qrDialog);
             layout->addWidget(label);
             qrDialog->resize(img.width(), img.height());
 

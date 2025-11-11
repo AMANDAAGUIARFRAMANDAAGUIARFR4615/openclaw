@@ -142,7 +142,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         if (!videoFrameWidget)
             return;
 
-        auto *ioDevice = videoFrameWidget->mediaPlayer->sourceDevice();
+        auto ioDevice = videoFrameWidget->mediaPlayer->sourceDevice();
         auto device = qobject_cast<LiveStreamDevice*>(const_cast<QIODevice*>(ioDevice));
         this->setWindowTitle(title + " " + Tools::formatByteSize(device->speedBps()) + " / s");
     });

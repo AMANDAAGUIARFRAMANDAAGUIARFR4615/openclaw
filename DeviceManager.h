@@ -23,7 +23,7 @@ public:
         setAttribute(Qt::WA_DeleteOnClose);
         resize(900, 700);
 
-        auto *mainLayout = new QVBoxLayout(this);
+        auto mainLayout = new QVBoxLayout(this);
 
         deviceTable = new QTableWidget(this);
         deviceTable->setSelectionMode(QAbstractItemView::NoSelection);
@@ -81,16 +81,16 @@ private:
         int row = deviceTable->rowCount();
         deviceTable->insertRow(row);
 
-        auto *item = new QTableWidgetItem(name);
+        auto item = new QTableWidgetItem(name);
         deviceTable->setItem(row, 0, item);
 
         QWidget *modeWidget = new QWidget(this);
-        auto *modeLayout = new QHBoxLayout(modeWidget);
+        auto modeLayout = new QHBoxLayout(modeWidget);
 
         QStringList modes = {"WIFI优先", "USB优先", "仅WIFI", "仅USB"};
         QButtonGroup *modeGroup = new QButtonGroup(modeWidget);
         for (const QString &m : modes) {
-            auto *rb = new QRadioButton(m, modeWidget);
+            auto rb = new QRadioButton(m, modeWidget);
             if (m == connMode) rb->setChecked(true);
             modeLayout->addWidget(rb);
             modeGroup->addButton(rb);
@@ -98,15 +98,15 @@ private:
         deviceTable->setCellWidget(row, 1, modeWidget);
 
         QWidget *groupWidget = new QWidget(this);
-        auto *groupLayout = new QGridLayout(groupWidget);
+        auto groupLayout = new QGridLayout(groupWidget);
 
         int cols = 8;
         for (int i = 0; i < groups.size(); ++i) {
-            auto *cb = new QCheckBox(groups[i], groupWidget);
+            auto cb = new QCheckBox(groups[i], groupWidget);
             cb->setChecked(true);
             groupLayout->addWidget(cb, i / cols, i % cols);
         }
-        
+        groupLayout->setAlignment(Qt::AlignLeft);
         deviceTable->setCellWidget(row, 2, groupWidget);
 
         deviceTable->resizeRowsToContents();
