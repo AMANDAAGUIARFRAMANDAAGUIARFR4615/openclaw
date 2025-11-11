@@ -21,5 +21,6 @@
         <file>icons/screen_record.png</file>
         <file>icons/high_quality.png</file>
         <file>icons/photo.png</file>
+        <file>icons/category.png</file>
     </qresource>
 </RCC>

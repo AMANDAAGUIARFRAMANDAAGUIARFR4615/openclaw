@@ -183,7 +183,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     connect(menu.addAction(QIcon(":/icons/volume_up.png"), "音量+"), &QAction::triggered, this, &DeviceView::onVolumeUpClicked);
     connect(menu.addAction(QIcon(":/icons/volume_down.png"), "音量-"), &QAction::triggered, this, &DeviceView::onVolumeDownClicked);
 
-    connect(menu.addAction(QIcon(""), "修改分组"), &QAction::triggered, this, [=]() {
+    connect(menu.addAction(QIcon(":/icons/category.png"), "修改分组"), &QAction::triggered, this, [=]() {
         quint32 mask = 0xff;
         BitMaskEditorDialog dialog(QVector<BitMaskEditorDialog::Item>(), mask, this);
         if (dialog.exec() != QDialog::Accepted) return;
