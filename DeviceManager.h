@@ -56,7 +56,9 @@ public:
 
         mainLayout->addWidget(deviceTable);
 
-        groups = {"组1", "组2", "组3", "组4", "组5", "组6"};
+        for(int i = 0; i < 32; i++)
+            groups << QString("组%1").arg(i + 1);
+
         addDevice("设备A - 测试", "WIFI优先");
         addDevice("设备B", "USB优先");
 
@@ -96,14 +98,15 @@ private:
         deviceTable->setCellWidget(row, 1, modeWidget);
 
         QWidget *groupWidget = new QWidget(this);
-        auto *groupLayout = new QHBoxLayout(groupWidget);
+        auto *groupLayout = new QGridLayout(groupWidget);
 
-        for (const QString &g : groups) {
-            auto *cb = new QCheckBox(g, groupWidget);
+        int cols = 8;
+        for (int i = 0; i < groups.size(); ++i) {
+            auto *cb = new QCheckBox(groups[i], groupWidget);
             cb->setChecked(true);
-            groupLayout->addWidget(cb);
+            groupLayout->addWidget(cb, i / cols, i % cols);
         }
-        groupLayout->addStretch();
+        
         deviceTable->setCellWidget(row, 2, groupWidget);
 
         deviceTable->resizeRowsToContents();
