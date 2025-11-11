@@ -10,39 +10,47 @@
 #include <QButtonGroup>
 #include <QFrame>
 #include <QCheckBox>
+#include <QKeyEvent>
+#include <QSpacerItem>
 
 class DeviceManager : public QWidget {
     Q_OBJECT
 public:
-    DeviceManager(QWidget *parent = nullptr) : QWidget(parent) {
-        setWindowTitle("设备管理系统");
-        resize(800, 700);
+    explicit DeviceManager(QWidget *parent = nullptr)
+        : QWidget(parent)
+    {
+        setWindowTitle("设备列表");
+        setAttribute(Qt::WA_DeleteOnClose);
+        resize(900, 700);
 
         auto *mainLayout = new QVBoxLayout(this);
-        mainLayout->setContentsMargins(10, 10, 10, 10);
-        mainLayout->setSpacing(8);
 
-        // === 设备管理区域 ===
-        auto *deviceFrame = new QFrame(this);
-        auto *deviceLayout = new QVBoxLayout(deviceFrame);
-        deviceLayout->setContentsMargins(0, 0, 0, 0);
-        deviceLayout->setSpacing(5);
-
-        // === 表格 ===
         deviceTable = new QTableWidget(this);
         deviceTable->setColumnCount(3);
         deviceTable->setHorizontalHeaderLabels({"设备名", "连接方式", "所属分组"});
-        deviceTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
+        deviceTable->horizontalHeader()->setStretchLastSection(true);
+        deviceTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
         deviceTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-        deviceTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
         deviceTable->verticalHeader()->setVisible(false);
         deviceTable->setAlternatingRowColors(true);
-        deviceTable->setStyleSheet("QTableWidget { selection-background-color: #b0d8ff; }");
+        // deviceTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+        deviceTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        deviceTable->setStyleSheet(R"(
+            QTableWidget {
+                selection-background-color: #cbe8ff;
+                gridline-color: #ccc;
+                font-size: 14px;
+            }
+            QHeaderView::section {
+                background-color: #f2f2f2;
+                font-weight: bold;
+                border: 1px solid #ddd;
+                padding: 6px;
+            }
+        )");
 
-        deviceLayout->addWidget(deviceTable, 1);
-        mainLayout->addWidget(deviceFrame);
+        mainLayout->addWidget(deviceTable);
 
-        // === 初始化默认分组与设备 ===
         groups = {"组1", "组2", "组3", "组4", "组5", "组6"};
         addDevice("设备A", "WIFI优先");
         addDevice("设备B", "USB优先");
@@ -56,6 +64,7 @@ protected:
             QWidget::keyPressEvent(event);
     }
 
+private:
     QTableWidget *deviceTable;
     QStringList groups;
 
@@ -64,38 +73,45 @@ protected:
         deviceTable->insertRow(row);
 
         // === 设备名 ===
-        deviceTable->setItem(row, 0, new QTableWidgetItem(name));
+        auto *item = new QTableWidgetItem(name);
+        item->setTextAlignment(Qt::AlignCenter);
+        deviceTable->setItem(row, 0, item);
 
         // === 连接方式 ===
         QWidget *modeWidget = new QWidget(this);
         auto *modeLayout = new QHBoxLayout(modeWidget);
+        modeLayout->setContentsMargins(5, 0, 5, 0);
+        modeLayout->setSpacing(10);
         modeLayout->setAlignment(Qt::AlignLeft);
-        modeLayout->setContentsMargins(0, 0, 0, 0);
 
         QStringList modes = {"WIFI优先", "USB优先", "仅WIFI", "仅USB"};
         QButtonGroup *modeGroup = new QButtonGroup(modeWidget);
         for (const QString &m : modes) {
             auto *rb = new QRadioButton(m, modeWidget);
+            rb->setStyleSheet("font-size: 13px;");
             if (m == connMode) rb->setChecked(true);
             modeLayout->addWidget(rb);
             modeGroup->addButton(rb);
         }
+        modeLayout->addStretch();
         deviceTable->setCellWidget(row, 1, modeWidget);
 
         // === 所属分组 ===
         QWidget *groupWidget = new QWidget(this);
         auto *groupLayout = new QHBoxLayout(groupWidget);
-        groupLayout->setContentsMargins(0, 0, 0, 0);
-        groupLayout->setSpacing(10);
+        groupLayout->setContentsMargins(5, 0, 5, 0);
+        groupLayout->setSpacing(8);
+        groupLayout->setAlignment(Qt::AlignLeft);
 
         for (const QString &g : groups) {
             auto *cb = new QCheckBox(g, groupWidget);
             cb->setChecked(true);
+            cb->setStyleSheet("font-size: 13px;");
             groupLayout->addWidget(cb);
         }
         groupLayout->addStretch();
         deviceTable->setCellWidget(row, 2, groupWidget);
 
-        deviceTable->resizeColumnsToContents();
+        deviceTable->resizeRowsToContents();
     }
 };

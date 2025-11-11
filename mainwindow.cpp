@@ -58,8 +58,8 @@ MainWindow::MainWindow(QWidget *parent)
     auto style = sideBarList->style();
 
     sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_DesktopIcon)), "设备连接"));
-    sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_ComputerIcon)), "分组操作"));
-    sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_BrowserReload)), "分组设置"));
+    sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_ComputerIcon)), "分组群控"));
+    sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_BrowserReload)), "设备列表"));
     sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_FileIcon)), "关于"));
 
     for (int i = 0; i < sideBarList->count(); i++) {
@@ -96,7 +96,7 @@ MainWindow::MainWindow(QWidget *parent)
             return;
         }
 
-        if (text == "分组操作") {
+        if (text == "分组群控") {
             QMenu *menu = new QMenu(this);
             menu->addAction("选项 1");
             menu->addAction("选项 2");
@@ -108,7 +108,7 @@ MainWindow::MainWindow(QWidget *parent)
             return;
         }
 
-        if (text == "分组设置") {
+        if (text == "设备列表") {
             auto window = new DeviceManager();
             window->show();
             return;
