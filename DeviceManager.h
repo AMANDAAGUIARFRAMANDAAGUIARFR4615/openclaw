@@ -59,6 +59,8 @@ public:
         groups = {"组1", "组2", "组3", "组4", "组5", "组6"};
         addDevice("设备A - 测试", "WIFI优先");
         addDevice("设备B", "USB优先");
+
+        deviceTable->setCurrentItem(nullptr);
     }
 
 protected:
