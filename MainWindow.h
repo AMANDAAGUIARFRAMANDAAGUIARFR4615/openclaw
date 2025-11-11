@@ -18,6 +18,7 @@ public:
     ~MainWindow();
 
     void addItem(DeviceConnection* connection = nullptr);
+    const QList<BitMaskEditorDialog::Item>& getTabs() const { return tabs; }
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -45,3 +46,5 @@ protected:
     QDialog *qrDialog = nullptr;
     QSettings settings;
 };
+
+Q_GLOBAL_STATIC(MainWindow, g_mainWindow)
