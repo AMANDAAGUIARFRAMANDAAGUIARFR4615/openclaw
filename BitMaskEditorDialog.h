@@ -7,9 +7,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
-
-#include <cstdint>
-#include <vector>
+#include <QVector>
 #include <QString>
 
 class BitMaskEditorDialog : public QDialog
@@ -21,7 +19,7 @@ public:
         QString name;   // 显示名称
     };
 
-    explicit BitMaskEditorDialog(const std::vector<Item>& items,
+    explicit BitMaskEditorDialog(const QVector<Item>& items,
                                  uint32_t currentMask,
                                  QWidget* parent = nullptr)
         : QDialog(parent)
@@ -64,25 +62,9 @@ private:
         mainLayout->addLayout(grid);
         mainLayout->addStretch();
 
-        auto buttonBox = new QDialogButtonBox(
-            QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+        auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
         buttonBox->button(QDialogButtonBox::Ok)->setText(tr("确定"));
         buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("取消"));
-
-        // auto okBtn = buttonBox->button(QDialogButtonBox::Ok);
-        // okBtn->setStyleSheet(R"(
-        //     QPushButton {
-        //         background-color: #3498db;
-        //         color: white;
-        //         border: none;
-        //         padding: 8px 20px;
-        //         border-radius: 4px;
-        //         font-weight: bold;
-        //         min-width: 80px;
-        //     }
-        //     QPushButton:hover { background-color: #2980b9; }
-        //     QPushButton:pressed { background-color: #1c6ba0; }
-        // )");
 
         mainLayout->addWidget(buttonBox);
 
@@ -109,9 +91,9 @@ private:
         }
     }
 
-    const std::vector<Item> m_items;
+    const QVector<Item> m_items;
     uint32_t m_currentMask = 0;
     uint32_t m_resultMask = 0;
 
-    std::vector<QCheckBox*> m_checkBoxes;
+    QVector<QCheckBox*> m_checkBoxes;
 };
