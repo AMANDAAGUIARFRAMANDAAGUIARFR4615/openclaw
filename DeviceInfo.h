@@ -1,5 +1,6 @@
 #pragma once
 
+#include "global.h"
 #include <QJsonObject>
 #include <QString>
 #include <QGuiApplication>

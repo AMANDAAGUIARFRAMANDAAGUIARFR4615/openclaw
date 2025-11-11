@@ -28,6 +28,7 @@ link_directories(${PLATFORM_DIR}/libimobiledevice-glue/lib)
 qt_add_resources(RESOURCE_SOURCES icons.qrc)
 
 add_executable(${PROJECT_NAME}
+    global.h global.cpp
     main.cpp Tools.h
     Logger.h LogWindow.h
     EventHub.h EventHub.cpp
@@ -48,7 +49,6 @@ add_executable(${PROJECT_NAME}
     RemoteFileExplorer.h RemoteFileExplorer.cpp FileTransfer.h
     AppListWidget.h FileViewer.h Recorder.h
     qrcodegen.hpp qrcodegen.cpp
-    Statics.cpp
     ${RESOURCE_SOURCES}
 )
 
