@@ -12,6 +12,80 @@
 #include <QCheckBox>
 #include <QKeyEvent>
 #include <QSpacerItem>
+#include <QLayout>
+
+class FlowLayout : public QLayout {
+public:
+    FlowLayout(QWidget *parent = nullptr) : QLayout(parent), rowHeight(0) {}
+
+    ~FlowLayout() {
+        QLayoutItem *item;
+        while ((item = takeAt(0)))
+            delete item;
+    }
+
+    void addItem(QLayoutItem *item) override {
+        itemList.append(item);
+    }
+
+    int count() const override {
+        return itemList.count();
+    }
+
+    QLayoutItem *itemAt(int index) const override {
+        return itemList.value(index);
+    }
+
+    QSize minimumSize() const override {
+        QSize size;
+        for (int i = 0; i < itemList.size(); ++i) {
+            size = size.expandedTo(itemList.at(i)->minimumSize());
+        }
+        return size;
+    }
+
+    QSize sizeHint() const override {
+        QSize size;
+        for (int i = 0; i < itemList.size(); ++i) {
+            size = size.expandedTo(itemList.at(i)->sizeHint());
+        }
+        return size;
+    }
+
+    void setGeometry(const QRect &rect) override {
+        QLayout::setGeometry(rect);
+
+        int x = rect.x();
+        int y = rect.y();
+        int lineHeight = 0;
+        int rowWidth = rect.width();
+
+        for (int i = 0; i < itemList.size(); ++i) {
+            QLayoutItem *item = itemList.at(i);
+            item->setGeometry(QRect(QPoint(x, y), item->sizeHint()));
+
+            x += item->sizeHint().width();
+            lineHeight = std::max(lineHeight, item->sizeHint().height());
+
+            if (x + item->sizeHint().width() > rowWidth) {
+                x = rect.x();
+                y += lineHeight;
+                lineHeight = 0;
+            }
+        }
+    }
+
+    QLayoutItem *takeAt(int index) override {
+        if (index >= 0 && index < itemList.size())
+            return itemList.takeAt(index);
+
+        return nullptr;
+    }
+
+private:
+    QList<QLayoutItem *> itemList;
+    int rowHeight;
+};
 
 class DeviceManager : public QWidget {
     Q_OBJECT
@@ -56,7 +130,7 @@ public:
 
         mainLayout->addWidget(deviceTable);
 
-        for(int i = 0; i < 32; i++)
+        for (int i = 0; i < 32; i++)
             groups << QString("组%1").arg(i + 1);
 
         addDevice("设备A - 测试", "WIFI优先");
@@ -98,15 +172,15 @@ private:
         deviceTable->setCellWidget(row, 1, modeWidget);
 
         QWidget *groupWidget = new QWidget(this);
-        auto groupLayout = new QGridLayout(groupWidget);
+        auto groupLayout = new FlowLayout(groupWidget);
 
-        int cols = 8;
         for (int i = 0; i < groups.size(); ++i) {
             auto cb = new QCheckBox(groups[i], groupWidget);
             cb->setChecked(true);
-            groupLayout->addWidget(cb, i / cols, i % cols);
+            groupLayout->addWidget(cb);
         }
-        groupLayout->setAlignment(Qt::AlignLeft);
+
+        groupWidget->setLayout(groupLayout);
         deviceTable->setCellWidget(row, 2, groupWidget);
 
         deviceTable->resizeRowsToContents();
