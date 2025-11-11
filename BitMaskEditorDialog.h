@@ -4,34 +4,30 @@
 #include <QCheckBox>
 #include <QDialogButtonBox>
 #include <QGridLayout>
-#include <QLabel>
-#include <QPushButton>
 #include <QVBoxLayout>
 #include <QVector>
-#include <QString>
+#include <QPushButton>
 
 class BitMaskEditorDialog : public QDialog
 {
     Q_OBJECT
 public:
     struct Item {
-        int bit;        // 位索引 [0, 31]
-        QString name;   // 显示名称
+        int bit;
+        QString name;
     };
 
     explicit BitMaskEditorDialog(const QVector<Item>& items,
-                                 uint32_t currentMask,
+                                 quint32& maskRef,
                                  QWidget* parent = nullptr)
         : QDialog(parent)
         , m_items(items)
-        , m_currentMask(currentMask)
+        , m_maskRef(maskRef)
     {
-        setWindowTitle(tr(""));
+        setWindowTitle(tr("位掩码编辑器"));
         setModal(true);
         setupUi();
     }
-
-    uint32_t mask() const { return m_resultMask; }
 
 private:
     void setupUi()
@@ -47,10 +43,9 @@ private:
 
         for (size_t i = 0; i < m_items.size(); ++i) {
             const auto& item = m_items[i];
-            if (item.bit < 0 || item.bit > 31) continue;
 
             auto cb = new QCheckBox(item.name, this);
-            cb->setChecked(m_currentMask & (1U << item.bit));
+            cb->setChecked(m_maskRef & (1U << item.bit));
             cb->setStyleSheet("QCheckBox { spacing: 8px; }");
             m_checkBoxes.push_back(cb);
 
@@ -68,32 +63,24 @@ private:
 
         mainLayout->addWidget(buttonBox);
 
-        connect(buttonBox, &QDialogButtonBox::accepted, this, &BitMaskEditorDialog::accept);
-        connect(buttonBox, &QDialogButtonBox::rejected, this, &BitMaskEditorDialog::reject);
         connect(buttonBox, &QDialogButtonBox::accepted, this, &BitMaskEditorDialog::collectMask);
+        connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+        connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
     }
 
     void collectMask()
     {
-        m_resultMask = m_currentMask;
-
-        for (const auto& item : m_items) {
-            if (item.bit >= 0 && item.bit <= 31)
-                m_resultMask &= ~(1U << item.bit);
-        }
+        m_maskRef = 0;
 
         for (size_t i = 0; i < m_checkBoxes.size(); ++i) {
             if (m_checkBoxes[i]->isChecked()) {
                 int bit = m_items[i].bit;
-                if (bit >= 0 && bit <= 31)
-                    m_resultMask |= (1U << bit);
+                m_maskRef |= (1U << bit);
             }
         }
     }
 
     const QVector<Item> m_items;
-    uint32_t m_currentMask = 0;
-    uint32_t m_resultMask = 0;
-
+    uint32_t& m_maskRef;
     QVector<QCheckBox*> m_checkBoxes;
 };

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BitMaskEditorDialog.h"
 #include <QApplication>
 #include <QWidget>
 #include <QVBoxLayout>
@@ -90,12 +91,43 @@ public:
 
         mainLayout->addWidget(deviceTable);
 
-        // 初始化32个分组
-        for (int i = 0; i < 32; ++i) {
-            groupNames.append(QString("组%1").arg(i + 1, 2, 10, QChar('0')));
-        }
+        // ---------- 改动开始 ----------
+        // 初始化 32 个分组，长度不一，最长 20 个字符
+        groupNames.append("组01");
+        groupNames.append("组02-测试机");
+        groupNames.append("组03-生产设备");
+        groupNames.append("组04-名称最长20字符");
+        groupNames.append("组05-备用机");
+        groupNames.append("组06-实验室");
+        groupNames.append("组07-仓库");
+        groupNames.append("组08");
+        groupNames.append("组09-远程监控");
+        groupNames.append("组10-数据中心");
+        groupNames.append("组11");
+        groupNames.append("组12-办公区");
+        groupNames.append("组13-会议室");
+        groupNames.append("组14");
+        groupNames.append("组15-安全区域");
+        groupNames.append("组16-研发部");
+        groupNames.append("组17");
+        groupNames.append("组18-财务部");
+        groupNames.append("组19-人力资源");
+        groupNames.append("组20-行政部");
+        groupNames.append("组21-市场部");
+        groupNames.append("组22-客服部");
+        groupNames.append("组23-运维部");
+        groupNames.append("组24");
+        groupNames.append("组25-测试环境");
+        groupNames.append("组26-正式环境");
+        groupNames.append("组27-备份服务器");
+        groupNames.append("组28-监控中心");
+        groupNames.append("组29-物联网设备");
+        groupNames.append("组30-智能家居");
+        groupNames.append("组31-边缘计算节点");
+        groupNames.append("组32-超长名称测试分组名称最长20字符"); // 20 字符
+        // ---------- 改动结束 ----------
 
-        // 示例设备
+        // 示例设备（分组掩码保持原样，仅为演示）
         addDevice("设备A - 测试机", "WIFI优先", 0x0000000F);  // 前4组
         addDevice("设备B - 生产设备", "USB优先", 0xFFFFFFFF);   // 全部
         addDevice("设备C - 备用机", "仅WIFI", 0x00000101);     // 组1 和 组9
@@ -183,70 +215,15 @@ private:
 
     void showGroupEditor(int row, uint32_t currentMask, QLabel *label)
     {
-        QDialog dialog(this);
-        dialog.setWindowTitle("编辑设备分组");
-        dialog.setModal(true);
-
-        QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
-        dialogLayout->setContentsMargins(16, 16, 16, 16);
-        dialogLayout->setSpacing(12);
-
-        // 直接使用网格布局作为内容
-        QGridLayout *gridLayout = new QGridLayout;
-        gridLayout->setContentsMargins(0, 0, 0, 0);
-        gridLayout->setHorizontalSpacing(16);
-        gridLayout->setVerticalSpacing(10);
-
-        QVector<QCheckBox*> checkBoxes(32);
-        for (int i = 0; i < 32; ++i) {
-            QCheckBox *cb = new QCheckBox(groupNames[i]);
-            cb->setChecked(currentMask & (1U << i));
-            cb->setStyleSheet("QCheckBox { spacing: 8px; }");
-            checkBoxes[i] = cb;
-
-            int col = i % 4;
-            int r   = i / 4;
-            gridLayout->addWidget(cb, r, col);
+        QVector<BitMaskEditorDialog::Item> items;
+        QVector<int> bits = {0, 2, 5, 7, 15};
+        for (int bit : bits) {
+            items.append({ bit, groupNames.value(bit, tr("分组%1").arg(bit + 1)) });
         }
 
-        dialogLayout->addLayout(gridLayout);
+        BitMaskEditorDialog dlg(items, currentMask, this);
+        if (dlg.exec() != QDialog::Accepted) return;
 
-        // 按钮
-        QDialogButtonBox *buttonBox = new QDialogButtonBox(
-            QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
-        buttonBox->button(QDialogButtonBox::Ok)->setText("确定");
-        buttonBox->button(QDialogButtonBox::Cancel)->setText("取消");
-
-        QPushButton *okButton = buttonBox->button(QDialogButtonBox::Ok);
-        okButton->setStyleSheet(R"(
-            QPushButton {
-                background-color: #3498db;
-                color: white;
-                border: none;
-                padding: 8px 20px;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #2980b9; }
-            QPushButton:pressed { background-color: #1c6ba0; }
-        )");
-
-        dialogLayout->addWidget(buttonBox);
-
-        connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-        connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-
-        if (dialog.exec() != QDialog::Accepted)
-            return;
-
-        // 收集新掩码
-        uint32_t newMask = 0;
-        for (int i = 0; i < 32; ++i) {
-            if (checkBoxes[i]->isChecked())
-                newMask |= (1U << i);
-        }
-
-        // 更新界面
-        updateGroupLabel(label, newMask);
+        updateGroupLabel(label, currentMask);
     }
 };

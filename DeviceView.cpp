@@ -8,6 +8,7 @@
 #include "EventHub.h"
 #include "Recorder.h"
 #include "AppListWidget.h"
+#include "BitMaskEditorDialog.h"
 #include <QLayout>
 #include <QMenu>
 #include <QLabel>
@@ -181,6 +182,14 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     connect(menu.addAction(QIcon(":/icons/photo.png"), "清空相册"), &QAction::triggered, this, &DeviceView::onDeleteAllPhotosClicked);
     connect(menu.addAction(QIcon(":/icons/volume_up.png"), "音量+"), &QAction::triggered, this, &DeviceView::onVolumeUpClicked);
     connect(menu.addAction(QIcon(":/icons/volume_down.png"), "音量-"), &QAction::triggered, this, &DeviceView::onVolumeDownClicked);
+
+    connect(menu.addAction(QIcon(""), "修改分组"), &QAction::triggered, this, [=]() {
+        quint32 mask = 0xff;
+        BitMaskEditorDialog dialog(QVector<BitMaskEditorDialog::Item>(), mask, this);
+        if (dialog.exec() != QDialog::Accepted) return;
+
+        qDebugEx() << "################################" << mask;
+    });
 
     auto subMenu = menu.addMenu(QIcon(":/icons/high_quality.png"), "清晰度");
     connect(subMenu->addAction("低清"), &QAction::triggered, this, [this]() {
