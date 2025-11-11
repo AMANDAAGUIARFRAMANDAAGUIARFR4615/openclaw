@@ -1,0 +1,6 @@
+{
+    "files.exclude": {
+        "macOS": true,
+        "mingw64": true
+    }
+}
