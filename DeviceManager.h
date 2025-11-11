@@ -181,34 +181,18 @@ private:
         label->setProperty("mask", QVariant(mask));
     }
 
-    // 弹出分组编辑对话框
     void showGroupEditor(int row, uint32_t currentMask, QLabel *label)
     {
         QDialog dialog(this);
         dialog.setWindowTitle("编辑设备分组");
         dialog.setModal(true);
-        dialog.resize(520, 620);
 
         QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
         dialogLayout->setContentsMargins(16, 16, 16, 16);
         dialogLayout->setSpacing(12);
 
-        // 标题
-        QLabel *titleLabel = new QLabel("请选择该设备所属的分组：", &dialog);
-        QFont titleFont = titleLabel->font();
-        titleFont.setPointSize(12);
-        titleFont.setBold(true);
-        titleLabel->setFont(titleFont);
-        dialogLayout->addWidget(titleLabel);
-
-        // 滚动区域
-        QScrollArea *scrollArea = new QScrollArea(&dialog);
-        scrollArea->setWidgetResizable(true);
-        scrollArea->setFrameShape(QFrame::NoFrame);
-        scrollArea->setStyleSheet("background: transparent;");
-
-        QWidget *contentWidget = new QWidget;
-        QGridLayout *gridLayout = new QGridLayout(contentWidget);
+        // 直接使用网格布局作为内容
+        QGridLayout *gridLayout = new QGridLayout;
         gridLayout->setContentsMargins(0, 0, 0, 0);
         gridLayout->setHorizontalSpacing(16);
         gridLayout->setVerticalSpacing(10);
@@ -225,8 +209,7 @@ private:
             gridLayout->addWidget(cb, r, col);
         }
 
-        scrollArea->setWidget(contentWidget);
-        dialogLayout->addWidget(scrollArea);
+        dialogLayout->addLayout(gridLayout);
 
         // 按钮
         QDialogButtonBox *buttonBox = new QDialogButtonBox(
