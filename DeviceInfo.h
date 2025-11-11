@@ -52,6 +52,7 @@ public:
     int orientation;
     bool lockedStatus;
     float scaleFactor = 1;
+    quint32 groupMask = 0;
 
     QString uniqueName() const {
         int sameCount = 0;
