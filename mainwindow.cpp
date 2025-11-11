@@ -253,6 +253,8 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
     if (index < 0)
         return;
 
+    auto bit = tabs[index].bit;
+
     QMenu menu(this);
 
     connect(menu.addAction("重命名"), &QAction::triggered, this, [=]() {
@@ -271,7 +273,9 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
             tabs[index].name = newName.trimmed();
         }
     });
-    connect(menu.addAction("删除"), &QAction::triggered, this, [=]() {
+    auto deleteAction = menu.addAction("删除");
+    deleteAction->setEnabled(bit != 0);
+    connect(deleteAction, &QAction::triggered, this, [=]() {
         QWidget *page = tabWidget->widget(index);
         tabWidget->removeTab(index);
         delete page;
