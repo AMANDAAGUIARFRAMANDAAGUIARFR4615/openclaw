@@ -36,25 +36,9 @@ public:
         return itemList.value(index);
     }
 
-    QSize minimumSize() const override {
-        QSize size;
-        for (int i = 0; i < itemList.size(); ++i) {
-            size = size.expandedTo(itemList.at(i)->minimumSize());
-        }
-        return size;
-    }
-
     QSize sizeHint() const override {
-        QSize size;
-        for (int i = 0; i < itemList.size(); ++i) {
-            size = size.expandedTo(itemList.at(i)->sizeHint());
-        }
-        return size;
-    }
-
-    void setGeometry(const QRect &rect) override {
-        QLayout::setGeometry(rect);
-
+        auto rect = geometry();
+        
         int x = rect.x();
         int y = rect.y();
         int lineHeight = 0;
@@ -73,6 +57,8 @@ public:
                 lineHeight = 0;
             }
         }
+
+        return QSize(rowWidth, y + lineHeight);
     }
 
     QLayoutItem *takeAt(int index) override {
