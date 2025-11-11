@@ -34,7 +34,6 @@
 #include <QFormLayout>
 #include <QInputDialog>
 #include <QJsonObject>
-#include <QSettings>
 
 MainWindow::MainWindow(QWidget *parent) 
     : settings(QSettings("MyApp", "MainWindow", this)), 
