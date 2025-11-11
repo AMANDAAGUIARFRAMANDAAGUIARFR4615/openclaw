@@ -86,9 +86,8 @@ void DeviceConnection::close()
     }
     else
     {
-        auto manager = UsbDeviceManager::instance();
-        auto ctx = manager->getContext(this);
-        manager->disconnectDevice(QString("%1:%2").arg(ctx->udid).arg(ctx->port));
+        auto ctx = g_usbDeviceManager->getContext(this);
+        g_usbDeviceManager->disconnectDevice(QString("%1:%2").arg(ctx->udid).arg(ctx->port));
     }
 }
 

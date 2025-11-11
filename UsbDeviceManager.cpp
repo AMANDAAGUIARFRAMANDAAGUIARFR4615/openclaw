@@ -2,12 +2,6 @@
 #include <QJsonDocument>
 #include <magic_enum/magic_enum.hpp>
 
-Q_GLOBAL_STATIC(UsbDeviceManager, s_usbDeviceManager)
-
-UsbDeviceManager* UsbDeviceManager::instance() {
-    return s_usbDeviceManager;
-}
-
 UsbDeviceManager::UsbDeviceManager(QObject* parent)
     : QObject(parent)
 {

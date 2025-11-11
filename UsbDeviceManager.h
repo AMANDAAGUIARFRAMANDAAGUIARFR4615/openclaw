@@ -32,7 +32,6 @@ signals:
     void errorOccurred(DeviceConnection* conn, const QString& message);
 
 public:
-    // 公开构造给 Q_GLOBAL_STATIC 使用
     explicit UsbDeviceManager(QObject* parent = nullptr);
     ~UsbDeviceManager() override = default;
 
@@ -58,3 +57,5 @@ private:
 
     QFutureWatcher<QSet<QString>>* watcher = nullptr;
 };
+
+Q_GLOBAL_STATIC(UsbDeviceManager, g_usbDeviceManager)

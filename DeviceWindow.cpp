@@ -112,9 +112,8 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         {
             auto device = new LiveStreamDevice(nullptr, 0, this);
             
-            auto manager = UsbDeviceManager::instance();
-            auto ctx = manager->getContext(connection);
-            auto deviceConnection = manager->connectDevice(ctx->udid, port, [=](DeviceConnection* conn, const QByteArray& data){
+            auto ctx = g_usbDeviceManager->getContext(connection);
+            auto deviceConnection = g_usbDeviceManager->connectDevice(ctx->udid, port, [=](DeviceConnection* conn, const QByteArray& data){
                 device->appendData(data);
             });
 
