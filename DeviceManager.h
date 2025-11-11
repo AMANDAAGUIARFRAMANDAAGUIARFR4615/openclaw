@@ -16,7 +16,7 @@
 
 class FlowLayout : public QLayout {
 public:
-    FlowLayout(QWidget *parent = nullptr) : QLayout(parent), rowHeight(0) {}
+    FlowLayout(QWidget *parent = nullptr) : QLayout(parent) {}
 
     ~FlowLayout() {
         QLayoutItem *item;
@@ -84,7 +84,6 @@ public:
 
 private:
     QList<QLayoutItem *> itemList;
-    int rowHeight;
 };
 
 class DeviceManager : public QWidget {
