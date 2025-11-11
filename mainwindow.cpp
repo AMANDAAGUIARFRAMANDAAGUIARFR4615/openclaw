@@ -305,11 +305,12 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
 
 void MainWindow::loadTabs()
 {
-    int tabCount = settings.value("tabCount", 0).toInt();
-    for (int i = 0; i < tabCount; ++i) {
-        int tabId = settings.value(QString("tab%1/bit").arg(i)).toInt();
-        QString tabName = settings.value(QString("tab%1/name").arg(i)).toString();
-        addTab(tabId, tabName);
+    QVariantList tabList = settings.value("tabs").toList();
+    for (const auto& var : tabList) {
+        QVariantMap map = var.toMap();
+        int bit = map["bit"].toInt();
+        QString name = map["name"].toString();
+        addTab(bit, name);
     }
 
     if (tabWidget->count() == 0)
@@ -318,11 +319,14 @@ void MainWindow::loadTabs()
 
 void MainWindow::saveTabs()
 {
-    settings.setValue("tabCount", tabs.size());
-    for (int i = 0; i < tabs.size(); ++i) {
-        settings.setValue(QString("tab%1/bit").arg(i), tabs[i].bit);
-        settings.setValue(QString("tab%1/name").arg(i), tabs[i].name);
+    QVariantList tabList;
+    for (const auto& tab : tabs) {
+        QVariantMap map;
+        map["bit"] = tab.bit;
+        map["name"] = tab.name;
+        tabList.append(map);
     }
+    settings.setValue("tabs", tabList);
 }
 
 void MainWindow::addTab(int bit, const QString &name)
