@@ -33,7 +33,7 @@
 #include <QDesktopServices>
 
 RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath) 
-    : connection(connection), rootPath(rootPath), QWidget(), settings(QSettings("MyApp", "RemoteFileExplorer", this))
+    : connection(connection), rootPath(rootPath), QWidget()
 {
     QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(rootPath);
     instanceMap[key] = this;

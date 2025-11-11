@@ -10,7 +10,6 @@
 #include <QPainter>
 #include <QStatusBar>
 #include <QListWidget>
-#include <QSettings>
 #include <QTableWidget>
 
 class VirtualItemDelegate : public QStyledItemDelegate {
@@ -87,7 +86,6 @@ protected:
     QPoint m_dragStartPos;
 
     QListWidget* quickAccessList = nullptr;
-    QSettings settings;
     QStringList favorites;
 
     void loadFavorites();
