@@ -3,7 +3,7 @@
 #include "global.h"
 #include <QJsonObject>
 #include <QString>
-#include <QGuiApplication>
+#include <QApplication>
 #include <QScreen>
 #include <QList>
 
@@ -23,7 +23,7 @@ public:
         lockedStatus(json["lockedStatus"].toBool()),
         version(json["version"].toString()) {
             
-        auto screenSize = QGuiApplication::primaryScreen()->size();
+        auto screenSize = QApplication::primaryScreen()->size();
         auto maxWidth = screenSize.width() * 0.8;
         auto maxHeight = screenSize.height() * 0.8;
 

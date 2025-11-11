@@ -230,8 +230,8 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     transferLabel->setStyleSheet("font-weight: bold; padding: 4px;");
 
     transferTable = new QTableWidget(this);
-    transferTable->setColumnCount(8);
-    transferTable->setHorizontalHeaderLabels({ "名称", "状态", "进度", "大小", "本地路径", "远程路径", "平均速度", "用时" });
+    transferTable->setColumnCount(9);
+    transferTable->setHorizontalHeaderLabels({ "开始时间", "名称", "状态", "进度", "大小", "本地路径", "远程路径", "平均速度", "用时" });
     transferTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     transferTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     transferTable->setFixedHeight(180);
@@ -240,7 +240,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     connect(transferTable, &QTableWidget::customContextMenuRequested, this, &RemoteFileExplorer::showTableContextMenu);
 
     for (int i = 0; i < transferTable->columnCount(); i++) {
-        if (i == 0 || i == 4 || i == 5)
+        if (i == 5 || i == 6)
             transferTable->horizontalHeader()->setSectionResizeMode(i, QHeaderView::Stretch);
         else
             transferTable->horizontalHeader()->setSectionResizeMode(i, QHeaderView::ResizeToContents);
@@ -257,22 +257,23 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     QVariantList history = settings.value("transferHistory/" + connection->deviceInfo->deviceId).toList();
     for (const QVariant &v : history) {
         QJsonObject obj = v.toJsonObject();
-        int row = transferTable->rowCount();
+        int row = 0;
         transferTable->insertRow(row);
         QStringList texts = {
+            obj["startTime"].toString(),
             obj["name"].toString(),
             obj["type"].toInt() == 1 ? "接收完成" : "发送完成",
             "100%",
             obj["size"].toString(),
-            obj["local"].toString(),
-            obj["remote"].toString(),
+            obj["localPath"].toString(),
+            obj["remotePath"].toString(),
             obj["speed"].toString(),
-            obj["time"].toString()
+            obj["usedTime"].toString()
         };
         for (int col = 0; col < texts.size(); ++col) {
             auto item = new QTableWidgetItem(texts[col]);
             item->setTextAlignment(Qt::AlignCenter);
-            if (col == 0 || col == 4 || col == 5)
+            if (col == 1 || col == 5 || col == 6)
                 item->setToolTip(texts[col]);
             transferTable->setItem(row, col, item);
         }
@@ -507,10 +508,11 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
 {
     auto transfer = new FileTransfer(connection, type, localPath, size);
 
-    int row = transferTable->rowCount();
+    int row = 0;
     transferTable->insertRow(row);
 
     QStringList texts = {
+        QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"),
         QFileInfo(localPath).fileName(),
         type == 1 ? "接收中" : "发送中",
         "0%",
@@ -525,7 +527,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
         auto item = new QTableWidgetItem(texts[col]);
         item->setTextAlignment(Qt::AlignCenter);
 
-        if (col == 0 || col == 4 || col == 5)
+        if (col == 1 || col == 5 || col == 6)
             item->setToolTip(texts[col]);
 
         transferTable->setItem(row, col, item);
@@ -533,25 +535,26 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
 
     connect(transfer, &FileTransfer::progressUpdated, this, [=](quint64 transferred, quint64 total) {
         double percent = (double)transferred / total * 100;
-        transferTable->item(row, 2)->setText(QString::number(percent, 'f', 1) + "%");
-        transferTable->item(row, 3)->setText(QString("%1/%2").arg(Tools::formatByteSize(transferred)).arg(Tools::formatByteSize(total)));
+        transferTable->item(row, 3)->setText(QString::number(percent, 'f', 1) + "%");
+        transferTable->item(row, 4)->setText(QString("%1/%2").arg(Tools::formatByteSize(transferred)).arg(Tools::formatByteSize(total)));
 
         double elapsed = transfer->elapsedTime();
-        transferTable->item(row, 6)->setText(Tools::formatByteSize(transferred / elapsed) + "/s");
-        transferTable->item(row, 7)->setText(QString::number(elapsed, 'f', 2) + " s");
+        transferTable->item(row, 7)->setText(Tools::formatByteSize(transferred / elapsed) + "/s");
+        transferTable->item(row, 8)->setText(QString::number(elapsed, 'f', 2) + " s");
 
         if (transferred == total) {
             QString finalStatus = type == 1 ? "接收完成" : "发送完成";
-            transferTable->item(row, 1)->setText(finalStatus);
+            transferTable->item(row, 2)->setText(finalStatus);
 
             QJsonObject obj;
-            obj["name"]   = transferTable->item(row, 0)->text();
-            obj["type"]   = type;
-            obj["size"]   = transferTable->item(row, 3)->text();
-            obj["local"]  = localPath;
-            obj["remote"] = remotePath;
-            obj["speed"]  = transferTable->item(row, 6)->text();
-            obj["time"]   = transferTable->item(row, 7)->text();
+            obj["startTime"] = transferTable->item(row, 0)->text();
+            obj["name"] = transferTable->item(row, 1)->text();
+            obj["type"] = type;
+            obj["size"] = transferTable->item(row, 4)->text();
+            obj["localPath"] = localPath;
+            obj["remotePath"] = remotePath;
+            obj["speed"] = transferTable->item(row, 7)->text();
+            obj["usedTime"] = transferTable->item(row, 8)->text();
 
             QString key = "transferHistory/" + connection->deviceInfo->deviceId;
             QVariantList history = settings.value(key).toList();
@@ -775,8 +778,8 @@ void RemoteFileExplorer::showTableContextMenu(const QPoint &pos)
     if (!index.isValid())
         return;
 
-    QString localPath = transferTable->item(index.row(), 4)->text();
-    QString remotePath = transferTable->item(index.row(), 5)->text();
+    QString localPath = transferTable->item(index.row(), 5)->text();
+    QString remotePath = transferTable->item(index.row(), 6)->text();
 
     QMenu menu(this);
 

@@ -14,7 +14,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QFrame>
-#include <QGuiApplication>
+#include <QApplication>
 #include <QScreen>
 #include <QApplication>
 #include <QTabBar>
@@ -142,7 +142,7 @@ MainWindow::MainWindow(QWidget *parent)
     auto gridLayout = new QGridLayout(content);
     scrollArea->setWidget(content);
 
-    QSize screenSize = QGuiApplication::primaryScreen()->size();
+    QSize screenSize = QApplication::primaryScreen()->size();
     resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
 
     EventHub::on(this, "deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {

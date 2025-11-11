@@ -50,8 +50,8 @@ public:
 
         auto explorer = new RemoteFileExplorer(connection, rootPath);
         explorer->setWindowTitle(connection->displayName());
-        auto deviceInfo = connection->deviceInfo;
-        explorer->resize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
+        QSize screenSize = QApplication::primaryScreen()->size();
+        explorer->resize(screenSize.width() * 0.7, screenSize.height() * 0.7);
         explorer->show();
         return explorer;
     }

@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
         g_usbDeviceManager->start();
 
-        QObject::connect(&app, &QCoreApplication::aboutToQuit, [=]() {
+        QObject::connect(&app, &QApplication::aboutToQuit, [=]() {
             g_usbDeviceManager->stop();
         });
     // }
