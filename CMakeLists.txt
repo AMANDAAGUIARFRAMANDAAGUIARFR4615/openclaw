@@ -31,6 +31,7 @@ add_executable(${PROJECT_NAME}
     main.cpp Tools.h
     Logger.h LogWindow.h
     EventHub.h EventHub.cpp
+    BitMaskEditorDialog.h
     LiveStreamDevice.h
     MainWindow.h MainWindow.cpp
     VideoFrameWidget.h
