@@ -2,6 +2,7 @@
 
 #include "DeviceInfo.h"
 #include "DeviceConnection.h"
+#include "BitMaskEditorDialog.h"
 #include <QMainWindow>
 #include <QKeyEvent>
 #include <QDialog>
@@ -31,12 +32,7 @@ protected:
     void addTab(int id, const QString &name);
     int findAvailableTabId();
 
-    struct TabInfo {
-        int id;
-        QString name;
-    };
-
-    QList<TabInfo> tabs;
+    QList<BitMaskEditorDialog::Item> tabs;
 
     QList<QFrame*> devices;
 

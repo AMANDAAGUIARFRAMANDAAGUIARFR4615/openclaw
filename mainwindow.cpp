@@ -1,6 +1,5 @@
 #include "MainWindow.h"
 #include "Tools.h"
-#include "CenteredItemDelegate.h"
 #include "RemoteFileExplorer.h"
 #include "EventHub.h"
 #include "LiveStreamDevice.h"
@@ -179,7 +178,7 @@ void MainWindow::onTabMoved(int fromIndex, int toIndex)
     if (fromIndex == toIndex)
         return;
 
-    TabInfo movedTab = tabs.takeAt(fromIndex);
+    auto movedTab = tabs.takeAt(fromIndex);
     tabs.insert(toIndex, movedTab);
 
     saveTabs();
@@ -297,8 +296,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
         if (ok && !newName.trimmed().isEmpty()) {
             QWidget *newTab = new QWidget();
             tabWidget->insertTab(index + 1, newTab, newName.trimmed());
-            TabInfo newTabInfo{newId, newName.trimmed()};
-            tabs.insert(index + 1, newTabInfo);
+            tabs.insert(index + 1, BitMaskEditorDialog::Item({newId, newName.trimmed()}));
         }
     });
 
@@ -309,7 +307,7 @@ void MainWindow::loadTabs()
 {
     int tabCount = settings.value("tabCount", 0).toInt();
     for (int i = 0; i < tabCount; ++i) {
-        int tabId = settings.value(QString("tab%1/id").arg(i)).toInt();
+        int tabId = settings.value(QString("tab%1/bit").arg(i)).toInt();
         QString tabName = settings.value(QString("tab%1/name").arg(i)).toString();
         addTab(tabId, tabName);
     }
@@ -322,31 +320,28 @@ void MainWindow::saveTabs()
 {
     settings.setValue("tabCount", tabs.size());
     for (int i = 0; i < tabs.size(); ++i) {
-        settings.setValue(QString("tab%1/id").arg(i), tabs[i].id);
+        settings.setValue(QString("tab%1/bit").arg(i), tabs[i].bit);
         settings.setValue(QString("tab%1/name").arg(i), tabs[i].name);
     }
 }
 
-void MainWindow::addTab(int id, const QString &name)
+void MainWindow::addTab(int bit, const QString &name)
 {
-    qDebugEx() << "addTab" << id << name;
-
-    QWidget *newTab = id == 0 ? scrollArea : new QWidget();
+    QWidget *newTab = tabWidget->count() == 0 ? scrollArea : new QWidget();
     tabWidget->addTab(newTab, name);
-    TabInfo newTabInfo{id, name};
-    tabs.append(newTabInfo);
+    tabs.append(BitMaskEditorDialog::Item({bit, name}));
 }
 
 int MainWindow::findAvailableTabId()
 {
     QSet<int> usedIds;
     for (const auto &tab : tabs) {
-        usedIds.insert(tab.id);
+        usedIds.insert(tab.bit);
     }
 
-    for (int id = 0; id < 32; ++id) {
-        if (!usedIds.contains(id)) {
-            return id;
+    for (int bit = 0; bit < 32; ++bit) {
+        if (!usedIds.contains(bit)) {
+            return bit;
         }
     }
 
