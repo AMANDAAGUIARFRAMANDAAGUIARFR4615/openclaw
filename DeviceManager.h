@@ -26,6 +26,7 @@ public:
         auto *mainLayout = new QVBoxLayout(this);
 
         deviceTable = new QTableWidget(this);
+        deviceTable->setSelectionMode(QAbstractItemView::SingleSelection);
         deviceTable->setColumnCount(3);
         deviceTable->setHorizontalHeaderLabels({"设备名", "连接方式", "所属分组"});
         deviceTable->horizontalHeader()->setStretchLastSection(true);
