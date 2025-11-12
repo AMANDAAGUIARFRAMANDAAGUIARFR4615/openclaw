@@ -714,13 +714,11 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
                 list << getLocalPath(remotePath);
             }
 
-            QClipboard *clipboard = QApplication::clipboard();
-            clipboard->setText(list.join("\n"));
+            qApp->clipboard()->setText(list.join("\n"));
         });
 
         connect(menu.addAction("复制远程路径"), &QAction::triggered, this, [=]() {
-            QClipboard *clipboard = QApplication::clipboard();
-            clipboard->setText(paths.join("\n"));
+            qApp->clipboard()->setText(paths.join("\n"));
         });
 
         connect(menu.addAction("复制文件"), &QAction::triggered, this, [=]() {
@@ -736,8 +734,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             }
             mimeData->setUrls(urlList);
   
-            QClipboard *clipboard = QApplication::clipboard();
-            clipboard->setMimeData(mimeData, QClipboard::Clipboard);
+            qApp->clipboard()->setMimeData(mimeData, QClipboard::Clipboard);
 
             if (pendingDownloadPaths.count() == 0)
                 return;
@@ -793,13 +790,11 @@ void RemoteFileExplorer::showTableContextMenu(const QPoint &pos)
     });
 
     connect(menu.addAction("复制本地路径"), &QAction::triggered, [=]() {
-        QClipboard *clipboard = QApplication::clipboard();
-        clipboard->setText(localPath);
+        qApp->clipboard()->setText(localPath);
     });
 
     connect(menu.addAction("复制远程路径"), &QAction::triggered, [=]() {
-        QClipboard *clipboard = QApplication::clipboard();
-        clipboard->setText(remotePath);
+        qApp->clipboard()->setText(remotePath);
     });
 
     menu.exec(transferTable->viewport()->mapToGlobal(pos));

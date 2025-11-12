@@ -4,7 +4,6 @@
 #include "ToastWidget.h"
 #include <QVBoxLayout>
 #include <QLabel>
-#include <QApplication>
 #include <QClipboard>
 
 DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo): DeviceView(connection, deviceInfo)
@@ -34,11 +33,9 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
         auto type = data["type"].toInt();
         auto content = data["content"].toString();
 
-        QClipboard *clipboard = QApplication::clipboard();
-
         if (type == 1)
         {
-            clipboard->setText(content);
+            qApp->clipboard()->setText(content);
             return;
         }
         
@@ -53,7 +50,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
                 return;
             }
 
-            clipboard->setPixmap(QPixmap::fromImage(image));
+            qApp->clipboard()->setPixmap(QPixmap::fromImage(image));
             return;
         }
 
