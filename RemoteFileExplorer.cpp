@@ -254,7 +254,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
 
     setStatusMessage("就绪");
 
-    QVariantList history = settings.value("transferHistory/" + connection->deviceInfo->deviceId).toList();
+    QVariantList history = settings.value(connection->deviceInfo->deviceId + "/transferHistory").toList();
     for (const QVariant &v : history) {
         QJsonObject obj = v.toJsonObject();
         int row = 0;
@@ -556,7 +556,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
             obj["speed"] = transferTable->item(row, 7)->text();
             obj["usedTime"] = transferTable->item(row, 8)->text();
 
-            QString key = "transferHistory/" + connection->deviceInfo->deviceId;
+            QString key = connection->deviceInfo->deviceId + "/transferHistory";
             QVariantList history = settings.value(key).toList();
             history.append(obj);
             settings.setValue(key, history);

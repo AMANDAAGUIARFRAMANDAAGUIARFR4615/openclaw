@@ -18,6 +18,7 @@
 #include <QOperatingSystemVersion>
 #include <QApplication>
 #include <QAudioOutput>
+#include <QSlider>
 
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(connection, deviceInfo), deviceWidget(deviceWidget)
 {
@@ -81,6 +82,50 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         connection->send("audioPort", 0);
     });
     buttonLayout->addWidget(audioButton);
+
+    auto volumeSlider = new QSlider(Qt::Horizontal, this);
+    volumeSlider->setRange(0, 100);
+    volumeSlider->setStyleSheet(R"(
+        QSlider::groove:horizontal {
+            border-radius: 4px;
+            height: 8px;
+            background: #e0e0e0;
+        }
+        QSlider::handle:horizontal {
+            background: #4CAF50;
+            border: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            margin: -4px 0;
+        }
+        QSlider::handle:horizontal:hover {
+            background: #45a049;
+        }
+        QSlider::sub-page:horizontal {
+            background: #4CAF50;
+            border-radius: 4px;
+        }
+    )");
+
+    auto volumeLabel = new QLabel("音量：0%", this);
+    volumeLabel->setAlignment(Qt::AlignCenter);
+
+    auto volumeLayout = new QVBoxLayout();
+    volumeLayout->addWidget(volumeSlider);
+    volumeLayout->addWidget(volumeLabel);
+
+    const QString& volumeKey = deviceInfo->deviceId + "/volume";
+
+    connect(volumeSlider, &QSlider::valueChanged, this, [=](int value) {
+        volumeLabel->setText(QString("音量：%1%").arg(value));
+        // audioOutput->setVolume(value / 100.0f);
+        settings.setValue(volumeKey, value);
+    });
+
+    volumeSlider->setValue(settings.value(volumeKey, 0u).toInt());
+
+    buttonLayout->addLayout(volumeLayout);
 
     buttonLayout->addStretch();
 

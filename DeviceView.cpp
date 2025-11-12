@@ -188,8 +188,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         BitMaskEditorDialog dialog(g_mainWindow->getTabs(), deviceInfo->groupMask, this);
         if (dialog.exec() != QDialog::Accepted) return;
 
-        const QString key = QStringLiteral("groupMask_%1").arg(deviceInfo->deviceId);
-        settings.setValue(key, deviceInfo->groupMask);
+        settings.setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
     });
 
     auto subMenu = menu.addMenu(QIcon(":/icons/high_quality.png"), "清晰度");

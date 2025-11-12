@@ -32,8 +32,7 @@ public:
                                 maxHeight / static_cast<float>(screenHeight));
         }
 
-        const QString key = QStringLiteral("groupMask_%1").arg(deviceId);
-        groupMask = settings.value(key, 0u).toUInt();
+        groupMask = settings.value(deviceId + "/groupMask", 0u).toUInt();
 
         allDevices.append(this);
     }
