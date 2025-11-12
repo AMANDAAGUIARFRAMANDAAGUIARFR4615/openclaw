@@ -5,7 +5,7 @@
 #include <QDialogButtonBox>
 #include <QGridLayout>
 #include <QVBoxLayout>
-#include <QVector>
+#include <QList>
 #include <QPushButton>
 
 class BitMaskEditorDialog : public QDialog
@@ -17,7 +17,7 @@ public:
         QString name;
     };
 
-    explicit BitMaskEditorDialog(const QVector<Item>& items,
+    explicit BitMaskEditorDialog(const QList<Item>& items,
                                  quint32& maskRef,
                                  QWidget* parent = nullptr)
         : QDialog(parent)
@@ -41,7 +41,7 @@ private:
         grid->setVerticalSpacing(10);
         m_checkBoxes.reserve(m_items.size());
 
-        for (size_t i = 0; i < m_items.size(); ++i) {
+        for (int i = 0; i < m_items.size(); ++i) {
             const auto& item = m_items[i];
 
             auto cb = new QCheckBox(item.name, this);
@@ -72,7 +72,7 @@ private:
     {
         m_maskRef = 0;
 
-        for (size_t i = 0; i < m_checkBoxes.size(); ++i) {
+        for (int i = 0; i < m_checkBoxes.size(); ++i) {
             if (m_checkBoxes[i]->isChecked()) {
                 int bit = m_items[i].bit;
                 m_maskRef |= (1U << bit);
@@ -80,7 +80,7 @@ private:
         }
     }
 
-    const QVector<Item> m_items;
+    const QList<Item> m_items;
     quint32& m_maskRef;
-    QVector<QCheckBox*> m_checkBoxes;
+    QList<QCheckBox*> m_checkBoxes;
 };

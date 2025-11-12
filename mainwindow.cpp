@@ -8,6 +8,7 @@
 #include "DeviceWidget.h"
 #include "DeviceManager.h"
 #include "ToastWidget.h"
+#include "SettingsViewer.h"
 #include <QTabWidget>
 #include <QWidget>
 #include <QVBoxLayout>
@@ -35,9 +36,7 @@
 #include <QInputDialog>
 #include <QJsonObject>
 
-MainWindow::MainWindow(QWidget *parent) 
-    : settings(QSettings("MyApp", "MainWindow", this)), 
-      QMainWindow(parent)
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
     auto central = new QWidget(this);
     setCentralWidget(central);
@@ -69,16 +68,10 @@ MainWindow::MainWindow(QWidget *parent)
         QString text = item->text();
 
         if (text == "设备连接") {
-            if (qrDialog) {
-                qrDialog->activateWindow();
-                return;
-            }
-
             auto img = Tools::generateQrImage(QJsonDocument(TcpServer::getInstance()->getHostInfo()).toJson().toBase64());
 
-            qrDialog = new QDialog(this);
+            auto qrDialog = new QDialog(this);
             qrDialog->setWindowTitle("扫码连接");
-            qrDialog->setAttribute(Qt::WA_DeleteOnClose);
 
             QLabel *label = new QLabel(qrDialog);
             label->setPixmap(QPixmap::fromImage(img));
@@ -87,11 +80,7 @@ MainWindow::MainWindow(QWidget *parent)
             layout->addWidget(label);
             qrDialog->resize(img.width(), img.height());
 
-            connect(qrDialog, &QDialog::finished, this, [this]() {
-                qrDialog = nullptr;
-            });
-
-            qrDialog->show();
+            qrDialog->exec();
             return;
         }
 
@@ -116,6 +105,11 @@ MainWindow::MainWindow(QWidget *parent)
         if (text == "设备列表") {
             auto window = new DeviceManager();
             window->show();
+            return;
+        }
+
+        if (text == "关于") {
+            new SettingsViewer(&settings, this);
             return;
         }
     });

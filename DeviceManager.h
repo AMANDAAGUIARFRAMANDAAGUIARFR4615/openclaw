@@ -215,8 +215,8 @@ private:
 
     void showGroupEditor(int row, quint32 currentMask, QLabel *label)
     {
-        QVector<BitMaskEditorDialog::Item> items;
-        QVector<int> bits = {0, 2, 5, 7, 15};
+        QList<BitMaskEditorDialog::Item> items;
+        QList<int> bits = {0, 2, 5, 7, 15};
         for (int bit : bits) {
             items.append({ bit, groupNames.value(bit, tr("分组%1").arg(bit + 1)) });
         }

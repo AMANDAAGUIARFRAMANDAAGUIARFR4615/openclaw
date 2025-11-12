@@ -7,7 +7,6 @@
 #include <QKeyEvent>
 #include <QDialog>
 #include <QScrollArea>
-#include <QSettings>
 
 class MainWindow : public QMainWindow
 {
@@ -43,8 +42,6 @@ protected:
 
     QTabWidget* tabWidget;
     QScrollArea* scrollArea;
-    QDialog *qrDialog = nullptr;
-    QSettings settings;
 };
 
 Q_GLOBAL_STATIC(MainWindow, g_mainWindow)

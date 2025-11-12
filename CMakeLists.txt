@@ -29,7 +29,7 @@ qt_add_resources(RESOURCE_SOURCES icons.qrc)
 
 add_executable(${PROJECT_NAME}
     global.h global.cpp
-    main.cpp Tools.h
+    main.cpp Tools.h SettingsViewer.h
     Logger.h LogWindow.h
     EventHub.h EventHub.cpp
     BitMaskEditorDialog.h
