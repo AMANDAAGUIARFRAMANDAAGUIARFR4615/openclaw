@@ -33,8 +33,6 @@ private:
     void setupUi()
     {
         auto mainLayout = new QVBoxLayout(this);
-        mainLayout->setContentsMargins(16, 16, 16, 16);
-        mainLayout->setSpacing(12);
 
         auto grid = new QGridLayout;
         grid->setHorizontalSpacing(20);

@@ -29,8 +29,6 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     layout->setSpacing(0);
 
     auto buttonLayout = new QVBoxLayout();
-    buttonLayout->setContentsMargins(5, 5, 5, 5);
-    buttonLayout->setSpacing(5);
 
     auto homeScreenButton = new QPushButton(QIcon(":/icons/home.png"), "主屏幕", this);
     connect(homeScreenButton, &QPushButton::clicked, this, &DeviceView::onHomeScreenClicked);

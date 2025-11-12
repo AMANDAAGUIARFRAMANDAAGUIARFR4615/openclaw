@@ -17,7 +17,6 @@ public:
 
         QVBoxLayout *layout = new QVBoxLayout(this);
         layout->addWidget(label);
-        layout->setContentsMargins(20, 15, 20, 15);
 
         // 阴影效果
         auto shadow = new QGraphicsDropShadowEffect(this);

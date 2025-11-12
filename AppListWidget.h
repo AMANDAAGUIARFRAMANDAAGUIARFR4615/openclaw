@@ -48,7 +48,6 @@ private:
         table = new QTableWidget(this);
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
         mainLayout->addWidget(table);
-        mainLayout->setContentsMargins(10, 10, 10, 10);
         setLayout(mainLayout);
 
         setupTable();
@@ -143,8 +142,6 @@ private:
         // 操作按钮
         QWidget *actionWidget = new QWidget();
         QHBoxLayout *layout = new QHBoxLayout(actionWidget);
-        layout->setContentsMargins(4, 2, 4, 2);
-        layout->setSpacing(8);
         layout->setAlignment(Qt::AlignCenter);
 
         QString btnStyle = R"(
