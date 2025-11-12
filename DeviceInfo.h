@@ -41,6 +41,17 @@ public:
         allDevices.removeOne(this);
     }
 
+    static QList<DeviceInfo*> getDevices(quint32 mask)
+    {
+        QList<DeviceInfo*> result;
+        for (auto deviceInfo : allDevices) {
+            if (deviceInfo && (deviceInfo->groupMask & mask))
+                result.append(deviceInfo);
+        }
+
+        return result;
+    }
+
     const QString deviceId;
     const QString deviceName;
     const int videoPort;

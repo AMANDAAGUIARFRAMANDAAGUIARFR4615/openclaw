@@ -10,6 +10,7 @@
 #include <QMessageBox>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QClipboard>
 
 class SettingsViewer : public QDialog
 {
@@ -41,6 +42,7 @@ private:
         m_tree->header()->setSectionResizeMode(0, QHeaderView::Stretch);
         m_tree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
         m_tree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+        m_tree->header()->setStretchLastSection(false);
 
         m_tree->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(m_tree, &QTreeWidget::customContextMenuRequested, this, &SettingsViewer::showContextMenu);
@@ -147,8 +149,15 @@ private slots:
         if (type == "key" || type == "group")
             menu.addAction("删除", this, [this, item]() { deleteItem(item); });
 
-        if (!menu.actions().isEmpty())
-            menu.exec(m_tree->mapToGlobal(pos));
+        menu.addAction("复制键", this, [this, item]() {
+            qApp->clipboard()->setText(item->text(0));
+        });
+
+        menu.addAction("复制值", this, [this, item]() {
+            qApp->clipboard()->setText(item->text(1));
+        });
+
+        menu.exec(m_tree->mapToGlobal(pos));
     }
 
     void deleteItem(QTreeWidgetItem* item)
