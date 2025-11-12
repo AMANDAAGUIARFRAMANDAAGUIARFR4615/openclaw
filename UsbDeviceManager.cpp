@@ -59,6 +59,9 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
     if (idevice_connection_get_fd(ctx->connection, &fd) == IDEVICE_E_SUCCESS && fd >= 0) {
         ctx->notifier = new QSocketNotifier(fd, QSocketNotifier::Read, this);
         connect(ctx->notifier, &QSocketNotifier::activated, this, [=](int) {
+            if (!ctx->notifier)
+                return;
+                
             char buffer[1024 * 1024];
             quint32 bytes = 0;
             idevice_error_t err = idevice_connection_receive(ctx->connection, buffer, sizeof(buffer), &bytes);
@@ -75,14 +78,14 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
                 processBufferedData(key, ctx->handler);
             } else if (err != IDEVICE_E_SUCCESS) {
                 emit errorOccurred(ctx->handler, QString("%1端口通信错误: %2").arg(port).arg(magic_enum::enum_name(err)));
-                disconnectDevice(udid + ":" + port);
+                disconnectDevice(udid + ":" + QString::number(port));
             }
         });
     }
 
     devices.insert(key, ctx);
     connToContext.insert(ctx->handler, ctx);
-    qDebugEx() << "✅ 已连接设备:" << key;
+    qDebugEx() << "✅ 连接设备:" << key;
     emit deviceConnected(ctx->handler);
     return ctx->handler;
 }
@@ -94,8 +97,7 @@ void UsbDeviceManager::disconnectDevice(const QString& key) {
     qDebugEx() << "❌ 断开设备:" << key;
 
     if (ctx->notifier) {
-        ctx->notifier->setEnabled(false);
-        ctx->notifier->deleteLater();
+        delete ctx->notifier;
         ctx->notifier = nullptr;
     }
 
