@@ -75,7 +75,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
                 processBufferedData(key, ctx->handler);
             } else if (err != IDEVICE_E_SUCCESS) {
                 emit errorOccurred(ctx->handler, QString("%1端口通信错误: %2").arg(port).arg(magic_enum::enum_name(err)));
-                ctx->notifier->deleteLater();
+                disconnectDevice(udid + ":" + port);
             }
         });
     }
@@ -93,12 +93,18 @@ void UsbDeviceManager::disconnectDevice(const QString& key) {
     UsbDeviceContext* ctx = devices[key];
     qDebugEx() << "❌ 断开设备:" << key;
 
-    if (ctx->notifier) ctx->notifier->deleteLater();
+    if (ctx->notifier) {
+        ctx->notifier->setEnabled(false);
+        ctx->notifier->deleteLater();
+        ctx->notifier = nullptr;
+    }
+
     if (ctx->handler) {
         emit deviceDisconnected(ctx->handler);
         connToContext.remove(ctx->handler);
         delete ctx->handler;
     }
+
     if (ctx->connection) idevice_disconnect(ctx->connection);
     if (ctx->device) idevice_free(ctx->device);
 
