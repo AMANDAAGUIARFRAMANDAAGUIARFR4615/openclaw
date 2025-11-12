@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceView.h"
+#include <QAudioOutput>
 
 class DeviceWidget;
 
@@ -29,4 +30,6 @@ protected:
     int accumulatedDelta = 0;
     const int maxSteps = 5;
     int stepCount = 0;
+    QMediaPlayer* audioPlayer = nullptr;
+    DeviceConnection* audioDeviceConnection = nullptr;
 };

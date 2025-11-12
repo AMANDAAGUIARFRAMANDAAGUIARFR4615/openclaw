@@ -19,7 +19,7 @@ public:
     void stop();
 
     DeviceConnection* connectDevice(const QString& udid, uint16_t port, std::function<void(DeviceConnection*, const QByteArray&)> rawDataCallback = nullptr);
-    void disconnectDevice(const QString& key);
+    void disconnectDevice(DeviceConnection* conn);
 
     UsbDeviceContext* getContext(DeviceConnection* conn) const;
 
@@ -44,12 +44,11 @@ private slots:
 
 private:
     void pollDevices();
-    void processBufferedData(const QString& key, DeviceConnection* handler);
+    void processBufferedData(UsbDeviceContext* usbDeviceContext);
 
     QTimer* timer = nullptr;
-    QHash<QString, UsbDeviceContext*> devices;
     QSet<QString> previousDevices;
-    QHash<QString, QByteArray> deviceBuffers;
+    QHash<UsbDeviceContext*, QByteArray> deviceBuffers;
 
     QHash<DeviceConnection*, UsbDeviceContext*> connToContext;
 

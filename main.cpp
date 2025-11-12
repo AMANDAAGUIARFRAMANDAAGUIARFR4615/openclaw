@@ -75,11 +75,11 @@ int main(int argc, char *argv[])
 
     // if (QOperatingSystemVersion::current().type() == QOperatingSystemVersion::Windows || QOperatingSystemVersion::current().type() == QOperatingSystemVersion::MacOS) {
         QObject::connect(g_usbDeviceManager, &UsbDeviceManager::deviceConnected, [](DeviceConnection* conn){
-            qDebugEx() << "✅ 设备已连接:" << conn;
+            // qDebugEx() << "✅ 设备已连接:" << conn;
         });
 
         QObject::connect(g_usbDeviceManager, &UsbDeviceManager::deviceDisconnected, [](DeviceConnection* conn){
-            qDebugEx() << "❌ 设备已断开:" << conn;
+            // qDebugEx() << "❌ 设备已断开:" << conn;
         });
 
         QObject::connect(g_usbDeviceManager, &UsbDeviceManager::dataReceived, [](DeviceConnection* conn, const QJsonObject& data){

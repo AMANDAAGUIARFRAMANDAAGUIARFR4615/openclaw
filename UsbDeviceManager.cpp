@@ -22,13 +22,13 @@ void UsbDeviceManager::start() {
 
 void UsbDeviceManager::stop() {
     qDebugEx() << "🛑 停止设备管理器...";
-    for (const QString& key : devices.keys())
-        disconnectDevice(key);
+
+    for (const auto& it : connToContext) {
+        disconnectDevice(it->handler);
+    }
 }
 
 DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t port, std::function<void(DeviceConnection*, const QByteArray&)> rawDataCallback) {
-    QString key = udid + ":" + QString::number(port);
-
     UsbDeviceContext* ctx = new UsbDeviceContext();
     ctx->udid = udid;
     ctx->port = port;
@@ -74,45 +74,43 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
                     return;
                 }
 
-                deviceBuffers[key].append(data);
-                processBufferedData(key, ctx->handler);
+                deviceBuffers[ctx].append(data);
+                processBufferedData(ctx);
             } else if (err != IDEVICE_E_SUCCESS) {
                 emit errorOccurred(ctx->handler, QString("%1端口通信错误: %2").arg(port).arg(magic_enum::enum_name(err)));
-                disconnectDevice(udid + ":" + QString::number(port));
+                disconnectDevice(ctx->handler);
             }
         });
     }
 
-    devices.insert(key, ctx);
     connToContext.insert(ctx->handler, ctx);
-    qDebugEx() << "✅ 连接设备:" << key;
+    qDebugEx() << "✅ 连接设备:" << ctx << ctx->udid + ":" + QString::number(ctx->port);
     emit deviceConnected(ctx->handler);
     return ctx->handler;
 }
 
-void UsbDeviceManager::disconnectDevice(const QString& key) {
-    if (!devices.contains(key)) return;
+void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
+    if (!conn) return;
 
-    UsbDeviceContext* ctx = devices[key];
-    qDebugEx() << "❌ 断开设备:" << key;
+    UsbDeviceContext* ctx = connToContext.value(conn, nullptr);
+    if (!ctx) return;
+
+    emit deviceDisconnected(conn);
+    connToContext.remove(conn);
+    delete conn;
+
+    qDebugEx() << "❌ 断开设备:" << ctx << ctx->udid + ":" + QString::number(ctx->port);
 
     if (ctx->notifier) {
         delete ctx->notifier;
         ctx->notifier = nullptr;
     }
 
-    if (ctx->handler) {
-        emit deviceDisconnected(ctx->handler);
-        connToContext.remove(ctx->handler);
-        delete ctx->handler;
-    }
-
     if (ctx->connection) idevice_disconnect(ctx->connection);
     if (ctx->device) idevice_free(ctx->device);
 
+    deviceBuffers.remove(ctx);
     delete ctx;
-    devices.remove(key);
-    deviceBuffers.remove(key);
 }
 
 void UsbDeviceManager::pollDevices() {
@@ -156,10 +154,9 @@ void UsbDeviceManager::handlePollFinished() {
     for (const QString& udid : previousDevices) {
         if (!currentDevices.contains(udid)) {
             qDebugEx() << "❌ 检测到设备拔出:" << udid;
-            auto keys = devices.keys();
-            for (const QString& key : keys) {
-                if (key.startsWith(udid + ":"))
-                    disconnectDevice(key);
+            for (const auto& it : connToContext) {
+                if (it->udid == udid)
+                    disconnectDevice(it->handler);
             }
         }
     }
@@ -167,8 +164,8 @@ void UsbDeviceManager::handlePollFinished() {
     previousDevices = currentDevices;
 }
 
-void UsbDeviceManager::processBufferedData(const QString& key, DeviceConnection* handler) {
-    auto &buffer = deviceBuffers[key];
+void UsbDeviceManager::processBufferedData(UsbDeviceContext* ctx) {
+    auto &buffer = deviceBuffers[ctx];
 
     while (buffer.size() >= static_cast<int>(sizeof(quint64) + sizeof(quint32))) {
         auto identifier = *reinterpret_cast<const quint64*>(buffer.constData());
@@ -187,7 +184,7 @@ void UsbDeviceManager::processBufferedData(const QString& key, DeviceConnection*
         QJsonDocument doc = QJsonDocument::fromJson(jsonData);
 
         if (!doc.isNull()) {
-            emit dataReceived(handler, doc.object());
+            emit dataReceived(ctx->handler, doc.object());
         } else {
             qCriticalEx() << "JSON 解析失败，丢弃数据";
         }

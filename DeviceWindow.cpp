@@ -17,7 +17,6 @@
 #include <QPushButton>
 #include <QOperatingSystemVersion>
 #include <QApplication>
-#include <QAudioOutput>
 #include <QSlider>
 
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(connection, deviceInfo), deviceWidget(deviceWidget)
@@ -77,12 +76,6 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     connect(lockButton, &QPushButton::clicked, this, &DeviceView::onLockClicked);
     buttonLayout->addWidget(lockButton);
 
-    QPushButton *audioButton = new QPushButton(QIcon(":/icons/audio.png"), "音频", this);
-    connect(audioButton, &QPushButton::clicked, this, [=]() {
-        connection->send("audioPort", 0);
-    });
-    buttonLayout->addWidget(audioButton);
-
     auto volumeSlider = new QSlider(Qt::Horizontal, this);
     volumeSlider->setRange(0, 100);
     volumeSlider->setStyleSheet(R"(
@@ -119,8 +112,58 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 
     connect(volumeSlider, &QSlider::valueChanged, this, [=](int value) {
         volumeLabel->setText(QString("音量：%1%").arg(value));
-        // audioOutput->setVolume(value / 100.0f);
         settings.setValue(volumeKey, value);
+
+        if (value == 0) {
+            if (audioDeviceConnection) {
+                audioDeviceConnection->close();
+                audioDeviceConnection = nullptr;
+            }
+            
+            audioPlayer->stop();
+            delete audioPlayer->sourceDevice();
+            delete audioPlayer->audioOutput();
+            delete audioPlayer;
+            audioPlayer = nullptr;
+        }
+        else {
+            if (!audioPlayer) {
+                audioPlayer = new QMediaPlayer(this);
+                audioPlayer->setAudioOutput(new QAudioOutput(this));
+
+                connection->send("audioPort", 0);
+
+                EventHub::on(this, "audioPort", [this](const QJsonValue &data, DeviceConnection* connection) {
+                    if (this->connection != connection)
+                        return;
+
+                    EventHub::off(this, "audioPort");
+
+                    auto port = data["port"].toInt();
+                    qDebugEx() << "audioPort" << port;
+
+                    if (connection->type == DeviceConnection::Usb)
+                    {
+                        auto device = new LiveStreamDevice(nullptr, 0, this);
+                        audioPlayer->setSourceDevice(device);
+                        audioPlayer->play();
+                        
+                        auto ctx = g_usbDeviceManager->getContext(connection);
+                        audioDeviceConnection = g_usbDeviceManager->connectDevice(ctx->udid, port, [=](DeviceConnection* conn, const QByteArray& data) {
+                            if (audioPlayer)
+                                device->appendData(data);
+                        });
+                    }
+                    else
+                    {
+                        // auto device = new LiveStreamDevice(deviceInfo->localIp, deviceInfo->videoPort, this);
+                        // player->setSourceDevice(device);
+                    }
+                });
+            }
+
+            audioPlayer->audioOutput()->setVolume(value / 100.0f);
+        }
     });
 
     volumeSlider->setValue(settings.value(volumeKey, 0u).toInt());
@@ -148,37 +191,6 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
             overlay->hide();
     });
 
-    EventHub::on(this, "audioPort", [this](const QJsonValue &data, DeviceConnection* connection) {
-        if (this->connection != connection)
-            return;
-
-        auto port = data["port"].toInt();
-        if (connection->type == DeviceConnection::Usb)
-        {
-            auto device = new LiveStreamDevice(nullptr, 0, this);
-            
-            auto ctx = g_usbDeviceManager->getContext(connection);
-            auto deviceConnection = g_usbDeviceManager->connectDevice(ctx->udid, port, [=](DeviceConnection* conn, const QByteArray& data){
-                device->appendData(data);
-            });
-
-            auto player = new QMediaPlayer(this);
-            player->setAudioOutput(new QAudioOutput(this));
-
-            player->setSourceDevice(device);
-            player->play();
-
-            connect(this, &QObject::destroyed, [=]() {
-                deviceConnection->close();
-            });
-        }
-        else
-        {
-            // auto device = new LiveStreamDevice(deviceInfo->localIp, deviceInfo->videoPort, this);
-            // player->setSourceDevice(device);
-        }
-    });
-
     auto title = windowTitle(); 
 
     auto timer = new QTimer(this);
@@ -197,6 +209,19 @@ DeviceWindow::~DeviceWindow()
 {
     EventHub::off(this, "lockedStatus");
     EventHub::off(this, "audioPort");
+
+    if (audioDeviceConnection) {
+        audioDeviceConnection->close();
+        audioDeviceConnection = nullptr;
+    }
+    
+    if (audioPlayer) {
+        audioPlayer->stop();
+        delete audioPlayer->sourceDevice();
+        delete audioPlayer->audioOutput();
+        delete audioPlayer;
+        audioPlayer = nullptr;
+    }
 }
 
 QPoint DeviceWindow::getTransformedPosition(QPoint pos) {
