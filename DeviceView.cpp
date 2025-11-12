@@ -185,6 +185,11 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     connect(menu.addAction(QIcon(":/icons/volume_down.png"), "音量-"), &QAction::triggered, this, &DeviceView::onVolumeDownClicked);
 
     connect(menu.addAction(QIcon(":/icons/category.png"), "修改分组"), &QAction::triggered, this, [=]() {
+        if (g_mainWindow->getTabs().count() <= 1) {
+            new ToastWidget("请先右键点击标签页添加自定义分组", this);
+            return;
+        }
+
         BitMaskEditorDialog dialog(g_mainWindow->getTabs(), deviceInfo->groupMask, this);
         if (dialog.exec() != QDialog::Accepted) return;
 
