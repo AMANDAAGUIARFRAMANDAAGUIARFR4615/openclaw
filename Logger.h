@@ -1,6 +1,6 @@
 #pragma once
 
-#define __PROJECT_FILE__ (__FILE__ + sizeof(PROJECT_SOURCE_DIR))
+#define __PROJECT_FILE__ (reinterpret_cast<const char*>(__FILE__) + sizeof(PROJECT_SOURCE_DIR))
 
 #define LOG_PREFIX() QStringLiteral("%1:%2@%3 | ") \
     .arg(__PROJECT_FILE__) \
