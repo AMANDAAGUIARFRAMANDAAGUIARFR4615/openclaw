@@ -90,5 +90,5 @@ public:
     }
 
 private:
-    static QList<DeviceInfo*> allDevices;
+    inline static QList<DeviceInfo*> allDevices;
 };

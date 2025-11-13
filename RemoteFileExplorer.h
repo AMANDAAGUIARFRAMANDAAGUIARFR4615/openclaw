@@ -96,5 +96,5 @@ protected:
 
     QTableWidget* transferTable = nullptr;
 
-    static QMap<QString, RemoteFileExplorer*> instanceMap;
+    inline static QMap<QString, RemoteFileExplorer*> instanceMap;
 };

@@ -383,5 +383,5 @@ protected:
     QTreeView *treeView;
     QStatusBar *statusBar;
 
-    static QMap<DeviceConnection*, Recorder*> instanceMap;
+    inline static QMap<DeviceConnection*, Recorder*> instanceMap;
 };

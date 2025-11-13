@@ -256,5 +256,5 @@ private:
     DeviceConnection* const connection;
     QTableWidget *table;
 
-    static QMap<DeviceConnection*, AppListWidget*> instanceMap;
+    inline static QMap<DeviceConnection*, AppListWidget*> instanceMap;
 };
