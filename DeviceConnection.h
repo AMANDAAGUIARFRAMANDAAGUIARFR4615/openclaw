@@ -31,7 +31,7 @@ public:
 
     const Type type;
 
-    DeviceInfo* deviceInfo;
+    DeviceInfo* deviceInfo = nullptr;
 
     QString displayName() {
         return QString("%1 - %2").arg(deviceInfo->deviceName).arg(type == DeviceConnection::Usb ? "USB" : "WIFI");

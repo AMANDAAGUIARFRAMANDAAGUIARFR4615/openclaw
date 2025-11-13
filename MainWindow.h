@@ -16,7 +16,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    void addItem(DeviceConnection* connection = nullptr);
+    void addItem(DeviceConnection* connection);
     const QList<BitMaskEditorDialog::Item>& getTabs() const { return tabs; }
 
 protected:
