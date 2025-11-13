@@ -53,13 +53,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     sideBarList->setFixedWidth(80);
     sideBarList->setStyleSheet("QListWidget::item { margin-top: 10px; margin-bottom: 10px; }");
 
-    auto style = sideBarList->style();
-
-    sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_FileIcon)), "设备连接"));
-    sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_FileIcon)), "分组群控"));
-    sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_FileIcon)), "设备列表"));
-    sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_FileIcon)), "设置"));
-    sideBarList->addItem(new QListWidgetItem(QIcon(style->standardIcon(QStyle::SP_FileIcon)), "关于"));
+    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🔗"), "设备连接"));
+    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("👥"), "分组群控"));
+    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("📑"), "设备列表"));
+    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("⚙️"), "设置"));
+    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("💡"), "帮助"));
+    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("💬"), "客服"));
+    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🛠️"), "开发者"));
 
     for (int i = 0; i < sideBarList->count(); i++) {
         sideBarList->item(i)->setSizeHint(QSize(sideBarList->width() - 4, 70));
@@ -140,7 +140,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
         }
 
-        if (text == "关于") {
+        if (text == "开发者") {
             new SettingsViewer(&settings, this);
             return;
         }
