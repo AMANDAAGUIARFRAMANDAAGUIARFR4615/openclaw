@@ -36,8 +36,8 @@ protected:
 
     QHash<DeviceInfo*, QFrame*> deviceFrames;
 
-    const int minItemWidth = 150;
-    const int minItemHeight = minItemWidth * 1.7786;
+    const int frameItemWidth = 150;
+    const int frameItemHeight = frameItemWidth * 1.7786;
     const int spacing = 10;
 
     QTabWidget* tabWidget;

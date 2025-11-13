@@ -207,18 +207,18 @@ void MainWindow::relayoutDevices()
 
     int tabWidth = scrollArea->viewport()->width();
 
-    int totalCols = std::max(1, tabWidth / (minItemWidth + spacing));
+    int totalCols = std::max(1, tabWidth / (frameItemWidth + spacing));
 
     auto bit = tabs[tabWidget->currentIndex()].bit;
     auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
 
-    if (devices.count() >= totalCols)
+    if (devices.count() > totalCols)
         gridLayout->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
     else
         gridLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
     while (QLayoutItem* item = gridLayout->takeAt(0)) {
-        if (QWidget* w = item->widget())
+        if (auto w = item->widget())
             w->hide();
         delete item;
     }
@@ -227,10 +227,7 @@ void MainWindow::relayoutDevices()
         int row = i / totalCols;
         int col = i % totalCols;
 
-        QWidget* widget = deviceFrames[devices[i]];
-        if (!widget)
-            continue;
-
+        auto widget = deviceFrames[devices[i]];
         widget->show();
         gridLayout->addWidget(widget, row, col);
     }
@@ -260,8 +257,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     }
 
     auto frame = new QFrame(this);
-    frame->setMinimumSize(minItemWidth, minItemHeight);
-    frame->setMaximumSize(minItemWidth * 1.5, minItemHeight * 1.5);
+    frame->setFixedSize(frameItemWidth, frameItemHeight);
     frame->setFrameShape(QFrame::Box);
     auto frameLayout = new QVBoxLayout(frame);
     frameLayout->setContentsMargins(0, 0, 0, 0);
