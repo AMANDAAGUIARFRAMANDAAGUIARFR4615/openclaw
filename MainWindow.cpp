@@ -85,22 +85,51 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (text == "分组群控") {
+            auto send = [this](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
+                auto bit = tabs[tabWidget->currentIndex()].bit;
+                auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+
+                for (const auto& device : devices) {
+                    device->connection->send(event, jsonValue);
+                }
+            };
+
             QMenu menu(this);
-            menu.addAction("锁屏");
-            menu.addAction("解锁");
-            menu.addAction("重启");
-            menu.addAction("静音");
-            menu.addAction("取消静音");
-            menu.addAction("安装应用");
-            menu.addAction("投屏清晰度");
-            menu.addAction("屏幕截图");
+            menu.addAction("锁屏", [=]() {
+                send("changeScreenLockedStatus", 1);
+            });
+            menu.addAction("解锁", [=]() {
+                send("changeScreenLockedStatus", 0);
+            });
+            menu.addAction("重启", [=]() {
+                send("reboot");
+            });
+            menu.addAction("静音", [=]() {
+                
+            });
+            menu.addAction("取消静音", [=]() {
+                
+            });
+            menu.addAction("安装应用", [=]() {
+                
+            });
+            auto subMenu = menu.addMenu(QIcon(":/icons/high_quality.png"), "投屏清晰度");
+            subMenu->addAction("360p", [=]() {
+                send("setVideoQuality", 3);
+            });
+            subMenu->addAction("480p", [=]() {
+                send("setVideoQuality", 4);
+            });
+            subMenu->addAction("720p", [=]() {
+                send("setVideoQuality", 5);
+            });
+            menu.addAction("屏幕截图", [=]() {
+                
+            });
             menu.addAction("屏幕录制")->setEnabled(false);
             QRect rect = sideBarList->visualItemRect(item);
             QPoint globalPos = sideBarList->viewport()->mapToGlobal(rect.topRight());
-            auto action = menu.exec(globalPos);
-            if (action) {
-                action->text();
-            }
+            menu.exec(globalPos);
             return;
         }
 
