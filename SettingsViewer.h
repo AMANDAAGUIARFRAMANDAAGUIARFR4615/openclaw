@@ -147,13 +147,13 @@ private slots:
 
         QString type = item->data(0, Qt::UserRole).toString();
         if (type == "key" || type == "group")
-            menu.addAction("删除", this, [this, item]() { deleteItem(item); });
+            menu.addAction("删除", [this, item]() { deleteItem(item); });
 
-        menu.addAction("复制键", this, [this, item]() {
+        menu.addAction("复制键", [this, item]() {
             qApp->clipboard()->setText(item->text(0));
         });
 
-        menu.addAction("复制值", this, [this, item]() {
+        menu.addAction("复制值", [this, item]() {
             qApp->clipboard()->setText(item->text(1));
         });
 

@@ -17,11 +17,11 @@ public:
             return;
 
         m_socket = new QTcpSocket();
-        connect(m_socket, &QTcpSocket::errorOccurred, this, [=](QAbstractSocket::SocketError socketError) {
+        connect(m_socket, &QTcpSocket::errorOccurred, [=](QAbstractSocket::SocketError socketError) {
             qCriticalEx() << "errorOccurred" << socketError << m_socket->errorString();
         });
         
-        connect(m_socket, &QTcpSocket::readyRead, this, [=]() {
+        connect(m_socket, &QTcpSocket::readyRead, [=]() {
             appendData(m_socket->readAll());
         });
 

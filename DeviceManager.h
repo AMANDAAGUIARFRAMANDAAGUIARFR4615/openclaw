@@ -189,7 +189,7 @@ private:
         groupLabel->setProperty("row", row);
         groupLabel->setProperty("mask", QVariant(groupMask));
 
-        connect(groupLabel, &QLabel::linkActivated, this, [this, groupLabel]() {
+        connect(groupLabel, &QLabel::linkActivated, [this, groupLabel]() {
             int row = groupLabel->property("row").toInt();
             quint32 currentMask = groupLabel->property("mask").toUInt();
             showGroupEditor(row, currentMask, groupLabel);

@@ -124,7 +124,7 @@ private:
         treeView->setAcceptDrops(true);
         treeView->setDropIndicatorShown(true);
 
-        connect(infiniteCheckBox, &QCheckBox::toggled, this, [=](bool checked) {
+        connect(infiniteCheckBox, &QCheckBox::toggled, [=](bool checked) {
             playbackTimesSpinBox->setEnabled(!checked);
         });
 

@@ -17,14 +17,14 @@ public:
         mediaPlayer->setVideoOutput(this);
         mediaPlayer->setAudioOutput(nullptr);
 
-        connect(mediaPlayer, &QMediaPlayer::mediaStatusChanged, this, [this](QMediaPlayer::MediaStatus status) {
+        connect(mediaPlayer, &QMediaPlayer::mediaStatusChanged, [this](QMediaPlayer::MediaStatus status) {
             qDebugEx() << "Media Status Changed: " << status;
             if (status == QMediaPlayer::LoadedMedia) {
                 qDebugEx() << "播放...";
             }
         });
 
-        connect(mediaPlayer, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error error, const QString &errorString) {
+        connect(mediaPlayer, &QMediaPlayer::errorOccurred, [this](QMediaPlayer::Error error, const QString &errorString) {
             qCriticalEx() << "errorOccurred" << error << errorString;
         });
 

@@ -168,7 +168,7 @@ private:
             QPushButton *btn = new QPushButton(name);
             layout->addWidget(btn);
 
-            connect(btn, &QPushButton::clicked, this, [=](bool) {
+            connect(btn, &QPushButton::clicked, [=](bool) {
                 bool needConfirm = (name == "卸载" || name == "清除缓存" || name == "清除钥匙串");
                 if (needConfirm) {
                     QString msg = QString("确定要执行“%1”操作吗？").arg(name);

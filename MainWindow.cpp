@@ -64,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         sideBarList->item(i)->setSizeHint(QSize(sideBarList->width() - 4, 70));
     }
 
-    connect(sideBarList, &QListWidget::itemClicked, this, [=](QListWidgetItem *item) {
+    connect(sideBarList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
         QString text = item->text();
 
         if (text == "设备连接") {

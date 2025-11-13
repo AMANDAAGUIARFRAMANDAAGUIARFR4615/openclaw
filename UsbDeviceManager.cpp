@@ -58,7 +58,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
     int fd = -1;
     if (idevice_connection_get_fd(ctx->connection, &fd) == IDEVICE_E_SUCCESS && fd >= 0) {
         ctx->notifier = new QSocketNotifier(fd, QSocketNotifier::Read, this);
-        connect(ctx->notifier, &QSocketNotifier::activated, this, [=](int) {
+        connect(ctx->notifier, &QSocketNotifier::activated, [=](int) {
             if (!ctx->notifier)
                 return;
                 

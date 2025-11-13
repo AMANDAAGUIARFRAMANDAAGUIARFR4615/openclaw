@@ -108,7 +108,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 
     const QString& volumeKey = deviceInfo->deviceId + "/volume";
 
-    connect(volumeSlider, &QSlider::valueChanged, this, [=](int value) {
+    connect(volumeSlider, &QSlider::valueChanged, [=](int value) {
         volumeLabel->setText(QString("音量：%1%").arg(value));
         settings.setValue(volumeKey, value);
 
@@ -192,7 +192,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     auto title = windowTitle(); 
 
     auto timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, [=]() {
+    connect(timer, &QTimer::timeout, [=]() {
         if (!videoFrameWidget)
             return;
 
@@ -457,7 +457,7 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
     );
     QApplication::postEvent(this, pressEvent);
 
-    connect(wheelTimer, &QTimer::timeout, this, [=]() mutable {
+    connect(wheelTimer, &QTimer::timeout, [=]() mutable {
         int stepDelta;
 
         if (stepCount == maxSteps - 1)

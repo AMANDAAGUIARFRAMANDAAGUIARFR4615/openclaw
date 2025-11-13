@@ -50,7 +50,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     quickAccessList->setDragDropMode(QAbstractItemView::InternalMove);
 
     // 当顺序改变时，更新 favorites
-    connect(quickAccessList->model(), &QAbstractItemModel::rowsMoved, this, [this](const QModelIndex &, int, int, const QModelIndex &, int){
+    connect(quickAccessList->model(), &QAbstractItemModel::rowsMoved, [this](const QModelIndex &, int, int, const QModelIndex &, int){
         QStringList newOrder;
         for (int i = 1; i < quickAccessList->count(); i++) {
             newOrder.append(quickAccessList->item(i)->text());
@@ -76,7 +76,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
 
     QPushButton* addQuickAccessButton = new QPushButton("添加路径", this);
     layout->insertWidget(1, addQuickAccessButton);
-    connect(addQuickAccessButton, &QPushButton::clicked, this, [this]() {
+    connect(addQuickAccessButton, &QPushButton::clicked, [this]() {
         bool ok;
         QString path = QInputDialog::getText(this, "添加快速访问路径", "请输入路径:", QLineEdit::Normal, "", &ok);
         if (!ok)
@@ -218,7 +218,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     loadFavorites();
     refreshQuickAccessList();
 
-    connect(quickAccessList, &QListWidget::itemClicked, this, [this](QListWidgetItem* item) {
+    connect(quickAccessList, &QListWidget::itemClicked, [this](QListWidgetItem* item) {
         QString path = item->text();
         setStatusMessage("打开收藏路径: " + path);
         this->rootPath = path;
@@ -533,7 +533,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
         transferTable->setItem(row, col, item);
     }
 
-    connect(transfer, &FileTransfer::progressUpdated, this, [=](quint64 transferred, quint64 total) {
+    connect(transfer, &FileTransfer::progressUpdated, [=](quint64 transferred, quint64 total) {
         double percent = (double)transferred / total * 100;
         transferTable->item(row, 3)->setText(QString::number(percent, 'f', 1) + "%");
         transferTable->item(row, 4)->setText(QString("%1/%2").arg(Tools::formatByteSize(transferred)).arg(Tools::formatByteSize(total)));
@@ -662,7 +662,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
                 }
             });
 
-            menu.addAction("解压", this, [=]() {
+            menu.addAction("解压", [=]() {
                 for (const QString& remotePath : paths) {
                     if (remotePath.endsWith(".zip") || remotePath.endsWith(".rar"))
                         connection->send("extractArchive", remotePath);
