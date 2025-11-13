@@ -122,7 +122,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     tabBar->setToolTip("右键点击可修改分组");
     tabBar->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    connect(tabBar, &QTabBar::tabBarClicked, this, &MainWindow::onTabClicked);
+    connect(tabBar, &QTabBar::currentChanged, this, &MainWindow::onTabChanged);
     connect(tabBar, &QTabBar::tabMoved, this, &MainWindow::onTabMoved);
     connect(tabBar, &QWidget::customContextMenuRequested, this, &MainWindow::showTabBarContextMenu);
 
@@ -166,9 +166,9 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         QMainWindow::keyPressEvent(event);
 }
 
-void MainWindow::onTabClicked(int index)
+void MainWindow::onTabChanged(int index)
 {
-    qDebugEx() << "Clicked on Tab " << index + 1;
+    qDebugEx() << "onTabChanged" << index;
 }
 
 void MainWindow::onTabMoved(int fromIndex, int toIndex)
@@ -199,7 +199,8 @@ void MainWindow::relayoutDevices()
 
     int totalCols = std::max(1, tabWidth / (minItemWidth + spacing));
 
-    auto devices = DeviceInfo::getDevices(-1);
+    auto mask = this->tabs[tabWidget->currentIndex()].bit;
+    auto devices = DeviceInfo::getDevices(mask);
 
     if (devices.count() >= totalCols)
         gridLayout->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
