@@ -42,8 +42,7 @@ add_executable(${PROJECT_NAME}
     DeviceView.h DeviceView.cpp
     DeviceWidget.h DeviceWidget.cpp
     DeviceWindow.h DeviceWindow.cpp
-    TcpServer.h TcpServer.cpp
-    UdpTransport.h UdpTransport.cpp
+    TcpServer.h UdpTransport.h
     ToastWidget.h
     NetworkUtils.h
     RemoteFileExplorer.h RemoteFileExplorer.cpp FileTransfer.h
