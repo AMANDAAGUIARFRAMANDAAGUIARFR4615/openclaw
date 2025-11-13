@@ -44,6 +44,12 @@ private:
 
             auto cb = new QCheckBox(item.name, this);
             cb->setChecked(m_maskRef & (1U << item.bit));
+            
+            if (!item.bit) {
+                cb->setChecked(true);
+                cb->setEnabled(false);
+            }
+
             cb->setStyleSheet("QCheckBox { spacing: 8px; }");
             m_checkBoxes.push_back(cb);
 

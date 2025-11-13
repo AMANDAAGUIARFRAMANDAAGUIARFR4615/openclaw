@@ -169,6 +169,16 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 void MainWindow::onTabChanged(int index)
 {
     qDebugEx() << "onTabChanged" << index;
+
+    auto widget = tabWidget->currentWidget();
+    auto layout = widget->layout();
+    if (!layout) {
+        layout = new QVBoxLayout(widget);
+        layout->setContentsMargins(0, 0, 0, 0);
+    }
+    layout->addWidget(scrollArea);
+
+    relayoutDevices();
 }
 
 void MainWindow::onTabMoved(int fromIndex, int toIndex)
@@ -199,18 +209,30 @@ void MainWindow::relayoutDevices()
 
     int totalCols = std::max(1, tabWidth / (minItemWidth + spacing));
 
-    auto mask = this->tabs[tabWidget->currentIndex()].bit;
-    auto devices = DeviceInfo::getDevices(mask);
+    auto bit = tabs[tabWidget->currentIndex()].bit;
+    auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
 
     if (devices.count() >= totalCols)
         gridLayout->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
     else
         gridLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
+    while (QLayoutItem* item = gridLayout->takeAt(0)) {
+        if (QWidget* w = item->widget())
+            w->hide();
+        delete item;
+    }
+
     for (int i = 0; i < devices.size(); ++i) {
         int row = i / totalCols;
         int col = i % totalCols;
-        gridLayout->addWidget(deviceFrames[devices[i]], row, col);
+
+        QWidget* widget = deviceFrames[devices[i]];
+        if (!widget)
+            continue;
+
+        widget->show();
+        gridLayout->addWidget(widget, row, col);
     }
 }
 
@@ -301,9 +323,8 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
             &ok
         );
         if (ok && !newName.trimmed().isEmpty()) {
-            QWidget *newTab = new QWidget();
-            tabWidget->insertTab(index + 1, newTab, newName.trimmed());
             tabs.insert(index + 1, BitMaskEditorDialog::Item({newId, newName.trimmed()}));
+            tabWidget->insertTab(index + 1, new QWidget(), newName.trimmed());
         }
     });
 
@@ -322,8 +343,6 @@ void MainWindow::loadTabs()
 
     if (tabWidget->count() == 0)
         addTab(0, "默认分组");
-
-    onTabChanged(0);
 }
 
 void MainWindow::saveTabs()
@@ -340,8 +359,8 @@ void MainWindow::saveTabs()
 
 void MainWindow::addTab(int bit, const QString &name)
 {
-    tabWidget->addTab(new QWidget(), name);
     tabs.append(BitMaskEditorDialog::Item({bit, name}));
+    tabWidget->addTab(new QWidget(), name);
 }
 
 int MainWindow::findAvailableTabId()
