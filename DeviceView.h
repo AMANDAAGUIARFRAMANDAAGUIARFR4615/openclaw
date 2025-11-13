@@ -5,6 +5,7 @@
 #include "VideoFrameWidget.h"
 #include <QWidget>
 #include <QUrl>
+#include <QMenu>
 
 class QMediaPlayer;
 
@@ -36,7 +37,7 @@ public:
 
 protected:
     void addOverlay(const QString &text);
-
+    virtual QMenu* createContextMenu();
     void contextMenuEvent(QContextMenuEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;

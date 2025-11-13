@@ -497,3 +497,19 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
 
     wheelTimer->start(30);
 }
+
+QMenu* DeviceWindow::createContextMenu()
+{
+    auto menu = DeviceView::createContextMenu();
+    auto subMenu = menu->addMenu(QIcon(":/icons/high_quality.png"), "清晰度");
+    subMenu->addAction("360p", [this]() {
+        connection->send("setVideoQuality", 3);
+    });
+    subMenu->addAction("480p", [this]() {
+        connection->send("setVideoQuality", 4);
+    });
+    subMenu->addAction("720p", [this]() {
+        connection->send("setVideoQuality", 5);
+    });
+    return menu;
+}
