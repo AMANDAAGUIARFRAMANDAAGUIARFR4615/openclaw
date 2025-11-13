@@ -51,6 +51,13 @@ public:
     }
 
 protected:
+    void keyPressEvent(QKeyEvent *event) override {
+        if (event->key() == Qt::Key_Escape)
+            close();
+        else
+            QWidget::keyPressEvent(event);
+    }
+
     void contextMenuEvent(QContextMenuEvent *event) override
     {
         QMenu *menu = createStandardContextMenu();
@@ -77,7 +84,6 @@ protected:
         delete menu;
     }
 
-private:
     inline static LogWindow* logWindow;
     QFile logFile;
     bool showOnlyErrors = false;
