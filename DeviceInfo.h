@@ -7,10 +7,13 @@
 #include <QScreen>
 #include <QList>
 
+class DeviceConnection;
+
 class DeviceInfo {
 public:
-    explicit DeviceInfo(const QJsonObject &json)
-      : deviceId(json["deviceId"].toString()),
+    explicit DeviceInfo(DeviceConnection* const connection, const QJsonObject &json)
+      : connection(connection),
+        deviceId(json["deviceId"].toString()),
         deviceName(json["deviceName"].toString()),
         videoPort(json["videoPort"].toInt()),
         jbType(json["jbType"].toInt()),
@@ -55,6 +58,8 @@ public:
         return result;
     }
 
+    DeviceConnection* const connection;
+    
     const QString deviceId;
     const QString deviceName;
     const int videoPort;

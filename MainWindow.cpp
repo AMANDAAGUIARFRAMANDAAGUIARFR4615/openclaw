@@ -140,7 +140,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
 
     EventHub::on(this, "deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
-        connection->deviceInfo = new DeviceInfo(data.toObject());
+        connection->deviceInfo = new DeviceInfo(connection, data.toObject());
         addItem(connection);
     });
 
