@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include "Tools.h"
+#include "EmojiIconProvider.h"
 #include "RemoteFileExplorer.h"
 #include "EventHub.h"
 #include "LiveStreamDevice.h"
@@ -95,25 +96,25 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             };
 
             QMenu menu(this);
-            menu.addAction("锁屏", [=]() {
+            menu.addAction(EmojiIconProvider::createIcon("🔒"), "锁屏", [=]() {
                 send("changeScreenLockedStatus", 1);
             });
-            menu.addAction("解锁", [=]() {
+            menu.addAction(EmojiIconProvider::createIcon("🔓"), "解锁", [=]() {
                 send("changeScreenLockedStatus", 0);
             });
-            menu.addAction("重启", [=]() {
+            menu.addAction(EmojiIconProvider::createIcon("🔄"), "重启", [=]() {
                 send("reboot");
             });
-            menu.addAction("静音", [=]() {
+            menu.addAction(EmojiIconProvider::createIcon("🔇"), "静音", [=]() {
                 
             });
-            menu.addAction("取消静音", [=]() {
+            menu.addAction(EmojiIconProvider::createIcon("🔊"), "取消静音", [=]() {
                 
             });
-            menu.addAction("安装应用", [=]() {
+            menu.addAction(EmojiIconProvider::createIcon("📲"), "安装应用", [=]() {
                 
             });
-            auto subMenu = menu.addMenu(QIcon(":/icons/high_quality.png"), "投屏清晰度");
+            auto subMenu = menu.addMenu(EmojiIconProvider::createIcon("🎬"), "投屏清晰度");
             subMenu->addAction("360p", [=]() {
                 send("setVideoQuality", 3);
             });
@@ -123,10 +124,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             subMenu->addAction("720p", [=]() {
                 send("setVideoQuality", 5);
             });
-            menu.addAction("屏幕截图", [=]() {
+            menu.addAction(EmojiIconProvider::createIcon("📸"), "屏幕截图", [=]() {
                 
             });
-            menu.addAction("屏幕录制")->setEnabled(false);
+            menu.addAction(EmojiIconProvider::createIcon("🎥"), "屏幕录制")->setEnabled(false);
             QRect rect = sideBarList->visualItemRect(item);
             QPoint globalPos = sideBarList->viewport()->mapToGlobal(rect.topRight());
             menu.exec(globalPos);

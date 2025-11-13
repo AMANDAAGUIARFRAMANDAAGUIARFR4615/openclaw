@@ -10,6 +10,7 @@
 #include "AppListWidget.h"
 #include "BitMaskEditorDialog.h"
 #include "MainWindow.h"
+#include "EmojiIconProvider.h"
 #include <QLayout>
 #include <QLabel>
 #include <QMimeData>
@@ -167,23 +168,25 @@ QMenu* DeviceView::createContextMenu()
 {
     auto menu = new QMenu(this);
 
-    menu->addAction(QIcon(":/icons/home.png"), "主屏幕", this, &DeviceView::onHomeScreenClicked);
-    menu->addAction(QIcon(":/icons/kill.png"), "清理应用", this, &DeviceView::onKillAllAppClicked);
-    menu->addAction(QIcon(":/icons/file_move.png"), "文件管理", this, &DeviceView::onFileClicked);
-    menu->addAction(QIcon(":/icons/screen_record.png"), "录屏", this, &DeviceView::onRecorderClicked);
-    menu->addAction(QIcon(":/icons/apps.png"), "应用列表", this, &DeviceView::onAppListClicked);
+    menu->addAction(EmojiIconProvider::createIcon("🏠"), "主屏幕", this, &DeviceView::onHomeScreenClicked);
+    menu->addAction(EmojiIconProvider::createIcon("🧹"), "清理应用", this, &DeviceView::onKillAllAppClicked);
+    menu->addAction(EmojiIconProvider::createIcon("📁"), "文件管理", this, &DeviceView::onFileClicked);
+    menu->addAction(EmojiIconProvider::createIcon("⏺️"), "录屏", this, &DeviceView::onRecorderClicked);
+    menu->addAction(EmojiIconProvider::createIcon("📱"), "应用列表", this, &DeviceView::onAppListClicked);
+
+    menu->addAction(EmojiIconProvider::createIcon("📸"), "截图", this, &DeviceView::onScreenshotClicked);
+    menu->addAction(EmojiIconProvider::createIcon("🔄"), "重启", this, &DeviceView::onRebootClicked);
 
     if (deviceInfo->lockedStatus)
-        menu->addAction(QIcon(":/icons/unlock.png"), "解锁", this, &DeviceView::onUnlockClicked);
+        menu->addAction(EmojiIconProvider::createIcon("🔓"), "解锁", this, &DeviceView::onUnlockClicked);
     else
-        menu->addAction(QIcon(":/icons/lock.png"), "锁屏", this, &DeviceView::onLockClicked);
+        menu->addAction(EmojiIconProvider::createIcon("🔒"), "锁屏", this, &DeviceView::onLockClicked);
 
-    menu->addAction(QIcon(":/icons/restart.png"), "重启", this, &DeviceView::onRebootClicked);
-    menu->addAction(QIcon(":/icons/photo.png"), "清空相册", this, &DeviceView::onDeleteAllPhotosClicked);
-    menu->addAction(QIcon(":/icons/volume_up.png"), "音量+", this, &DeviceView::onVolumeUpClicked);
-    menu->addAction(QIcon(":/icons/volume_down.png"), "音量-", this, &DeviceView::onVolumeDownClicked);
+    menu->addAction(EmojiIconProvider::createIcon("🗑️"), "清空相册", this, &DeviceView::onDeleteAllPhotosClicked);
+    menu->addAction(EmojiIconProvider::createIcon("🔊"), "音量+", this, &DeviceView::onVolumeUpClicked);
+    menu->addAction(EmojiIconProvider::createIcon("🔈"), "音量-", this, &DeviceView::onVolumeDownClicked);
 
-    menu->addAction(QIcon(":/icons/category.png"), "修改分组", [=]() {
+    menu->addAction(EmojiIconProvider::createIcon("🔧"), "修改分组", [=]() {
         if (g_mainWindow->getTabs().count() <= 1) {
             new ToastWidget("请先右键点击标签页添加自定义分组", this);
             return;

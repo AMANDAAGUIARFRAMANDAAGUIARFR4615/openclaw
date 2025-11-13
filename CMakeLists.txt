@@ -28,8 +28,9 @@ link_directories(${PLATFORM_DIR}/libimobiledevice-glue/lib)
 qt_add_resources(RESOURCE_SOURCES icons.qrc)
 
 add_executable(${PROJECT_NAME}
+    main.cpp
     global.h global.cpp
-    main.cpp Tools.h SettingsViewer.h
+    EmojiIconProvider.h Tools.h SettingsViewer.h
     Logger.h LogWindow.h
     EventHub.h EventHub.cpp
     BitMaskEditorDialog.h
