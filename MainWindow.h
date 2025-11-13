@@ -34,7 +34,7 @@ protected:
 
     QList<BitMaskEditorDialog::Item> tabs;
 
-    QList<QFrame*> devices;
+    QHash<DeviceInfo*, QFrame*> deviceFrames;
 
     const int minItemWidth = 150;
     const int minItemHeight = minItemWidth * 1.7786;

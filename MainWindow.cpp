@@ -199,6 +199,8 @@ void MainWindow::relayoutDevices()
 
     int totalCols = std::max(1, tabWidth / (minItemWidth + spacing));
 
+    auto devices = DeviceInfo::getDevices(-1);
+
     if (devices.count() >= totalCols)
         gridLayout->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
     else
@@ -207,7 +209,7 @@ void MainWindow::relayoutDevices()
     for (int i = 0; i < devices.size(); ++i) {
         int row = i / totalCols;
         int col = i % totalCols;
-        gridLayout->addWidget(devices[i], row, col);
+        gridLayout->addWidget(deviceFrames[devices[i]], row, col);
     }
 }
 
@@ -242,7 +244,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     frameLayout->setContentsMargins(0, 0, 0, 0);
     frameLayout->addWidget(player);
 
-    devices.append(frame);
+    deviceFrames.insert(deviceInfo, frame);
 
     relayoutDevices();
 }

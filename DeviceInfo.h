@@ -45,7 +45,7 @@ public:
     {
         QList<DeviceInfo*> result;
         for (auto deviceInfo : allDevices) {
-            if (deviceInfo && (deviceInfo->groupMask & mask))
+            if (deviceInfo->groupMask & mask)
                 result.append(deviceInfo);
         }
 
