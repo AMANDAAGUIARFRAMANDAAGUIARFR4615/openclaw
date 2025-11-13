@@ -31,8 +31,7 @@ add_executable(${PROJECT_NAME}
     main.cpp
     global.h global.cpp
     EmojiIconProvider.h Tools.h SettingsViewer.h
-    Logger.h LogWindow.h
-    EventHub.h EventHub.cpp
+    Logger.h LogWindow.h EventHub.h
     BitMaskEditorDialog.h
     LiveStreamDevice.h
     MainWindow.h MainWindow.cpp
