@@ -628,16 +628,16 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         if (isDir)
         {
             if (favorites.contains(remotePath)) {
-                connect(menu.addAction("从快速访问移除"), &QAction::triggered, this, [=]() {
+                menu.addAction("从快速访问移除", [=]() {
                     removeFromFavorites(remotePath);
                 });
             } else {
-                connect(menu.addAction("添加到快速访问"), &QAction::triggered, this, [=]() {
+                menu.addAction("添加到快速访问", [=]() {
                     addToFavorites(remotePath);
                 });
             }
 
-            connect(menu.addAction("压缩"), &QAction::triggered, this, [=]() {
+            menu.addAction("压缩", [=]() {
                 for (const QString& remotePath : paths) {
                     connection->send("compressArchive", remotePath);
                 }
@@ -645,8 +645,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         }
         else
         {
-            QAction *viewAction = menu.addAction("查看");
-            connect(viewAction, &QAction::triggered, this, [=]() {
+            menu.addAction("查看", [=]() {
                 if (!QFile::exists(localPath))
                 {
                     new ToastWidget("文件不存在，请先下载", this);
@@ -654,17 +653,16 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
                 }
 
                 new FileViewer(localPath, this);
-            });
-            viewAction->setEnabled(selectedCount == 1);
+            })->setEnabled(selectedCount == 1);
 
-            connect(menu.addAction("下载"), &QAction::triggered, this, [=]() {
+            menu.addAction("下载", [=]() {
                 for (const QString& remotePath : paths) {
                     auto localPath = getLocalPath(remotePath);
                     startFileTransfer(1, localPath, remotePath, 0);
                 }
             });
 
-            connect(menu.addAction("解压"), &QAction::triggered, this, [=]() {
+            menu.addAction("解压", this, [=]() {
                 for (const QString& remotePath : paths) {
                     if (remotePath.endsWith(".zip") || remotePath.endsWith(".rar"))
                         connection->send("extractArchive", remotePath);
@@ -672,8 +670,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             });
         }
 
-        QAction *renameAction = menu.addAction("重命名");
-        connect(renameAction, &QAction::triggered, this, [=]() {
+        menu.addAction("重命名", [=]() {
             bool ok;
             auto name = QInputDialog::getText(this, "重命名", "请输入名称:", QLineEdit::Normal, "", &ok);
             
@@ -687,10 +684,9 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             dataObject["toPath"] = name;
 
             connection->send("renameItem", dataObject);
-        });
-        renameAction->setEnabled(selectedCount == 1);
+        })->setEnabled(selectedCount == 1);
 
-        connect(menu.addAction("删除"), &QAction::triggered, this, [=]() {
+        menu.addAction("删除", [=]() {
             auto description = paths.count() > 1 ? QString("%1项").arg(paths.count()) : QFileInfo(remotePath).fileName();
             auto reply = QMessageBox::question(this, "确认删除", "你确定要删除【" + description + "】吗？", QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
@@ -704,11 +700,11 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             }
         });
 
-        connect(menu.addAction("在文件资源管理器中显示"), &QAction::triggered, [=]() {
+        menu.addAction("在文件资源管理器中显示", [=]() {
             Tools::showInFileExplorer(localPath);
         });
 
-        connect(menu.addAction("复制本地路径"), &QAction::triggered, this, [=]() {
+        menu.addAction("复制本地路径", [=]() {
             QStringList list;
             for (const QString& remotePath : paths) {
                 list << getLocalPath(remotePath);
@@ -717,11 +713,11 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             qApp->clipboard()->setText(list.join("\n"));
         });
 
-        connect(menu.addAction("复制远程路径"), &QAction::triggered, this, [=]() {
+        menu.addAction("复制远程路径", [=]() {
             qApp->clipboard()->setText(paths.join("\n"));
         });
 
-        connect(menu.addAction("复制文件"), &QAction::triggered, this, [=]() {
+        menu.addAction("复制文件", [=]() {
             QMimeData *mimeData = new QMimeData();
             QList<QUrl> urlList;
             QList<QString> pendingDownloadPaths;
@@ -751,8 +747,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         });
     }
 
-    QAction *newFolderAction = menu.addAction("新建文件夹");
-    connect(newFolderAction, &QAction::triggered, [=]() {
+    menu.addAction("新建文件夹", [=]() {
         bool ok;
         auto name = QInputDialog::getText(this, "新建文件夹", "请输入名称:", QLineEdit::Normal, "", &ok);
         
@@ -763,8 +758,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
 
         auto dir = isDir ? remotePath : remotePath.left(remotePath.lastIndexOf('/'));
         connection->send("createDirectory", dir + "/" + name);
-    });
-    newFolderAction->setEnabled(selectedCount == 1 || (selectedCount == 0 && rootPath != "/"));
+    })->setEnabled(selectedCount == 1 || (selectedCount == 0 && rootPath != "/"));
 
     menu.exec(treeView->viewport()->mapToGlobal(pos));
 }
@@ -780,20 +774,19 @@ void RemoteFileExplorer::showTableContextMenu(const QPoint &pos)
 
     QMenu menu(this);
 
-    QAction *viewAction = menu.addAction("查看");
-    connect(viewAction, &QAction::triggered, [=]() {
+    menu.addAction("查看", [=]() {
         new FileViewer(localPath, this);
     });
 
-    connect(menu.addAction("在文件资源管理器中显示"), &QAction::triggered, [=]() {
+    menu.addAction("在文件资源管理器中显示", [=]() {
         Tools::showInFileExplorer(localPath);
     });
 
-    connect(menu.addAction("复制本地路径"), &QAction::triggered, [=]() {
+    menu.addAction("复制本地路径", [=]() {
         qApp->clipboard()->setText(localPath);
     });
 
-    connect(menu.addAction("复制远程路径"), &QAction::triggered, [=]() {
+    menu.addAction("复制远程路径", [=]() {
         qApp->clipboard()->setText(remotePath);
     });
 

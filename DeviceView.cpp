@@ -168,23 +168,23 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu menu(this);
 
-    connect(menu.addAction(QIcon(":/icons/home.png"), "主屏幕"), &QAction::triggered, this, &DeviceView::onHomeScreenClicked);
-    connect(menu.addAction(QIcon(":/icons/kill.png"), "清理应用"), &QAction::triggered, this, &DeviceView::onKillAllAppClicked);
-    connect(menu.addAction(QIcon(":/icons/file_move.png"), "文件管理"), &QAction::triggered, this, &DeviceView::onFileClicked);
-    connect(menu.addAction(QIcon(":/icons/screen_record.png"), "录屏"), &QAction::triggered, this, &DeviceView::onRecorderClicked);
-    connect(menu.addAction(QIcon(":/icons/apps.png"), "应用列表"), &QAction::triggered, this, &DeviceView::onAppListClicked);
+    menu.addAction(QIcon(":/icons/home.png"), "主屏幕", this, &DeviceView::onHomeScreenClicked);
+    menu.addAction(QIcon(":/icons/kill.png"), "清理应用", this, &DeviceView::onKillAllAppClicked);
+    menu.addAction(QIcon(":/icons/file_move.png"), "文件管理", this, &DeviceView::onFileClicked);
+    menu.addAction(QIcon(":/icons/screen_record.png"), "录屏", this, &DeviceView::onRecorderClicked);
+    menu.addAction(QIcon(":/icons/apps.png"), "应用列表", this, &DeviceView::onAppListClicked);
 
     if (deviceInfo->lockedStatus)
-        connect(menu.addAction(QIcon(":/icons/unlock.png"), "解锁"), &QAction::triggered, this, &DeviceView::onUnlockClicked);
+        menu.addAction(QIcon(":/icons/unlock.png"), "解锁", this, &DeviceView::onUnlockClicked);
     else
-        connect(menu.addAction(QIcon(":/icons/lock.png"), "锁屏"), &QAction::triggered, this, &DeviceView::onLockClicked);
+        menu.addAction(QIcon(":/icons/lock.png"), "锁屏", this, &DeviceView::onLockClicked);
 
-    connect(menu.addAction(QIcon(":/icons/restart.png"), "重启"), &QAction::triggered, this, &DeviceView::onRebootClicked);
-    connect(menu.addAction(QIcon(":/icons/photo.png"), "清空相册"), &QAction::triggered, this, &DeviceView::onDeleteAllPhotosClicked);
-    connect(menu.addAction(QIcon(":/icons/volume_up.png"), "音量+"), &QAction::triggered, this, &DeviceView::onVolumeUpClicked);
-    connect(menu.addAction(QIcon(":/icons/volume_down.png"), "音量-"), &QAction::triggered, this, &DeviceView::onVolumeDownClicked);
+    menu.addAction(QIcon(":/icons/restart.png"), "重启", this, &DeviceView::onRebootClicked);
+    menu.addAction(QIcon(":/icons/photo.png"), "清空相册", this, &DeviceView::onDeleteAllPhotosClicked);
+    menu.addAction(QIcon(":/icons/volume_up.png"), "音量+", this, &DeviceView::onVolumeUpClicked);
+    menu.addAction(QIcon(":/icons/volume_down.png"), "音量-", this, &DeviceView::onVolumeDownClicked);
 
-    connect(menu.addAction(QIcon(":/icons/category.png"), "修改分组"), &QAction::triggered, this, [=]() {
+    menu.addAction(QIcon(":/icons/category.png"), "修改分组", [=]() {
         if (g_mainWindow->getTabs().count() <= 1) {
             new ToastWidget("请先右键点击标签页添加自定义分组", this);
             return;
@@ -197,16 +197,16 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     });
 
     auto subMenu = menu.addMenu(QIcon(":/icons/high_quality.png"), "清晰度");
-    connect(subMenu->addAction("低清"), &QAction::triggered, this, [this]() {
+    subMenu->addAction("低清", [this]() {
         connection->send("setVideoQuality", 1);
     });
-    connect(subMenu->addAction("标清"), &QAction::triggered, this, [this]() {
+    subMenu->addAction("标清", [this]() {
         connection->send("setVideoQuality", 2);
     });
-    connect(subMenu->addAction("高清"), &QAction::triggered, this, [this]() {
+    subMenu->addAction("高清", [this]() {
         connection->send("setVideoQuality", 3);
     });
-    connect(subMenu->addAction("超清"), &QAction::triggered, this, [this]() {
+    subMenu->addAction("超清", [this]() {
         connection->send("setVideoQuality", 4);
     });
 

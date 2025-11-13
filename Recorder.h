@@ -265,31 +265,27 @@ protected:
             path = recorderPath;
         }
 
-        QMenu *menu = new QMenu(treeView);
+        QMenu menu(treeView);
 
         if (index.isValid()) {
             if (!fileInfo.isDir()) {
-                QAction *editAction = menu->addAction("编辑");
-                connect(editAction, &QAction::triggered, [=]() {
+                menu.addAction("编辑", [=]() {
                     new FileViewer(path, this);
                 });
 
                 if (!isPlaying) {
-                    QAction *playAction = menu->addAction("开始回放");
-                    connect(playAction, &QAction::triggered, [=]() {
+                    menu.addAction("开始回放", [=]() {
                         onStartPlayback(path);
                     });
                 }
                 else {
-                    QAction *stopAction = menu->addAction("停止回放");
-                    connect(stopAction, &QAction::triggered, [this]() {
+                    menu.addAction("停止回放", [this]() {
                         onStopPlayback();
                     });
                 }
             }
 
-            QAction *renameAction = menu->addAction("重命名");
-            connect(renameAction, &QAction::triggered, [=]() {
+            menu.addAction("重命名", [=]() {
                 bool ok;
                 QString newName = QInputDialog::getText(nullptr, "重命名",
                                                         "新名称：", QLineEdit::Normal,
@@ -302,8 +298,7 @@ protected:
                 }
             });
 
-            QAction *deleteAction = menu->addAction("删除");
-            connect(deleteAction, &QAction::triggered, [=]() {
+            menu.addAction("删除", [=]() {
                 if (QMessageBox::question(nullptr, "确认删除",
                                           QString("确定删除 “%1” 吗？").arg(fileInfo.fileName()))
                     == QMessageBox::Yes) {
@@ -315,8 +310,7 @@ protected:
             });
         }
 
-        QAction *newFolderAction = menu->addAction("新建文件夹");
-        connect(newFolderAction, &QAction::triggered, [=]() {
+        menu.addAction("新建文件夹", [=]() {
             bool ok;
             QString folderName = QInputDialog::getText(nullptr, "新建文件夹",
                                                        "文件夹名称：", QLineEdit::Normal,
@@ -328,8 +322,7 @@ protected:
             }
         });
 
-        menu->exec(treeView->viewport()->mapToGlobal(pos));
-        delete menu;
+        menu.exec(treeView->viewport()->mapToGlobal(pos));
     }
 
     void updateButtonStates() {

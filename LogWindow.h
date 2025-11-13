@@ -56,17 +56,13 @@ protected:
         QMenu *menu = createStandardContextMenu();
         menu->addSeparator();
 
-        connect(menu->addAction("清空日志"), &QAction::triggered, this, [this]() {
+        menu->addAction("清空日志", [this]() {
             clear();
             allLogs.clear();
             logFile.resize(0);
         });
 
-        QAction *filterAction = menu->addAction("只显示错误日志");
-        filterAction->setCheckable(true);
-        filterAction->setChecked(showOnlyErrors);
-
-        connect(filterAction, &QAction::toggled, this, [this](bool checked) {
+        QAction *filterAction = menu->addAction("只显示错误日志", [this](bool checked) {
             showOnlyErrors = checked;
             
             clear();
@@ -74,6 +70,8 @@ protected:
                 appendLog(msg);
             }
         });
+        filterAction->setCheckable(true);
+        filterAction->setChecked(showOnlyErrors);
 
         menu->exec(event->globalPos());
         delete menu;

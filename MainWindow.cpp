@@ -85,20 +85,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (text == "分组群控") {
-            QMenu *menu = new QMenu(this);
-            menu->addAction("锁屏");
-            menu->addAction("解锁");
-            menu->addAction("重启");
-            menu->addAction("静音");
-            menu->addAction("取消静音");
-            menu->addAction("安装应用");
-            menu->addAction("投屏清晰度");
-            menu->addAction("屏幕截图");
-            menu->addAction("屏幕录制")->setEnabled(false);
+            QMenu menu(this);
+            menu.addAction("锁屏");
+            menu.addAction("解锁");
+            menu.addAction("重启");
+            menu.addAction("静音");
+            menu.addAction("取消静音");
+            menu.addAction("安装应用");
+            menu.addAction("投屏清晰度");
+            menu.addAction("屏幕截图");
+            menu.addAction("屏幕录制")->setEnabled(false);
             QRect rect = sideBarList->visualItemRect(item);
             QPoint globalPos = sideBarList->viewport()->mapToGlobal(rect.topRight());
-            menu->exec(globalPos);
-            delete menu;
+            auto action = menu.exec(globalPos);
+            if (action) {
+                action->text();
+            }
             return;
         }
 
@@ -278,7 +280,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
 
     QMenu menu(this);
 
-    connect(menu.addAction("重命名"), &QAction::triggered, this, [=]() {
+    menu.addAction("重命名", [=]() {
         bool ok = false;
         QString currentText = tabWidget->tabText(index);
         QString newName = QInputDialog::getText(
@@ -294,15 +296,15 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
             tabs[index].name = newName.trimmed();
         }
     });
-    auto deleteAction = menu.addAction("删除");
-    deleteAction->setEnabled(bit != 0);
-    connect(deleteAction, &QAction::triggered, this, [=]() {
+    
+    menu.addAction("删除", [=]() {
         QWidget *page = tabWidget->widget(index);
         tabWidget->removeTab(index);
         delete page;
         tabs.remove(index);
-    });
-    connect(menu.addAction("添加"), &QAction::triggered, this, [=]() {
+    })->setEnabled(bit != 0);
+
+    menu.addAction("添加", [=]() {
         int newId = findAvailableTabId();
         if (newId == -1) {
             new ToastWidget("已达到最大分组数", this);
