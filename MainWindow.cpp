@@ -322,6 +322,8 @@ void MainWindow::loadTabs()
 
     if (tabWidget->count() == 0)
         addTab(0, "默认分组");
+
+    onTabChanged(0);
 }
 
 void MainWindow::saveTabs()
@@ -338,8 +340,7 @@ void MainWindow::saveTabs()
 
 void MainWindow::addTab(int bit, const QString &name)
 {
-    QWidget *newTab = tabWidget->count() == 0 ? scrollArea : new QWidget();
-    tabWidget->addTab(newTab, name);
+    tabWidget->addTab(new QWidget(), name);
     tabs.append(BitMaskEditorDialog::Item({bit, name}));
 }
 
