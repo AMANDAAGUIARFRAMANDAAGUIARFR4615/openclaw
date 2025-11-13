@@ -10,6 +10,7 @@
 #include "DeviceManager.h"
 #include "ToastWidget.h"
 #include "SettingsViewer.h"
+#include "FileTransfer.h"
 #include <QTabWidget>
 #include <QWidget>
 #include <QVBoxLayout>
@@ -35,6 +36,7 @@
 #include <QPushButton>
 #include <QFormLayout>
 #include <QInputDialog>
+#include <QFileDialog>
 #include <QJsonObject>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
@@ -112,7 +114,35 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 
             });
             menu.addAction(EmojiIconProvider::createIcon("📲"), "安装应用", [=]() {
-                
+                QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+
+                QStringList files = QFileDialog::getOpenFileNames(
+                    this,
+                    "请选择 .ipa 或 .deb 文件",
+                    desktopPath,
+                    "*.ipa *.deb"
+                );
+
+                for (const auto &localPath : files) {
+                    auto type = 2; // 收是1，发是2
+                    auto size = Tools::getFileSize(localPath);
+
+                    auto bit = tabs[tabWidget->currentIndex()].bit;
+                    auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+
+                    for (const auto& device : devices) {
+                        auto transfer = new FileTransfer(device->connection, type, localPath, size);
+
+                        QJsonObject dataObject;
+                        dataObject["id"] = transfer->id;
+                        dataObject["type"] = type;
+                        dataObject["port"] = transfer->serverPort();
+                        dataObject["name"] = localPath.section('/', -1);
+                        dataObject["size"] = size;
+
+                        device->connection->send("transferFile", dataObject);
+                    }
+                }
             });
             auto subMenu = menu.addMenu(EmojiIconProvider::createIcon("🎬"), "投屏清晰度");
             subMenu->addAction("360p", [=]() {
