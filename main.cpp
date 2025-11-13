@@ -3,7 +3,6 @@
 #include "TcpServer.h"
 #include "UdpTransport.h"
 #include "NetworkUtils.h"
-#include "LogWindow.h"
 #include "DeviceInfo.h"
 #include "EventHub.h"
 #include "DeviceWindow.h"
@@ -11,7 +10,6 @@
 #include <QApplication>
 #include <QNetworkProxy>
 #include <QLoggingCategory>
-#include <QShortcut>
 #include <QHostInfo>
 
 void onClientConnected(QTcpSocket* socket) {
@@ -59,11 +57,6 @@ int main(int argc, char *argv[])
     // qputenv("QT_MEDIA_BACKEND", "ffmpeg");
 
     // QLoggingCategory::setFilterRules("qt.multimedia.*=true");
-
-    auto logWindow = new LogWindow(g_mainWindow);
-    logWindow->resize(g_mainWindow->size().width(), 400);
-    auto shortcut = new QShortcut(QKeySequence(Qt::Key_F5), g_mainWindow);
-    QObject::connect(shortcut, &QShortcut::activated, logWindow, &LogWindow::toggleVisibility);
 
     TcpServer server(onClientConnected, [](QTcpSocket* socket, const QJsonObject &jsonObject) {
             DeviceConnection *connection = DeviceConnection::find(socket);

@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "LogWindow.h"
 #include "Tools.h"
 #include "EmojiIconProvider.h"
 #include "RemoteFileExplorer.h"
@@ -11,6 +12,7 @@
 #include "ToastWidget.h"
 #include "SettingsViewer.h"
 #include "FileTransfer.h"
+#include <QShortcut>
 #include <QTabWidget>
 #include <QWidget>
 #include <QVBoxLayout>
@@ -41,6 +43,14 @@
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
+    QSize screenSize = QApplication::primaryScreen()->size();
+    resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
+
+    auto logWindow = new LogWindow();
+    logWindow->resize(size().width(), 400);
+    auto shortcut = new QShortcut(QKeySequence(Qt::Key_F5), this);
+    connect(shortcut, &QShortcut::activated, logWindow, &LogWindow::toggleVisibility);
+
     auto central = new QWidget(this);
     setCentralWidget(central);
 
@@ -197,9 +207,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     auto content = new QWidget;
     auto gridLayout = new QGridLayout(content);
     scrollArea->setWidget(content);
-
-    QSize screenSize = QApplication::primaryScreen()->size();
-    resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
 
     EventHub::on(this, "deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         connection->deviceInfo = new DeviceInfo(connection, data.toObject());
