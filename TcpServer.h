@@ -10,6 +10,15 @@
 #include <QJsonDocument>
 #include <QHostInfo>
 
+#if defined(_WIN32)
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#elif defined(__linux__) || defined(__APPLE__)
+#include <sys/socket.h>
+#include <netinet/tcp.h>
+#include <netinet/in.h>
+#endif
+
 class TcpServer : public QTcpServer
 {
     Q_OBJECT
@@ -46,6 +55,29 @@ public:
 private slots:
     void onNewConnection() {
         auto socket = this->nextPendingConnection();
+
+        qintptr fd = socket->socketDescriptor();
+
+        int opt = 1;
+        setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (const char*)&opt, sizeof(opt));
+
+#ifdef _WIN32
+        struct tcp_keepalive alive;
+        DWORD bytesReturned;
+        alive.onoff = 1;
+        alive.keepalivetime = 3000;    // 空闲多久后首次发送 KeepAlive 探针
+        alive.keepaliveinterval = 200; // 每次探针间隔（Windows 固定重试 10 次）
+
+        WSAIoctl(fd, SIO_KEEPALIVE_VALS, &alive, sizeof(alive),
+                 nullptr, 0, &bytesReturned, nullptr, nullptr);
+#elif defined(__APPLE__)
+        int idle = 3;
+        int interval = 1;
+        int count = 3;
+        setsockopt(fd, IPPROTO_TCP, TCP_KEEPALIVE,  &idle,     sizeof(idle));
+        setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL,  &interval, sizeof(interval));
+        setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT,    &count,    sizeof(count));
+#endif
 
         auto ip = socket->peerAddress().toString();
         auto port = socket->peerPort();
