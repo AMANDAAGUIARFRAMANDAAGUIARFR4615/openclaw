@@ -47,6 +47,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
     }
 
     ctx->handler = new DeviceConnection(ctx->connection);
+    connect(ctx->handler, &DeviceConnection::aboutToDestroyed, this, &UsbDeviceManager::disconnectDevice);
 
     if (!rawDataCallback)
     {

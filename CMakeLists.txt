@@ -38,7 +38,7 @@ add_executable(${PROJECT_NAME}
     VideoFrameWidget.h
     DeviceInfo.h DeviceManager.h
     UsbDeviceManager.h UsbDeviceManager.cpp
-    DeviceConnection.h DeviceConnection.cpp
+    DeviceConnection.h
     DeviceView.h DeviceView.cpp
     DeviceWidget.h DeviceWidget.cpp
     DeviceWindow.h DeviceWindow.cpp
