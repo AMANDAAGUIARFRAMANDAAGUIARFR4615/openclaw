@@ -29,6 +29,12 @@ public:
 
     ~DeviceConnection() {
         emit aboutToDestroyed(this);
+
+        if (type == Tcp)
+        {
+            tcpSocket->close();
+            tcpSocket->deleteLater();
+        }
     }
 
     static DeviceConnection* find(QTcpSocket* socket) {
@@ -84,14 +90,6 @@ public:
                 qCriticalEx() << "发送失败" << magic_enum::enum_name(error) << byteArray.size() << sent;
                 usbConnection = nullptr;
             }
-        }
-    }
-
-    void close() {
-        if (type == Tcp)
-        {
-            tcpSocket->close();
-            tcpSocket->deleteLater();
         }
     }
 

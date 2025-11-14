@@ -66,13 +66,8 @@ public:
         EventHub::off(this, "transferPort");
 
         connection = nullptr;
-
-        transferConnection->close();
-
-        if (tcpServer) {
-            delete tcpServer;
-            delete transferConnection;
-        }
+        delete transferConnection;
+        delete tcpServer;
     }
 
     const QString id;

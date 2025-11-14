@@ -114,7 +114,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 
         if (value == 0) {
             if (audioDeviceConnection) {
-                audioDeviceConnection->close();
+                delete audioDeviceConnection;
                 audioDeviceConnection = nullptr;
             }
             
@@ -208,17 +208,13 @@ DeviceWindow::~DeviceWindow()
     EventHub::off(this, "lockedStatus");
     EventHub::off(this, "audioPort");
 
-    if (audioDeviceConnection) {
-        audioDeviceConnection->close();
-        audioDeviceConnection = nullptr;
-    }
+    delete audioDeviceConnection;
     
     if (audioPlayer) {
         audioPlayer->stop();
         delete audioPlayer->sourceDevice();
         delete audioPlayer->audioOutput();
         delete audioPlayer;
-        audioPlayer = nullptr;
     }
 }
 
