@@ -122,10 +122,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 send("reboot");
             });
             menu.addAction(EmojiIconProvider::createIcon("🔇"), "静音", [=]() {
-                
+                connection->send("volumeControl", "OFF");
             });
             menu.addAction(EmojiIconProvider::createIcon("🔊"), "取消静音", [=]() {
-                
+                connection->send("volumeControl", "ON");
             });
             menu.addAction(EmojiIconProvider::createIcon("📲"), "安装应用", [=]() {
                 QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
