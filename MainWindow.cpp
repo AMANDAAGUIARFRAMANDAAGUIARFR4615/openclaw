@@ -122,10 +122,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 send("reboot");
             });
             menu.addAction(EmojiIconProvider::createIcon("🔇"), "静音", [=]() {
-                connection->send("volumeControl", "OFF");
+                send("volumeControl", "OFF");
             });
             menu.addAction(EmojiIconProvider::createIcon("🔊"), "取消静音", [=]() {
-                connection->send("volumeControl", "ON");
+                send("volumeControl", "ON");
             });
             menu.addAction(EmojiIconProvider::createIcon("📲"), "安装应用", [=]() {
                 QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
@@ -215,6 +215,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     EventHub::on(this, "deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         connection->deviceInfo = new DeviceInfo(connection, data.toObject());
         addItem(connection);
+    });
+
+    EventHub::on(this, "disconnected", [this](const QJsonValue &data, DeviceConnection* connection) {
+        qDebugEx() << "断开连接处理";
+        deviceFrames.remove(connection->deviceInfo);
+        delete connection->deviceInfo;
+        delete connection;
     });
 
     loadTabs();
