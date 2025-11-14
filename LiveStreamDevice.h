@@ -29,6 +29,12 @@ public:
     }
 
     ~LiveStreamDevice() {
+        {
+            QMutexLocker locker(&m_mutex);
+            m_stopped = true;           // 设置停止标志
+            m_dataAvailable.wakeAll();  // 唤醒所有等待的线程
+        }
+
         if (m_socket) {
             m_socket->disconnectFromHost();
             m_socket->deleteLater();
@@ -36,16 +42,6 @@ public:
     }
 
     bool isSequential() const override { return true; }
-
-    // bool open(OpenMode mode) override {
-    //     qDebugEx() << "open" << mode;
-    //     return QIODevice::open(mode);
-    // }
-
-    // void close() override {
-    //     qDebugEx() << "close";
-    //     QIODevice::close();
-    // }
 
     void appendData(const QByteArray &data) {
         QMutexLocker locker(&m_mutex);
@@ -71,9 +67,12 @@ protected:
     qint64 readData(char *data, qint64 maxSize) override {
         QMutexLocker locker(&m_mutex);
 
-        while (m_buffer.isEmpty()) {
+        while (m_buffer.isEmpty() && !m_stopped) {
             m_dataAvailable.wait(&m_mutex);
         }
+
+        if (m_stopped && m_buffer.isEmpty())
+            return -1;
 
         qint64 bytesToRead = qMin(maxSize, qint64(m_buffer.size()));
         memcpy(data, m_buffer.constData(), bytesToRead);
@@ -96,4 +95,5 @@ protected:
     qint64 m_curSecBytes = 0;
     qint64 m_prevSecBytes = 0;
     quint64 m_lastSec = 0;
+    bool m_stopped = false;
 };
