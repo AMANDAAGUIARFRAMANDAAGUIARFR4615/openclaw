@@ -46,6 +46,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     QSize screenSize = QApplication::primaryScreen()->size();
     resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
 
+    int x = (screenSize.width() - width()) / 2;
+    int y = (screenSize.height() - height()) / 2;
+    move(x, y);
+
     auto logWindow = new LogWindow();
     logWindow->resize(size().width(), 400);
     auto shortcut = new QShortcut(QKeySequence(Qt::Key_F5), this);

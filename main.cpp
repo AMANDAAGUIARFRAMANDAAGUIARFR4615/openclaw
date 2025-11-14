@@ -58,6 +58,8 @@ int main(int argc, char *argv[])
 
     // QLoggingCategory::setFilterRules("qt.multimedia.*=true");
 
+    g_mainWindow->show();
+
     TcpServer server(onClientConnected, [](QTcpSocket* socket, const QJsonObject &jsonObject) {
             DeviceConnection *connection = DeviceConnection::find(socket);
             if (!connection)
@@ -104,15 +106,6 @@ int main(int argc, char *argv[])
         // qDebugEx() << "同子网IP: " << ip.toString();
         udpTransport.sendData(server.getHostInfo(localIP), ip, 32838);
     }
-
-    QScreen *screen = QApplication::primaryScreen();
-    QRect screenGeometry = screen->availableGeometry();
-
-    int x = (screenGeometry.width() - g_mainWindow->width()) / 2;
-    int y = (screenGeometry.height() - g_mainWindow->height()) / 2;
-    g_mainWindow->move(x, y);
-
-    g_mainWindow->show();
 
     return app.exec();
 }
