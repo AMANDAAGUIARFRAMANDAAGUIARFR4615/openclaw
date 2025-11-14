@@ -29,11 +29,9 @@ public:
     }
 
     ~LiveStreamDevice() {
-        {
-            QMutexLocker locker(&m_mutex);
-            m_stopped = true;           // 设置停止标志
-            m_dataAvailable.wakeAll();  // 唤醒所有等待的线程
-        }
+        QMutexLocker locker(&m_mutex);
+        m_stopped = true;
+        m_dataAvailable.wakeAll();
 
         if (m_socket) {
             m_socket->disconnectFromHost();
@@ -71,7 +69,7 @@ protected:
             m_dataAvailable.wait(&m_mutex);
         }
 
-        if (m_stopped && m_buffer.isEmpty())
+        if (m_stopped)
             return -1;
 
         qint64 bytesToRead = qMin(maxSize, qint64(m_buffer.size()));
