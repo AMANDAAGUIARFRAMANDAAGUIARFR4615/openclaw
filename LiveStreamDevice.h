@@ -29,8 +29,6 @@ public:
     }
 
     ~LiveStreamDevice() {
-        close();
-
         if (m_socket) {
             m_socket->disconnectFromHost();
             m_socket->deleteLater();
@@ -39,24 +37,15 @@ public:
 
     bool isSequential() const override { return true; }
 
-    bool open(OpenMode mode) override {
-        QMutexLocker locker(&m_mutex);
+    // bool open(OpenMode mode) override {
+    //     qDebugEx() << "open" << mode;
+    //     return QIODevice::open(mode);
+    // }
 
-        if (!(mode & ReadOnly))
-            return false;
-
-        m_eof = false;
-        return QIODevice::open(mode);
-    }
-
-    void close() override {
-        QMutexLocker locker(&m_mutex);
-        
-        QIODevice::close();
-        m_buffer.clear();
-        m_eof = true;
-        m_dataAvailable.wakeAll();
-    }
+    // void close() override {
+    //     qDebugEx() << "close";
+    //     QIODevice::close();
+    // }
 
     void appendData(const QByteArray &data) {
         QMutexLocker locker(&m_mutex);
@@ -82,12 +71,9 @@ protected:
     qint64 readData(char *data, qint64 maxSize) override {
         QMutexLocker locker(&m_mutex);
 
-        while (m_buffer.isEmpty() && !m_eof) {
+        while (m_buffer.isEmpty()) {
             m_dataAvailable.wait(&m_mutex);
         }
-
-        if (atEnd())
-            return 0;
 
         qint64 bytesToRead = qMin(maxSize, qint64(m_buffer.size()));
         memcpy(data, m_buffer.constData(), bytesToRead);
@@ -100,14 +86,13 @@ protected:
     }
 
     bool atEnd() const override {
-        return m_eof;
+        return false;
     }
 
     QTcpSocket* m_socket = nullptr;
     QByteArray m_buffer;
     mutable QMutex m_mutex;
     QWaitCondition m_dataAvailable;
-    bool m_eof = false;
     qint64 m_curSecBytes = 0;
     qint64 m_prevSecBytes = 0;
     quint64 m_lastSec = 0;
