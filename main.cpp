@@ -13,7 +13,7 @@
 #include <QHostInfo>
 
 void onClientConnected(QTcpSocket* socket) {
-    // qDebugEx() << "有新的客户端连接！";
+    
 }
 
 void onDataReceived(DeviceConnection *connection, const QJsonObject &jsonObject) {
@@ -29,7 +29,8 @@ void onDataReceived(DeviceConnection *connection, const QJsonObject &jsonObject)
 }
 
 void onClientDisconnected(QTcpSocket* socket) {
-    // qDebugEx() << "客户端断开连接！";
+    DeviceConnection *connection = DeviceConnection::find(socket);
+    EventHub::trigger("disconnected", QJsonValue(), connection);
 }
 
 void onError(QTcpSocket* socket, QAbstractSocket::SocketError socketError) {
@@ -68,29 +69,23 @@ int main(int argc, char *argv[])
             onDataReceived(connection, jsonObject);
         }, onClientDisconnected, onError);
 
-    // if (QOperatingSystemVersion::current().type() == QOperatingSystemVersion::Windows || QOperatingSystemVersion::current().type() == QOperatingSystemVersion::MacOS) {
-        QObject::connect(g_usbDeviceManager, &UsbDeviceManager::deviceConnected, [](DeviceConnection* conn){
-            // qDebugEx() << "✅ 设备已连接:" << conn;
-        });
+    QObject::connect(g_usbDeviceManager, &UsbDeviceManager::deviceDisconnected, [](DeviceConnection* conn){
+        EventHub::trigger("disconnected", QJsonValue(), conn);
+    });
 
-        QObject::connect(g_usbDeviceManager, &UsbDeviceManager::deviceDisconnected, [](DeviceConnection* conn){
-            // qDebugEx() << "❌ 设备已断开:" << conn;
-        });
+    QObject::connect(g_usbDeviceManager, &UsbDeviceManager::dataReceived, [](DeviceConnection* conn, const QJsonObject& data){
+        onDataReceived(conn, data);
+    });
 
-        QObject::connect(g_usbDeviceManager, &UsbDeviceManager::dataReceived, [](DeviceConnection* conn, const QJsonObject& data){
-            onDataReceived(conn, data);
-        });
+    QObject::connect(g_usbDeviceManager, &UsbDeviceManager::errorOccurred, [](DeviceConnection* conn, const QString& msg){
+        qCriticalEx() << "⚠️ 设备错误:" << msg;
+    });
 
-        QObject::connect(g_usbDeviceManager, &UsbDeviceManager::errorOccurred, [](DeviceConnection* conn, const QString& msg){
-            qCriticalEx() << "⚠️ 设备错误:" << msg;
-        });
+    g_usbDeviceManager->start();
 
-        g_usbDeviceManager->start();
-
-        QObject::connect(&app, &QApplication::aboutToQuit, [=]() {
-            g_usbDeviceManager->stop();
-        });
-    // }
+    QObject::connect(&app, &QApplication::aboutToQuit, [=]() {
+        g_usbDeviceManager->stop();
+    });
 
     QString localIP = NetworkUtils::getLocalIP();
     qDebugEx() << "本机内网IP:" << localIP;

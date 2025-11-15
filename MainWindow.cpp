@@ -222,6 +222,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         deviceFrames.remove(connection->deviceInfo);
         delete connection->deviceInfo;
         delete connection;
+        relayoutDevices();
     });
 
     loadTabs();
