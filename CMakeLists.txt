@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(RemotePro LANGUAGES CXX)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Network Concurrent Multimedia MultimediaWidgets Sql)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Network Concurrent Multimedia MultimediaWidgets WebSockets)
 
 qt_standard_project_setup()
 
@@ -32,8 +32,8 @@ add_executable(${PROJECT_NAME}
     global.h global.cpp
     EmojiIconProvider.h Tools.h SettingsViewer.h
     Logger.h LogWindow.h EventHub.h
-    BitMaskEditorDialog.h
-    LiveStreamDevice.h
+    BitMaskEditorDialog.h LiveStreamDevice.h
+    LoginWidget.h RegisterWidget.h
     MainWindow.h MainWindow.cpp
     VideoFrameWidget.h
     DeviceInfo.h DeviceManager.h
@@ -71,7 +71,7 @@ else()
     )
 endif()
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Concurrent Qt6::Multimedia Qt6::MultimediaWidgets Qt6::Sql ${THIRD_PARTY_LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Concurrent Qt6::Multimedia Qt6::MultimediaWidgets Qt6::WebSockets ${THIRD_PARTY_LIBS})
 
 add_definitions(-DPROJECT_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\")
 
