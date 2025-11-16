@@ -8,6 +8,8 @@
 #include <QTimer>
 
 class ToastWidget : public QWidget {
+    Q_OBJECT
+
 public:
     explicit ToastWidget(const QString &message, QWidget *parent = nullptr) : QWidget(parent) {
         setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint);
