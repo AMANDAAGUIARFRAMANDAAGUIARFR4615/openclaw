@@ -114,7 +114,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 
         if (value == 0) {
             if (audioDeviceConnection) {
-                delete audioDeviceConnection;
+                g_usbDeviceManager->disconnectDevice(audioDeviceConnection);
                 audioDeviceConnection = nullptr;
             }
             
@@ -208,7 +208,7 @@ DeviceWindow::~DeviceWindow()
     EventHub::off(this, "lockedStatus");
     EventHub::off(this, "audioPort");
 
-    delete audioDeviceConnection;
+    g_usbDeviceManager->disconnectDevice(audioDeviceConnection);
     
     if (audioPlayer) {
         audioPlayer->stop();
