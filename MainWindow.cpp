@@ -221,7 +221,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         qDebugEx() << "断开连接处理";
         deviceFrames.remove(connection->deviceInfo);
         delete connection->deviceInfo;
-        delete connection;
         relayoutDevices();
     });
 

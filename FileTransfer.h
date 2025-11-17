@@ -66,8 +66,12 @@ public:
         EventHub::off(this, "transferPort");
 
         connection = nullptr;
-        delete transferConnection;
         delete tcpServer;
+        
+        if (connection->type != DeviceConnection::Usb)
+            delete transferConnection;
+        else
+            g_usbDeviceManager->disconnectDevice(transferConnection);
     }
 
     const QString id;

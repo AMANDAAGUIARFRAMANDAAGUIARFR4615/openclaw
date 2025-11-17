@@ -24,7 +24,7 @@ void UsbDeviceManager::stop() {
     qDebugEx() << "🛑 停止设备管理器...";
 
     for (const auto& it : connToContext) {
-        delete it->handler;
+        disconnectDevice(it->handler);
     }
 }
 
@@ -47,8 +47,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
     }
 
     ctx->handler = new DeviceConnection(ctx->connection);
-    connect(ctx->handler, &DeviceConnection::aboutToDestroyed, this, &UsbDeviceManager::disconnectDevice);
-
+    
     if (!rawDataCallback)
     {
         ctx->handler->send("deviceInfo", QJsonObject{
@@ -79,7 +78,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
                 processBufferedData(ctx);
             } else if (err != IDEVICE_E_SUCCESS) {
                 emit errorOccurred(ctx->handler, QString("%1端口通信错误: %2").arg(port).arg(magic_enum::enum_name(err)));
-                delete ctx->handler;
+                disconnectDevice(ctx->handler);
             }
         });
     }
@@ -96,8 +95,10 @@ void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
     UsbDeviceContext* ctx = connToContext.value(conn, nullptr);
     if (!ctx) return;
 
-    emit deviceDisconnected(conn);
     connToContext.remove(conn);
+
+    if (ctx->port == 32839)
+        emit deviceDisconnected(conn);
 
     qDebugEx() << "❌ 断开设备:" << ctx << ctx->udid + ":" + QString::number(ctx->port);
 
@@ -156,7 +157,7 @@ void UsbDeviceManager::handlePollFinished() {
             qDebugEx() << "❌ 检测到设备拔出:" << udid;
             for (const auto& it : connToContext) {
                 if (it->udid == udid)
-                    delete it->handler;
+                    disconnectDevice(it->handler);
             }
         }
     }

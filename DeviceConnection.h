@@ -28,8 +28,6 @@ public:
     }
 
     ~DeviceConnection() {
-        emit aboutToDestroyed(this);
-
         if (type == Tcp)
         {
             tcpSocket->close();
@@ -100,9 +98,6 @@ public:
     QString displayName() {
         return QString("%1 - %2").arg(deviceInfo->deviceName).arg(type == DeviceConnection::Usb ? "USB" : "WIFI");
     }
-
-signals:
-    void aboutToDestroyed(DeviceConnection* );
 
 protected:
     QTcpSocket *tcpSocket;
