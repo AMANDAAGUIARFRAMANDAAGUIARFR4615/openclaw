@@ -205,7 +205,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 qDebugEx() << "收到数据2222";
             });
 
-            socket->connectToHost("192.168.0.111", 53621);
+            socket->connectToHost("192.168.0.111", 56504);
         }
 
         if (text == "开发者") {
