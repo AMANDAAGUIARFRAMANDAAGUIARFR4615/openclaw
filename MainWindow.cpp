@@ -179,9 +179,33 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (text == "设备列表") {
-            auto window = new DeviceManager();
-            window->show();
+            // auto window = new DeviceManager();
+            // window->show();
+
+            auto socket = new QTcpSocket();
+            connect(socket, &QTcpSocket::errorOccurred, [=](QAbstractSocket::SocketError socketError) {
+                qCriticalEx() << "errorOccurred" << socketError << socket->errorString();
+            });
+            
+            connect(socket, &QTcpSocket::readyRead, [=]() {
+                qDebugEx() << "收到数据1111";
+            });
+
+            socket->connectToHost("119.28.3.242", 55257);
             return;
+        }
+
+        if (text == "帮助") {
+            auto socket = new QTcpSocket();
+            connect(socket, &QTcpSocket::errorOccurred, [=](QAbstractSocket::SocketError socketError) {
+                qCriticalEx() << "errorOccurred" << socketError << socket->errorString();
+            });
+            
+            connect(socket, &QTcpSocket::readyRead, [=]() {
+                qDebugEx() << "收到数据2222";
+            });
+
+            socket->connectToHost("192.168.0.111", 53621);
         }
 
         if (text == "开发者") {
