@@ -30,13 +30,13 @@ public:
     }
 
     void emitEvent(const QString &event, const QJsonValue &data) {
-        sendJson({{"type", "event"}, {"name", event}, {"data", data}});
+        sendJson({{"type", "event"}, {"event", event}, {"data", data}});
     }
 
     void emitEvent(const QString &event, const QJsonValue &data, AckCallback cb) {
         int id = ++m_nextId;
         m_pendingAcks[id] = cb;
-        sendJson({{"type", "event"}, {"name", event}, {"data", data}, {"id", id}});
+        sendJson({{"type", "event"}, {"event", event}, {"data", data}, {"id", id}});
     }
 
 private:
@@ -63,12 +63,12 @@ private:
                 if (cb) cb(data);
             }
         } else if (type == "event") {
-            QString name = obj["name"].toString();
-            if (m_handlers.contains(name)) {
+            QString event = obj["event"].toString();
+            if (m_handlers.contains(event)) {
                 QJsonValue idVal = obj["id"];
                 QPointer<SocketClient> self = this;
 
-                m_handlers[name](data, [self, idVal](const QJsonValue &respData) {
+                m_handlers[event](data, [self, idVal](const QJsonValue &respData) {
                     if (self && !idVal.isUndefined() && !idVal.isNull()) {
                         self->sendJson({{"type", "ack"}, {"id", idVal}, {"data", respData}});
                     }
