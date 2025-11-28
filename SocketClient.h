@@ -4,6 +4,7 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QHash>
+#include <QPointer>
 #include <functional>
 
 using AckCallback = std::function<void(const QJsonValue &)>;
@@ -17,8 +18,15 @@ public:
         connect(this, &QWebSocket::textMessageReceived, this, &SocketClient::handleMessage);
     }
 
-    void on(const QString &event, EventHandler handler) {
-        m_handlers[event] = handler;
+    template <typename Func>
+    void on(const QString &event, Func handler) {
+        if constexpr (std::is_invocable_v<Func, QJsonValue, AckCallback>) {
+            m_handlers[event] = handler;
+        } else {
+            m_handlers[event] = [handler](const QJsonValue &data, AckCallback) {
+                handler(data);
+            };
+        }
     }
 
     void emitEvent(const QString &event, const QJsonValue &data) {
@@ -41,7 +49,10 @@ private:
     }
 
     void handleMessage(const QString &msg) {
-        QJsonObject obj = QJsonDocument::fromJson(msg.toUtf8()).object();
+        QJsonDocument doc = QJsonDocument::fromJson(msg.toUtf8());
+        if (!doc.isObject()) return;
+
+        QJsonObject obj = doc.object();
         QString type = obj["type"].toString();
         QJsonValue data = obj["data"];
 
@@ -54,11 +65,12 @@ private:
         } else if (type == "event") {
             QString name = obj["name"].toString();
             if (m_handlers.contains(name)) {
-                // 如果对方发来了id，说明需要回执
                 QJsonValue idVal = obj["id"];
-                m_handlers[name](data, [this, idVal](const QJsonValue &respData) {
-                    if (!idVal.isUndefined()) {
-                        sendJson({{"type", "ack"}, {"id", idVal}, {"data", respData}});
+                QPointer<SocketClient> self = this;
+
+                m_handlers[name](data, [self, idVal](const QJsonValue &respData) {
+                    if (self && !idVal.isUndefined() && !idVal.isNull()) {
+                        self->sendJson({{"type", "ack"}, {"id", idVal}, {"data", respData}});
                     }
                 });
             }
