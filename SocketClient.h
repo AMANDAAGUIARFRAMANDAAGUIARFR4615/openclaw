@@ -3,8 +3,7 @@
 #include <QWebSocket>
 #include <QJsonObject>
 #include <QJsonDocument>
-#include <QMap>
-#include <QUuid>
+#include <QHash>
 #include <functional>
 
 using AckCallback = std::function<void(const QJsonValue &)>;
@@ -27,14 +26,15 @@ public:
     }
 
     void emitEvent(const QString &event, const QJsonValue &data, AckCallback cb) {
-        QString id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        int id = ++m_nextId;
         m_pendingAcks[id] = cb;
         sendJson({{"type", "event"}, {"name", event}, {"data", data}, {"id", id}});
     }
 
 private:
-    QMap<QString, EventHandler> m_handlers;
-    QMap<QString, AckCallback> m_pendingAcks;
+    QHash<QString, EventHandler> m_handlers;
+    QHash<int, AckCallback> m_pendingAcks;
+    int m_nextId = 0;
 
     void sendJson(const QJsonObject &obj) {
         sendTextMessage(QString::fromUtf8(QJsonDocument(obj).toJson(QJsonDocument::Compact)));
@@ -43,10 +43,10 @@ private:
     void handleMessage(const QString &msg) {
         QJsonObject obj = QJsonDocument::fromJson(msg.toUtf8()).object();
         QString type = obj["type"].toString();
-        QString id = obj["id"].toString();
         QJsonValue data = obj["data"];
 
         if (type == "ack") {
+            int id = obj["id"].toInt();
             if (m_pendingAcks.contains(id)) {
                 auto cb = m_pendingAcks.take(id);
                 if (cb) cb(data);
@@ -54,8 +54,12 @@ private:
         } else if (type == "event") {
             QString name = obj["name"].toString();
             if (m_handlers.contains(name)) {
-                m_handlers[name](data, [this, id](const QJsonValue &respData) {
-                    if (!id.isEmpty()) sendJson({{"type", "ack"}, {"id", id}, {"data", respData}});
+                // 如果对方发来了id，说明需要回执
+                QJsonValue idVal = obj["id"];
+                m_handlers[name](data, [this, idVal](const QJsonValue &respData) {
+                    if (!idVal.isUndefined()) {
+                        sendJson({{"type", "ack"}, {"id", idVal}, {"data", respData}});
+                    }
                 });
             }
         }
