@@ -33,8 +33,10 @@ public:
 
         actionButton = new QPushButton("登录");
         actionButton->setObjectName("mainBtn");
+        actionButton->setCursor(Qt::PointingHandCursor);
         switchButton = new QPushButton("注册新账号");
         switchButton->setObjectName("subBtn");
+        switchButton->setCursor(Qt::PointingHandCursor);
         
         statusLabel = new QLabel("正在连接服务器...");
         statusLabel->setAlignment(Qt::AlignCenter);
@@ -162,29 +164,59 @@ private:
     void updateStyle()
     {
         QString color = isRegisterMode ? "#e74c3c" : "#3498db";
+        
         QString qss = QString(R"(
             QLineEdit { 
-                padding: 12px; font-size: 15px; border: 2px solid #ddd; border-radius: 10px; 
+                padding: 12px; 
+                font-size: 15px; 
+                border: 2px solid #e0e0e0; 
+                border-radius: 8px; 
+                background: #f9f9f9;
             }
             QLineEdit:focus { 
                 border-color: %1; 
+                background: #ffffff;
             }
+            
             QPushButton { 
-                padding: 12px; font-size: 16px; border-radius: 10px; 
+                padding: 12px; 
+                font-size: 15px; 
+                border-radius: 8px; 
+                font-weight: bold;
             }
+
+            /* 主按钮：实心颜色 */
             QPushButton#mainBtn { 
-                background: %1; color: white; border: none; font-weight: bold;
+                background-color: %1; 
+                color: white; 
+                border: 2px solid %1;
             }
             QPushButton#mainBtn:hover {
+                background-color: palette(button-text);
+                border-color: %1;
                 opacity: 0.9;
             }
+            QPushButton#mainBtn:pressed {
+                padding-top: 14px;
+                padding-bottom: 10px;
+            }
+
+            /* 副按钮：描边风格 */
             QPushButton#subBtn  { 
-                background: transparent; color: #7f8c8d; border: none; 
+                background-color: transparent; 
+                color: %1; 
+                border: 2px solid %1; 
             }
             QPushButton#subBtn:hover { 
-                color: %1; text-decoration: underline;
+                background-color: %1; 
+                color: white;
+            }
+            QPushButton#subBtn:pressed {
+                padding-top: 14px;
+                padding-bottom: 10px;
             }
         )").arg(color);
+
         setStyleSheet(qss);
     }
 };
