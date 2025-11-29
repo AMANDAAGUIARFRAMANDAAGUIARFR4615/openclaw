@@ -62,20 +62,16 @@ public:
 
         connect(actionButton, &QPushButton::clicked, this, &LoginWidget::onAction);
         connect(switchButton, &QPushButton::clicked, this, &LoginWidget::toggleMode);
-        
-        if (!webSocketClient.isValid()) {
-            connect(&webSocketClient, &QWebSocket::connected, [this]() {
-                setStatus("已连接服务器");
-                actionButton->setEnabled(true);
-            });
-            connect(&webSocketClient, &QWebSocket::errorOccurred, [this](QAbstractSocket::SocketError) {
-                setStatus("连接失败: " + webSocketClient.errorString(), true);
-                actionButton->setEnabled(false);
-            });
-            webSocketClient.open(QUrl("ws://localhost:3000"));
-        } else {
+
+        connect(&webSocketClient, &QWebSocket::connected, [this]() {
             setStatus("已连接服务器");
-        }
+            actionButton->setEnabled(true);
+        });
+        connect(&webSocketClient, &QWebSocket::errorOccurred, [this](QAbstractSocket::SocketError) {
+            setStatus("连接失败: " + webSocketClient.errorString(), true);
+            actionButton->setEnabled(false);
+        });
+        webSocketClient.open(QUrl("ws://localhost:3000"));
     }
 
 private:
@@ -108,10 +104,10 @@ private:
 
     void onAction()
     {
-        QString user = phoneLineEdit->text().trimmed();
-        QString pass = passwordLineEdit->text();
+        QString phone = phoneLineEdit->text().trimmed();
+        QString password = passwordLineEdit->text();
 
-        if (user.isEmpty() || pass.isEmpty()) {
+        if (phone.isEmpty() || password.isEmpty()) {
             new ToastWidget("请输入完整信息", this);
             return;
         }
@@ -125,31 +121,33 @@ private:
         actionButton->setEnabled(false);
 
         if (isRegisterMode) {
-            if (pass != confirmLineEdit->text()) {
+            if (password != confirmLineEdit->text()) {
                 new ToastWidget("两次密码不一致", this);
                 actionButton->setEnabled(true);
                 return;
             }
 
-            webSocketClient.emitEvent("register", QJsonObject{{"username", user}, {"password", pass}}, [this](const QJsonValue &res) {
+            webSocketClient.emitEvent("register", QJsonObject{{"phone", phone}, {"password", password}}, [this](const QJsonValue &res) {
                 actionButton->setEnabled(true);
-                // 根据实际协议修改判断逻辑，假设 msg 为空即成功
-                if (res["msg"].isNull() || res["msg"].toString().isEmpty()) {
-                    new ToastWidget("注册成功，请登录", this);
-                    toggleMode();
-                    setStatus("注册成功");
-                } else {
-                    setStatus(res["msg"].toString(), true);
-                }
-            });
-        } else {
-            webSocketClient.emitEvent("login", QJsonObject{{"phone", user}, {"password", pass}}, [this](const QJsonValue &res) {
-                actionButton->setEnabled(true);
-                if (res["msg"].isNull()) {
-                    if (g_mainWindow) g_mainWindow->show();
-                    this->close();
+
+                if (res["msg"].isUndefined()) {
+                    g_mainWindow->show();
+                    close();
                     return;
                 }
+   
+                setStatus(res["msg"].toString(), true);
+            });
+        } else {
+            webSocketClient.emitEvent("login", QJsonObject{{"phone", phone}, {"password", password}}, [this](const QJsonValue &res) {
+                actionButton->setEnabled(true);
+
+                if (res["msg"].isUndefined()) {
+                    g_mainWindow->show();
+                    close();
+                    return;
+                }
+
                 setStatus(res["msg"].toString(), true);
             });
         }

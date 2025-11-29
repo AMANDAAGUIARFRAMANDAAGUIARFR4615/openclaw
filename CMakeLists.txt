@@ -33,7 +33,7 @@ add_executable(${PROJECT_NAME}
     EmojiIconProvider.h Tools.h SettingsViewer.h
     Logger.h LogWindow.h EventHub.h
     BitMaskEditorDialog.h LiveStreamDevice.h
-    LoginWidget.h RegisterWidget.h
+    LoginWidget.h
     MainWindow.h MainWindow.cpp
     VideoFrameWidget.h
     DeviceInfo.h DeviceManager.h
