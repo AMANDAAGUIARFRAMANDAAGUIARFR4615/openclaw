@@ -32,7 +32,9 @@ public:
         confirmLineEdit->setVisible(false);
 
         actionButton = new QPushButton("登录");
+        actionButton->setObjectName("mainBtn");
         switchButton = new QPushButton("注册新账号");
+        switchButton->setObjectName("subBtn");
         
         statusLabel = new QLabel("正在连接服务器...");
         statusLabel->setAlignment(Qt::AlignCenter);
@@ -161,12 +163,27 @@ private:
     {
         QString color = isRegisterMode ? "#e74c3c" : "#3498db";
         QString qss = QString(R"(
-            QLineEdit { padding: 12px; font-size: 15px; border: 2px solid #ddd; border-radius: 10px; }
-            QLineEdit:focus { border-color: %1; }
-            QPushButton { padding: 12px; font-size: 16px; border-radius: 10px; }
-            QPushButton:first { background: %1; color: white; border: none; }
-            QPushButton:last  { background: transparent; color: #7f8c8d; border: none; }
-            QPushButton:last:hover { color: %1; }
+            QLineEdit { 
+                padding: 12px; font-size: 15px; border: 2px solid #ddd; border-radius: 10px; 
+            }
+            QLineEdit:focus { 
+                border-color: %1; 
+            }
+            QPushButton { 
+                padding: 12px; font-size: 16px; border-radius: 10px; 
+            }
+            QPushButton#mainBtn { 
+                background: %1; color: white; border: none; font-weight: bold;
+            }
+            QPushButton#mainBtn:hover {
+                opacity: 0.9;
+            }
+            QPushButton#subBtn  { 
+                background: transparent; color: #7f8c8d; border: none; 
+            }
+            QPushButton#subBtn:hover { 
+                color: %1; text-decoration: underline;
+            }
         )").arg(color);
         setStyleSheet(qss);
     }
