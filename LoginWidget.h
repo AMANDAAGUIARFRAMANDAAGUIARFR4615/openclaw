@@ -15,6 +15,8 @@ class LoginWidget : public QWidget
 public:
     explicit LoginWidget(QWidget *parent = nullptr) : QWidget(parent)
     {
+        setAttribute(Qt::WA_DeleteOnClose);
+        
         titleLabel = new QLabel("用户登录");
         titleLabel->setAlignment(Qt::AlignCenter);
         titleLabel->setStyleSheet("font: bold 26px; color: #2c3e50; margin: 20px;");
@@ -74,7 +76,14 @@ public:
         webSocketClient.open(QUrl("ws://localhost:3000"));
     }
 
-private:
+protected:
+    void keyPressEvent(QKeyEvent *event) override {
+        if (event->key() == Qt::Key_Escape)
+            close();
+        else
+            QWidget::keyPressEvent(event);
+    }    
+
     QLabel *titleLabel;
     QLineEdit *phoneLineEdit;
     QLineEdit *passwordLineEdit;
