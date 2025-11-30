@@ -7,13 +7,14 @@
 #include "EventHub.h"
 #include "DeviceWindow.h"
 #include "UsbDeviceManager.h"
+#include "LoginWidget.h"
 #include <QApplication>
 #include <QNetworkProxy>
 #include <QLoggingCategory>
 #include <QHostInfo>
 
 void onClientConnected(QTcpSocket* socket) {
-    
+
 }
 
 void onDataReceived(DeviceConnection *connection, const QJsonObject &jsonObject) {
@@ -60,9 +61,11 @@ int main(int argc, char *argv[])
 
     // QLoggingCategory::setFilterRules("qt.multimedia.*=true");
 
-    g_mainWindow->show();
+    auto loginWidget = new LoginWidget();
+    loginWidget->show();
 
-    TcpServer server(onClientConnected, [](QTcpSocket* socket, const QJsonObject &jsonObject) {
+    QObject::connect(loginWidget, &QObject::destroyed, [=]() {
+        auto tcpServer = new TcpServer(onClientConnected, [](QTcpSocket* socket, const QJsonObject &jsonObject) {
             DeviceConnection *connection = DeviceConnection::find(socket);
             if (!connection)
                 connection = new DeviceConnection(socket);
@@ -70,38 +73,39 @@ int main(int argc, char *argv[])
             onDataReceived(connection, jsonObject);
         }, onClientDisconnected, onError);
 
-    QObject::connect(g_usbDeviceManager, &UsbDeviceManager::deviceDisconnected, [](DeviceConnection* conn){
-        EventHub::trigger("disconnected", QJsonValue(), conn);
-    });
+        QObject::connect(g_usbDeviceManager, &UsbDeviceManager::deviceDisconnected, [](DeviceConnection* conn){
+            EventHub::trigger("disconnected", QJsonValue(), conn);
+        });
 
-    QObject::connect(g_usbDeviceManager, &UsbDeviceManager::dataReceived, [](DeviceConnection* conn, const QJsonObject& data){
-        onDataReceived(conn, data);
-    });
+        QObject::connect(g_usbDeviceManager, &UsbDeviceManager::dataReceived, [](DeviceConnection* conn, const QJsonObject& data){
+            onDataReceived(conn, data);
+        });
 
-    QObject::connect(g_usbDeviceManager, &UsbDeviceManager::errorOccurred, [](DeviceConnection* conn, const QString& msg){
-        qCriticalEx() << "⚠️ 设备错误:" << msg;
-    });
+        QObject::connect(g_usbDeviceManager, &UsbDeviceManager::errorOccurred, [](DeviceConnection* conn, const QString& msg){
+            qCriticalEx() << "⚠️ 设备错误:" << msg;
+        });
 
-    g_usbDeviceManager->start();
+        g_usbDeviceManager->start();
 
-    QObject::connect(&app, &QApplication::aboutToQuit, [=]() {
-        g_usbDeviceManager->stop();
-    });
+        QObject::connect(qApp, &QApplication::aboutToQuit, [=]() {
+            g_usbDeviceManager->stop();
+        });
 
-    QString localIP = NetworkUtils::getLocalIP();
-    qDebugEx() << "本机内网IP:" << localIP;
+        QString localIP = NetworkUtils::getLocalIP();
+        qDebugEx() << "本机内网IP:" << localIP;
 
-    UdpTransport udpTransport(
-        [](const QJsonObject &jsonObject) {
-            qDebugEx() << "Received Data:" << jsonObject;
+        UdpTransport udpTransport(
+            [](const QJsonObject &jsonObject) {
+                qDebugEx() << "Received Data:" << jsonObject;
+            }
+        );
+
+        QList<QHostAddress> subnetIPs = NetworkUtils::getSubnetIPs(localIP);
+        for (const QHostAddress &ip : subnetIPs) {
+            // qDebugEx() << "同子网IP: " << ip.toString();
+            udpTransport.sendData(tcpServer->getHostInfo(localIP), ip, 32838);
         }
-    );
-
-    QList<QHostAddress> subnetIPs = NetworkUtils::getSubnetIPs(localIP);
-    for (const QHostAddress &ip : subnetIPs) {
-        // qDebugEx() << "同子网IP: " << ip.toString();
-        udpTransport.sendData(server.getHostInfo(localIP), ip, 32838);
-    }
+    });
 
     return app.exec();
 }
