@@ -65,13 +65,14 @@ public:
     ~FileTransfer() {
         EventHub::off(this, "transferPort");
 
-        connection = nullptr;
         delete tcpServer;
         
         if (connection->type != DeviceConnection::Usb)
             delete transferConnection;
         else
             g_usbDeviceManager->disconnectDevice(transferConnection);
+
+        connection = nullptr;
     }
 
     const QString id;
