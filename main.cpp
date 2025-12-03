@@ -107,6 +107,9 @@ int main(int argc, char *argv[])
         }
     });
 
+    g_mainWindow->show();
+    loginWidget->close();
+
     return app.exec();
 }
 
