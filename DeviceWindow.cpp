@@ -164,9 +164,10 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         }
     });
 
-    volumeSlider->setValue(settings.value(volumeKey, 0u).toInt());
+    // volumeSlider->setValue(settings.value(volumeKey, 0u).toInt());
+    volumeLayout->deleteLater();
 
-    buttonLayout->addLayout(volumeLayout);
+    // buttonLayout->addLayout(volumeLayout);
 
     buttonLayout->addStretch();
 
