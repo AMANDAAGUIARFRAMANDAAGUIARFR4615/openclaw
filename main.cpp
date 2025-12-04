@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
         QString localIP = NetworkUtils::getLocalIP();
         qDebugEx() << "本机内网IP:" << localIP;
 
-        UdpTransport udpTransport(
+        auto udpTransport = new UdpTransport(
             [](const QJsonObject &jsonObject) {
                 qDebugEx() << "Received Data:" << jsonObject;
             }
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
         QList<QHostAddress> subnetIPs = NetworkUtils::getSubnetIPs(localIP);
         for (const QHostAddress &ip : subnetIPs) {
             // qDebugEx() << "同子网IP: " << ip.toString();
-            udpTransport.sendData(tcpServer->getHostInfo(localIP), ip, 32838);
+            udpTransport->sendData(tcpServer->getHostInfo(localIP), ip, 32838);
         }
     });
 
