@@ -18,6 +18,7 @@
 #include <QOperatingSystemVersion>
 #include <QApplication>
 #include <QSlider>
+#include <QImageReader>
 
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(connection, deviceInfo), deviceWidget(deviceWidget)
 {
@@ -337,14 +338,47 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
         {
             const QMimeData *mimeData = qApp->clipboard()->mimeData();
 
-            QJsonObject dataObject;
+            auto content = mimeData->text();
+
+            if (content.startsWith("file://")) {
+#ifdef Q_OS_WIN
+                auto filePath = content.mid(8); // Windows 去掉 file:///
+#else
+                auto filePath = content.mid(7); // Mac/Linux 去掉 file://
+#endif
+
+                QFileInfo fileInfo(filePath);
+                if (fileInfo.exists() && fileInfo.isFile()) {
+                    QImageReader reader(filePath);
+                    reader.setDecideFormatFromContent(true);
+
+                    QByteArray format = reader.format();
+                    if (format.isEmpty()) {
+                        qCriticalEx() << "不是有效的图片文件 ->" << filePath;
+                        return;
+                    }
+
+                    qDebugEx() << "检测到图片格式:" << format;
+
+                    QFile file(filePath);
+                    if (!file.open(QIODevice::ReadOnly)) {
+                        qCriticalEx() << "无法打开文件读取 ->" << filePath;
+                        return;
+                    }
+
+                    QByteArray fileData = file.readAll();
+                    file.close();
+
+                    connection->send("clipboard", QJsonObject{{"type", 2}, {"content", QString(fileData.toBase64())}});
+                    return;
+                }
+            }
 
             if (mimeData->hasText())
             {
-                qDebugEx() << "剪切板内容是文本:" << mimeData->text();
+                qDebugEx() << "剪切板内容是文本:" << content;
 
-                dataObject["type"] = 1;
-                dataObject["content"] = mimeData->text();
+                connection->send("clipboard", QJsonObject{{"type", 1}, {"content", content}});
             }
             else if (mimeData->hasImage())
             {
@@ -352,16 +386,12 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
                 auto base64Data = Tools::imageToBase64(image);
                 qDebugEx() << "剪切板内容是图片:" << base64Data.length();
 
-                dataObject["type"] = 2;
-                dataObject["content"] = base64Data;
+                connection->send("clipboard", QJsonObject{{"type", 2}, {"content", base64Data}});
             }
             else
             {
                 new ToastWidget("此类型暂不支持", this);
-                return;
             }
-
-            connection->send("clipboard", dataObject);
 
             return;
         }
