@@ -153,6 +153,7 @@ jobs:
             --enable-avformat \
             --enable-avutil \
             --enable-swscale \
+            --enable-swresample \
             --enable-decoder=h264 \
             --enable-parser=h264 \
             --enable-demuxer=h264 \
