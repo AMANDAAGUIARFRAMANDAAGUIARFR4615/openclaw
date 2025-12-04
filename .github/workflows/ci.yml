@@ -228,6 +228,9 @@ jobs:
         run: |
           cd qtmultimedia
 
+          export PKG_CONFIG_PATH=$FFMPEG_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
+          echo "PKG_CONFIG_PATH is $PKG_CONFIG_PATH"
+
           # QT_ROOT_DIR=/d/Qt/6.10.0/mingw_64
           cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR -DCMAKE_INSTALL_PREFIX=$QTMULTIMEDIA_DIR
           cmake --build build --config Release --target install --parallel
@@ -259,6 +262,9 @@ jobs:
             xcode-select -print-path
             xcodebuild -version
           fi
+
+          export PKG_CONFIG_PATH=$FFMPEG_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
+          echo "PKG_CONFIG_PATH is $PKG_CONFIG_PATH"
 
           cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR
           cmake --build build --config Release --parallel
