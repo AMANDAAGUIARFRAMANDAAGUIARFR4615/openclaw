@@ -65,21 +65,13 @@ public:
         connect(actionButton, &QPushButton::clicked, this, &LoginWidget::onAction);
         connect(switchButton, &QPushButton::clicked, this, &LoginWidget::toggleMode);
 
-        QPointer<LoginWidget> self = this;
-
-        connect(&webSocketClient, &QWebSocket::connected, [&self]() {
-            if (!self)
-                return;
-
-            self->setStatus("已连接服务器");
-            self->actionButton->setEnabled(true);
+        connect(&webSocketClient, &QWebSocket::connected, this, [this]() {
+            setStatus("已连接服务器");
+            actionButton->setEnabled(true);
         });
-        connect(&webSocketClient, &QWebSocket::errorOccurred, [&self](QAbstractSocket::SocketError) {
-            if (!self)
-                return;
-
-            self->setStatus("连接失败: " + webSocketClient.errorString(), true);
-            self->actionButton->setEnabled(false);
+        connect(&webSocketClient, &QWebSocket::errorOccurred, this, [this](QAbstractSocket::SocketError) {
+            setStatus("连接失败: " + webSocketClient.errorString(), true);
+            actionButton->setEnabled(false);
         });
         webSocketClient.open(QUrl("ws://localhost:3000"));
     }
