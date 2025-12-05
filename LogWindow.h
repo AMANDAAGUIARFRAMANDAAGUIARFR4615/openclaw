@@ -55,7 +55,7 @@ protected:
         if (event->key() == Qt::Key_Escape)
             close();
         else
-            QWidget::keyPressEvent(event);
+            QTextBrowser::keyPressEvent(event);
     }
 
     void contextMenuEvent(QContextMenuEvent *event) override
