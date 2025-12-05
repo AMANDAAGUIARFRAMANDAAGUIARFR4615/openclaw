@@ -22,7 +22,7 @@
 
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(connection, deviceInfo), deviceWidget(deviceWidget)
 {
-    setAttribute(Qt::WA_InputMethodEnabled, true);
+    // setAttribute(Qt::WA_InputMethodEnabled, true);
 
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setSizeConstraint(QLayout::SetFixedSize);
@@ -321,115 +321,87 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
         return;
     }
 
-    auto keySequence = QKeySequence(event->key()).toString();
+    const int key = event->key();
+    const auto modifiers = event->modifiers();
 
-    if (event->modifiers() & Qt::ControlModifier) {
-        if (event->key() == Qt::Key_A || event->key() == Qt::Key_C || event->key() == Qt::Key_X || event->key() == Qt::Key_Z || event->key() == Qt::Key_Y || event->key() == Qt::Key_Space)
-        {
-            QJsonObject dataObject;
-            dataObject["type"] = "keyPress";
-            dataObject["key"] = QKeySequence(event->modifiers()).toString() + keySequence;
+    const bool isModifier = key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Alt || key == Qt::Key_Meta;
 
-            connection->send("keyboard", dataObject);
-            return;
-        }
+    const QString keySequence = QKeySequence(isModifier ? modifiers : (modifiers | key)).toString();
 
-        if (event->key() == Qt::Key_V)
-        {
-            const QMimeData *mimeData = qApp->clipboard()->mimeData();
+    qDebugEx() << "按下" << keySequence;
 
-            auto content = mimeData->text();
+    if (key >= Qt::Key_A && key <= Qt::Key_Z && (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier)) {
+        connection->send("keyboard", QJsonObject{{"type", "keyPress"}, {"key", event->text()}, {"repeat", event->isAutoRepeat()}});
+        return;
+    }
 
-            if (content.startsWith("file://")) {
+    if (event->modifiers() & Qt::ControlModifier && event->key() == Qt::Key_V) {
+        const QMimeData *mimeData = qApp->clipboard()->mimeData();
+
+        auto content = mimeData->text();
+
+        if (content.startsWith("file://")) {
 #ifdef Q_OS_WIN
-                auto filePath = content.mid(8); // Windows 去掉 file:///
+            auto filePath = content.mid(8); // Windows 去掉 file:///
 #else
-                auto filePath = content.mid(7); // Mac/Linux 去掉 file://
+            auto filePath = content.mid(7); // Mac/Linux 去掉 file://
 #endif
 
-                QFileInfo fileInfo(filePath);
-                if (fileInfo.exists() && fileInfo.isFile()) {
-                    QImageReader reader(filePath);
-                    reader.setDecideFormatFromContent(true);
+            QFileInfo fileInfo(filePath);
+            if (fileInfo.exists() && fileInfo.isFile()) {
+                QImageReader reader(filePath);
+                reader.setDecideFormatFromContent(true);
 
-                    QByteArray format = reader.format();
-                    if (format.isEmpty()) {
-                        qCriticalEx() << "不是有效的图片文件 ->" << filePath;
-                        return;
-                    }
-
-                    qDebugEx() << "检测到图片格式:" << format;
-
-                    QFile file(filePath);
-                    if (!file.open(QIODevice::ReadOnly)) {
-                        qCriticalEx() << "无法打开文件读取 ->" << filePath;
-                        return;
-                    }
-
-                    QByteArray fileData = file.readAll();
-                    file.close();
-
-                    connection->send("clipboard", QJsonObject{{"type", 2}, {"content", QString(fileData.toBase64())}});
+                QByteArray format = reader.format();
+                if (format.isEmpty()) {
+                    qCriticalEx() << "不是有效的图片文件 ->" << filePath;
                     return;
                 }
-            }
 
-            if (mimeData->hasText())
-            {
-                qDebugEx() << "剪切板内容是文本:" << content;
+                qDebugEx() << "检测到图片格式:" << format;
 
-                connection->send("clipboard", QJsonObject{{"type", 1}, {"content", content}});
-            }
-            else if (mimeData->hasImage())
-            {
-                QImage image = mimeData->imageData().value<QImage>();
-                auto base64Data = Tools::imageToBase64(image);
-                qDebugEx() << "剪切板内容是图片:" << base64Data.length();
+                QFile file(filePath);
+                if (!file.open(QIODevice::ReadOnly)) {
+                    qCriticalEx() << "无法打开文件读取 ->" << filePath;
+                    return;
+                }
 
-                connection->send("clipboard", QJsonObject{{"type", 2}, {"content", base64Data}});
-            }
-            else
-            {
-                new ToastWidget("此类型暂不支持", this);
-            }
+                QByteArray fileData = file.readAll();
+                file.close();
 
-            return;
+                connection->send("clipboard", QJsonObject{{"type", 2}, {"content", QString(fileData.toBase64())}});
+                return;
+            }
         }
-    }
 
-    qDebugEx() << "Key Pressed:" << keySequence;
+        if (mimeData->hasText())
+        {
+            qDebugEx() << "剪切板内容是文本:" << content;
 
-    QList<int> keys = {
-        Qt::Key_Backspace, Qt::Key_Delete, Qt::Key_Enter, Qt::Key_Return,
-        Qt::Key_Up, Qt::Key_Down, Qt::Key_Left, Qt::Key_Right,
-        Qt::Key_Tab
-    };
+            connection->send("clipboard", QJsonObject{{"type", 1}, {"content", content}});
+        }
+        else if (mimeData->hasImage())
+        {
+            QImage image = mimeData->imageData().value<QImage>();
+            auto base64Data = Tools::imageToBase64(image);
+            qDebugEx() << "剪切板内容是图片:" << base64Data.length();
 
-    if (keys.contains(event->key()))
-    {
-        QJsonObject dataObject;
-        dataObject["type"] = "keyPress";
-        dataObject["key"] = QKeySequence(event->modifiers()).toString() + keySequence;
+            connection->send("clipboard", QJsonObject{{"type", 2}, {"content", base64Data}});
+        }
+        else
+        {
+            new ToastWidget("此类型暂不支持", this);
+        }
 
-        connection->send("keyboard", dataObject);
         return;
     }
 
-    auto keyText = event->text();
-
-    if (keyText.isEmpty())
-        return;
-
-    qDebugEx() << "按键输入:" << keyText;
-
-    connection->send("inputText", keyText);
+    connection->send("keyboard", QJsonObject{{"type", "keyPress"}, {"key", keySequence}, {"repeat", event->isAutoRepeat()}});
 }
 
 void DeviceWindow::keyReleaseEvent(QKeyEvent *event)
 {
-    auto keyText = QKeySequence(event->key()).toString();
-
-    qDebugEx() << "Key Released:" << keyText;
+    qDebugEx() << "放开" << QKeySequence(event->key()).toString();
 
     DeviceView::keyReleaseEvent(event);
 }
