@@ -330,7 +330,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
 
     qDebugEx() << "按下" << keySequence;
 
-    if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
+    if (!event->text().isEmpty() && (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier)) {
         connection->send("keyboard", QJsonObject{{"type", "keyPress"}, {"key", event->text()}, {"repeat", event->isAutoRepeat()}});
         return;
     }
