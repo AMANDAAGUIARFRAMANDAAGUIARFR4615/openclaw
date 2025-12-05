@@ -335,7 +335,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
         return;
     }
 
-    if (event->modifiers() & Qt::ControlModifier && event->key() == Qt::Key_V) {
+    if (event->matches(QKeySequence::Paste)) {
         const QMimeData *mimeData = qApp->clipboard()->mimeData();
 
         auto content = mimeData->text();
