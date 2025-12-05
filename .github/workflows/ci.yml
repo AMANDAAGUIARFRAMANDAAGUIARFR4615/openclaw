@@ -140,6 +140,8 @@ jobs:
 
           if [[ "${{runner.os}}" == "macOS" ]]; then
             brew install nasm
+          else
+            winget install nasm
           fi
 
           echo FFMPEG_DIR=$FFMPEG_DIR
