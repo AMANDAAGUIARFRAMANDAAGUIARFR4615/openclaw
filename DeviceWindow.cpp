@@ -322,6 +322,7 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
     }
 
     const int key = event->key();
+    const auto text = event->text();
     const auto modifiers = event->modifiers();
 
     const bool isModifier = key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Alt || key == Qt::Key_Meta;
@@ -330,8 +331,8 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
 
     qDebugEx() << "按下" << keySequence;
 
-    if (!event->text().isEmpty() && (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier)) {
-        connection->send("keyboard", QJsonObject{{"type", "keyPress"}, {"key", event->text()}, {"repeat", event->isAutoRepeat()}});
+    if (!text.isEmpty() && text.at(0).isPrint() && (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier)) {
+        connection->send("keyboard", QJsonObject{{"type", "keyPress"}, {"key", text}, {"repeat", event->isAutoRepeat()}});
         return;
     }
 
