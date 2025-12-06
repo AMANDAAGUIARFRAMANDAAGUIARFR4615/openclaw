@@ -27,6 +27,11 @@ link_directories(${PLATFORM_DIR}/libimobiledevice-glue/lib)
 
 qt_add_resources(RESOURCE_SOURCES icons.qrc)
 
+if(WIN32)
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/logo.rc" "IDI_ICON1 ICON \"${CMAKE_CURRENT_SOURCE_DIR}/icons/logo.ico\"")
+    list(APPEND RESOURCE_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/logo.rc")
+endif()
+
 add_executable(${PROJECT_NAME}
     main.cpp
     global.h global.cpp
