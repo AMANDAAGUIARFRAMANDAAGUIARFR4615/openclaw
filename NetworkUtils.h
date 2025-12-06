@@ -49,18 +49,12 @@ public:
         const QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
 
         for (const QNetworkInterface &interface : interfaces) {
-            // 1. 基本状态过滤：必须启用(Up)且运行中(Running)
-            if (!(interface.flags() & QNetworkInterface::IsUp) || 
-                !(interface.flags() & QNetworkInterface::IsRunning)) {
+            if (!(interface.flags() & QNetworkInterface::IsUp) || !(interface.flags() & QNetworkInterface::IsRunning))
                 continue;
-            }
 
-            // 2. 必须不是回环
-            if (interface.flags() & QNetworkInterface::IsLoopBack) {
+            if (interface.flags() & QNetworkInterface::IsLoopBack)
                 continue;
-            }
 
-            // 3. 虚拟网卡过滤
             // 如果类型明确是 Wifi，绝对是物理网卡，跳过黑名单检查
             bool isWifi = (interface.type() == QNetworkInterface::Wifi);
             
@@ -72,33 +66,26 @@ public:
                 }
             }
 
-            // 4. 遍历 IP 地址
             const QList<QNetworkAddressEntry> entries = interface.addressEntries();
             for (const QNetworkAddressEntry &entry : entries) {
                 QHostAddress ip = entry.ip();
 
-                // 只取 IPv4
-                if (ip.protocol() != QAbstractSocket::IPv4Protocol) {
+                if (ip.protocol() != QAbstractSocket::IPv4Protocol)
                     continue;
-                }
 
                 QString ipStr = ip.toString();
 
                 // 排除 169.254 (自动专用IP，无效)
-                if (ipStr.startsWith("169.254")) {
+                if (ipStr.startsWith("169.254"))
                     continue;
-                }
 
-                // --- 排序逻辑 ---
-                if (ipStr.startsWith("192.168.")) {
+                if (isWifi || ipStr.startsWith("192.168."))
                     priority1.append(ipStr);
-                } else {
+                else
                     priority2.append(ipStr);
-                }
             }
         }
 
-        // 合并列表
         return priority1 + priority2;
     }
 
