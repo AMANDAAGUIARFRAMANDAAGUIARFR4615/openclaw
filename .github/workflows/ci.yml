@@ -67,7 +67,7 @@ jobs:
 
           BUILD_TIME=$(date "+%Y-%m-%d %H:%M:%S")
           
-          sed -i "s|setApplicationDisplayName(\"RemotePro\")|setApplicationDisplayName(\"$SAFE_MSG $BUILD_TIME\")|g" main.cpp
+          perl -pi -e "s|setApplicationDisplayName\(\"RemotePro\"\)|setApplicationDisplayName\(\"$SAFE_MSG $BUILD_TIME\"\)|g" main.cpp
 
       - name: Write to frpc.toml
         if: false
