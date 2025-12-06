@@ -221,22 +221,22 @@ DeviceWindow::~DeviceWindow()
 }
 
 QPoint DeviceWindow::getTransformedPosition(QPoint pos) {
-    auto x = pos.x() / deviceInfo->scaleFactor;
-    auto y = pos.y() / deviceInfo->scaleFactor;
-    auto width = this->width() / deviceInfo->scaleFactor;
-    auto height = this->height() / deviceInfo->scaleFactor;
+    int x = pos.x() / deviceInfo->scaleFactor;
+    int y = pos.y() / deviceInfo->scaleFactor;
+    int w = this->width() / deviceInfo->scaleFactor;
+    int h = this->height() / deviceInfo->scaleFactor;
 
     switch (deviceInfo->orientation) {
         case 1: // Portrait
-            return QPoint(x, y);
+            return QPoint(qBound(0, x, w), qBound(0, y, h));
         case 2: // PortraitUpsideDown
-            return QPoint(width - x, height - y);
-        case 3: // LandscapeRight
-            return QPoint(height - y, x);
-        case 4: // LandscapeLeft
-            return QPoint(y, width - x);
+            return QPoint(qBound(0, w - x, w), qBound(0, h - y, h));
+        case 3: // LandscapeRight (注意：X限制为h, Y限制为w)
+            return QPoint(qBound(0, h - y, h), qBound(0, x, w));
+        case 4: // LandscapeLeft (注意：X限制为h, Y限制为w)
+            return QPoint(qBound(0, y, h), qBound(0, w - x, w));
         default:
-            return QPoint(x, y);
+            return QPoint(qBound(0, x, w), qBound(0, y, h));
     }
 }
 
