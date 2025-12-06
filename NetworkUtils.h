@@ -12,89 +12,99 @@
 class NetworkUtils
 {
 public:
-    static bool isPrivateIPv4(const QString &ip) {
-        // 判断是否为内网 IPv4（10.x.x.x, 172.16.0.0 - 172.31.255.255, 192.168.x.x）
-        static QRegularExpression rePrivate(R"(^\s*(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\s*$)");
-        return rePrivate.match(ip).hasMatch();
+    // 判断是否为虚拟网卡名称的辅助函数
+    static bool isVirtualAdapter(const QString &humanName, const QString &devName) {
+        // 转小写以便不区分大小写比较
+        QString name = humanName.toLower();
+        QString dName = devName.toLower();
+
+        // 常见的虚拟网卡关键字黑名单
+        QStringList keywords = {
+            "zerotier",     // ZeroTier
+            "vmware",       // VMware 虚拟机
+            "virtualbox",   // VirtualBox 虚拟机
+            "vbox",         // VirtualBox
+            "virtual",      // 通用虚拟
+            "pseudo",       // 伪接口 (如 Loopback Pseudo-Interface)
+            "tap-windows",  // OpenVPN 常用的 TAP 适配器
+            "vpn",          // 各类 VPN
+            "docker",       // Docker 容器
+            "wsl",          // Windows Subsystem for Linux
+            "hyper-v",      // 微软 Hyper-V
+            "switch"        // 虚拟交换机
+        };
+
+        for (const QString &kw : keywords) {
+            if (name.contains(kw) || dName.contains(kw)) {
+                return true; // 是虚拟网卡
+            }
+        }
+        return false; // 看起来像物理网卡
     }
 
-    // 获取本机内网IP地址
+    static QStringList getPhysicalIPs() {
+        QStringList priority1; // 192.168.x.x (物理 Wifi/LAN 首选)
+        QStringList priority2; // 其他物理 IPv4 (10.x, 172.x, 公网IP)
+
+        const QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
+
+        for (const QNetworkInterface &interface : interfaces) {
+            // 1. 基本状态过滤：必须启用(Up)且运行中(Running)
+            if (!(interface.flags() & QNetworkInterface::IsUp) || 
+                !(interface.flags() & QNetworkInterface::IsRunning)) {
+                continue;
+            }
+
+            // 2. 必须不是回环
+            if (interface.flags() & QNetworkInterface::IsLoopBack) {
+                continue;
+            }
+
+            // 3. 虚拟网卡过滤
+            // 如果类型明确是 Wifi，绝对是物理网卡，跳过黑名单检查
+            bool isWifi = (interface.type() == QNetworkInterface::Wifi);
+            
+            if (!isWifi) {
+                // 如果不是 Wifi (通常是 Ethernet)，则检查名字是否包含虚拟关键字
+                if (isVirtualAdapter(interface.humanReadableName(), interface.name())) {
+                    qDebug() << "过滤掉虚拟网卡:" << interface.humanReadableName();
+                    continue; 
+                }
+            }
+
+            // 4. 遍历 IP 地址
+            const QList<QNetworkAddressEntry> entries = interface.addressEntries();
+            for (const QNetworkAddressEntry &entry : entries) {
+                QHostAddress ip = entry.ip();
+
+                // 只取 IPv4
+                if (ip.protocol() != QAbstractSocket::IPv4Protocol) {
+                    continue;
+                }
+
+                QString ipStr = ip.toString();
+
+                // 排除 169.254 (自动专用IP，无效)
+                if (ipStr.startsWith("169.254")) {
+                    continue;
+                }
+
+                // --- 排序逻辑 ---
+                if (ipStr.startsWith("192.168.")) {
+                    priority1.append(ipStr);
+                } else {
+                    priority2.append(ipStr);
+                }
+            }
+        }
+
+        // 合并列表
+        return priority1 + priority2;
+    }
+
     static QString getLocalIP()
     {
-        if (QOperatingSystemVersion::current().type() == QOperatingSystemVersion::MacOS) {
-            QProcess process;
-            process.start("networksetup", QStringList() << "-getinfo" << "Wi-Fi");
-            process.waitForFinished();
-
-            auto output = process.readAllStandardOutput();
-            auto lines = output.split('\n');
-
-            // 查找IP地址所在行
-            for (const auto &line : lines) {
-                if (line.startsWith("IP address:")) {
-                    qDebugEx() << "networksetup" << line;
-                    return line.mid(12).trimmed();
-                }
-            }
-        }
-        else
-        {
-            QProcess process;
-            process.start("ipconfig");
-            process.waitForFinished(3000);
-
-            QString output = QString::fromLocal8Bit(process.readAllStandardOutput());
-            
-            // 按顶格空行分块，每个块对应一个网卡
-            QStringList blocks = output.split(QRegularExpression("(?m)^\\s*$"), Qt::SkipEmptyParts);
-
-            // IPv4 地址正则
-            QRegularExpression reIPv4(R"((?:IPv4 地址|IPv4 Address).*?:\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+))",
-                                    QRegularExpression::CaseInsensitiveOption);
-
-            // IPv4 网关正则
-            QRegularExpression reIPv4Addr(R"(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+))");
-
-            for (const QString &block : blocks) {
-                QRegularExpressionMatch matchIPv4 = reIPv4.match(block);
-                if (!matchIPv4.hasMatch())
-                    continue; // 没有 IPv4 地址就跳过
-
-                QString ip = matchIPv4.captured(1);
-                QString gateway;
-
-                QStringList lines = block.split(QRegularExpression("\\r?\\n"));
-                bool gwSection = false;
-                for (const QString &line : lines) {
-                    if (!gwSection) {
-                        // 检查本行是否是“默认网关”行
-                        if (line.contains("Default Gateway") || line.contains("默认网关")) {
-                            gwSection = true;
-                            // 本行是否直接有 IPv4
-                            QRegularExpressionMatch m = reIPv4Addr.match(line);
-                            if (m.hasMatch()) {
-                                gateway = m.captured(1);
-                                break;
-                            }
-                        }
-                    } else {
-                        // 下一行缩进的内容可能是 IPv4
-                        if (line.trimmed().isEmpty())
-                            break; // 空行就结束
-                        QRegularExpressionMatch m = reIPv4Addr.match(line);
-                        if (m.hasMatch()) {
-                            gateway = m.captured(1);
-                            break;
-                        }
-                    }
-                }
-
-                if (!gateway.isEmpty())
-                    return ip;
-            }
-        }
-
-        return QString();
+        return getPhysicalIPs()[0];
     }
 
     // 遍历同一子网的IP地址，IP范围从 .1 到 .254
