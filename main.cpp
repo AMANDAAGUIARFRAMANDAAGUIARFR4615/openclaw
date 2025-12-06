@@ -43,6 +43,8 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
+    app.setApplicationDisplayName("RemotePro");
+
     QObject::connect(&app, &QApplication::focusChanged, [](QWidget *old, QWidget *now) {
         qDebugEx() << "焦点从" << old << "变为" << now;
 

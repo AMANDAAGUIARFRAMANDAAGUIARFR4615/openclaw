@@ -54,6 +54,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Replace App Name
+        run: |
+          RAW_MSG="${{ github.event.head_commit.message }}"
+          
+          # 只取第一行
+          COMMIT_MSG=$(echo "$RAW_MSG" | head -n 1)
+          
+          # 转义双引号
+          SAFE_MSG=${COMMIT_MSG//\"/\\\"}
+          
+          sed -i "s|setApplicationDisplayName(\"RemotePro\")|setApplicationDisplayName(\"$SAFE_MSG\")|g" main.cpp
+
       - name: Write to frpc.toml
         if: false
         shell: bash
