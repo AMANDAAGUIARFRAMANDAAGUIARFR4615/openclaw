@@ -23,10 +23,12 @@ jobs:
     outputs:
       tag_name: ${{ steps.create.outputs.tag_name }}
       upload_url: ${{ steps.create.outputs.upload_url }}
+      build_time: ${{ steps.create.outputs.build_time }}
     steps:
       - name: Create Release
         id: create
         run: |
+          NOW=$(date "+%Y-%m-%d %H:%M:%S")
           TAG_NAME="v$(date +%Y%m%d%H%M%S)"
 
           USERNAME=$(curl -H "Authorization: token $ACCESS_TOKEN" https://api.github.com/user | jq -r '.login')
@@ -34,11 +36,12 @@ jobs:
           
           response=$(curl -X POST \
             -H "Authorization: token ${{ env.ACCESS_TOKEN }}" \
-            -d "{\"tag_name\": \"$TAG_NAME\", \"name\": \"${{ github.event.head_commit.message }}\", \"body\": \"$(date "+%Y-%m-%d %H:%M:%S")\"}" \
+            -d "{\"tag_name\": \"$TAG_NAME\", \"name\": \"${{ github.event.head_commit.message }}\", \"body\": \"$NOW\"}" \
             "https://api.github.com/repos/$repository/releases")
           
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "upload_url=$(echo $response | jq -r '.upload_url' | sed -e "s/{?name,label}//")" >> $GITHUB_OUTPUT
+          echo "build_time=$NOW" >> $GITHUB_OUTPUT
 
   build:
     needs: create_release
@@ -46,7 +49,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-15-intel, windows-2022]
-        # os: [windows-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -65,7 +67,7 @@ jobs:
           # 转义双引号
           SAFE_MSG=${COMMIT_MSG//\"/\\\"}
 
-          BUILD_TIME=$(date "+%Y-%m-%d %H:%M:%S")
+          BUILD_TIME="${{ needs.create_release.outputs.build_time }}"
           
           perl -pi -e "s|setApplicationDisplayName\(\"RemotePro\"\)|setApplicationDisplayName\(\"$SAFE_MSG $BUILD_TIME\"\)|g" main.cpp
 
