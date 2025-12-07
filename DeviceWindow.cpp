@@ -8,6 +8,7 @@
 #include "LiveStreamDevice.h"
 #include "UsbDeviceManager.h"
 #include "EmojiIconProvider.h"
+#include "KeyMapping.h"
 #include <QElapsedTimer>
 #include <QVBoxLayout>
 #include <QMouseEvent>
@@ -324,15 +325,23 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
     const int key = event->key();
     const auto modifiers = event->modifiers();
 
-    const bool isModifier = key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Alt || key == Qt::Key_Meta;
+    if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
+#ifdef _WIN32
+        char c = KeyMapping::fromScanCode(event->nativeScanCode());
+#else
+        char c = KeyMapping::fromKey(event->key());
+#endif
 
-    const QString keySequence = QKeySequence(isModifier ? modifiers : (modifiers | key)).toString();
+        if (c != 0) {
+            qDebugEx() << "扫描码映射字符" << c;
+            connection->send("keyboard", QJsonObject{{"type", "keyPress"}, {"key", QString(modifiers == Qt::ShiftModifier ? "Shift+" : "") + c}, {"repeat", event->isAutoRepeat()}});
+            return;
+        }
 
-    qDebugEx() << "按下" << keySequence;
-
-    if (key >= Qt::Key_A && key <= Qt::Key_Z && (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier)) {
-        connection->send("keyboard", QJsonObject{{"type", "keyPress"}, {"key", event->text()}, {"repeat", event->isAutoRepeat()}});
-        return;
+        if (key >= Qt::Key_A && key <= Qt::Key_Z) {
+            connection->send("keyboard", QJsonObject{{"type", "keyPress"}, {"key", event->text()}, {"repeat", event->isAutoRepeat()}});
+            return;
+        }
     }
 
     if (event->matches(QKeySequence::Paste)) {
@@ -396,6 +405,9 @@ void DeviceWindow::keyPressEvent(QKeyEvent *event)
         return;
     }
 
+    const bool isModifier = key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Alt || key == Qt::Key_Meta;
+    const QString keySequence = QKeySequence(isModifier ? modifiers : (modifiers | key)).toString();
+    qDebugEx() << "按下" << keySequence;
     connection->send("keyboard", QJsonObject{{"type", "keyPress"}, {"key", keySequence}, {"repeat", event->isAutoRepeat()}});
 }
 
