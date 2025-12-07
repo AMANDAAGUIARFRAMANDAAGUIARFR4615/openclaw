@@ -3,6 +3,7 @@
 class KeyMapping {
 public:
     enum class ScanCode {
+#ifdef _WIN32
         DIK_1           = 0x02,
         DIK_2           = 0x03,
         DIK_3           = 0x04,
@@ -24,6 +25,30 @@ public:
         DIK_COMMA       = 0x33,
         DIK_PERIOD      = 0x34,
         DIK_SLASH       = 0x35
+#else
+        DIK_1           = 0x12, // kVK_ANSI_1
+        DIK_2           = 0x13, // kVK_ANSI_2
+        DIK_3           = 0x14, // kVK_ANSI_3
+        DIK_4           = 0x15, // kVK_ANSI_4
+        DIK_5           = 0x17, // kVK_ANSI_5
+        DIK_6           = 0x16, // kVK_ANSI_6
+        DIK_7           = 0x1A, // kVK_ANSI_7
+        DIK_8           = 0x1C, // kVK_ANSI_8
+        DIK_9           = 0x19, // kVK_ANSI_9
+        DIK_0           = 0x1D, // kVK_ANSI_0
+        
+        DIK_MINUS       = 0x1B, // kVK_ANSI_Minus (-)
+        DIK_EQUALS      = 0x18, // kVK_ANSI_Equal (=)
+        DIK_LBRACKET    = 0x21, // kVK_ANSI_LeftBracket ([)
+        DIK_RBRACKET    = 0x1E, // kVK_ANSI_RightBracket (])
+        DIK_SEMICOLON   = 0x29, // kVK_ANSI_Semicolon (;)
+        DIK_APOSTROPHE  = 0x27, // kVK_ANSI_Quote (')
+        DIK_GRAVE       = 0x32, // kVK_ANSI_Grave (`)
+        DIK_BACKSLASH   = 0x2A, // kVK_ANSI_Backslash (\)
+        DIK_COMMA       = 0x2B, // kVK_ANSI_Comma (,)
+        DIK_PERIOD      = 0x2F, // kVK_ANSI_Period (.)
+        DIK_SLASH       = 0x2C  // kVK_ANSI_Slash (/)
+#endif
     };
 
     enum class KeyChar {
@@ -50,8 +75,8 @@ public:
         DIK_SLASH       = '/'
     };
 
-    static char fromScanCode(int scanCode) {
-        switch (static_cast<ScanCode>(scanCode)) {
+    static char toChar(int key) {
+        switch (static_cast<ScanCode>(key)) {
             // --- 数字键 ---
             case ScanCode::DIK_1:           return asChar(KeyChar::DIK_1);
             case ScanCode::DIK_2:           return asChar(KeyChar::DIK_2);
@@ -78,37 +103,6 @@ public:
             case ScanCode::DIK_SLASH:       return asChar(KeyChar::DIK_SLASH);
             
             default:                        return 0;
-        }
-    }
-
-    static char fromKey(int key) {
-        switch (static_cast<Qt::Key>(key)) {
-            // --- 数字键 ---
-            case Qt::Key_1:             return asChar(KeyChar::DIK_1);
-            case Qt::Key_2:             return asChar(KeyChar::DIK_2);
-            case Qt::Key_3:             return asChar(KeyChar::DIK_3);
-            case Qt::Key_4:             return asChar(KeyChar::DIK_4);
-            case Qt::Key_5:             return asChar(KeyChar::DIK_5);
-            case Qt::Key_6:             return asChar(KeyChar::DIK_6);
-            case Qt::Key_7:             return asChar(KeyChar::DIK_7);
-            case Qt::Key_8:             return asChar(KeyChar::DIK_8);
-            case Qt::Key_9:             return asChar(KeyChar::DIK_9);
-            case Qt::Key_0:             return asChar(KeyChar::DIK_0);
-            
-            // --- 符号键 ---
-            case Qt::Key_Minus:         return asChar(KeyChar::DIK_MINUS);
-            case Qt::Key_Equal:         return asChar(KeyChar::DIK_EQUALS);
-            case Qt::Key_BracketLeft:   return asChar(KeyChar::DIK_LBRACKET);
-            case Qt::Key_BracketRight:  return asChar(KeyChar::DIK_RBRACKET);
-            case Qt::Key_Semicolon:     return asChar(KeyChar::DIK_SEMICOLON);
-            case Qt::Key_Apostrophe:    return asChar(KeyChar::DIK_APOSTROPHE);
-            case Qt::Key_QuoteLeft:     return asChar(KeyChar::DIK_GRAVE);
-            case Qt::Key_Backslash:     return asChar(KeyChar::DIK_BACKSLASH);
-            case Qt::Key_Comma:         return asChar(KeyChar::DIK_COMMA);
-            case Qt::Key_Period:        return asChar(KeyChar::DIK_PERIOD);
-            case Qt::Key_Slash:         return asChar(KeyChar::DIK_SLASH);
-            
-            default:                    return 0;
         }
     }
 
