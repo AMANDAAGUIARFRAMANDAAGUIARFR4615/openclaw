@@ -220,7 +220,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 qDebugEx() << "连接成功";
             });
 
-            socket->connectToHost("2409:8a34:452:950:d5b4:782:6109:3d77", 12345);
+            socket->connectToHost("2409:8a34:452:950:aa32:471b:f039:b06e", 12345);
         }
 
         if (text == "开发者") {
