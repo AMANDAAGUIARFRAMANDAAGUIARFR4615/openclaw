@@ -67,8 +67,29 @@ public:
         dataToSend.append(reinterpret_cast<const char*>(&jsonDataLength), sizeof(jsonDataLength));
         dataToSend.append(jsonData);
 
-        if (socket->writeDatagram(dataToSend, host, port) != dataToSend.size())
-            qCriticalEx() << host.toString() + ":" + QString::number(port) << "发送失败";
+        auto sendAttempt = new std::function<void(quint16)>();
+        *sendAttempt = [=](quint16 remainingRetries) mutable {
+            if (socket->writeDatagram(dataToSend, host, port) == dataToSend.size()) {
+                delete sendAttempt; // 成功发送，清理
+                return;
+            }
+
+            if (remainingRetries == 0) {
+                qCriticalEx() << host.toString() + ":" + QString::number(port) << "发送失败，已达到最大重试次数！";
+                delete sendAttempt;
+                return;
+            }
+
+            qWarningEx() << host.toString() + ":" + QString::number(port) 
+                        << "发送失败，剩余重试次数:" << remainingRetries;
+
+            // 使用单次定时器延迟重试
+            QTimer::singleShot(50, [=]() {
+                (*sendAttempt)(remainingRetries - 1);
+            });
+        };
+
+        (*sendAttempt)(retryCount);
     }
 
 private:
