@@ -52,14 +52,10 @@ public:
 
 protected:
     void keyPressEvent(QKeyEvent *event) override {
-        // if (event->key() == Qt::Key_Escape)
-        //     close();
-        // else
-        //     QTextBrowser::keyPressEvent(event);
-
-        const int key = event->key();
-
-        qDebugEx() << "扫描码:" << event->nativeScanCode() << "虚拟码" << event->nativeVirtualKey() << "key" << event->key();
+        if (event->key() == Qt::Key_Escape)
+            close();
+        else
+            QTextBrowser::keyPressEvent(event);
     }
 
     void contextMenuEvent(QContextMenuEvent *event) override
