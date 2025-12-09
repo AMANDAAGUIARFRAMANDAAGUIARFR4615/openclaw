@@ -209,6 +209,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (text == "客服") {
+            qDebugEx() << "发起ipv6请求";
+
             auto socket = new QTcpSocket();
             connect(socket, &QTcpSocket::errorOccurred, [=](QAbstractSocket::SocketError socketError) {
                 qCriticalEx() << "errorOccurred" << socketError << socket->errorString();
