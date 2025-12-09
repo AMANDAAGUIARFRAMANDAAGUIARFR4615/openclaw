@@ -208,6 +208,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             socket->connectToHost("192.168.0.111", 56504);
         }
 
+        if (text == "客服") {
+            auto socket = new QTcpSocket();
+            connect(socket, &QTcpSocket::errorOccurred, [=](QAbstractSocket::SocketError socketError) {
+                qCriticalEx() << "errorOccurred" << socketError << socket->errorString();
+            });
+
+            connect(socket, &QTcpSocket::connected, [=]() {
+                qDebugEx() << "连接成功";
+            });
+
+            socket->connectToHost("2409:8a34:452:950:d5b4:782:6109:3d77", 12345);
+        }
+
         if (text == "开发者") {
             new SettingsViewer(&settings, this);
             return;
