@@ -38,7 +38,7 @@ public:
 
         connect(this, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
 
-        if (!this->listen(QHostAddress::AnyIPv4, port)) {
+        if (!this->listen(QHostAddress::Any, port)) {
             qCriticalEx() << "无法启动服务器" << port;
             return;
         }

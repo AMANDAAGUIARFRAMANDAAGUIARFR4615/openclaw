@@ -20,7 +20,7 @@ public:
     {
         socket = new QUdpSocket(this);
 
-        if (!socket->bind(QHostAddress::AnyIPv4, listenPort)) {
+        if (!socket->bind(QHostAddress::Any, listenPort)) {
             qCriticalEx() << "无法绑定端口";
             return;
         }
