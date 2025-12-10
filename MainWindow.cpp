@@ -50,11 +50,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     int y = (screenSize.height() - height()) / 2;
     move(x, y);
 
-    auto logWindow = new LogWindow();
-    logWindow->resize(size().width(), 400);
-    auto shortcut = new QShortcut(QKeySequence(Qt::Key_F5), this);
-    connect(shortcut, &QShortcut::activated, logWindow, &LogWindow::toggleVisibility);
-
     auto central = new QWidget(this);
     setCentralWidget(central);
 
@@ -71,10 +66,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🔗"), "设备连接"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("👥"), "分组群控"));
-    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("📑"), "设备列表"));
+    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("📱"), "设备列表"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("⚙️"), "设置"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("💡"), "帮助"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("💬"), "客服"));
+    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("📜"), "日志"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🛠️"), "开发者"));
 
     for (int i = 0; i < sideBarList->count(); i++) {
@@ -206,6 +202,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             });
 
             socket->connectToHost("192.168.0.111", 56504);
+            return;
         }
 
         if (text == "客服") {
@@ -221,6 +218,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             });
 
             socket->connectToHost("2409:8a34:452:950:aa32:471b:f039:b06e", 12345);
+            return;
+        }
+
+        if (text == "日志") {
+            auto logWindow = LogWindow::getInstance();
+            logWindow->setParent(scrollArea);
+            logWindow->resize(scrollArea->size());
+            logWindow->toggleVisibility();
+            return;
         }
 
         if (text == "开发者") {

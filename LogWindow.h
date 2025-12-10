@@ -16,8 +16,7 @@ class LogWindow : public QTextBrowser
 public:
     explicit LogWindow(QWidget *parent = nullptr) : QTextBrowser(parent)
     {
-        logWindow = this;
-        setVisible(false);
+        instance = this;
 
         logFile.setFileName(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/app_log.txt");
         if (!logFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
@@ -25,7 +24,7 @@ public:
         }
 
         qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &message) {
-            QMetaObject::invokeMethod(logWindow, [=]() {
+            QMetaObject::invokeMethod(instance, [=]() {
                 QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss.zzz");
                 QString formattedMessage = QString("[%1] %2 | %3").arg(time).arg(magic_enum::enum_name(type)).arg(message);
 
@@ -35,15 +34,17 @@ public:
                     .arg(color)
                     .arg(formattedMessage);
 
-                logWindow->allLogs.append(htmlMessage);
-                logWindow->appendLog(htmlMessage);
+                instance->allLogs.append(htmlMessage);
+                instance->appendLog(htmlMessage);
 
-                QTextStream out(&logWindow->logFile);
+                QTextStream out(&instance->logFile);
                 out << formattedMessage << "\n";
                 out.flush();
             });
         });
     }
+
+    static LogWindow* getInstance() {return instance;}
 
     void toggleVisibility()
     {
@@ -84,7 +85,7 @@ protected:
         delete menu;
     }
 
-    inline static LogWindow* logWindow;
+    inline static LogWindow* instance;
     QFile logFile;
     bool showOnlyErrors = false;
     QStringList allLogs;

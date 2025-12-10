@@ -8,6 +8,7 @@
 #include "DeviceWindow.h"
 #include "UsbDeviceManager.h"
 #include "LoginWidget.h"
+#include "LogWindow.h"
 #include <QApplication>
 #include <QNetworkProxy>
 #include <QLoggingCategory>
@@ -44,6 +45,8 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     app.setApplicationDisplayName("RemotePro");
+
+    new LogWindow();
 
     QObject::connect(&app, &QApplication::focusChanged, [](QWidget *old, QWidget *now) {
         qDebugEx() << "焦点从" << old << "变为" << now;
