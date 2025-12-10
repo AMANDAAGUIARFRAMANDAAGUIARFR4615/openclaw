@@ -1,7 +1,6 @@
 #include "RemoteFileExplorer.h"
 #include "Logger.h"
 #include "EventHub.h"
-#include "TcpServer.h"
 #include "Tools.h"
 #include "FileTransfer.h"
 #include "ToastWidget.h"

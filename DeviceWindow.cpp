@@ -1,7 +1,6 @@
 #include "DeviceWindow.h"
 #include "DeviceWidget.h"
 #include "Logger.h"
-#include "TcpServer.h"
 #include "EventHub.h"
 #include "ToastWidget.h"
 #include "Tools.h"

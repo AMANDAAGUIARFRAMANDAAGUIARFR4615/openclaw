@@ -3,7 +3,6 @@
 #include "DeviceWindow.h"
 #include "Tools.h"
 #include "RemoteFileExplorer.h"
-#include "TcpServer.h"
 #include "FileTransfer.h"
 #include "EventHub.h"
 #include "Recorder.h"
