@@ -192,16 +192,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (text == "帮助") {
-            auto socket = new QTcpSocket();
-            connect(socket, &QTcpSocket::errorOccurred, [=](QAbstractSocket::SocketError socketError) {
-                qCriticalEx() << "errorOccurred" << socketError << socket->errorString();
-            });
-            
-            connect(socket, &QTcpSocket::readyRead, [=]() {
-                qDebugEx() << "收到数据2222";
-            });
-
-            socket->connectToHost("192.168.0.111", 56504);
             return;
         }
 
@@ -364,10 +354,10 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     auto player = new DeviceWidget(connection, deviceInfo);
 
+    auto device = new LiveStreamDevice(nullptr, 0, this);
+
     if (connection->type == DeviceConnection::Usb)
     {
-        auto device = new LiveStreamDevice(nullptr, 0, this);
-
         auto ctx = g_usbDeviceManager->getContext(connection);
         g_usbDeviceManager->connectDevice(ctx->udid, deviceInfo->videoPort, [=](DeviceConnection* conn, const QByteArray& data){
             device->appendData(data);
@@ -377,7 +367,18 @@ void MainWindow::addItem(DeviceConnection* connection)
     }
     else
     {
-        auto device = new LiveStreamDevice(deviceInfo->localIp, deviceInfo->videoPort, this);
+        // auto device = new LiveStreamDevice(deviceInfo->localIp, deviceInfo->videoPort, this);
+        auto server = new QTcpServer(this);
+        connect(server, &QTcpServer::newConnection, this, [=]() {
+            QTcpSocket *socket = server->nextPendingConnection();
+            qDebug() << "Client connected:" << socket->peerAddress().toString();
+            connect(socket, &QTcpSocket::readyRead, this, [=]() {
+                QTcpSocket *socket = qobject_cast<QTcpSocket*>(sender());
+                device->appendData(socket->readAll());
+            });
+        });
+        server->listen(QHostAddress::Any, 0);
+        connection->send("videoPort", server->serverPort());
         player->setSourceDevice(device);
     }
 
