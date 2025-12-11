@@ -292,8 +292,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         if (!connection)
             return;
 
-        deviceFrames.remove(connection->deviceInfo);
-        delete connection->deviceInfo;
+        auto deviceFrame = deviceFrames.take(connection->deviceInfo);
+        if (!deviceFrame)
+            return;
+
+        deviceFrame->deleteLater();
         relayoutDevices();
     });
 
@@ -376,13 +379,20 @@ void MainWindow::relayoutDevices()
         delete item;
     }
 
-    for (int i = 0; i < devices.size(); ++i) {
-        int row = i / totalCols;
-        int col = i % totalCols;
+    int index = 0;
 
-        auto widget = deviceFrames[devices[i]];
+    for (auto& device : devices) {
+        auto widget = deviceFrames[device];
+        if (!widget)
+            continue;
+
+        int row = index / totalCols;
+        int col = index % totalCols;
+
         widget->show();
         gridLayout->addWidget(widget, row, col);
+
+        index++;
     }
 }
 
@@ -418,7 +428,15 @@ void MainWindow::addItem(DeviceConnection* connection)
         server->listen(QHostAddress::Any, 0);
         connection->send("videoPort", server->serverPort());
         player->setSourceDevice(device);
+
+        connect(player, &QObject::destroyed, [=]() {
+            delete server;
+        });
     }
+
+    connect(player, &QObject::destroyed, [=]() {
+        delete device;
+    });
 
     auto frame = new QFrame(this);
     frame->setFixedSize(frameItemWidth, frameItemHeight);

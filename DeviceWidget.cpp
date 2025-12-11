@@ -78,6 +78,11 @@ DeviceWidget::~DeviceWidget()
 {
     EventHub::off(this, "clipboard");
     EventHub::off(this, "lockedStatus");
+
+    if (deviceWindow)
+        deviceWindow->deleteLater();
+
+    delete connection->deviceInfo;
 }
 
 void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
@@ -99,10 +104,13 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
 
     videoFrameWidgetSize = videoFrameWidget->size();
 
-    auto placeholder = new QWidget();
+    QPointer<QWidget> placeholder = new QWidget();
 
     deviceWindow = new DeviceWindow(connection, deviceInfo, this);
     connect(deviceWindow, &QObject::destroyed, [=]() {
+        if (!placeholder)
+            return;
+
         deviceWindow = nullptr;
         placeholder->deleteLater();
     });

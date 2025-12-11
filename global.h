@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Logger.h"
 #include <QSettings>
 #include "WebSocketClient.h"
 
