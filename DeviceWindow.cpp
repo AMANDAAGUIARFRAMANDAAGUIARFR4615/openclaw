@@ -20,7 +20,7 @@
 #include <QSlider>
 #include <QImageReader>
 
-DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(connection, deviceInfo), deviceWidget(deviceWidget)
+DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo) : DeviceView(connection, deviceInfo)
 {
     // setAttribute(Qt::WA_InputMethodEnabled, true);
 
@@ -238,15 +238,6 @@ QPoint DeviceWindow::getTransformedPosition(QPoint pos) {
         default:
             return QPoint(qBound(0, x, w), qBound(0, y, h));
     }
-}
-
-void DeviceWindow::closeEvent(QCloseEvent *event)
-{
-    videoFrameWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    videoFrameWidget->setFixedSize(deviceWidget->videoFrameWidgetSize);
-    deviceWidget->addVideoFrameWidget(videoFrameWidget);
-    videoFrameWidget = nullptr;
-    DeviceView::closeEvent(event);
 }
 
 void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)

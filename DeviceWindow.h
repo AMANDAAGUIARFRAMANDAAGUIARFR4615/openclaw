@@ -9,14 +9,11 @@ class DeviceWindow : public DeviceView
 {
     Q_OBJECT
 public:
-    explicit DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget);
+    explicit DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo);
     ~DeviceWindow();
-
-    DeviceWidget* const deviceWidget;
 
 protected:
     QPoint getTransformedPosition(QPoint pos);
-    void closeEvent(QCloseEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     bool event(QEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;

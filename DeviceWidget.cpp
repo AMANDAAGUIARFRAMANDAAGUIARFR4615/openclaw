@@ -106,17 +106,19 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
 
     QPointer<QWidget> placeholder = new QWidget();
 
-    deviceWindow = new DeviceWindow(connection, deviceInfo, this);
+    deviceWindow = new DeviceWindow(connection, deviceInfo);
     connect(deviceWindow, &QObject::destroyed, [=]() {
         if (!placeholder)
             return;
+
+        videoFrameWidget->resize(videoFrameWidgetSize);
+        addVideoFrameWidget(videoFrameWidget);
 
         deviceWindow = nullptr;
         placeholder->deleteLater();
     });
 
-    videoFrameWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    videoFrameWidget->setFixedSize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
+    videoFrameWidget->resize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
     deviceWindow->addVideoFrameWidget(videoFrameWidget);
     deviceWindow->show();
     qobject_cast<QBoxLayout*>(layout())->addWidget(placeholder);
