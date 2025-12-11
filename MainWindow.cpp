@@ -288,7 +288,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     });
 
     EventHub::on(this, "disconnected", [this](const QJsonValue &data, DeviceConnection* connection) {
-        qDebugEx() << "断开连接处理";
+        qDebugEx() << "断开连接处理" << connection;
+        if (!connection)
+            return;
+
         deviceFrames.remove(connection->deviceInfo);
         delete connection->deviceInfo;
         relayoutDevices();
