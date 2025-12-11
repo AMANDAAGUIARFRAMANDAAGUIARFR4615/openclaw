@@ -373,23 +373,10 @@ void MainWindow::relayoutDevices()
     int totalRows = qMax(1, tabHeight / (currentItemHeight + spacing));
     int totalCols = qMax(1, tabWidth / (currentItemWidth + spacing));
 
-    if (devices.count() > totalCols)
+    if (devices.count() >= totalCols)
         gridLayout->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
     else
         gridLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-
-    for (int i = 0; i < 50; ++i) { 
-        gridLayout->setRowStretch(i, 0);
-        gridLayout->setColumnStretch(i, 0);
-    }
-
-    for (int i = 0; i < totalRows; i++) {
-        gridLayout->setRowStretch(i, 1);
-    }
-
-    for (int i = 0; i < totalCols; i++) {
-        gridLayout->setColumnStretch(i, 1);
-    }
 
     while (QLayoutItem* item = gridLayout->takeAt(0)) {
         if (auto w = item->widget())
@@ -404,7 +391,7 @@ void MainWindow::relayoutDevices()
         if (!widget)
             continue;
 
-        widget->resize(currentItemWidth, currentItemHeight);
+        widget->setFixedSize(currentItemWidth, currentItemHeight);
         widget->show();
 
         int row = index / totalCols;
