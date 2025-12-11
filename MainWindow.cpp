@@ -368,13 +368,28 @@ void MainWindow::relayoutDevices()
     int currentItemHeight = isLandscape ? frameItemWidth : frameItemHeight;
 
     int tabWidth = scrollArea->viewport()->width();
+    int tabHeight = scrollArea->viewport()->height();
 
+    int totalRows = qMax(1, tabHeight / (currentItemHeight + spacing));
     int totalCols = qMax(1, tabWidth / (currentItemWidth + spacing));
 
     if (devices.count() > totalCols)
         gridLayout->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
     else
         gridLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+
+    for (int i = 0; i < 50; ++i) { 
+        gridLayout->setRowStretch(i, 0);
+        gridLayout->setColumnStretch(i, 0);
+    }
+
+    for (int i = 0; i < totalRows; i++) {
+        gridLayout->setRowStretch(i, 1);
+    }
+
+    for (int i = 0; i < totalCols; i++) {
+        gridLayout->setColumnStretch(i, 1);
+    }
 
     while (QLayoutItem* item = gridLayout->takeAt(0)) {
         if (auto w = item->widget())
@@ -389,13 +404,11 @@ void MainWindow::relayoutDevices()
         if (!widget)
             continue;
 
-        widget->setFixedSize(currentItemWidth, currentItemHeight);
-        widget->update();
+        widget->resize(currentItemWidth, currentItemHeight);
+        widget->show();
 
         int row = index / totalCols;
         int col = index % totalCols;
-
-        widget->show();
         gridLayout->addWidget(widget, row, col);
 
         index++;
@@ -445,7 +458,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     });
 
     auto frame = new QFrame(this);
-    frame->setFixedSize(frameItemWidth, frameItemHeight);
+    frame->resize(frameItemWidth, frameItemHeight);
     frame->setFrameShape(QFrame::Box);
     auto frameLayout = new QVBoxLayout(frame);
     frameLayout->setContentsMargins(0, 0, 0, 0);
