@@ -85,6 +85,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             qrDialog->setWindowTitle("扫码连接");
 
             auto mainLayout = new QHBoxLayout(qrDialog);
+            mainLayout->setSizeConstraint(QLayout::SetFixedSize); 
 
             auto localIPs = NetworkUtils::getPhysicalIPs();
             qDebugEx() << "本机内网IP:" << localIPs;
@@ -93,19 +94,28 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 QJsonObject hostInfo = TcpServer::getInstance()->getHostInfo(localIP);
                 QByteArray data = QJsonDocument(hostInfo).toJson().toBase64();
                 
+                int qrSize = qMax(200, 500 - (localIPs.size() * 100));
+
                 auto img = Tools::generateQrImage(data);
+                QPixmap pixmap = QPixmap::fromImage(img).scaled(
+                    qrSize, qrSize, 
+                    Qt::KeepAspectRatio, 
+                    Qt::SmoothTransformation
+                );
 
                 QWidget *itemWidget = new QWidget(qrDialog);
                 QVBoxLayout *itemLayout = new QVBoxLayout(itemWidget);
-                itemLayout->setContentsMargins(5, 5, 5, 5);
 
                 QLabel *imgLabel = new QLabel(itemWidget);
-                imgLabel->setPixmap(QPixmap::fromImage(img));
+                imgLabel->setPixmap(pixmap);
                 imgLabel->setAlignment(Qt::AlignCenter);
 
                 QLabel *textLabel = new QLabel(localIP, itemWidget);
                 textLabel->setAlignment(Qt::AlignCenter);
-                // textLabel->setStyleSheet("font-weight: bold;"); // 可选：加粗字体
+                QFont font = textLabel->font();
+                font.setPointSize(16);
+                font.setBold(true);
+                textLabel->setFont(font);
 
                 itemLayout->addWidget(imgLabel);
                 itemLayout->addWidget(textLabel);
