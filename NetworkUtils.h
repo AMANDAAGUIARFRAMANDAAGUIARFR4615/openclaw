@@ -20,18 +20,30 @@ public:
 
         // 常见的虚拟网卡关键字黑名单
         QStringList keywords = {
-            "zerotier",     // ZeroTier
-            "vmware",       // VMware 虚拟机
-            "virtualbox",   // VirtualBox 虚拟机
-            "vbox",         // VirtualBox
-            "virtual",      // 通用虚拟
-            "pseudo",       // 伪接口 (如 Loopback Pseudo-Interface)
-            "tap-windows",  // OpenVPN 常用的 TAP 适配器
-            "vpn",          // 各类 VPN
-            "docker",       // Docker 容器
-            "wsl",          // Windows Subsystem for Linux
-            "hyper-v",      // 微软 Hyper-V
-            "switch"        // 虚拟交换机
+            // --- VPN 与 隧道协议 ---
+            "zerotier",     // ZeroTier 异地组网虚拟网卡
+            "tap-windows",  // OpenVPN 等 VPN 软件使用的虚拟 TAP 驱动
+            "vpn",          // 各类 VPN 软件的通用标识
+            "utun",         // macOS/iOS 用户态网络隧道 (User Tunnel)
+            "pseudo",       // 伪设备接口 / 隧道接口
+            "gif",          // IPv4 到 IPv6 的通用隧道接口
+            "stf",          // 6to4 隧道接口
+
+            // --- 虚拟机 与 容器 ---
+            "vmware",       // VMware 虚拟机网卡 (VMnet系列)
+            "virtualbox",   // VirtualBox 虚拟机网卡
+            "vbox",         // VirtualBox 的缩写标识
+            "docker",       // Docker 容器默认网桥 (docker0)
+            "wsl",          // Windows Subsystem for Linux (WSL2) 虚拟网卡
+
+            // --- 特定硬件与协议 ---
+            "awdl",         // Apple Wireless Direct Link (AirDrop 专用)
+            "llw",          // Apple Low Latency WLAN (Sidecar 专用)
+            "feth",         // Linux veth pair (容器间通信接口)
+
+            // --- 特殊的虚拟交换与热点 (精确匹配，避免误杀物理网卡) ---
+            "default switch",               // Hyper-V 强制生成的内部 NAT 交换机
+            "microsoft wi-fi direct virtual" // Windows 移动热点虚拟适配器
         };
 
         for (const QString &kw : keywords) {
@@ -43,8 +55,7 @@ public:
     }
 
     static QStringList getPhysicalIPs() {
-        QStringList priority1; // 192.168.x.x (物理 Wifi/LAN 首选)
-        QStringList priority2; // 其他物理 IPv4 (10.x, 172.x, 公网IP)
+        QStringList ips;
 
         const QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
 
@@ -79,14 +90,11 @@ public:
                 if (ipStr.startsWith("169.254"))
                     continue;
 
-                if (isWifi || ipStr.startsWith("192.168."))
-                    priority1.append(ipStr);
-                else
-                    priority2.append(ipStr);
+                ips.append(ipStr);
             }
         }
 
-        return priority1 + priority2;
+        return ips;
     }
 
     // 遍历同一子网的IP地址，IP范围从 .1 到 .254
