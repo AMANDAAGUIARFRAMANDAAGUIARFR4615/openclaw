@@ -81,17 +81,42 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         QString text = item->text();
 
         if (text == "设备连接") {
-            auto img = Tools::generateQrImage(QJsonDocument(TcpServer::getInstance()->getHostInfo()).toJson().toBase64());
-
             auto qrDialog = new QDialog(this);
             qrDialog->setWindowTitle("扫码连接");
 
-            QLabel *label = new QLabel(qrDialog);
-            label->setPixmap(QPixmap::fromImage(img));
+            auto mainLayout = new QHBoxLayout(qrDialog);
 
-            auto layout = new QVBoxLayout(qrDialog);
-            layout->addWidget(label);
-            qrDialog->resize(img.width(), img.height());
+            auto localIPs = NetworkUtils::getPhysicalIPs();
+            qDebugEx() << "本机内网IP:" << localIPs;
+
+            for (const QString &localIP : localIPs) {
+                QJsonObject hostInfo = TcpServer::getInstance()->getHostInfo(localIP);
+                QByteArray data = QJsonDocument(hostInfo).toJson().toBase64();
+                
+                auto img = Tools::generateQrImage(data);
+
+                QWidget *itemWidget = new QWidget(qrDialog);
+                QVBoxLayout *itemLayout = new QVBoxLayout(itemWidget);
+                itemLayout->setContentsMargins(5, 5, 5, 5);
+
+                QLabel *imgLabel = new QLabel(itemWidget);
+                imgLabel->setPixmap(QPixmap::fromImage(img));
+                imgLabel->setAlignment(Qt::AlignCenter);
+
+                QLabel *textLabel = new QLabel(localIP, itemWidget);
+                textLabel->setAlignment(Qt::AlignCenter);
+                // textLabel->setStyleSheet("font-weight: bold;"); // 可选：加粗字体
+
+                itemLayout->addWidget(imgLabel);
+                itemLayout->addWidget(textLabel);
+
+                mainLayout->addWidget(itemWidget);
+            }
+
+            if (localIPs.isEmpty()) {
+                QLabel *errLabel = new QLabel("未检测到有效网卡", qrDialog);
+                mainLayout->addWidget(errLabel);
+            }
 
             qrDialog->exec();
             return;

@@ -48,8 +48,8 @@ public:
 
     static TcpServer* getInstance() {return instance;}
 
-    QJsonObject getHostInfo(const QString& ip = nullptr) {
-        return QJsonObject{{"ip", ip != nullptr ? ip : NetworkUtils::getLocalIP()}, {"port", serverPort()}, {"remoteDeviceName", QHostInfo::localHostName()}};
+    QJsonObject getHostInfo(const QString& ip) {
+        return QJsonObject{{"ip", ip}, {"port", serverPort()}, {"remoteDeviceName", QHostInfo::localHostName()}};
     }
 
 private slots:

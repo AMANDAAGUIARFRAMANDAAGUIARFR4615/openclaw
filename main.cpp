@@ -96,8 +96,8 @@ int main(int argc, char *argv[])
             g_usbDeviceManager->stop();
         });
 
-        QString localIP = NetworkUtils::getLocalIP();
-        qDebugEx() << "本机内网IP:" << localIP;
+        auto localIPs = NetworkUtils::getPhysicalIPs();
+        qDebugEx() << "本机内网IP:" << localIPs;
 
         auto udpTransport = new UdpTransport(
             [](const QJsonObject &jsonObject) {
@@ -105,10 +105,12 @@ int main(int argc, char *argv[])
             }
         );
 
-        QList<QHostAddress> subnetIPs = NetworkUtils::getSubnetIPs(localIP);
-        for (const QHostAddress &ip : subnetIPs) {
-            // qDebugEx() << "同子网IP: " << ip.toString();
-            udpTransport->sendData(tcpServer->getHostInfo(localIP), ip, 32838);
+        for (const QString &localIP : localIPs) {
+            QList<QHostAddress> subnetIPs = NetworkUtils::getSubnetIPs(localIP);
+            for (const QHostAddress &ip : subnetIPs) {
+                // qDebugEx() << "同子网IP: " << ip.toString();
+                udpTransport->sendData(tcpServer->getHostInfo(localIP), ip, 32838);
+            }
         }
     });
 
