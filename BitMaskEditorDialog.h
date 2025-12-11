@@ -15,6 +15,7 @@ public:
     struct Item {
         int bit;
         QString name;
+        bool isLandscape;
     };
 
     explicit BitMaskEditorDialog(const QList<Item>& items,

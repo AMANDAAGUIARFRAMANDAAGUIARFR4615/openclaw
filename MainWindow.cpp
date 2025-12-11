@@ -358,15 +358,18 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 void MainWindow::relayoutDevices()
 {
+    auto& [bit, _, isLandscape] = tabs[tabWidget->currentIndex()];
+    const auto& devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+
     auto contentWidget = scrollArea->widget();
     auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
 
+    int currentItemWidth = isLandscape ? frameItemHeight : frameItemWidth;
+    int currentItemHeight = isLandscape ? frameItemWidth : frameItemHeight;
+
     int tabWidth = scrollArea->viewport()->width();
 
-    int totalCols = std::max(1, tabWidth / (frameItemWidth + spacing));
-
-    auto bit = tabs[tabWidget->currentIndex()].bit;
-    auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+    int totalCols = qMax(1, tabWidth / (currentItemWidth + spacing));
 
     if (devices.count() > totalCols)
         gridLayout->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
@@ -385,6 +388,9 @@ void MainWindow::relayoutDevices()
         auto widget = deviceFrames[device];
         if (!widget)
             continue;
+
+        widget->setFixedSize(currentItemWidth, currentItemHeight);
+        widget->update();
 
         int row = index / totalCols;
         int col = index % totalCols;
@@ -456,9 +462,15 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
     if (index < 0)
         return;
 
-    auto bit = tabs[index].bit;
+    auto& [bit, _, isLandscape] = tabs[index];
 
     QMenu menu(this);
+
+    menu.addAction(isLandscape ? "竖屏" : "横屏", [=]() {
+        tabs[tabWidget->currentIndex()].isLandscape = !isLandscape;
+        saveTabs();
+        relayoutDevices();
+    });
 
     menu.addAction("重命名", [=]() {
         bool ok = false;
@@ -530,6 +542,7 @@ void MainWindow::saveTabs()
         QVariantMap map;
         map["bit"] = tab.bit;
         map["name"] = tab.name;
+        map["isLandscape"] = tab.isLandscape;
         tabList.append(map);
     }
     settings.setValue("tabs", tabList);
