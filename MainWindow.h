@@ -27,7 +27,6 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     void relayoutDevices();
-    void onTabChanged(int index);
     void onTabMoved(int fromIndex, int toIndex);
     void showTabBarContextMenu(const QPoint &pos);
     void loadTabs();

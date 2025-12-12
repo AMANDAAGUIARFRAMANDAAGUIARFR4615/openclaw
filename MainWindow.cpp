@@ -275,7 +275,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     tabBar->setToolTip("右键点击可修改分组");
     tabBar->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    connect(tabBar, &QTabBar::currentChanged, this, &MainWindow::onTabChanged);
     connect(tabBar, &QTabBar::tabMoved, this, &MainWindow::onTabMoved);
     connect(tabBar, &QWidget::customContextMenuRequested, this, &MainWindow::showTabBarContextMenu);
 
@@ -317,6 +316,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         relayoutDevices();
     });
 
+    connect(tabBar, &QTabBar::currentChanged, this, [=](int index) {
+        qDebugEx() << "onTabChanged" << index;
+
+        auto widget = tabWidget->currentWidget();
+        auto layout = widget->layout();
+        if (!layout) {
+            layout = new QVBoxLayout(widget);
+            layout->setContentsMargins(0, 0, 0, 0);
+        }
+        layout->addWidget(scrollArea);
+
+        zoomSlider->setValue(tabs[index].scale);
+
+        relayoutDevices();
+    });
+
     controlLayout->addWidget(zoomOutBtn);
     controlLayout->addWidget(zoomSlider);
     controlLayout->addWidget(zoomInBtn);
@@ -353,8 +368,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     });
 
     loadTabs();
-
-    zoomSlider->setValue(tabs[0].scale);
 }
 
 MainWindow::~MainWindow()
@@ -374,21 +387,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         close();
     else
         QMainWindow::keyPressEvent(event);
-}
-
-void MainWindow::onTabChanged(int index)
-{
-    qDebugEx() << "onTabChanged" << index;
-
-    auto widget = tabWidget->currentWidget();
-    auto layout = widget->layout();
-    if (!layout) {
-        layout = new QVBoxLayout(widget);
-        layout->setContentsMargins(0, 0, 0, 0);
-    }
-    layout->addWidget(scrollArea);
-
-    relayoutDevices();
 }
 
 void MainWindow::onTabMoved(int fromIndex, int toIndex)
