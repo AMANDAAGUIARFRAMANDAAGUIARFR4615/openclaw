@@ -40,6 +40,7 @@
 #include <QInputDialog>
 #include <QFileDialog>
 #include <QJsonObject>
+#include <QToolButton>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
@@ -282,11 +283,29 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     auto controlBar = new QWidget(this);
     auto controlLayout = new QHBoxLayout(controlBar);
 
-    auto zoomLabelSmall = new QLabel("🔍-", controlBar);
     auto zoomSlider = new QSlider(Qt::Horizontal, controlBar);
     zoomSlider->setRange(100, 1000);
     zoomSlider->setValue(100);
-    auto zoomLabelBig = new QLabel("🔍+", controlBar);
+
+    auto zoomOutBtn = new QToolButton(controlBar);
+    zoomOutBtn->setIcon(EmojiIconProvider::createIcon("➖")); 
+    zoomOutBtn->setToolTip("缩小");
+    zoomOutBtn->setAutoRaise(true);
+    zoomOutBtn->setCursor(Qt::PointingHandCursor);
+    
+    connect(zoomOutBtn, &QToolButton::clicked, [=]() {
+        zoomSlider->setValue(zoomSlider->value() - 10);
+    });
+
+    auto zoomInBtn = new QToolButton(controlBar);
+    zoomInBtn->setIcon(EmojiIconProvider::createIcon("➕"));
+    zoomInBtn->setToolTip("放大");
+    zoomInBtn->setAutoRaise(true);
+    zoomInBtn->setCursor(Qt::PointingHandCursor);
+
+    connect(zoomInBtn, &QToolButton::clicked, [=]() {
+        zoomSlider->setValue(zoomSlider->value() + 10);
+    });
     
     auto percentLabel = new QLabel("100%", controlBar);
     percentLabel->setFixedWidth(40);
@@ -298,9 +317,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         relayoutDevices();
     });
 
-    controlLayout->addWidget(zoomLabelSmall);
+    controlLayout->addWidget(zoomOutBtn);
     controlLayout->addWidget(zoomSlider);
-    controlLayout->addWidget(zoomLabelBig);
+    controlLayout->addWidget(zoomInBtn);
     controlLayout->addWidget(percentLabel);
 
     rightLayout->addWidget(controlBar);
