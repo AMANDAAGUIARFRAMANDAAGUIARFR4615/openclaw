@@ -181,12 +181,12 @@ QMenu* DeviceView::createContextMenu()
     menu->addAction(EmojiIconProvider::createIcon("🔈"), "音量-", this, &DeviceView::onVolumeDownClicked);
 
     menu->addAction(EmojiIconProvider::createIcon("🔧"), "修改分组", [=]() {
-        if (g_mainWindow->getTabs().count() <= 1) {
+        if (MainWindow::getInstance()->getTabs().count() <= 1) {
             new ToastWidget("请先右键点击标签页添加自定义分组", this);
             return;
         }
 
-        BitMaskEditorDialog dialog(g_mainWindow->getTabs(), deviceInfo->groupMask, this);
+        BitMaskEditorDialog dialog(MainWindow::getInstance()->getTabs(), deviceInfo->groupMask, this);
         dialog.setWindowTitle("修改分组");
         if (dialog.exec() != QDialog::Accepted) return;
 

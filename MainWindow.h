@@ -13,11 +13,14 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    static MainWindow* getInstance() { static MainWindow instance; return &instance; }
 
     void addItem(DeviceConnection* connection);
     const QList<BitMaskEditorDialog::Item>& getTabs() const { return tabs; }
+
+private:
+    MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -43,5 +46,3 @@ protected:
     QTabWidget* tabWidget;
     QScrollArea* scrollArea;
 };
-
-Q_GLOBAL_STATIC(MainWindow, g_mainWindow)
