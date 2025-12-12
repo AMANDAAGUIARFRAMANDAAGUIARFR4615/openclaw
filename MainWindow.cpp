@@ -64,6 +64,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     sideBarList->setViewMode(QListView::IconMode);
     sideBarList->setFixedWidth(80);
     sideBarList->setStyleSheet("QListWidget::item { margin-top: 10px; margin-bottom: 10px; }");
+    sideBarList->setCursor(Qt::PointingHandCursor);
 
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🔗"), "设备连接"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("👥"), "分组群控"));
@@ -312,7 +313,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     percentLabel->setAlignment(Qt::AlignCenter);
 
     connect(zoomSlider, &QSlider::valueChanged, this, [=](int value) {
-        tabs[tabWidget->currentIndex()].scale = value / 100.0f;
+        tabs[tabWidget->currentIndex()].scale = value;
         percentLabel->setText(QString::number(value) + "%");
         relayoutDevices();
     });
@@ -410,8 +411,9 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 void MainWindow::relayoutDevices()
 {
-    auto& [bit, _, scale, isLandscape] = tabs[tabWidget->currentIndex()];
+    auto& [bit, _, rawScale, isLandscape] = tabs[tabWidget->currentIndex()];
     const auto& devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+    const auto scale = rawScale == 0 ? 1 : rawScale / 100.0f;
 
     auto contentWidget = scrollArea->widget();
     auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
@@ -575,13 +577,14 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
 
 void MainWindow::loadTabs()
 {
-    QVariantList tabList = settings.value("tabs").toList();
-    for (const auto& var : tabList) {
-        QVariantMap map = var.toMap();
-        int bit = map["bit"].toInt();
-        QString name = map["name"].toString();
+    int size = settings.beginReadArray("tabs");
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+        auto bit = settings.value("bit").toInt();
+        auto name = settings.value("name").toString();
         addTab(bit, name);
     }
+    settings.endArray();
 
     if (tabWidget->count() == 0)
         addTab(0, "默认分组");
@@ -589,15 +592,16 @@ void MainWindow::loadTabs()
 
 void MainWindow::saveTabs()
 {
-    QVariantList tabList;
-    for (const auto& tab : tabs) {
-        QVariantMap map;
-        map["bit"] = tab.bit;
-        map["name"] = tab.name;
-        map["isLandscape"] = tab.isLandscape;
-        tabList.append(map);
+    settings.beginWriteArray("tabs");
+    for (int i = 0; i < tabs.size(); i++) {
+        auto& [bit, name, scale, isLandscape] = tabs[i];
+        settings.setArrayIndex(i);
+        settings.setValue("bit", bit);
+        settings.setValue("name", name);
+        settings.setValue("scale", scale);
+        settings.setValue("isLandscape", isLandscape); 
     }
-    settings.setValue("tabs", tabList);
+    settings.endArray();
 }
 
 void MainWindow::addTab(int bit, const QString &name)
