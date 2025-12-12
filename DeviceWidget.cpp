@@ -9,22 +9,19 @@
 DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo): DeviceView(connection, deviceInfo)
 {
     auto layout = new QVBoxLayout;
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
 
     auto deviceInfoLabel = new QLabel(connection->displayName(), this);
     deviceInfoLabel->setAlignment(Qt::AlignCenter);
-    deviceInfoLabel->setStyleSheet(R"(
-        font-size: 12px;
-        font-weight: bold;
-        padding: 5px;
-        background-color: rgba(0, 0, 0, 50%);
-        color: white;
-        border-radius: 5px;
-    )");
-    
     deviceInfoLabel->setFixedHeight(24);
+    auto ipLabel = new QLabel(deviceInfo->localIp, this);
+    ipLabel->setAlignment(Qt::AlignCenter);
+    ipLabel->setFixedHeight(24);
     
     layout->addWidget(deviceInfoLabel);
     layout->addWidget(overlay);
+    layout->addWidget(ipLabel);
     setLayout(layout);
 
     EventHub::on(this, "clipboard", [this](const QJsonValue &data, DeviceConnection* connection) {
