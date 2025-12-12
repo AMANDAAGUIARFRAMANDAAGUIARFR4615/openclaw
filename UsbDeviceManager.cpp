@@ -8,7 +8,7 @@ UsbDeviceManager::UsbDeviceManager(QObject* parent)
     : QObject(parent)
 {
     timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &UsbDeviceManager::pollDevices);
+    timer->callOnTimeout(this, &UsbDeviceManager::pollDevices);
 
     watcher = new QFutureWatcher<QSet<QString>>(this);
     connect(watcher, &QFutureWatcher<QSet<QString>>::finished, this, &UsbDeviceManager::handlePollFinished);

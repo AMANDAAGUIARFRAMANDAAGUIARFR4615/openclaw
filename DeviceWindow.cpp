@@ -190,7 +190,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo)
     auto title = windowTitle(); 
 
     auto timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, [=]() {
+    timer->callOnTimeout([=]() {
         if (!videoFrameWidget)
             return;
 

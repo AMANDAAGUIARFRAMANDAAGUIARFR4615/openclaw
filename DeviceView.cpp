@@ -477,7 +477,7 @@ void DeviceView::wheelEvent(QWheelEvent *event)
     );
     QApplication::postEvent(this, pressEvent);
 
-    connect(wheelTimer, &QTimer::timeout, [=]() mutable {
+    wheelTimer->callOnTimeout([=]() mutable {
         int stepDelta;
 
         if (stepCount == maxSteps - 1)
