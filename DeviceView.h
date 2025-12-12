@@ -41,9 +41,22 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
+    
+    QPoint getTransformedPosition(QPoint pos);
+    bool event(QEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
 
     DeviceConnection* const connection;
     DeviceInfo* const deviceInfo;
     VideoFrameWidget *videoFrameWidget = nullptr;
     QWidget *overlay = nullptr;
+
+    Qt::MouseButtons pressedButtons = Qt::NoButton;
+    QTimer *wheelTimer = nullptr;
+    QPoint currentPos;
+    int accumulatedDelta = 0;
+    const int maxSteps = 5;
+    int stepCount = 0;
 };
