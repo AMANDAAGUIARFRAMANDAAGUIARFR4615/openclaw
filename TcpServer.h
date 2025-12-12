@@ -48,6 +48,21 @@ public:
 
     static TcpServer* getInstance() {return instance;}
 
+    QSet<QString> getConnectedIps() const {
+        QSet<QString> ips;
+        for (auto socket : clientBuffers.keys()) {
+            if (socket && socket->state() == QAbstractSocket::ConnectedState) {
+                auto ip = socket->peerAddress().toString();
+
+                if (ip.startsWith("::ffff:"))
+                    ip = ip.mid(7);
+
+                ips.insert(ip);
+            }
+        }
+        return ips;
+    }
+
     QJsonObject getHostInfo(const QString& ip) {
         return QJsonObject{{"ip", ip}, {"port", serverPort()}, {"remoteDeviceName", QHostInfo::localHostName()}};
     }

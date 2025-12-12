@@ -380,10 +380,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     );
 
     auto broadcastTask = [=]() {
-        for (const QString &localIP : localIPs) {
+        const auto& ips = TcpServer::getInstance()->getConnectedIps();
+        for (const auto &localIP : localIPs) {
             QList<QHostAddress> subnetIPs = NetworkUtils::getSubnetIPs(localIP);
             for (const QHostAddress &ip : subnetIPs) {
-                udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
+                if (!ips.contains(ip.toString()))
+                    udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
             }
         }
     };
