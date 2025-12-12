@@ -262,6 +262,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     splitter->addWidget(sideBarList);
 
+    auto rightContainer = new QWidget(this);
+    auto rightLayout = new QVBoxLayout(rightContainer);
+    rightLayout->setContentsMargins(0, 0, 0, 0);
+    rightLayout->setSpacing(0);
+
     tabWidget = new QTabWidget(this);
     auto tabBar = tabWidget->tabBar();
     tabBar->setMovable(true);
@@ -272,7 +277,35 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     connect(tabBar, &QTabBar::tabMoved, this, &MainWindow::onTabMoved);
     connect(tabBar, &QWidget::customContextMenuRequested, this, &MainWindow::showTabBarContextMenu);
 
-    splitter->addWidget(tabWidget);
+    rightLayout->addWidget(tabWidget);
+
+    auto controlBar = new QWidget(this);
+    auto controlLayout = new QHBoxLayout(controlBar);
+
+    auto zoomLabelSmall = new QLabel("🔍-", controlBar);
+    auto zoomSlider = new QSlider(Qt::Horizontal, controlBar);
+    zoomSlider->setRange(100, 1000);
+    zoomSlider->setValue(100);
+    auto zoomLabelBig = new QLabel("🔍+", controlBar);
+    
+    auto percentLabel = new QLabel("100%", controlBar);
+    percentLabel->setFixedWidth(40);
+    percentLabel->setAlignment(Qt::AlignCenter);
+
+    connect(zoomSlider, &QSlider::valueChanged, this, [=](int value) {
+        tabs[tabWidget->currentIndex()].scale = value / 100.0f;
+        percentLabel->setText(QString::number(value) + "%");
+        relayoutDevices();
+    });
+
+    controlLayout->addWidget(zoomLabelSmall);
+    controlLayout->addWidget(zoomSlider);
+    controlLayout->addWidget(zoomLabelBig);
+    controlLayout->addWidget(percentLabel);
+
+    rightLayout->addWidget(controlBar);
+
+    splitter->addWidget(rightContainer);
 
     scrollArea = new QScrollArea(this);
     scrollArea->setWidgetResizable(true);
@@ -358,14 +391,14 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 void MainWindow::relayoutDevices()
 {
-    auto& [bit, _, isLandscape] = tabs[tabWidget->currentIndex()];
+    auto& [bit, _, scale, isLandscape] = tabs[tabWidget->currentIndex()];
     const auto& devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
 
     auto contentWidget = scrollArea->widget();
     auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
 
-    int currentItemWidth = isLandscape ? frameItemHeight : frameItemWidth;
-    int currentItemHeight = isLandscape ? frameItemWidth : frameItemHeight;
+    int currentItemWidth = (isLandscape ? frameItemHeight : frameItemWidth) * scale;
+    int currentItemHeight = (isLandscape ? frameItemWidth : frameItemHeight) * scale;
 
     int tabWidth = scrollArea->viewport()->width();
     int tabHeight = scrollArea->viewport()->height();
@@ -462,7 +495,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
     if (index < 0)
         return;
 
-    auto& [bit, _, isLandscape] = tabs[index];
+    auto& [bit, _, __, isLandscape] = tabs[index];
 
     QMenu menu(this);
 
