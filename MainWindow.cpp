@@ -286,7 +286,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     auto zoomSlider = new QSlider(Qt::Horizontal, controlBar);
     zoomSlider->setRange(100, 1000);
-    zoomSlider->setValue(100);
 
     auto zoomOutBtn = new QToolButton(controlBar);
     zoomOutBtn->setIcon(EmojiIconProvider::createIcon("➖")); 
@@ -354,6 +353,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     });
 
     loadTabs();
+
+    zoomSlider->setValue(tabs[0].scale);
 }
 
 MainWindow::~MainWindow()
@@ -522,7 +523,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
 
     menu.addAction(isLandscape ? "竖屏" : "横屏", [=]() {
         tabs[tabWidget->currentIndex()].isLandscape = !isLandscape;
-        saveTabs();
+        saveTabs(tabWidget->currentIndex());
         relayoutDevices();
     });
 
@@ -590,10 +591,19 @@ void MainWindow::loadTabs()
         addTab(0, "默认分组");
 }
 
-void MainWindow::saveTabs()
+void MainWindow::saveTabs(int index)
 {
     settings.beginWriteArray("tabs");
-    for (int i = 0; i < tabs.size(); i++) {
+
+    int start = 0;
+    int end = tabs.size();
+
+    if (index != -1) {
+        start = index;
+        end = index + 1;
+    }
+    
+    for (int i = start; i < end; i++) {
         auto& [bit, name, scale, isLandscape] = tabs[i];
         settings.setArrayIndex(i);
         settings.setValue("bit", bit);
@@ -601,6 +611,7 @@ void MainWindow::saveTabs()
         settings.setValue("scale", scale);
         settings.setValue("isLandscape", isLandscape); 
     }
+
     settings.endArray();
 }
 

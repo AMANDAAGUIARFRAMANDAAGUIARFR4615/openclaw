@@ -28,7 +28,7 @@ protected:
     void onTabMoved(int fromIndex, int toIndex);
     void showTabBarContextMenu(const QPoint &pos);
     void loadTabs();
-    void saveTabs();
+    void saveTabs(int index = -1);
     void addTab(int id, const QString &name);
     int findAvailableTabId();
 

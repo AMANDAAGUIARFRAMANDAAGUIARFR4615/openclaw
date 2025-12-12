@@ -187,6 +187,7 @@ QMenu* DeviceView::createContextMenu()
         }
 
         BitMaskEditorDialog dialog(g_mainWindow->getTabs(), deviceInfo->groupMask, this);
+        dialog.setWindowTitle("修改分组");
         if (dialog.exec() != QDialog::Accepted) return;
 
         settings.setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
