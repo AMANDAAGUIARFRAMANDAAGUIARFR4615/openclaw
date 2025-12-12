@@ -31,7 +31,7 @@ public:
         auto maxHeight = screenSize.height() * 0.8;
 
         if (screenWidth > maxWidth || screenHeight > maxHeight) {
-            scaleFactor = std::min(maxWidth / static_cast<float>(screenWidth),
+            scaleFactor = qMin(maxWidth / static_cast<float>(screenWidth),
                                 maxHeight / static_cast<float>(screenHeight));
         }
 

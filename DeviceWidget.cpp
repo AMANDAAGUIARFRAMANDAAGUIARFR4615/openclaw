@@ -112,6 +112,8 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
         if (!placeholder)
             return;
 
+        videoFrameWidgetLocal->setMinimumSize(0, 0);
+        videoFrameWidgetLocal->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
         videoFrameWidgetLocal->resize(videoFrameWidgetSize);
         addVideoFrameWidget(videoFrameWidgetLocal);
 
@@ -119,7 +121,7 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
         placeholder->deleteLater();
     });
 
-    videoFrameWidget->resize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
+    videoFrameWidget->setFixedSize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
     deviceWindow->addVideoFrameWidget(videoFrameWidget);
     deviceWindow->show();
     qobject_cast<QBoxLayout*>(layout())->addWidget(placeholder);

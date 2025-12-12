@@ -223,8 +223,8 @@ DeviceWindow::~DeviceWindow()
 QPoint DeviceWindow::getTransformedPosition(QPoint pos) {
     int x = pos.x() / deviceInfo->scaleFactor;
     int y = pos.y() / deviceInfo->scaleFactor;
-    int w = this->width() / deviceInfo->scaleFactor;
-    int h = this->height() / deviceInfo->scaleFactor;
+    int w = videoFrameWidget->width() / deviceInfo->scaleFactor;
+    int h = videoFrameWidget->height() / deviceInfo->scaleFactor;
 
     switch (deviceInfo->orientation) {
         case 1: // Portrait
