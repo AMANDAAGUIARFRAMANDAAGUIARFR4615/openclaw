@@ -20,6 +20,7 @@ protected:
     void keyReleaseEvent(QKeyEvent *event) override;
     void inputMethodEvent(QInputMethodEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
     QMenu* createContextMenu() override;
 
     Qt::MouseButtons pressedButtons = Qt::NoButton;

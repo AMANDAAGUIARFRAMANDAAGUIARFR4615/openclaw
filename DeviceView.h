@@ -41,7 +41,6 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
-    void resizeEvent(QResizeEvent *event) override;
 
     DeviceConnection* const connection;
     DeviceInfo* const deviceInfo;

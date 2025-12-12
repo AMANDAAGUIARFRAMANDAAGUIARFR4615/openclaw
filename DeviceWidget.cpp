@@ -24,6 +24,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     deviceInfoLabel->setFixedHeight(24);
     
     layout->addWidget(deviceInfoLabel);
+    layout->addWidget(overlay);
     setLayout(layout);
 
     EventHub::on(this, "clipboard", [this](const QJsonValue &data, DeviceConnection* connection) {

@@ -499,6 +499,16 @@ void DeviceWindow::wheelEvent(QWheelEvent *event)
     wheelTimer->start(30);
 }
 
+void DeviceWindow::resizeEvent(QResizeEvent *event)
+{
+    if (videoFrameWidget) {
+        overlay->move(videoFrameWidget->pos());
+        overlay->resize(videoFrameWidget->size());
+    }
+
+    DeviceView::resizeEvent(event);
+}
+
 QMenu* DeviceWindow::createContextMenu()
 {
     auto menu = DeviceView::createContextMenu();

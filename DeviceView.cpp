@@ -252,13 +252,3 @@ void DeviceView::dropEvent(QDropEvent *event)
 
     event->accept();
 }
-
-void DeviceView::resizeEvent(QResizeEvent *event)
-{
-    if (videoFrameWidget) {
-        overlay->move(videoFrameWidget->pos());
-        overlay->resize(videoFrameWidget->size());
-    }
-
-    QWidget::resizeEvent(event);
-}
