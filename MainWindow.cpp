@@ -12,6 +12,7 @@
 #include "ToastWidget.h"
 #include "SettingsViewer.h"
 #include "FileTransfer.h"
+#include "UdpTransport.h"
 #include <QShortcut>
 #include <QTabWidget>
 #include <QWidget>
@@ -368,6 +369,30 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     });
 
     loadTabs();
+
+    auto localIPs = NetworkUtils::getPhysicalIPs();
+    qDebugEx() << "本机内网IP:" << localIPs;
+
+    auto udpTransport = new UdpTransport(
+        [](const QJsonObject &jsonObject) {
+            qDebugEx() << "Received Data:" << jsonObject;
+        }
+    );
+
+    auto broadcastTask = [=]() {
+        for (const QString &localIP : localIPs) {
+            QList<QHostAddress> subnetIPs = NetworkUtils::getSubnetIPs(localIP);
+            for (const QHostAddress &ip : subnetIPs) {
+                udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
+            }
+        }
+    };
+
+    broadcastTask();
+
+    QTimer *timer = new QTimer(this);
+    timer->callOnTimeout(broadcastTask);
+    timer->start(3000);
 }
 
 MainWindow::~MainWindow()

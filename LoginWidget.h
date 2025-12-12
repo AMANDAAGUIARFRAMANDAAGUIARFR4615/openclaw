@@ -2,7 +2,6 @@
 
 #include "global.h"
 #include "ToastWidget.h"
-#include "MainWindow.h"
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -158,7 +157,6 @@ protected:
                 actionButton->setEnabled(true);
 
                 if (res["msg"].isUndefined()) {
-                    MainWindow::getInstance()->show();
                     close();
                     return;
                 }
@@ -170,7 +168,6 @@ protected:
                 actionButton->setEnabled(true);
 
                 if (res["msg"].isUndefined()) {
-                    MainWindow::getInstance()->show();
                     close();
                     return;
                 }

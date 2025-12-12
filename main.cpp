@@ -1,7 +1,6 @@
 #include "Logger.h"
 #include "MainWindow.h"
 #include "TcpServer.h"
-#include "UdpTransport.h"
 #include "NetworkUtils.h"
 #include "DeviceInfo.h"
 #include "EventHub.h"
@@ -96,25 +95,9 @@ int main(int argc, char *argv[])
             g_usbDeviceManager->stop();
         });
 
-        auto localIPs = NetworkUtils::getPhysicalIPs();
-        qDebugEx() << "本机内网IP:" << localIPs;
-
-        auto udpTransport = new UdpTransport(
-            [](const QJsonObject &jsonObject) {
-                qDebugEx() << "Received Data:" << jsonObject;
-            }
-        );
-
-        for (const QString &localIP : localIPs) {
-            QList<QHostAddress> subnetIPs = NetworkUtils::getSubnetIPs(localIP);
-            for (const QHostAddress &ip : subnetIPs) {
-                // qDebugEx() << "同子网IP: " << ip.toString();
-                udpTransport->sendData(tcpServer->getHostInfo(localIP), ip, 32838);
-            }
-        }
+        MainWindow::getInstance()->show();
     });
 
-    MainWindow::getInstance()->show();
     loginWidget->close();
 
     return app.exec();
