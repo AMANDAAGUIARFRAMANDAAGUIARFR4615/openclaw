@@ -32,7 +32,6 @@ protected:
     void showTabBarContextMenu(const QPoint &pos);
     void loadTabs();
     void saveTabs(int index = -1);
-    void addTab(int id, const QString &name);
     int findAvailableTabId();
 
     QList<BitMaskEditorDialog::Item> tabs;

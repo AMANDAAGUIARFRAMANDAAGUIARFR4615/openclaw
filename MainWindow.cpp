@@ -544,14 +544,14 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
         }
     });
     
-    menu.addAction("删除", [=]() {
+    menu.addAction("删除", [&]() {
         QWidget *page = tabWidget->widget(index);
         tabWidget->removeTab(index);
         delete page;
         tabs.remove(index);
     })->setEnabled(bit != 0);
 
-    menu.addAction("添加", [=]() {
+    menu.addAction("添加", [&]() {
         int newId = findAvailableTabId();
         if (newId == -1) {
             new ToastWidget("已达到最大分组数", this);
@@ -583,12 +583,18 @@ void MainWindow::loadTabs()
         settings.setArrayIndex(i);
         auto bit = settings.value("bit").toInt();
         auto name = settings.value("name").toString();
-        addTab(bit, name);
+        auto scale = settings.value("scale").toInt();
+        auto isLandscape = settings.value("isLandscape").toBool();
+        tabs.append(BitMaskEditorDialog::Item({bit, name, scale, isLandscape}));
+        tabWidget->addTab(new QWidget(), name);
     }
     settings.endArray();
 
-    if (tabWidget->count() == 0)
-        addTab(0, "默认分组");
+    if (tabWidget->count() == 0) {
+        auto name = "默认分组";
+        tabs.append(BitMaskEditorDialog::Item({0, name}));
+        tabWidget->addTab(new QWidget(), name);
+    }
 }
 
 void MainWindow::saveTabs(int index)
@@ -613,12 +619,6 @@ void MainWindow::saveTabs(int index)
     }
 
     settings.endArray();
-}
-
-void MainWindow::addTab(int bit, const QString &name)
-{
-    tabs.append(BitMaskEditorDialog::Item({bit, name}));
-    tabWidget->addTab(new QWidget(), name);
 }
 
 int MainWindow::findAvailableTabId()
