@@ -15,7 +15,7 @@ public:
     struct Item {
         int bit;
         QString name;
-        float scale;
+        int scale;
         bool isLandscape;
     };
 
