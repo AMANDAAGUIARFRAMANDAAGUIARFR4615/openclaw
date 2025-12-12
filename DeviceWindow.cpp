@@ -22,8 +22,6 @@
 
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo) : DeviceView(connection, deviceInfo)
 {
-    // setAttribute(Qt::WA_InputMethodEnabled, true);
-
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setSizeConstraint(QLayout::SetFixedSize);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -406,18 +404,6 @@ void DeviceWindow::keyReleaseEvent(QKeyEvent *event)
     qDebugEx() << "放开" << QKeySequence(event->key()).toString();
 
     DeviceView::keyReleaseEvent(event);
-}
-
-void DeviceWindow::inputMethodEvent(QInputMethodEvent *event)
-{
-    QString commitText = event->commitString();
-    if (!commitText.isEmpty())
-    {
-        qDebugEx() << "输入内容:" << commitText;
-        connection->send("inputText", commitText);
-    }
-
-    DeviceView::inputMethodEvent(event);
 }
 
 void DeviceWindow::wheelEvent(QWheelEvent *event)
