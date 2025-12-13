@@ -444,11 +444,24 @@ void MainWindow::relayoutDevices()
     auto contentWidget = scrollArea->widget();
     auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
 
-    int currentItemWidth = (isLandscape ? frameItemHeight : frameItemWidth) * scale;
-    int currentItemHeight = (isLandscape ? frameItemWidth : frameItemHeight) * scale;
-
     int tabWidth = scrollArea->viewport()->width();
     int tabHeight = scrollArea->viewport()->height();
+
+    int left, top, right, bottom;
+    gridLayout->getContentsMargins(&left, &top, &right, &bottom);
+
+    int maxItemWidth = tabWidth - left - right;
+    int maxItemHeight = tabHeight - top - bottom;
+
+    int targetW = (isLandscape ? frameItemHeight : frameItemWidth) * scale;
+    int targetH = (isLandscape ? frameItemWidth : frameItemHeight) * scale;
+
+    QSize currentSize(targetW, targetH);
+    if (currentSize.width() > maxItemWidth || currentSize.height() > maxItemHeight)
+        currentSize.scale(maxItemWidth, maxItemHeight, Qt::KeepAspectRatio);
+
+    int currentItemWidth = currentSize.width();
+    int currentItemHeight = currentSize.height();
 
     int totalRows = qMax(1, tabHeight / (currentItemHeight + spacing));
     int totalCols = qMax(1, tabWidth / (currentItemWidth + spacing));
