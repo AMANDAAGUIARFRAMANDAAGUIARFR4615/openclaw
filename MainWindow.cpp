@@ -223,7 +223,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (text == "设置") {
-            SettingsDialog dialog;
+            SettingsDialog dialog(this);
             return;
         }
 
