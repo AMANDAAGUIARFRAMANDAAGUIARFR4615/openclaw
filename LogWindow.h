@@ -8,6 +8,8 @@
 #include <QDateTime>
 #include <QStandardPaths>
 #include <QMenu>
+#include <QFileInfo>
+#include <QDir>
 #include <magic_enum/magic_enum.hpp>
 
 class LogWindow : public QTextBrowser
@@ -18,7 +20,13 @@ public:
     {
         instance = this;
 
-        logFile.setFileName(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/app_log.txt");
+        const auto& filePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/app_log.txt";
+
+        const auto& dir = QFileInfo(filePath).absoluteDir();
+        if (!dir.exists())
+            dir.mkpath(".");
+
+        logFile.setFileName(filePath);
         if (!logFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
             append("<span style='color:red;'>无法打开日志文件！</span>");
         }
