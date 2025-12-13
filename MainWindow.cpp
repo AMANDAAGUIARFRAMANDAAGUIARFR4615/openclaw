@@ -14,8 +14,6 @@
 #include "FileTransfer.h"
 #include "UdpTransport.h"
 #include <QShortcut>
-#include <QTabWidget>
-#include <QWidget>
 #include <QVBoxLayout>
 #include <QGridLayout>
 #include <QLabel>
@@ -25,7 +23,6 @@
 #include <QApplication>
 #include <QTabBar>
 #include <QSplitter>
-#include <QListWidget>
 #include <QListWidgetItem>
 #include <QStyle>
 #include <QIcon>
@@ -63,7 +60,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     mainLayout->addWidget(splitter);
     splitter->setStyleSheet("QSplitter::handle {background-color: #B0B0B0;width: 1px;}");
 
-    auto sideBarList = new QListWidget();
+    sideBarList = new QListWidget();
     sideBarList->setViewMode(QListView::IconMode);
     sideBarList->setFixedWidth(80);
     sideBarList->setStyleSheet("QListWidget::item { margin-top: 10px; margin-bottom: 10px; }");
@@ -218,16 +215,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             // auto window = new DeviceManager();
             // window->show();
 
-            auto socket = new QTcpSocket();
-            connect(socket, &QTcpSocket::errorOccurred, [=](QAbstractSocket::SocketError socketError) {
-                qCriticalEx() << "errorOccurred" << socketError << socket->errorString();
-            });
-            
-            connect(socket, &QTcpSocket::readyRead, [=]() {
-                qDebugEx() << "收到数据1111";
-            });
-
-            socket->connectToHost("119.28.3.242", 55257);
+            showFullScreen();
+            // QKeyEvent event;
+            // if (event->matches(QKeySequence::FullScreen))
             return;
         }
 
@@ -286,7 +276,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     auto controlBar = new QWidget(this);
     auto controlLayout = new QHBoxLayout(controlBar);
 
-    auto zoomSlider = new QSlider(Qt::Horizontal, controlBar);
+    zoomSlider = new QSlider(Qt::Horizontal, controlBar);
     zoomSlider->setRange(100, 1000);
 
     auto zoomOutBtn = new QToolButton(controlBar);
@@ -410,12 +400,43 @@ void MainWindow::closeEvent(QCloseEvent *event)
     QApplication::quit();
 }
 
+void MainWindow::changeEvent(QEvent *event)
+{
+    QMainWindow::changeEvent(event);
+
+    if (event->type() == QEvent::WindowStateChange) {
+        if (this->windowState() & Qt::WindowFullScreen) {
+            sideBarList->hide();
+            tabWidget->tabBar()->hide();
+            zoomSlider->parentWidget()->hide();
+        }
+        else {
+            sideBarList->show();
+            tabWidget->tabBar()->show();
+            zoomSlider->parentWidget()->show();
+        }
+        
+        // 如果需要在切换时重新布局设备，可以在这里调用
+        // relayoutDevices(); 
+    }
+}
+
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Escape)
-        close();
-    else
-        QMainWindow::keyPressEvent(event);
+    QMainWindow::keyPressEvent(event);
+
+    if (event->matches(QKeySequence::FullScreen))
+    {
+        isFullScreen() ? showNormal() : showFullScreen();
+        return;
+    }
+
+    if (event->key() == Qt::Key_Escape) {
+        if (isFullScreen())
+            showNormal();
+        else
+            close();
+    }
 }
 
 void MainWindow::onTabMoved(int fromIndex, int toIndex)

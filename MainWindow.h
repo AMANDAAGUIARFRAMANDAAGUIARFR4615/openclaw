@@ -7,6 +7,8 @@
 #include <QKeyEvent>
 #include <QDialog>
 #include <QScrollArea>
+#include <QListWidget>
+#include <QSlider>
 
 class MainWindow : public QMainWindow
 {
@@ -24,6 +26,7 @@ private:
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+    void changeEvent(QEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     void relayoutDevices();
@@ -41,6 +44,8 @@ protected:
     const int frameItemHeight = frameItemWidth * 1.7786;
     const int spacing = 10;
 
+    QListWidget* sideBarList;
     QTabWidget* tabWidget;
     QScrollArea* scrollArea;
+    QSlider* zoomSlider;
 };
