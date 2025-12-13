@@ -10,6 +10,10 @@
 #include <QMenu>
 #include <QFileInfo>
 #include <QDir>
+#include <QClipboard>
+#include <QGuiApplication>
+#include <QPainter>
+#include <QPixmap>
 #include <magic_enum/magic_enum.hpp>
 
 class LogWindow : public QTextBrowser
@@ -71,6 +75,16 @@ protected:
     {
         QMenu *menu = createStandardContextMenu();
         menu->addSeparator();
+
+        menu->addAction("生成长图到剪切板", [this]() {
+            QPixmap pixmap(document()->size().toSize());
+            pixmap.fill(Qt::white);
+
+            QPainter painter(&pixmap);
+            document()->drawContents(&painter);
+            
+            QGuiApplication::clipboard()->setPixmap(pixmap);
+        });
 
         menu->addAction("清空日志", [this]() {
             clear();
