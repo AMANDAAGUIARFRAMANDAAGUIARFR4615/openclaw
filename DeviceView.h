@@ -25,7 +25,6 @@ public:
     void onFileClicked();
     void onRecorderClicked();
     void onAppListClicked();
-    void onToggleMultiControl();
     void onScreenshotClicked();
     void onRebootClicked();
     void onDeleteAllPhotosClicked();
@@ -53,8 +52,6 @@ protected:
     DeviceInfo* const deviceInfo;
     VideoFrameWidget *videoFrameWidget = nullptr;
     QWidget *overlay = nullptr;
-
-    bool isMultiControlEnabled = false;
 
     Qt::MouseButtons pressedButtons = Qt::NoButton;
     QTimer *wheelTimer = nullptr;

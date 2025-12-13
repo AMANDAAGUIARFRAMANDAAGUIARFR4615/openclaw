@@ -124,11 +124,6 @@ void DeviceView::onAppListClicked()
     AppListWidget::open(connection);
 }
 
-void DeviceView::onToggleMultiControl()
-{
-    isMultiControlEnabled = !isMultiControlEnabled;
-}
-
 void DeviceView::onScreenshotClicked()
 {
     connection->send("screenshot");
@@ -173,11 +168,6 @@ QMenu* DeviceView::createContextMenu()
     menu->addAction(EmojiIconProvider::createIcon("📁"), "文件管理", this, &DeviceView::onFileClicked);
     menu->addAction(EmojiIconProvider::createIcon("⏺️"), "录制+回放", this, &DeviceView::onRecorderClicked);
     menu->addAction(EmojiIconProvider::createIcon("📱"), "应用列表", this, &DeviceView::onAppListClicked);
-
-    if (!isMultiControlEnabled)
-        menu->addAction(EmojiIconProvider::createIcon("🟢"), "开启一控多", this, &DeviceView::onToggleMultiControl);
-    else
-        menu->addAction(EmojiIconProvider::createIcon("🔴"), "关闭一控多", this, &DeviceView::onToggleMultiControl);
 
     menu->addAction(EmojiIconProvider::createIcon("📸"), "截图", this, &DeviceView::onScreenshotClicked);
     menu->addAction(EmojiIconProvider::createIcon("🔄"), "重启", this, &DeviceView::onRebootClicked);
