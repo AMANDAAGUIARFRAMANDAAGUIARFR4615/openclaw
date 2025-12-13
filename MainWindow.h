@@ -27,6 +27,7 @@ private:
 protected:
     void closeEvent(QCloseEvent *event) override;
     void changeEvent(QEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     void relayoutDevices();
@@ -48,4 +49,6 @@ protected:
     QTabWidget* tabWidget;
     QScrollArea* scrollArea;
     QSlider* zoomSlider;
+
+    bool isMultiControlEnabled = true;
 };

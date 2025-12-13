@@ -427,6 +427,69 @@ void MainWindow::changeEvent(QEvent *event)
     }
 }
 
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (!isMultiControlEnabled)
+        return false;
+
+    // 只二次分发来自操作系统的真实用户输入
+    if (!event->spontaneous())
+        return false;
+
+    auto sourceWidget = qobject_cast<DeviceWidget*>(watched);
+    if (!sourceWidget)
+        return false;
+
+    QEvent::Type type = event->type();
+    bool isMouseEvent = (type == QEvent::MouseButtonPress ||
+                         type == QEvent::MouseButtonRelease ||
+                         type == QEvent::MouseButtonDblClick ||
+                         type == QEvent::MouseMove);
+    bool isWheelEvent = (type == QEvent::Wheel);
+    bool isKeyEvent = (type == QEvent::KeyPress ||
+                       type == QEvent::KeyRelease);
+
+    if (isMouseEvent || isWheelEvent || isKeyEvent) {
+        auto bit = tabs[tabWidget->currentIndex()].bit;
+        auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+
+        for (const auto& device : devices) {
+            if (!deviceFrames.contains(device)) continue;
+            QFrame* frame = deviceFrames[device];
+            DeviceWidget* targetWidget = frame->findChild<DeviceWidget*>();
+
+            if (targetWidget && targetWidget != sourceWidget) {
+                if (isMouseEvent) {
+                    QMouseEvent* me = static_cast<QMouseEvent*>(event);
+                    QPointF localPos = me->localPos();
+                    QPointF globalPos = targetWidget->mapToGlobal(localPos.toPoint());
+
+                    QMouseEvent newEvent(type, localPos, me->windowPos(), globalPos,
+                                         me->button(), me->buttons(), me->modifiers(), me->source());
+                    QApplication::sendEvent(targetWidget, &newEvent);
+                } 
+                else if (isWheelEvent) {
+                    QWheelEvent* we = static_cast<QWheelEvent*>(event);
+                    QPointF globalPos = targetWidget->mapToGlobal(we->position().toPoint());
+                    
+                    QWheelEvent newEvent(we->position(), globalPos, we->pixelDelta(), we->angleDelta(),
+                                         we->buttons(), we->modifiers(), we->phase(), we->inverted(), we->source());
+                    QApplication::sendEvent(targetWidget, &newEvent);
+                }
+                else if (isKeyEvent) {
+                    QKeyEvent* ke = static_cast<QKeyEvent*>(event);
+                    QKeyEvent newEvent(type, ke->key(), ke->modifiers(), 
+                                       ke->nativeScanCode(), ke->nativeVirtualKey(), ke->nativeModifiers(), 
+                                       ke->text(), ke->isAutoRepeat(), ke->count());
+                    QApplication::sendEvent(targetWidget, &newEvent);
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     QMainWindow::keyPressEvent(event);
