@@ -13,6 +13,7 @@
 #include "SettingsViewer.h"
 #include "FileTransfer.h"
 #include "UdpTransport.h"
+#include "SettingsDialog.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QGridLayout>
@@ -221,6 +222,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
         }
 
+        if (text == "设置") {
+            SettingsDialog dialog;
+            return;
+        }
+
         if (text == "帮助") {
             return;
         }
@@ -250,7 +256,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (text == "开发者") {
-            new SettingsViewer(&settings, this);
+            SettingsViewer dialog(&settings, this);
             return;
         }
     });
