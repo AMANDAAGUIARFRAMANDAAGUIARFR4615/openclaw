@@ -429,11 +429,7 @@ void MainWindow::changeEvent(QEvent *event)
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-    if (!isMultiControlEnabled)
-        return false;
-
-    // 只二次分发来自操作系统的真实用户输入
-    if (!event->spontaneous())
+    if (!isMultiControlEnabled || isDispatching)
         return false;
 
     auto sourceWidget = qobject_cast<DeviceWidget*>(watched);
@@ -450,6 +446,8 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                        type == QEvent::KeyRelease);
 
     if (isMouseEvent || isWheelEvent || isKeyEvent) {
+        isDispatching = true;
+
         auto bit = tabs[tabWidget->currentIndex()].bit;
         auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
 
@@ -485,6 +483,8 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                 }
             }
         }
+
+        isDispatching = false;
     }
 
     return false;
@@ -592,6 +592,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     auto deviceInfo = connection->deviceInfo;
 
     auto player = new DeviceWidget(connection, deviceInfo);
+    player->installEventFilter(this);
 
     auto device = new LiveStreamDevice(nullptr, 0, this);
 

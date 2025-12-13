@@ -51,4 +51,5 @@ protected:
     QSlider* zoomSlider;
 
     bool isMultiControlEnabled = true;
+    bool isDispatching = false;
 };
