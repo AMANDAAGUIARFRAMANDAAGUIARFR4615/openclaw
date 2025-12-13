@@ -15,7 +15,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     auto deviceInfoLabel = new QLabel(connection->displayName(), this);
     deviceInfoLabel->setAlignment(Qt::AlignCenter);
     deviceInfoLabel->setFixedHeight(24);
-    auto ipLabel = new QLabel(deviceInfo->localIp, this);
+    auto ipLabel = new QLabel(connection->type == DeviceConnection::Usb ? "" : deviceInfo->localIp, this);
     ipLabel->setAlignment(Qt::AlignCenter);
     ipLabel->setFixedHeight(24);
     
