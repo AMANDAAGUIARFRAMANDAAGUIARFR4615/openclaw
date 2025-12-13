@@ -441,8 +441,8 @@ void DeviceView::keyReleaseEvent(QKeyEvent *event)
 
 void DeviceView::wheelEvent(QWheelEvent *event)
 {
-    if (QOperatingSystemVersion::current().type() == QOperatingSystemVersion::MacOS)
-        return;
+    // if (QOperatingSystemVersion::current().type() == QOperatingSystemVersion::MacOS)
+    //     return;
 
     qDebugEx() << "wheelEvent" << event;
 
