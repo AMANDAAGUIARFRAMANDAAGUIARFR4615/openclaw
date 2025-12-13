@@ -47,7 +47,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo)
     connect(fileButton, &QPushButton::clicked, this, &DeviceView::onFileClicked);
     buttonLayout->addWidget(fileButton);
 
-    auto recorderButton = new QPushButton(EmojiIconProvider::createIcon("⏺️"), "录屏", this);
+    auto recorderButton = new QPushButton(EmojiIconProvider::createIcon("⏺️"), "录制+回放", this);
     connect(recorderButton, &QPushButton::clicked, this, &DeviceView::onRecorderClicked);
     buttonLayout->addWidget(recorderButton);
 

@@ -166,7 +166,7 @@ QMenu* DeviceView::createContextMenu()
     menu->addAction(EmojiIconProvider::createIcon("🏠"), "主屏幕", this, &DeviceView::onHomeScreenClicked);
     menu->addAction(EmojiIconProvider::createIcon("🧹"), "清理应用", this, &DeviceView::onKillAllAppClicked);
     menu->addAction(EmojiIconProvider::createIcon("📁"), "文件管理", this, &DeviceView::onFileClicked);
-    menu->addAction(EmojiIconProvider::createIcon("⏺️"), "录屏", this, &DeviceView::onRecorderClicked);
+    menu->addAction(EmojiIconProvider::createIcon("⏺️"), "录制+回放", this, &DeviceView::onRecorderClicked);
     menu->addAction(EmojiIconProvider::createIcon("📱"), "应用列表", this, &DeviceView::onAppListClicked);
 
     menu->addAction(EmojiIconProvider::createIcon("📸"), "截图", this, &DeviceView::onScreenshotClicked);
