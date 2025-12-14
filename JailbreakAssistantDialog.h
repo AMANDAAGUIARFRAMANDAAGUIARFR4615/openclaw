@@ -367,11 +367,22 @@ private slots:
 
     void startProcess() {
         btnStart->setDisabled(true);
-        btnSkip->setDisabled(true); // 开始后也禁用跳过，避免冲突
+        btnSkip->setDisabled(true);
         consoleOutput->clear();
         consoleOutput->append(QString("正在启动注入程序，目标应用: <span style='color:yellow;'>%1</span> ...<br>").arg(targetAppName));
 
         QString program = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/TrollRestore";
+
+        #ifdef Q_OS_MAC
+        QFile localFile(program);
+        // 获取当前权限并加上 所有者的可执行权限 + 用户组可执行 + 其他人可执行
+        if (!localFile.setPermissions(localFile.permissions() | 
+                                      QFileDevice::ExeOwner | 
+                                      QFileDevice::ExeGroup | 
+                                      QFileDevice::ExeOther)) {
+            qCriticalEx() << "设置可执行权限失败";
+        }
+        #endif
         
         QStringList arguments;
         if (!targetAppName.isEmpty()) {
