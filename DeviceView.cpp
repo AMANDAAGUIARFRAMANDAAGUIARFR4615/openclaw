@@ -70,6 +70,9 @@ void DeviceView::showOverlay(const QString &text)
     overlay->show();
     overlay->raise();
 
+    if (metaObject()->className() == QString("DeviceWindow"))
+        return;
+
     QTimer::singleShot(0, [=]() {
         if (videoFrameWidget)
             videoFrameWidget->hide();
@@ -79,6 +82,9 @@ void DeviceView::showOverlay(const QString &text)
 void DeviceView::hideOverlay()
 {
     overlay->hide();
+
+    if (metaObject()->className() == QString("DeviceWindow"))
+        return;
 
     if (videoFrameWidget)
         videoFrameWidget->show();
