@@ -566,14 +566,9 @@ void MainWindow::relayoutDevices()
         
         auto infoPtr = (DeviceInfo*)item->data(Qt::UserRole).value<quintptr>();
 
-        bool shouldShow = false;
-        if (infoPtr) {
-            shouldShow = devicesInGroup.contains(infoPtr);
-        }
+        item->setHidden(!infoPtr || !devicesInGroup.contains(infoPtr));
 
-        item->setHidden(!shouldShow);
-
-        if (shouldShow && widget) {
+        if (!item->isHidden() && widget) {
             item->setSizeHint(targetSize);
             widget->setFixedSize(targetSize);
         }
