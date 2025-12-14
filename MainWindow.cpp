@@ -342,7 +342,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     deviceListWidget = new QListWidget(this);
     deviceListWidget->setViewMode(QListWidget::IconMode); // 图标模式（网格）
     deviceListWidget->setResizeMode(QListWidget::Adjust); // 随窗口自动调整换行
-    deviceListWidget->setDragDropMode(QListWidget::InternalMove); // 支持内部拖动排序
+    deviceListWidget->setDragDropMode(QListWidget::NoDragDrop);
     deviceListWidget->setSpacing(10);
 
     connect(tabBar, &QTabBar::currentChanged, this, [=](int index) {
