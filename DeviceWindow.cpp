@@ -182,9 +182,9 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo)
         auto locked = data.toBool();
 
         if (locked)
-            addOverlay("设备已锁定");
+            showOverlay("设备已锁定");
         else
-            overlay->hide();
+            hideOverlay();
     });
 
     auto title = windowTitle(); 

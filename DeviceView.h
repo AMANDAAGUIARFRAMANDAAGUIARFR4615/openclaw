@@ -36,7 +36,8 @@ public:
     void addVideoFrameWidget(VideoFrameWidget* videoFrameWidget);
 
 protected:
-    void addOverlay(const QString &text);
+    void showOverlay(const QString &text);
+    void hideOverlay();
     virtual QMenu* createContextMenu();
     void contextMenuEvent(QContextMenuEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;

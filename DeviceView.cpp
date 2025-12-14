@@ -62,13 +62,26 @@ void DeviceView::setSourceDevice(QIODevice *device, const QUrl &sourceUrl)
     mediaPlayer->play();
 }
 
-void DeviceView::addOverlay(const QString &text)
+void DeviceView::showOverlay(const QString &text)
 {
     QLabel *label = overlay->findChild<QLabel *>();
     label->setText(text);
 
     overlay->show();
     overlay->raise();
+
+    QTimer::singleShot(0, [=]() {
+        if (videoFrameWidget)
+            videoFrameWidget->hide();
+    });
+}
+
+void DeviceView::hideOverlay()
+{
+    overlay->hide();
+
+    if (videoFrameWidget)
+        videoFrameWidget->show();
 }
 
 void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
@@ -84,9 +97,9 @@ void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
     videoFrameWidget->orientationChanged(deviceInfo->orientation);
 
     if (deviceInfo->lockedStatus)
-        addOverlay("设备已锁定");
+        showOverlay("设备已锁定");
     else
-        overlay->hide();
+        hideOverlay();
 }
 
 void DeviceView::onHomeScreenClicked()

@@ -66,9 +66,9 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
             return;
 
         if (locked)
-            addOverlay("设备已锁定");
+            showOverlay("设备已锁定");
         else
-            overlay->hide();
+            hideOverlay();
     });
 }
 
@@ -98,7 +98,7 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
         return;
     }
 
-    addOverlay("设备控制中");
+    showOverlay("设备控制中");
 
     auto videoFrameWidgetLocal = videoFrameWidget;
     auto videoFrameWidgetSize = videoFrameWidget->size();

@@ -550,8 +550,6 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 void MainWindow::relayoutDevices()
 {
-    if (!deviceListWidget) return;
-
     auto& [bit, _, rawScale, isLandscape] = tabs[tabWidget->currentIndex()];
     
     const auto& devicesInGroup = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
