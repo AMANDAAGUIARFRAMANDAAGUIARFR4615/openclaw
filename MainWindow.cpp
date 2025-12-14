@@ -668,7 +668,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
 
     QMenu menu(this);
 
-    menu.addAction(isLandscape ? "竖屏" : "横屏", [=]() {
+    menu.addAction(isLandscape ? "切换为竖屏" : "切换为横屏", [=]() {
         tabs[tabWidget->currentIndex()].isLandscape = !isLandscape;
         saveTabs(tabWidget->currentIndex());
         relayoutDevices();
