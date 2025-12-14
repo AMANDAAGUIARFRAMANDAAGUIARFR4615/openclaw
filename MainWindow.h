@@ -50,6 +50,6 @@ protected:
     QScrollArea* scrollArea;
     QSlider* zoomSlider;
 
-    bool isMultiControlEnabled = true;
+    bool isMultiControlEnabled = false;
     bool isDispatching = false;
 };
