@@ -6,7 +6,6 @@
 #include <QMainWindow>
 #include <QKeyEvent>
 #include <QDialog>
-#include <QScrollArea>
 #include <QListWidget>
 #include <QSlider>
 
@@ -47,7 +46,7 @@ protected:
 
     QListWidget* sideBarList;
     QTabWidget* tabWidget;
-    QScrollArea* scrollArea;
+    QListWidget* deviceListWidget;
     QSlider* zoomSlider;
 
     bool isMultiControlEnabled = false;

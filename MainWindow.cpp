@@ -17,7 +17,6 @@
 #include "JailbreakAssistantDialog.h"
 #include <QShortcut>
 #include <QVBoxLayout>
-#include <QGridLayout>
 #include <QLabel>
 #include <QFrame>
 #include <QApplication>
@@ -26,11 +25,11 @@
 #include <QTabBar>
 #include <QSplitter>
 #include <QListWidgetItem>
+#include <QListWidget>
 #include <QStyle>
 #include <QIcon>
 #include <QTimer>
 #include <cmath>
-#include <QScrollArea>
 #include <QMenu>
 #include <QDialog>
 #include <QCheckBox>
@@ -265,8 +264,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
         if (text == "日志") {
             auto logWindow = LogWindow::getInstance();
-            logWindow->setParent(scrollArea);
-            logWindow->resize(scrollArea->size());
+            logWindow->setParent(deviceListWidget);
+            logWindow->resize(deviceListWidget->size());
             logWindow->toggleVisibility();
             return;
         }
@@ -331,22 +330,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         relayoutDevices();
     });
 
-    connect(tabBar, &QTabBar::currentChanged, this, [=](int index) {
-        qDebugEx() << "onTabChanged" << index;
-
-        auto widget = tabWidget->currentWidget();
-        auto layout = widget->layout();
-        if (!layout) {
-            layout = new QVBoxLayout(widget);
-            layout->setContentsMargins(0, 0, 0, 0);
-        }
-        layout->addWidget(scrollArea);
-
-        zoomSlider->setValue(tabs[index].scale);
-
-        relayoutDevices();
-    });
-
     controlLayout->addWidget(zoomOutBtn);
     controlLayout->addWidget(zoomSlider);
     controlLayout->addWidget(zoomInBtn);
@@ -356,13 +339,32 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     splitter->addWidget(rightContainer);
 
-    scrollArea = new QScrollArea(this);
-    scrollArea->setWidgetResizable(true);
-    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    auto content = new QWidget;
-    auto gridLayout = new QGridLayout(content);
-    scrollArea->setWidget(content);
+    deviceListWidget = new QListWidget(this);
+    deviceListWidget->setViewMode(QListWidget::IconMode); // 图标模式（网格）
+    deviceListWidget->setResizeMode(QListWidget::Adjust); // 随窗口自动调整换行
+    deviceListWidget->setDragDropMode(QListWidget::InternalMove); // 支持内部拖动排序
+    deviceListWidget->setSpacing(10);
+    // deviceListWidget->setFocusPolicy(Qt::NoFocus); // 去除选中虚线框
+    deviceListWidget->setStyleSheet("QListWidget { background: transparent; border: none; }");
+
+    connect(tabBar, &QTabBar::currentChanged, this, [=](int index) {
+        qDebugEx() << "onTabChanged" << index;
+
+        auto widget = tabWidget->currentWidget();
+        auto layout = widget->layout();
+        if (!layout) {
+            layout = new QVBoxLayout(widget);
+            layout->setContentsMargins(0, 0, 0, 0);
+        }
+        
+        if (deviceListWidget->parent() != widget) {
+            layout->addWidget(deviceListWidget);
+        }
+
+        zoomSlider->setValue(tabs[index].scale);
+
+        relayoutDevices();
+    });
 
     EventHub::on(this, "deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         connection->deviceInfo = new DeviceInfo(connection, data.toObject());
@@ -375,10 +377,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
 
         auto deviceFrame = deviceFrames.take(connection->deviceInfo);
-        if (!deviceFrame)
-            return;
-
-        deviceFrame->deleteLater();
+        
+        for (int i = 0; i < deviceListWidget->count(); i++) {
+            QListWidgetItem* item = deviceListWidget->item(i);
+            if (item->data(Qt::UserRole).value<quintptr>() == (quintptr)connection->deviceInfo) {
+                delete deviceListWidget->takeItem(i);
+                break;
+            }
+        }
+        
         relayoutDevices();
     });
 
@@ -545,61 +552,35 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 void MainWindow::relayoutDevices()
 {
+    if (!deviceListWidget) return;
+
     auto& [bit, _, rawScale, isLandscape] = tabs[tabWidget->currentIndex()];
-    const auto& devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+    
+    const auto& devicesInGroup = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+    
     const auto scale = rawScale == 0 ? 1 : rawScale / 100.0f;
-
-    auto contentWidget = scrollArea->widget();
-    auto gridLayout = qobject_cast<QGridLayout*>(contentWidget->layout());
-
-    int tabWidth = scrollArea->viewport()->width();
-    int tabHeight = scrollArea->viewport()->height();
-
-    int left, top, right, bottom;
-    gridLayout->getContentsMargins(&left, &top, &right, &bottom);
-
-    int maxItemWidth = tabWidth - left - right;
-    int maxItemHeight = tabHeight - top - bottom;
 
     int targetW = (isLandscape ? frameItemHeight : frameItemWidth) * scale;
     int targetH = (isLandscape ? frameItemWidth : frameItemHeight) * scale;
+    QSize targetSize(targetW, targetH);
 
-    QSize currentSize(targetW, targetH);
-    if (currentSize.width() > maxItemWidth || currentSize.height() > maxItemHeight)
-        currentSize.scale(maxItemWidth, maxItemHeight, Qt::KeepAspectRatio);
+    for (int i = 0; i < deviceListWidget->count(); ++i) {
+        QListWidgetItem* item = deviceListWidget->item(i);
+        QWidget* widget = deviceListWidget->itemWidget(item);
+        
+        auto infoPtr = (DeviceInfo*)item->data(Qt::UserRole).value<quintptr>();
 
-    int currentItemWidth = currentSize.width();
-    int currentItemHeight = currentSize.height();
+        bool shouldShow = false;
+        if (infoPtr) {
+            shouldShow = devicesInGroup.contains(infoPtr);
+        }
 
-    int totalRows = qMax(1, tabHeight / (currentItemHeight + spacing));
-    int totalCols = qMax(1, tabWidth / (currentItemWidth + spacing));
+        item->setHidden(!shouldShow);
 
-    if (devices.count() >= totalCols)
-        gridLayout->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
-    else
-        gridLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-
-    while (QLayoutItem* item = gridLayout->takeAt(0)) {
-        if (auto w = item->widget())
-            w->hide();
-        delete item;
-    }
-
-    int index = 0;
-
-    for (auto& device : devices) {
-        auto widget = deviceFrames[device];
-        if (!widget)
-            continue;
-
-        widget->setFixedSize(currentItemWidth, currentItemHeight);
-        widget->show();
-
-        int row = index / totalCols;
-        int col = index % totalCols;
-        gridLayout->addWidget(widget, row, col);
-
-        index++;
+        if (shouldShow && widget) {
+            item->setSizeHint(targetSize);
+            widget->setFixedSize(targetSize);
+        }
     }
 }
 
@@ -646,14 +627,20 @@ void MainWindow::addItem(DeviceConnection* connection)
         delete device;
     });
 
-    auto frame = new QFrame(this);
-    frame->resize(frameItemWidth, frameItemHeight);
+    auto frame = new QFrame();
     frame->setFrameShape(QFrame::Box);
     auto frameLayout = new QVBoxLayout(frame);
     frameLayout->setContentsMargins(0, 0, 0, 0);
     frameLayout->addWidget(player);
 
     deviceFrames.insert(deviceInfo, frame);
+
+    auto item = new QListWidgetItem(deviceListWidget);
+    item->setData(Qt::UserRole, QVariant::fromValue((quintptr)deviceInfo));
+    item->setSizeHint(QSize(frameItemWidth, frameItemHeight)); 
+    
+    deviceListWidget->addItem(item);
+    deviceListWidget->setItemWidget(item, frame);
 
     relayoutDevices();
 }
