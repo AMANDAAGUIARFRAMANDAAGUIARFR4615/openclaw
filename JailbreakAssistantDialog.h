@@ -127,7 +127,7 @@ public:
         : StepBase(title, desc, parent), m_url(url)
     {
         QString fileName = url.section('/', -1);
-        savePath = QCoreApplication::applicationDirPath() + "/" + fileName;
+        savePath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + fileName;
 
         btnAction = new QPushButton("");
         btnAction->setCursor(Qt::PointingHandCursor);
@@ -371,7 +371,7 @@ private slots:
         consoleOutput->clear();
         consoleOutput->append(QString("正在启动注入程序，目标应用: <span style='color:yellow;'>%1</span> ...<br>").arg(targetAppName));
 
-        QString program = QCoreApplication::applicationDirPath() + "/TrollRestore";
+        QString program = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/TrollRestore";
         
         QStringList arguments;
         if (!targetAppName.isEmpty()) {

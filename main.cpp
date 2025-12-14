@@ -45,6 +45,12 @@ int main(int argc, char *argv[])
 
     app.setApplicationDisplayName("RemotePro");
 
+    QString dataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+
+    QDir dir(dataPath);
+    if (!dir.exists())
+        dir.mkpath(".");
+
     new LogWindow();
 
     QObject::connect(&app, &QApplication::focusChanged, [](QWidget *old, QWidget *now) {

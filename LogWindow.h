@@ -26,10 +26,6 @@ public:
 
         const auto& filePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/app_log.txt";
 
-        const auto& dir = QFileInfo(filePath).absoluteDir();
-        if (!dir.exists())
-            dir.mkpath(".");
-
         logFile.setFileName(filePath);
         if (!logFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
             append("<span style='color:red;'>无法打开日志文件！</span>");
