@@ -14,6 +14,7 @@
 #include "FileTransfer.h"
 #include "UdpTransport.h"
 #include "SettingsDialog.h"
+#include "JailbreakAssistantDialog.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QGridLayout>
@@ -72,6 +73,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("📱"), "设备列表"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("⚙️"), "设置"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("💡"), "帮助"));
+    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("📲"), "越狱助手"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("💬"), "客服"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("📜"), "日志"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🛠️"), "开发者"));
@@ -228,6 +230,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (text == "帮助") {
+            return;
+        }
+
+        if (text == "越狱助手") {
+            JailbreakAssistantDialog dialog(this);
             return;
         }
 
