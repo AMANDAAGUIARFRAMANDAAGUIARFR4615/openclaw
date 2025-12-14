@@ -344,8 +344,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     deviceListWidget->setResizeMode(QListWidget::Adjust); // 随窗口自动调整换行
     deviceListWidget->setDragDropMode(QListWidget::InternalMove); // 支持内部拖动排序
     deviceListWidget->setSpacing(10);
-    // deviceListWidget->setFocusPolicy(Qt::NoFocus); // 去除选中虚线框
-    deviceListWidget->setStyleSheet("QListWidget { background: transparent; border: none; }");
 
     connect(tabBar, &QTabBar::currentChanged, this, [=](int index) {
         qDebugEx() << "onTabChanged" << index;
