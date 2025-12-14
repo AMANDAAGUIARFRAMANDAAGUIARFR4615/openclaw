@@ -344,13 +344,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     deviceListWidget->setResizeMode(QListWidget::Adjust); // 随窗口自动调整换行
     deviceListWidget->setDragDropMode(QListWidget::InternalMove); // 支持内部拖动排序
     deviceListWidget->setSpacing(10);
-    deviceListWidget->viewport()->installEventFilter(this);
-
-    // connect(deviceListWidget->model(), &QAbstractItemModel::rowsMoved, [this](const QModelIndex &, int, int, const QModelIndex &, int){
-    //     QTimer::singleShot(0, [this](){
-    //         relayoutDevices();
-    //     });
-    // });
 
     connect(tabBar, &QTabBar::currentChanged, this, [=](int index) {
         qDebugEx() << "onTabChanged" << index;
@@ -457,18 +450,6 @@ void MainWindow::changeEvent(QEvent *event)
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-    if (watched == deviceListWidget->viewport() && event->type() == QEvent::Drop) {
-        QDropEvent *dropEvent = static_cast<QDropEvent*>(event);
-        
-        if (dropEvent->source() == deviceListWidget) {
-            QTimer::singleShot(0, [this](){
-                relayoutDevices();
-            });
-        }
-        
-        return false;
-    }
-
     if (!isMultiControlEnabled || isDispatching)
         return false;
 
