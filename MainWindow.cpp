@@ -69,7 +69,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     sideBarList->setCursor(Qt::PointingHandCursor);
 
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🔗"), "设备连接"));
-    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("👥"), "分组群控"));
+    // sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("👥"), "分组群控"));
+    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🕹️", 64, !isMultiControlEnabled), "同屏操作"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("📱"), "设备列表"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("⚙️"), "设置"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("💡"), "帮助"));
@@ -211,6 +212,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             QRect rect = sideBarList->visualItemRect(item);
             QPoint globalPos = sideBarList->viewport()->mapToGlobal(rect.topRight());
             menu.exec(globalPos);
+            return;
+        }
+
+        if (text == "同屏操作") {
+            isMultiControlEnabled = !isMultiControlEnabled;
+            QIcon icon = EmojiIconProvider::createIcon("🕹️", 64, !isMultiControlEnabled);
+            item->setIcon(icon);
+            new ToastWidget(isMultiControlEnabled ? "同屏操作已开启" : "同屏操作已关闭", this);
             return;
         }
 
