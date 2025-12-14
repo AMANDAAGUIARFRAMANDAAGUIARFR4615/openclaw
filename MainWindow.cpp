@@ -555,45 +555,23 @@ void MainWindow::relayoutDevices()
     const auto& devicesInGroup = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
     
     const auto scale = rawScale == 0 ? 1 : rawScale / 100.0f;
+
     int targetW = (isLandscape ? frameItemHeight : frameItemWidth) * scale;
     int targetH = (isLandscape ? frameItemWidth : frameItemHeight) * scale;
     QSize targetSize(targetW, targetH);
 
-    QMap<DeviceInfo*, QListWidgetItem*> itemMap;
     for (int i = 0; i < deviceListWidget->count(); ++i) {
         QListWidgetItem* item = deviceListWidget->item(i);
-        auto infoPtr = (DeviceInfo*)item->data(Qt::UserRole).value<quintptr>();
-        if (infoPtr) {
-            itemMap.insert(infoPtr, item);
-        }
-    }
-
-    int targetRow = 0;
-
-    for (const auto& devPtr : devicesInGroup) {
-        if (!itemMap.contains(devPtr)) continue;
-
-        QListWidgetItem* item = itemMap[devPtr];
         QWidget* widget = deviceListWidget->itemWidget(item);
-
-        // 检查 Item 是否已经在正确的位置，如果不在，移动它
-        if (deviceListWidget->row(item) != targetRow) {
-            deviceListWidget->takeItem(deviceListWidget->row(item));
-            deviceListWidget->insertItem(targetRow, item);
-\
-            deviceListWidget->setItemWidget(item, widget); 
-        }
-
-        item->setHidden(false);
-
-        item->setSizeHint(targetSize);
-        widget->setFixedSize(targetSize);
         
-        targetRow++;
-    }
+        auto infoPtr = (DeviceInfo*)item->data(Qt::UserRole).value<quintptr>();
 
-    for (int i = targetRow; i < deviceListWidget->count(); ++i) {
-        deviceListWidget->item(i)->setHidden(true);
+        item->setHidden(!infoPtr || !devicesInGroup.contains(infoPtr));
+
+        if (!item->isHidden() && widget) {
+            item->setSizeHint(targetSize);
+            widget->setFixedSize(targetSize);
+        }
     }
 }
 
