@@ -170,7 +170,7 @@ private slots:
 
         auto file = new QFile(savePath);
         if (!file->open(QIODevice::WriteOnly)) {
-            statusLabel->setText("错误：无法写入文件，请检查权限");
+            statusLabel->setText("错误：无法写入文件，请检查权限 " + savePath);
             return;
         }
 
