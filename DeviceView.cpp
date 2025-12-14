@@ -71,7 +71,11 @@ void DeviceView::showOverlay(const QString &text)
     overlay->raise();
 
     if (metaObject()->className() == QString("DeviceWindow"))
+    {
+        overlay->move(videoFrameWidget->pos());
+        overlay->resize(videoFrameWidget->size());
         return;
+    }
 
     QTimer::singleShot(0, [=]() {
         if (videoFrameWidget)
