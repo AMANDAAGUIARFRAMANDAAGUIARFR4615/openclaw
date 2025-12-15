@@ -213,8 +213,8 @@ QMenu* DeviceView::createContextMenu()
 void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 {
     auto* menu = createContextMenu();
-    menu->setAttribute(Qt::WA_DeleteOnClose);
-    menu->popup(event->globalPos());
+    menu->exec(event->globalPos());
+    delete menu;
 }
 
 void DeviceView::dragEnterEvent(QDragEnterEvent *event)

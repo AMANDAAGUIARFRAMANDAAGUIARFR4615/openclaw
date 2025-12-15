@@ -464,12 +464,11 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                          type == QEvent::MouseButtonRelease ||
                          type == QEvent::MouseButtonDblClick ||
                          type == QEvent::MouseMove);
-    bool isContextMenuEvent = (type == QEvent::ContextMenu); 
     bool isWheelEvent = (type == QEvent::Wheel);
     bool isKeyEvent = (type == QEvent::KeyPress ||
                        type == QEvent::KeyRelease);
 
-    if (isMouseEvent || isContextMenuEvent || isWheelEvent || isKeyEvent) {
+    if (isMouseEvent || isWheelEvent || isKeyEvent) {
         isDispatching = true;
 
         for (int i = 0; i < deviceListWidget->count(); i++) {
@@ -489,15 +488,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                     QMouseEvent newEvent(type, localPos, me->windowPos(), globalPos,
                                          me->button(), me->buttons(), me->modifiers(), me->source());
                     QApplication::sendEvent(targetWidget, &newEvent);
-                }
-                else if (isContextMenuEvent) {
-                    QContextMenuEvent* ce = static_cast<QContextMenuEvent*>(event);
-                    QPoint localPos = ce->pos();
-                    QPoint globalPos = targetWidget->mapToGlobal(localPos);
-
-                    QContextMenuEvent newEvent(ce->reason(), localPos, globalPos, ce->modifiers());
-                    QApplication::sendEvent(targetWidget, &newEvent);
-                }
+                } 
                 else if (isWheelEvent) {
                     QWheelEvent* we = static_cast<QWheelEvent*>(event);
                     QPointF globalPos = targetWidget->mapToGlobal(we->position().toPoint());
@@ -686,6 +677,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
         auto page = tabWidget->widget(index);
         tabWidget->removeTab(index);
         delete page;
+        tabs.remove(index);
         auto tab = tabs.takeAt(index);
         auto mask = 1U << bit;
         auto devices = DeviceInfo::getDevices(mask);
