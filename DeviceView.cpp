@@ -36,16 +36,6 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
     layout->addWidget(label);
     layout->addStretch();
     overlay->setLayout(layout);
-
-    EventHub::on(this, "orientation", [this](const QJsonValue &data, DeviceConnection* connection) {
-        if (this->connection != connection)
-            return;
-
-        this->deviceInfo->orientation = data.toInt();
-
-        if (videoFrameWidget)
-            videoFrameWidget->orientationChanged(data.toInt());
-    });
 }
 
 DeviceView::~DeviceView()
@@ -103,8 +93,6 @@ void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
         boxLayout->addWidget(widget);
     else
         boxLayout->insertWidget(1, widget);
-    
-    videoFrameWidget->orientationChanged(deviceInfo->orientation);
 
     if (deviceInfo->lockedStatus)
         showOverlay("设备已锁定");

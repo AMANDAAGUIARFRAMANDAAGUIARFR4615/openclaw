@@ -70,6 +70,13 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
         else
             hideOverlay();
     });
+
+    EventHub::on(this, "orientation", [this](const QJsonValue &data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
+
+        this->deviceInfo->orientation = data.toInt();
+    });
 }
 
 DeviceWidget::~DeviceWidget()
@@ -118,7 +125,7 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
         placeholder->deleteLater();
     });
 
-    videoFrameWidget->setFixedSize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
+    deviceWindow->setFixedSize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
     deviceWindow->addVideoFrameWidget(videoFrameWidget);
     deviceWindow->show();
     qobject_cast<QBoxLayout*>(layout())->addWidget(placeholder);

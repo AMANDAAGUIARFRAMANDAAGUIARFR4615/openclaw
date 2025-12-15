@@ -36,22 +36,6 @@ public:
         }, Qt::QueuedConnection);
     }
 
-    void orientationChanged(int orientation)
-    {
-        auto width = size().width();
-        auto height = size().height();
-
-        if ((orientation == 1 || orientation == 2) && height < width || (orientation == 3 || orientation == 4) && height > width)
-        {
-            QString className = parentWidget()->metaObject()->className();
-
-            if (className == "DeviceWindow")
-                setFixedSize(height, width);
-        }
-
-        update();
-    }
-
     QMediaPlayer* const mediaPlayer;
 
 protected:

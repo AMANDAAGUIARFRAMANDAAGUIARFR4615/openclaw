@@ -47,6 +47,15 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo)
         else
             hideOverlay();
     });
+
+    EventHub::on(this, "orientation", [this](const QJsonValue &data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
+
+        auto orientation = data.toInt();
+        this->deviceInfo->orientation = orientation;
+        changeOrientation(orientation);
+    });
 }
 
 DeviceWindow::~DeviceWindow()
@@ -62,6 +71,33 @@ DeviceWindow::~DeviceWindow()
         delete audioPlayer->audioOutput();
         delete audioPlayer;
     }
+}
+
+void DeviceWindow::showEvent(QShowEvent *event)
+{
+    DeviceView::showEvent(event);
+    changeOrientation(deviceInfo->orientation);
+}
+
+void DeviceWindow::changeOrientation(int orientation)
+{
+    auto width = size().width();
+    auto height = size().height();
+
+    if ((orientation == 1 || orientation == 2) && height < width || (orientation == 3 || orientation == 4) && height > width)
+    {
+        std::swap(width, height);
+    }
+
+    this->layout()->setSizeConstraint(QLayout::SetFixedSize);
+    setFixedSize(width, height);
+
+    QTimer::singleShot(0, [=]() {
+        this->layout()->setSizeConstraint(QLayout::SetNoConstraint);
+        setMinimumSize(0, 0);
+        setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+        resize(width, height);
+    });
 }
 
 void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)

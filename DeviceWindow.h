@@ -13,6 +13,8 @@ public:
     ~DeviceWindow();
 
 protected:
+    void changeOrientation(int orientation);
+    void showEvent(QShowEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     QMenu* createContextMenu() override;
