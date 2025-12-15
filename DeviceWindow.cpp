@@ -18,6 +18,8 @@
 #include <QApplication>
 #include <QSlider>
 #include <QImageReader>
+#include <QScreen>
+#include <QWindow>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -122,16 +124,13 @@ bool DeviceWindow::nativeEvent(const QByteArray &eventType, void *message, qintp
             WPARAM edge = msg->wParam;
 
             // --- 步骤 1: 计算窗口边框和标题栏的尺寸 ---
-            // 获取窗口当前的样式
             HWND hwnd = (HWND)this->winId();
             DWORD style = GetWindowLong(hwnd, GWL_STYLE);
             DWORD exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
 
-            // 利用 API 计算只有边框时的大小（即内容为 0x0 时窗口多大）
             RECT borderRect = {0, 0, 0, 0};
             AdjustWindowRectEx(&borderRect, style, FALSE, exStyle);
             
-            // borderW 是左右边框总和，borderH 是标题栏+底边框总和
             int borderW = borderRect.right - borderRect.left;
             int borderH = borderRect.bottom - borderRect.top;
 
@@ -143,21 +142,22 @@ bool DeviceWindow::nativeEvent(const QByteArray &eventType, void *message, qintp
             int clientH = totalH - borderH;
 
             // --- 步骤 3: 根据内容区域计算理想尺寸 ---
-            
-            // 逻辑：如果是拖动上下边，以高度为基准算宽度；否则优先以宽度算高度
             if (edge == WMSZ_TOP || edge == WMSZ_BOTTOM) {
-                // 以高算宽
                 clientW = static_cast<int>(clientH * ratio);
             } else {
-                // 以宽算高 (默认)
                 clientH = static_cast<int>(clientW / ratio);
             }
             
             // --- 步骤 4: 限制检查 (基于内容区域 ClientSize) ---
-            // 注意：Qt 的 maximumWidth/Height 指的是 Client Size，不是 Window Size
-            int maxClientW = this->maximumWidth();
-            int maxClientH = this->maximumHeight();
+            // [新增] 获取当前屏幕的可用区域（减去任务栏等）
+            QScreen *screen = windowHandle() ? windowHandle()->screen() : QGuiApplication::primaryScreen();
+            QRect screenRect = screen ? screen->availableGeometry() : QRect(0, 0, 1920, 1080);
 
+            // [新增] 计算允许的最大内容宽高：取 (Qt最大值) 和 (屏幕可用宽高 - 边框) 中的较小值
+            int maxClientW = qMin(this->maximumWidth(), screenRect.width() - borderW);
+            int maxClientH = qMin(this->maximumHeight(), screenRect.height() - borderH);
+
+            // 进行限制判定
             if (clientW > maxClientW) {
                 clientW = maxClientW;
                 clientH = static_cast<int>(clientW / ratio);
@@ -166,7 +166,7 @@ bool DeviceWindow::nativeEvent(const QByteArray &eventType, void *message, qintp
                 clientH = maxClientH;
                 clientW = static_cast<int>(clientH * ratio);
             }
-            // 二次检查
+            // 二次检查 (防止因比例计算导致其中一边再次超标)
             if (clientW > maxClientW) {
                 clientW = maxClientW;
                 clientH = static_cast<int>(clientW / ratio);
