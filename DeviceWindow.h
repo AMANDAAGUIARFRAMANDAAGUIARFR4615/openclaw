@@ -16,6 +16,7 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     QMenu* createContextMenu() override;
+    bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 
     QMediaPlayer* audioPlayer = nullptr;
     DeviceConnection* audioDeviceConnection = nullptr;

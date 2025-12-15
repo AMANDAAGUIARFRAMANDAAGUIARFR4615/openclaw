@@ -19,12 +19,17 @@
 #include <QSlider>
 #include <QImageReader>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <winuser.h>
+#endif
+
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo) : DeviceView(connection, deviceInfo)
 {
     setWindowTitle(connection->displayName());
 
     QHBoxLayout *layout = new QHBoxLayout(this);
-    layout->setSizeConstraint(QLayout::SetFixedSize);
+    // layout->setSizeConstraint(QLayout::SetFixedSize);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
@@ -101,4 +106,58 @@ QMenu* DeviceWindow::createContextMenu()
         connection->send("setVideoQuality", 5);
     });
     return menu;
+}
+
+bool DeviceWindow::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
+{
+#ifdef Q_OS_WIN
+    float m_aspectRatio = 1.0f * deviceInfo->screenWidth / deviceInfo->screenHeight;
+
+    if (eventType == "windows_generic_MSG") {
+        MSG *msg = static_cast<MSG *>(message);
+
+        // 拦截 WM_SIZING 消息
+        // 当用户正在调整窗口大小时，系统发送此消息
+        if (msg->message == WM_SIZING) {
+            RECT *rect = (RECT *)msg->lParam;
+            int width = rect->right - rect->left;
+            int height = rect->bottom - rect->top;
+
+            // 获取当前是在拖动哪个边缘 (wParam)
+            // WMSZ_BOTTOM, WMSZ_RIGHT, WMSZ_BOTTOMRIGHT 等
+            WPARAM edge = msg->wParam;
+
+            // 计算包含边框和标题栏的实际比例
+            // 如果你需要更精确的内容区域比例，可能需要减去 frameGeometry 的差值
+            
+            // 下面根据拖动的不同边缘来决定是调整宽还是调整高
+            if (edge == WMSZ_LEFT || edge == WMSZ_RIGHT) {
+                // 如果只拖动左右边，根据宽度算高度
+                int newHeight = static_cast<int>(width / m_aspectRatio);
+                
+                // 保持垂直中心或顶部对齐? 这里通常让系统处理，或者：
+                // rect->bottom = rect->top + newHeight; 
+                // 但为了体验更好，通常我们修改非拖动轴：
+                rect->bottom = rect->top + newHeight;
+            }
+            else if (edge == WMSZ_TOP || edge == WMSZ_BOTTOM) {
+                // 如果只拖动上下边，根据高度算宽度
+                int newWidth = static_cast<int>(height * m_aspectRatio);
+                rect->right = rect->left + newWidth;
+            }
+            else {
+                // 拖动的是四个角 (WMSZ_TOPLEFT, WMSZ_BOTTOMRIGHT 等)
+                // 这里通常以宽度为准来调整高度，或者取变动大的一方
+                // 简单起见，我们优先保证宽度驱动高度
+                int newHeight = static_cast<int>(width / m_aspectRatio);
+                rect->bottom = rect->top + newHeight;
+            }
+
+            // 返回 true 表示我们已经处理了这个事件
+            *result = TRUE;
+            return true;
+        }
+    }
+#endif
+    return DeviceView::nativeEvent(eventType, message, result);
 }
