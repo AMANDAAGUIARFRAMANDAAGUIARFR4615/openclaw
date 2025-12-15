@@ -19,17 +19,9 @@
 #include <QSlider>
 #include <QImageReader>
 
-#if defined(Q_OS_MAC)
-#include "macos_utils.h"
-#endif
-
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo) : DeviceView(connection, deviceInfo)
 {
     setWindowTitle(connection->displayName());
-
-#if defined(Q_OS_MAC)
-    setMacWindowAspectRatio(this, deviceInfo->screenHeight, deviceInfo->screenWidth);
-#endif
 
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setSizeConstraint(QLayout::SetFixedSize);
