@@ -87,3 +87,9 @@ file(GLOB_RECURSE DEBUG_SOURCES
 )
 
 add_custom_target(DebugSources SOURCES ${DEBUG_SOURCES})
+
+if(APPLE)
+    find_library(COCOA_LIBRARY Cocoa)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${COCOA_LIBRARY})
+    target_sources(${PROJECT_NAME} PRIVATE macos_utils.mm)
+endif()
