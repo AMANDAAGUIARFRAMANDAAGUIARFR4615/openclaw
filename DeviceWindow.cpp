@@ -84,7 +84,7 @@ void DeviceWindow::changeOrientation(int orientation)
     auto width = size().width();
     auto height = size().height();
 
-    if ((orientation == 1 || orientation == 2) && height < width || (orientation == 3 || orientation == 4) && height > width)
+    if (orientation == 3 || orientation == 4)
     {
         std::swap(width, height);
     }
@@ -150,6 +150,9 @@ QMenu* DeviceWindow::createContextMenu()
 bool DeviceWindow::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
 {
     float ratio = 1.0f * deviceInfo->screenWidth / deviceInfo->screenHeight;
+
+    if (deviceInfo->orientation == 3 || deviceInfo->orientation == 4)
+        ratio = 1 / ratio;
 
 #ifdef Q_OS_WIN
     if (eventType == "windows_generic_MSG") {
