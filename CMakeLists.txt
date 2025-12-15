@@ -57,12 +57,6 @@ add_executable(${PROJECT_NAME}
     ${RESOURCE_SOURCES}
 )
 
-target_precompile_headers(${PROJECT_NAME} PRIVATE
-    <QtCore>
-    <QtGui>
-    <QtWidgets>
-)
-
 set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE TRUE
     MACOSX_BUNDLE TRUE
