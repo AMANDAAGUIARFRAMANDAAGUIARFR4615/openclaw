@@ -374,8 +374,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         if (!connection)
             return;
 
-        auto deviceFrame = deviceFrames.take(connection->deviceInfo);
-        
         for (int i = 0; i < deviceListWidget->count(); i++) {
             QListWidgetItem* item = deviceListWidget->item(i);
             if (item->data(Qt::UserRole).value<quintptr>() == (quintptr)connection->deviceInfo) {
@@ -469,13 +467,13 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
     if (isMouseEvent || isWheelEvent || isKeyEvent) {
         isDispatching = true;
 
-        auto bit = tabs[tabWidget->currentIndex()].bit;
-        auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+        for (int i = 0; i < deviceListWidget->count(); i++) {
+            QListWidgetItem* item = deviceListWidget->item(i);
+            
+            if (item->isHidden()) continue;
 
-        for (const auto& device : devices) {
-            if (!deviceFrames.contains(device)) continue;
-            QFrame* frame = deviceFrames[device];
-            DeviceWidget* targetWidget = frame->findChild<DeviceWidget*>();
+            QWidget* widget = deviceListWidget->itemWidget(item);
+            DeviceWidget* targetWidget = widget->findChild<DeviceWidget*>();
 
             if (targetWidget && targetWidget != sourceWidget) {
                 if (isMouseEvent) {
@@ -623,8 +621,6 @@ void MainWindow::addItem(DeviceConnection* connection)
     auto frameLayout = new QVBoxLayout(frame);
     frameLayout->setContentsMargins(0, 0, 0, 0);
     frameLayout->addWidget(player);
-
-    deviceFrames.insert(deviceInfo, frame);
 
     auto item = new QListWidgetItem(deviceListWidget);
     item->setData(Qt::UserRole, QVariant::fromValue((quintptr)deviceInfo));

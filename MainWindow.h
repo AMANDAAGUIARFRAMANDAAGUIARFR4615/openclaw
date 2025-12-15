@@ -38,8 +38,6 @@ protected:
 
     QList<BitMaskEditorDialog::Item> tabs;
 
-    QHash<DeviceInfo*, QFrame*> deviceFrames;
-
     const int frameItemWidth = 150;
     const int frameItemHeight = frameItemWidth * 1.7786;
     const int spacing = 10;
