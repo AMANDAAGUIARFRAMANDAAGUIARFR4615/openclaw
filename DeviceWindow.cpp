@@ -29,7 +29,6 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo)
     setWindowTitle(connection->displayName());
 
     QHBoxLayout *layout = new QHBoxLayout(this);
-    // layout->setSizeConstraint(QLayout::SetFixedSize);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
@@ -84,7 +83,9 @@ void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)
 
 void DeviceWindow::resizeEvent(QResizeEvent *event)
 {
-    if (videoFrameWidget) {
+    videoFrameWidget->setFixedSize(event->size());
+
+    if (overlay->isVisible()) {
         overlay->move(videoFrameWidget->pos());
         overlay->resize(videoFrameWidget->size());
     }
