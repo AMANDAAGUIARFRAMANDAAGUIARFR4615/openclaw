@@ -344,6 +344,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     deviceListWidget->setResizeMode(QListWidget::Adjust); // 随窗口自动调整换行
     deviceListWidget->setDragDropMode(QListWidget::NoDragDrop);
     deviceListWidget->setSpacing(10);
+    deviceListWidget->setSortingEnabled(true);
+    QLocale chineseLocale(QLocale::Chinese, QLocale::AnyCountry);
+    deviceListWidget->setLocale(chineseLocale);
+    deviceListWidget->sortItems(Qt::AscendingOrder);
 
     connect(tabBar, &QTabBar::currentChanged, this, [=](int index) {
         qDebugEx() << "onTabChanged" << index;
@@ -623,6 +627,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     frameLayout->addWidget(player);
 
     auto item = new QListWidgetItem(deviceListWidget);
+    item->setText(deviceInfo->deviceName);
     item->setData(Qt::UserRole, QVariant::fromValue((quintptr)deviceInfo));
     item->setSizeHint(QSize(frameItemWidth, frameItemHeight)); 
     
