@@ -6,7 +6,6 @@
 #include <QApplication>
 #include <QScreen>
 #include <QList>
-#include <algorithm>
 
 class DeviceConnection;
 
@@ -47,17 +46,14 @@ public:
 
     static QList<DeviceInfo*> getDevices(quint32 mask)
     {
+        if (!mask)
+            return allDevices;
+
         QList<DeviceInfo*> result;
-
         for (auto deviceInfo : allDevices) {
-            if (!mask || (deviceInfo->groupMask & mask)) {
+            if (deviceInfo->groupMask & mask)
                 result.append(deviceInfo);
-            }
         }
-
-        std::sort(result.begin(), result.end(), [](const DeviceInfo* a, const DeviceInfo* b) {
-            return QString::localeAwareCompare(a->deviceName, b->deviceName) < 0;
-        });
 
         return result;
     }
