@@ -97,10 +97,10 @@ void DeviceView::hideOverlay()
 void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
 {
     videoFrameWidget = widget;
-    
+
     QBoxLayout* boxLayout = qobject_cast<QBoxLayout*>(layout());
     if (qobject_cast<QHBoxLayout*>(boxLayout))
-        boxLayout->insertWidget(0, widget);
+        boxLayout->addWidget(widget);
     else
         boxLayout->insertWidget(1, widget);
     
