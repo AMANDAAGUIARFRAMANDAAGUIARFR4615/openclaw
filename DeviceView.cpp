@@ -316,6 +316,9 @@ QPoint DeviceView::getTransformedPosition(QPoint pos) {
 
 bool DeviceView::event(QEvent *event)
 {
+    if (!videoFrameWidget)
+        return QWidget::event(event);
+
     auto mouseEvent = dynamic_cast<QMouseEvent *>(event);
     if (!mouseEvent)
         return QWidget::event(event);
