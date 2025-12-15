@@ -15,31 +15,6 @@
 #include "UdpTransport.h"
 #include "SettingsDialog.h"
 #include "JailbreakAssistantDialog.h"
-#include <QShortcut>
-#include <QVBoxLayout>
-#include <QLabel>
-#include <QFrame>
-#include <QApplication>
-#include <QScreen>
-#include <QApplication>
-#include <QTabBar>
-#include <QSplitter>
-#include <QListWidgetItem>
-#include <QListWidget>
-#include <QStyle>
-#include <QIcon>
-#include <QTimer>
-#include <cmath>
-#include <QMenu>
-#include <QDialog>
-#include <QCheckBox>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QFormLayout>
-#include <QInputDialog>
-#include <QFileDialog>
-#include <QJsonObject>
-#include <QToolButton>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
