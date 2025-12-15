@@ -60,13 +60,6 @@ void DeviceView::showOverlay(const QString &text)
     overlay->show();
     overlay->raise();
 
-    if (metaObject()->className() == QString("DeviceWindow"))
-    {
-        overlay->move(videoFrameWidget->pos());
-        overlay->resize(videoFrameWidget->size());
-        return;
-    }
-
     QTimer::singleShot(0, [=]() {
         if (videoFrameWidget)
             videoFrameWidget->hide();
@@ -76,9 +69,6 @@ void DeviceView::showOverlay(const QString &text)
 void DeviceView::hideOverlay()
 {
     overlay->hide();
-
-    if (metaObject()->className() == QString("DeviceWindow"))
-        return;
 
     if (videoFrameWidget)
         videoFrameWidget->show();
@@ -90,7 +80,7 @@ void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
 
     QBoxLayout* boxLayout = qobject_cast<QBoxLayout*>(layout());
     if (qobject_cast<QHBoxLayout*>(boxLayout))
-        boxLayout->addWidget(widget);
+        boxLayout->insertWidget(0, widget);
     else
         boxLayout->insertWidget(1, widget);
 

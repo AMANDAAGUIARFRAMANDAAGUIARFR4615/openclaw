@@ -108,7 +108,6 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
     showOverlay("设备控制中");
 
     auto videoFrameWidgetLocal = videoFrameWidget;
-    auto videoFrameWidgetSize = videoFrameWidget->size();
     QPointer<QWidget> placeholder = new QWidget();
 
     deviceWindow = new DeviceWindow(connection, deviceInfo);
@@ -116,7 +115,6 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
         if (!placeholder)
             return;
 
-        videoFrameWidgetLocal->resize(videoFrameWidgetSize);
         addVideoFrameWidget(videoFrameWidgetLocal);
 
         deviceWindow = nullptr;

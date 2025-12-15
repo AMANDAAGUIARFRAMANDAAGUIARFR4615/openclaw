@@ -33,7 +33,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo)
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
-
+    layout->addWidget(overlay);
     setLayout(layout);
 
     EventHub::on(this, "lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
@@ -117,18 +117,6 @@ void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)
             QApplication::postEvent(this, releaseEvent);
         });
     }
-}
-
-void DeviceWindow::resizeEvent(QResizeEvent *event)
-{
-    videoFrameWidget->resize(event->size());
-
-    if (overlay->isVisible()) {
-        overlay->move(videoFrameWidget->pos());
-        overlay->resize(videoFrameWidget->size());
-    }
-
-    DeviceView::resizeEvent(event);
 }
 
 QMenu* DeviceWindow::createContextMenu()

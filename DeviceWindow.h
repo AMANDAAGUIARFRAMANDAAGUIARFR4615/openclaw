@@ -16,7 +16,6 @@ protected:
     void changeOrientation(int orientation);
     void showEvent(QShowEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
-    void resizeEvent(QResizeEvent *event) override;
     QMenu* createContextMenu() override;
     bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 
