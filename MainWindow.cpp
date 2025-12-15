@@ -671,10 +671,20 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
     });
     
     menu.addAction("删除", [&]() {
-        QWidget *page = tabWidget->widget(index);
+        if (QMessageBox::question(this, "删除确认", "分组内所有设备将被移除，\n确定删除？") != QMessageBox::Yes)
+            return;
+
+        auto page = tabWidget->widget(index);
         tabWidget->removeTab(index);
         delete page;
         tabs.remove(index);
+        auto tab = tabs.takeAt(index);
+        auto mask = 1U << bit;
+        auto devices = DeviceInfo::getDevices(mask);
+        for (auto& deviceInfo : devices) {
+            deviceInfo->groupMask &= ~mask;
+            settings.setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
+        }
     })->setEnabled(bit != 0);
 
     menu.addAction("添加", [&]() {
