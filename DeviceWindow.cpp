@@ -39,19 +39,6 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo)
         else
             hideOverlay();
     });
-
-    auto title = windowTitle(); 
-
-    auto timer = new QTimer(this);
-    timer->callOnTimeout([=]() {
-        if (!videoFrameWidget)
-            return;
-
-        auto ioDevice = videoFrameWidget->mediaPlayer->sourceDevice();
-        auto device = qobject_cast<LiveStreamDevice*>(const_cast<QIODevice*>(ioDevice));
-        this->setWindowTitle(title + " " + Tools::formatByteSize(device->speedBps()) + " / s");
-    });
-    timer->start(1000);
 }
 
 DeviceWindow::~DeviceWindow()
