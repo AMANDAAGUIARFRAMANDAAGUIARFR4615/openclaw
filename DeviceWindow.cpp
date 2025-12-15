@@ -121,7 +121,7 @@ void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)
 
 void DeviceWindow::resizeEvent(QResizeEvent *event)
 {
-    videoFrameWidget->setFixedSize(event->size());
+    videoFrameWidget->resize(event->size());
 
     if (overlay->isVisible()) {
         overlay->move(videoFrameWidget->pos());

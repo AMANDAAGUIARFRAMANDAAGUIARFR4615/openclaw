@@ -116,8 +116,6 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
         if (!placeholder)
             return;
 
-        videoFrameWidgetLocal->setMinimumSize(0, 0);
-        videoFrameWidgetLocal->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
         videoFrameWidgetLocal->resize(videoFrameWidgetSize);
         addVideoFrameWidget(videoFrameWidgetLocal);
 
