@@ -186,13 +186,15 @@ QMenu* DeviceView::createContextMenu()
 {
     auto menu = new QMenu(this);
 
+    auto isMultiControl = MainWindow::getInstance()->isMultiControl();
+
     menu->addAction(EmojiIconProvider::createIcon("🏠"), "主屏幕", this, &DeviceView::onHomeScreenClicked);
     menu->addAction(EmojiIconProvider::createIcon("🧹"), "清理应用", this, &DeviceView::onKillAllAppClicked);
-    menu->addAction(EmojiIconProvider::createIcon("📁"), "文件管理", this, &DeviceView::onFileClicked);
-    menu->addAction(EmojiIconProvider::createIcon("⏺️"), "录制+回放", this, &DeviceView::onRecorderClicked);
-    menu->addAction(EmojiIconProvider::createIcon("📱"), "应用列表", this, &DeviceView::onAppListClicked);
+    menu->addAction(EmojiIconProvider::createIcon("📁"), "文件管理", this, &DeviceView::onFileClicked)->setEnabled(!isMultiControl);
+    menu->addAction(EmojiIconProvider::createIcon("⏺️"), "录制+回放", this, &DeviceView::onRecorderClicked)->setEnabled(!isMultiControl);
+    menu->addAction(EmojiIconProvider::createIcon("📱"), "应用列表", this, &DeviceView::onAppListClicked)->setEnabled(!isMultiControl);
 
-    menu->addAction(EmojiIconProvider::createIcon("📸"), "截图", this, &DeviceView::onScreenshotClicked);
+    menu->addAction(EmojiIconProvider::createIcon("📸"), "截图", this, &DeviceView::onScreenshotClicked)->setEnabled(!isMultiControl);
     menu->addAction(EmojiIconProvider::createIcon("🔄"), "重启", this, &DeviceView::onRebootClicked);
 
     if (deviceInfo->lockedStatus)

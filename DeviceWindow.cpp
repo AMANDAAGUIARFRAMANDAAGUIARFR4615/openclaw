@@ -7,6 +7,7 @@
 #include "LiveStreamDevice.h"
 #include "UsbDeviceManager.h"
 #include "EmojiIconProvider.h"
+#include "MainWindow.h"
 #include <QElapsedTimer>
 #include <QVBoxLayout>
 #include <QMouseEvent>
@@ -24,6 +25,8 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo)
     layout->setSizeConstraint(QLayout::SetFixedSize);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
+
+    auto isMultiControl = MainWindow::getInstance()->isMultiControl();
 
     auto buttonLayout = new QVBoxLayout();
 
@@ -44,18 +47,22 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo)
     buttonLayout->addWidget(killAllAppButton);
 
     auto fileButton = new QPushButton(EmojiIconProvider::createIcon("📁"), "文件管理", this);
+    fileButton->setEnabled(isMultiControl);
     connect(fileButton, &QPushButton::clicked, this, &DeviceView::onFileClicked);
     buttonLayout->addWidget(fileButton);
 
     auto recorderButton = new QPushButton(EmojiIconProvider::createIcon("⏺️"), "录制+回放", this);
+    recorderButton->setEnabled(isMultiControl);
     connect(recorderButton, &QPushButton::clicked, this, &DeviceView::onRecorderClicked);
     buttonLayout->addWidget(recorderButton);
 
     auto appListButton = new QPushButton(EmojiIconProvider::createIcon("📱"), "应用列表", this);
+    appListButton->setEnabled(isMultiControl);
     connect(appListButton, &QPushButton::clicked, this, &DeviceView::onAppListClicked);
     buttonLayout->addWidget(appListButton);
 
     auto screenshotButton = new QPushButton(EmojiIconProvider::createIcon("📸"), "截图", this);
+    screenshotButton->setEnabled(isMultiControl);
     connect(screenshotButton, &QPushButton::clicked, this, &DeviceView::onScreenshotClicked);
     buttonLayout->addWidget(screenshotButton);
 
