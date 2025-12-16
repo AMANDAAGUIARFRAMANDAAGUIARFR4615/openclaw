@@ -17,8 +17,10 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     deviceInfoLabel->setFixedHeight(24);
     auto ipLabel = new QLabel(connection->type == DeviceConnection::Usb ? "" : deviceInfo->localIp, this);
     ipLabel->setAlignment(Qt::AlignCenter);
+    ipLabel->setFixedHeight(24);
     auto versionLabel = new QLabel("版本：" + deviceInfo->version, this);
     versionLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    versionLabel->setFixedHeight(24);
 
     auto hLayout = new QHBoxLayout;
     hLayout->setContentsMargins(5, 0, 5, 0);
