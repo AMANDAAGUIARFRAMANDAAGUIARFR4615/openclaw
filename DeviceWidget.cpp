@@ -34,6 +34,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
         if (type == 1)
         {
             qApp->clipboard()->setText(content);
+            new ToastWidget("文本已复制到剪切板", this);
             return;
         }
         
@@ -49,6 +50,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
             }
 
             qApp->clipboard()->setPixmap(QPixmap::fromImage(image));
+            new ToastWidget("图片已复制到剪切板", this);
             return;
         }
 
