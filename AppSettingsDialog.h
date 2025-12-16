@@ -12,6 +12,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QGroupBox>
 
 class AppSettingsDialog : public QDialog
 {
@@ -67,10 +68,16 @@ private:
         mainLayout->setSpacing(15);
         mainLayout->setContentsMargins(25, 20, 25, 20);
 
-        addSettingGroup(mainLayout, "diaplayMode", "默认投屏显示【分组单独设置后不受此选项影响】", {"竖屏显示", "横屏显示"}, 0);
-        addSettingGroup(mainLayout, "connectionMethod", "默认连接方式【分组单独设置后不受此选项影响】", {"WIFI优先", "USB优先"}, 0);
-        addSettingGroup(mainLayout, "videoQuality", "默认视频清晰度【分组单独设置后不受此选项影响】", {"图片流", "标清", "高清", "超清"}, 1);
-        addSettingGroup(mainLayout, "autoScan", "自动扫描局域网设备【分组单独设置后不受此选项影响】", {"开启", "关闭"}, 0);
+        QGroupBox *defaultBox = new QGroupBox("全局默认配置 (分组单独设置优先)", this);
+        QVBoxLayout *boxLayout = new QVBoxLayout(defaultBox);
+        boxLayout->setSpacing(5);
+
+        addSettingGroup(boxLayout, "diaplayMode", "默认投屏显示", {"竖屏显示", "横屏显示"}, 0);
+        addSettingGroup(boxLayout, "connectionMethod", "默认连接方式", {"WIFI优先", "USB优先"}, 0);
+        addSettingGroup(boxLayout, "videoQuality", "默认视频清晰度", {"图片流", "标清", "高清", "超清"}, 1);
+        addSettingGroup(boxLayout, "autoScan", "自动扫描局域网设备", {"开启", "关闭"}, 0);
+
+        mainLayout->addWidget(defaultBox);
 
         addSortableGroup(mainLayout, "sideBarMenu", "左侧栏 (拖拽调整)", 
             {"🔗设备连接", "🕹️同屏操作", "⚙️设置", "💡帮助", "📲越狱助手", "💬客服", "📜日志", "🛠️开发者"}, false);
@@ -93,6 +100,7 @@ private:
         m_listDefaults.insert(key, defaults);
 
         QVBoxLayout *groupLayout = new QVBoxLayout();
+        groupLayout->setSpacing(5);
 
         QLabel *titleLabel = new QLabel(title, this);
         QFont font = titleLabel->font();
@@ -169,6 +177,7 @@ private:
         m_intDefaults.insert(key, defaultIndex);
 
         QVBoxLayout *groupLayout = new QVBoxLayout();
+        groupLayout->setSpacing(5);
 
         QLabel *titleLabel = new QLabel(title, this);
         QFont font = titleLabel->font();
