@@ -58,7 +58,10 @@ private:
         mainLayout->setSpacing(15);
         mainLayout->setContentsMargins(25, 20, 25, 20);
 
-        addSettingGroup(mainLayout, "diaplayMode", "主窗口投屏显示【分组单独设置后不受此选项影响】", {"竖屏显示", "横屏显示"}, 0);
+        addSettingGroup(mainLayout, "diaplayMode", "默认投屏显示【分组单独设置后不受此选项影响】", {"竖屏显示", "横屏显示"}, 0);
+        addSettingGroup(mainLayout, "connectionMethod", "默认连接方式【分组单独设置后不受此选项影响】", {"WIFI优先", "USB优先"}, 0);
+        addSettingGroup(mainLayout, "videoQuality", "默认视频清晰度【分组单独设置后不受此选项影响】", {"图片流", "标清", "高清", "超清"}, 1);
+        addSettingGroup(mainLayout, "autoScan", "自动扫描局域网设备【分组单独设置后不受此选项影响】", {"开启", "关闭"}, 0);
 
         addSortableGroup(mainLayout, "sideBarMenu", "左侧栏 (拖拽调整)", 
             {"🔗设备连接", "🕹️同屏操作", "⚙️设置", "💡帮助", "📲越狱助手", "💬客服", "📜日志", "🛠️开发者"}, false);
@@ -68,10 +71,6 @@ private:
 
         addSortableGroup(mainLayout, "tabMenu", "分组标签页右键菜单 (拖拽调整)", 
             {"横竖屏切换", "重命名分组", "添加分组", "删除分组"}, true);
-
-        addSettingGroup(mainLayout, "autoScan", "自动扫描局域网设备", {"开启", "关闭"}, 0);
-        addSettingGroup(mainLayout, "connectionMethod", "默认连接方式【分组单独设置后不受此选项影响】", {"WIFI优先", "USB优先"}, 0);
-        addSettingGroup(mainLayout, "videoQuality", "默认视频清晰度【分组单独设置后不受此选项影响】", {"图片流", "标清", "高清", "超清"}, 1);
 
         setModal(true);
     }
