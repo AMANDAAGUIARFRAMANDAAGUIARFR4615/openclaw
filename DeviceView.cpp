@@ -163,28 +163,36 @@ void DeviceView::onVolumeDownClicked()
 QMenu* DeviceView::createContextMenu()
 {
     auto menu = new QMenu(this);
+    menu->setStyleSheet(R"(
+        QMenu::item {
+            padding: 5px;
+        }
+        QMenu::item:selected {
+            background-color: #E0E0E0;
+        }
+    )");
 
     auto isMultiControl = MainWindow::getInstance()->isMultiControl();
 
-    menu->addAction(EmojiIconProvider::createIcon("🏠"), "主屏幕", this, &DeviceView::onHomeScreenClicked);
-    menu->addAction(EmojiIconProvider::createIcon("🧹"), "清理应用", this, &DeviceView::onKillAllAppClicked);
-    menu->addAction(EmojiIconProvider::createIcon("📁"), "文件管理", this, &DeviceView::onFileClicked)->setEnabled(!isMultiControl);
-    menu->addAction(EmojiIconProvider::createIcon("⏺️"), "录制+回放", this, &DeviceView::onRecorderClicked)->setEnabled(!isMultiControl);
-    menu->addAction(EmojiIconProvider::createIcon("📱"), "应用列表", this, &DeviceView::onAppListClicked)->setEnabled(!isMultiControl);
+    menu->addAction("🏠主屏幕", this, &DeviceView::onHomeScreenClicked);
+    menu->addAction("🧹清理应用", this, &DeviceView::onKillAllAppClicked);
+    menu->addAction("📁文件管理", this, &DeviceView::onFileClicked)->setEnabled(!isMultiControl);
+    menu->addAction("⏺️录制+回放", this, &DeviceView::onRecorderClicked)->setEnabled(!isMultiControl);
+    menu->addAction("📱应用列表", this, &DeviceView::onAppListClicked)->setEnabled(!isMultiControl);
 
-    menu->addAction(EmojiIconProvider::createIcon("📸"), "截图", this, &DeviceView::onScreenshotClicked)->setEnabled(!isMultiControl);
-    menu->addAction(EmojiIconProvider::createIcon("🔄"), "重启", this, &DeviceView::onRebootClicked);
+    menu->addAction("📸截图", this, &DeviceView::onScreenshotClicked)->setEnabled(!isMultiControl);
+    menu->addAction("🔄重启", this, &DeviceView::onRebootClicked);
 
     if (deviceInfo->lockedStatus)
-        menu->addAction(EmojiIconProvider::createIcon("🔓"), "解锁", this, &DeviceView::onUnlockClicked);
+        menu->addAction("🔓解锁", this, &DeviceView::onUnlockClicked);
     else
-        menu->addAction(EmojiIconProvider::createIcon("🔒"), "锁屏", this, &DeviceView::onLockClicked);
+        menu->addAction("🔒锁屏", this, &DeviceView::onLockClicked);
 
-    menu->addAction(EmojiIconProvider::createIcon("🗑️"), "清空相册", this, &DeviceView::onDeleteAllPhotosClicked);
-    menu->addAction(EmojiIconProvider::createIcon("🔊"), "音量+", this, &DeviceView::onVolumeUpClicked);
-    menu->addAction(EmojiIconProvider::createIcon("🔈"), "音量-", this, &DeviceView::onVolumeDownClicked);
+    menu->addAction("🗑️清空相册", this, &DeviceView::onDeleteAllPhotosClicked);
+    menu->addAction("🔊音量+", this, &DeviceView::onVolumeUpClicked);
+    menu->addAction("🔈音量-", this, &DeviceView::onVolumeDownClicked);
 
-    menu->addAction(EmojiIconProvider::createIcon("🔧"), "修改分组", [=]() {
+    menu->addAction("🔧修改分组", [=]() {
         if (MainWindow::getInstance()->getTabs().count() <= 1) {
             new ToastWidget("请先右键点击标签页添加自定义分组", this);
             return;
