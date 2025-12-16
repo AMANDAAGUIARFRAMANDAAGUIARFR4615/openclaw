@@ -172,15 +172,13 @@ QMenu* DeviceView::createContextMenu()
         }
     )");
 
-    auto isMultiControl = MainWindow::getInstance()->isMultiControl();
-
     menu->addAction("🏠主屏幕", this, &DeviceView::onHomeScreenClicked);
     menu->addAction("🧹清理应用", this, &DeviceView::onKillAllAppClicked);
-    menu->addAction("📁文件管理", this, &DeviceView::onFileClicked)->setEnabled(!isMultiControl);
-    menu->addAction("⏺️录制+回放", this, &DeviceView::onRecorderClicked)->setEnabled(!isMultiControl);
-    menu->addAction("🧩应用列表", this, &DeviceView::onAppListClicked)->setEnabled(!isMultiControl);
+    menu->addAction("📁文件管理", this, &DeviceView::onFileClicked);
+    menu->addAction("⏺️录制+回放", this, &DeviceView::onRecorderClicked);
+    menu->addAction("🧩应用列表", this, &DeviceView::onAppListClicked);
 
-    menu->addAction("📸截图", this, &DeviceView::onScreenshotClicked)->setEnabled(!isMultiControl);
+    menu->addAction("📸截图", this, &DeviceView::onScreenshotClicked);
     menu->addAction("🔄重启", this, &DeviceView::onRebootClicked);
 
     if (deviceInfo->lockedStatus)
