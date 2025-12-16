@@ -85,6 +85,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
         if (text == "设备连接") {
             auto qrDialog = new QDialog(this);
+            qrDialog->setAttribute(Qt::WA_DeleteOnClose);
             qrDialog->setWindowTitle("扫码连接");
 
             auto mainLayout = new QHBoxLayout(qrDialog);
@@ -227,6 +228,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
         if (text == "帮助") {
             QDialog *helpDialog = new QDialog(this);
+            helpDialog->setAttribute(Qt::WA_DeleteOnClose);
             helpDialog->setWindowTitle("帮助");
             helpDialog->resize(600, 500);
 
@@ -292,18 +294,26 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (text == "客服") {
-            qDebugEx() << "发起ipv6请求";
+            auto supportDialog = new QDialog(this);
+            supportDialog->setAttribute(Qt::WA_DeleteOnClose);
+            supportDialog->setWindowTitle("客服");
 
-            auto socket = new QTcpSocket();
-            connect(socket, &QTcpSocket::errorOccurred, [=](QAbstractSocket::SocketError socketError) {
-                qCriticalEx() << "errorOccurred" << socketError << socket->errorString();
-            });
+            auto mainLayout = new QHBoxLayout(supportDialog);
+            mainLayout->setSizeConstraint(QLayout::SetFixedSize);
 
-            connect(socket, &QTcpSocket::connected, [=]() {
-                qDebugEx() << "连接成功";
-            });
+            auto pixmap = QPixmap(":/icons/support.jpg").scaled(
+                500, 500,
+                Qt::KeepAspectRatio,
+                Qt::SmoothTransformation
+            );
 
-            socket->connectToHost("2409:8a34:452:950:aa32:471b:f039:b06e", 12345);
+            QLabel *imgLabel = new QLabel(supportDialog);
+            imgLabel->setPixmap(pixmap);
+            imgLabel->setAlignment(Qt::AlignCenter);
+
+            mainLayout->addWidget(imgLabel);
+
+            supportDialog->exec();
             return;
         }
 

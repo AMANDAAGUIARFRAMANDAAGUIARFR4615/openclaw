@@ -5,5 +5,6 @@
         <file>icons/folder.png</file>
         <file>icons/folder_link.png</file>
         <file>icons/ipa.png</file>
+        <file>icons/support.jpg</file>
     </qresource>
 </RCC>
