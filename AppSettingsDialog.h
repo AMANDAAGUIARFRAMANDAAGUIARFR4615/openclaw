@@ -145,7 +145,7 @@ private:
             QVariantList saveList;
             for(int i = 0; i < listWidget->count(); ++i) {
                 QListWidgetItem *it = listWidget->item(i);
-                saveList << QStringList{it->text(), it->checkState() == Qt::Checked ? "1" : "0"};
+                saveList << QStringList{it->text(), ((it->flags() & Qt::ItemIsUserCheckable) == 0 || it->checkState() == Qt::Checked) ? "1" : "0"};
             }
             settings.setValue(key, saveList);
             emit configurationChanged(key);

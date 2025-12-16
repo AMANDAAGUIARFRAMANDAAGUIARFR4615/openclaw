@@ -66,19 +66,31 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     sideBarList->setStyleSheet("QListWidget::item { margin-top: 10px; margin-bottom: 10px; }");
     sideBarList->setCursor(Qt::PointingHandCursor);
 
-    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🔗"), "设备连接"));
-    // sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("👥"), "分组群控"));
-    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🕹️", 64, !isMultiControlEnabled), "同屏操作"));
-    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("⚙️"), "设置"));
-    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("💡"), "帮助"));
-    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("📲"), "越狱助手"));
-    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("💬"), "客服"));
-    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("📜"), "日志"));
-    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🛠️"), "开发者"));
+    auto updateSideBar = [=]() {
+        sideBarList->clear();
 
-    for (int i = 0; i < sideBarList->count(); i++) {
-        sideBarList->item(i)->setSizeHint(QSize(sideBarList->width() - 4, 70));
-    }
+        auto sideBarMenu = AppSettingsDialog::getInstance()->getEnabledList("sideBarMenu");
+
+        for (int i = 0; i < sideBarMenu.count(); i++) {
+            auto text = sideBarMenu[i];
+            QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
+            finder.toNextBoundary(); 
+            int splitPos = finder.position();
+
+            auto iconPart = text.left(splitPos);
+            auto labelPart = text.mid(splitPos);
+
+            auto item = new QListWidgetItem(EmojiIconProvider::createIcon(iconPart, 64, labelPart == "同屏操作" ? !isMultiControlEnabled : false), labelPart);
+            sideBarList->addItem(item);
+            item->setSizeHint(QSize(sideBarList->width() - 4, 70));
+        }
+    };
+
+    updateSideBar();
+
+    connect(AppSettingsDialog::getInstance(), &AppSettingsDialog::configurationChanged, updateSideBar);
+
+    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🛠️"), "开发者"));
 
     connect(sideBarList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
         QString text = item->text();
