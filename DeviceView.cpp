@@ -178,7 +178,7 @@ QMenu* DeviceView::createContextMenu()
     menu->addAction("🧹清理应用", this, &DeviceView::onKillAllAppClicked);
     menu->addAction("📁文件管理", this, &DeviceView::onFileClicked)->setEnabled(!isMultiControl);
     menu->addAction("⏺️录制+回放", this, &DeviceView::onRecorderClicked)->setEnabled(!isMultiControl);
-    menu->addAction("📱应用列表", this, &DeviceView::onAppListClicked)->setEnabled(!isMultiControl);
+    menu->addAction("🧩应用列表", this, &DeviceView::onAppListClicked)->setEnabled(!isMultiControl);
 
     menu->addAction("📸截图", this, &DeviceView::onScreenshotClicked)->setEnabled(!isMultiControl);
     menu->addAction("🔄重启", this, &DeviceView::onRebootClicked);
@@ -190,7 +190,7 @@ QMenu* DeviceView::createContextMenu()
 
     menu->addAction("🗑️清空相册", this, &DeviceView::onDeleteAllPhotosClicked);
     menu->addAction("🔊音量+", this, &DeviceView::onVolumeUpClicked);
-    menu->addAction("🔈音量-", this, &DeviceView::onVolumeDownClicked);
+    menu->addAction("🔈 音量-", this, &DeviceView::onVolumeDownClicked);
 
     menu->addAction("🔧修改分组", [=]() {
         if (MainWindow::getInstance()->getTabs().count() <= 1) {
