@@ -12,7 +12,7 @@
 #include "SettingsViewer.h"
 #include "FileTransfer.h"
 #include "UdpTransport.h"
-#include "SettingsDialog.h"
+#include "AppSettingsDialog.h"
 #include "JailbreakAssistantDialog.h"
 #include <QShortcut>
 #include <QVBoxLayout>
@@ -222,7 +222,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (text == "设置") {
-            SettingsDialog dialog(this);
+            auto appSettingsDialog = AppSettingsDialog::getInstance();
+            appSettingsDialog->setParent(this);
+            appSettingsDialog->setWindowFlags(Qt::Dialog);
+            appSettingsDialog->exec();
             return;
         }
 
@@ -302,7 +305,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             mainLayout->setSizeConstraint(QLayout::SetFixedSize);
 
             auto pixmap = QPixmap(":/icons/support.jpg").scaled(
-                500, 500,
+                640, 640,
                 Qt::KeepAspectRatio,
                 Qt::SmoothTransformation
             );

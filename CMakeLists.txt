@@ -50,7 +50,7 @@ add_executable(${PROJECT_NAME}
     TcpServer.h UdpTransport.h WebSocketClient.h
     ToastWidget.h
     NetworkUtils.h
-    SettingsDialog.h
+    AppSettingsDialog.h
     RemoteFileExplorer.h RemoteFileExplorer.cpp FileTransfer.h
     AppListWidget.h FileViewer.h Recorder.h
     qrcodegen.hpp qrcodegen.cpp
