@@ -119,22 +119,6 @@ void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)
     }
 }
 
-QMenu* DeviceWindow::createContextMenu()
-{
-    auto menu = DeviceView::createContextMenu();
-    auto subMenu = menu->addMenu(EmojiIconProvider::createIcon("🎬"), "清晰度");
-    subMenu->addAction("360p", [this]() {
-        connection->send("setVideoQuality", 3);
-    });
-    subMenu->addAction("480p", [this]() {
-        connection->send("setVideoQuality", 4);
-    });
-    subMenu->addAction("720p", [this]() {
-        connection->send("setVideoQuality", 5);
-    });
-    return menu;
-}
-
 bool DeviceWindow::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
 {
     float ratio = 1.0f * deviceInfo->screenWidth / deviceInfo->screenHeight;

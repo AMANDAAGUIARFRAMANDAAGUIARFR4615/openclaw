@@ -10,6 +10,7 @@
 #include "MainWindow.h"
 #include "EmojiIconProvider.h"
 #include "KeyMapping.h"
+#include "AppSettingsDialog.h"
 #include <QLayout>
 #include <QLabel>
 #include <QMimeData>
@@ -90,78 +91,12 @@ void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
         hideOverlay();
 }
 
-void DeviceView::onHomeScreenClicked()
+void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 {
-    connection->send("homeScreen");
-}
+    auto windowMenu = AppSettingsDialog::getInstance()->getEnabledList("windowMenu");
+    if (windowMenu.count() == 0)
+        return;
 
-void DeviceView::onCenterControllerClicked()
-{
-    connection->send("showCenterController");
-}
-
-void DeviceView::onKillAllAppClicked()
-{
-    connection->send("killAllApp");
-}
-
-void DeviceView::onAppSwitcherClicked()
-{
-    connection->send("appSwitcher");
-}
-
-void DeviceView::onFileClicked()
-{
-    RemoteFileExplorer::open(connection);
-}
-
-void DeviceView::onRecorderClicked()
-{
-    Recorder::open(connection);
-}
-
-void DeviceView::onAppListClicked()
-{
-    AppListWidget::open(connection);
-}
-
-void DeviceView::onScreenshotClicked()
-{
-    connection->send("screenshot");
-}
-
-void DeviceView::onRebootClicked()
-{
-    connection->send("reboot");
-}
-
-void DeviceView::onDeleteAllPhotosClicked()
-{
-    connection->send("deleteAllPhotos");
-}
-
-void DeviceView::onLockClicked()
-{
-    connection->send("changeScreenLockedStatus", 1);
-}
-
-void DeviceView::onUnlockClicked()
-{
-    connection->send("changeScreenLockedStatus", 0);
-}
-
-void DeviceView::onVolumeUpClicked()
-{
-    connection->send("volumeControl", "+");
-}
-
-void DeviceView::onVolumeDownClicked()
-{
-    connection->send("volumeControl", "-");
-}
-
-QMenu* DeviceView::createContextMenu()
-{
     auto menu = new QMenu(this);
     menu->setStyleSheet(R"(
         QMenu::item {
@@ -172,43 +107,62 @@ QMenu* DeviceView::createContextMenu()
         }
     )");
 
-    menu->addAction("🏠主屏幕", this, &DeviceView::onHomeScreenClicked);
-    menu->addAction("🧹清理应用", this, &DeviceView::onKillAllAppClicked);
-    menu->addAction("📁文件管理", this, &DeviceView::onFileClicked);
-    menu->addAction("⏺️录制+回放", this, &DeviceView::onRecorderClicked);
-    menu->addAction("🧩应用列表", this, &DeviceView::onAppListClicked);
+    for (int i = 0; i < windowMenu.count(); i++) {
+        auto text = windowMenu[i];
 
-    menu->addAction("📸截图", this, &DeviceView::onScreenshotClicked);
-    menu->addAction("🔄重启", this, &DeviceView::onRebootClicked);
-
-    if (deviceInfo->lockedStatus)
-        menu->addAction("🔓解锁", this, &DeviceView::onUnlockClicked);
-    else
-        menu->addAction("🔒锁屏", this, &DeviceView::onLockClicked);
-
-    menu->addAction("🗑️清空相册", this, &DeviceView::onDeleteAllPhotosClicked);
-    menu->addAction("🔊音量+", this, &DeviceView::onVolumeUpClicked);
-    menu->addAction("🔈 音量-", this, &DeviceView::onVolumeDownClicked);
-
-    menu->addAction("🔧修改分组", [=]() {
-        if (MainWindow::getInstance()->getTabs().count() <= 1) {
-            new ToastWidget("请先右键点击标签页添加自定义分组", this);
-            return;
+        if (text == "🏠主屏幕") {
+            menu->addAction(text, [this](){connection->send("homeScreen");});
         }
+        if (text == "🎛️控制中心") {
+            menu->addAction(text, [this](){connection->send("showCenterController");});
+        }
+        if (text == "↕️应用切换") {
+            menu->addAction(text, [this](){connection->send("appSwitcher");});
+        }
+        else if (text == "🧹清理应用") {
+            menu->addAction(text, [this](){connection->send("killAllApp");});
+        }
+        else if (text == "📁文件管理") {
+            menu->addAction(text, [this](){RemoteFileExplorer::open(connection);});
+        }
+        else if (text == "⏺️录制+回放") {
+            menu->addAction(text, [this](){Recorder::open(connection);});
+        }
+        else if (text == "🧩应用列表") {
+            menu->addAction(text, [this](){AppListWidget::open(connection);});
+        }
+        else if (text == "📸截图") {
+            menu->addAction(text, [this](){connection->send("screenshot");});
+        }
+        else if (text == "🔄重启") {
+            menu->addAction(text, [this](){connection->send("reboot");});
+        }
+        else if (text == "🔒锁屏") {
+            if (deviceInfo->lockedStatus) {
+                menu->addAction("🔓解锁", [this](){connection->send("changeScreenLockedStatus", 0);});
+            } else {
+                menu->addAction("🔒锁屏", [this](){connection->send("changeScreenLockedStatus", 1);});
+            }
+        }
+        else if (text == "🗑️清空相册") {
+            menu->addAction(text, [this](){connection->send("deleteAllPhotos");});
+        }
+        else if (text == "🔧修改分组") {
+            menu->addAction(text, [this]() {
+                if (MainWindow::getInstance()->getTabs().count() <= 1) {
+                    new ToastWidget("请先右键点击标签页添加自定义分组", this);
+                    return;
+                }
 
-        BitMaskEditorDialog dialog(MainWindow::getInstance()->getTabs(), deviceInfo->groupMask, this);
-        dialog.setWindowTitle("修改分组");
-        if (dialog.exec() != QDialog::Accepted) return;
+                BitMaskEditorDialog dialog(MainWindow::getInstance()->getTabs(), deviceInfo->groupMask, this);
+                dialog.setWindowTitle("修改分组");
+                if (dialog.exec() != QDialog::Accepted) return;
 
-        settings.setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
-    });
+                settings.setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
+            });
+        }
+    }
 
-    return menu;
-}
-
-void DeviceView::contextMenuEvent(QContextMenuEvent *event)
-{
-    auto* menu = createContextMenu();
     menu->exec(event->globalPos());
     delete menu;
 }

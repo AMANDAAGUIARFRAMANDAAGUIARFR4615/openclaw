@@ -18,27 +18,11 @@ public:
 
     void setSourceDevice(QIODevice *device, const QUrl &sourceUrl = QUrl());
 
-    void onHomeScreenClicked();
-    void onCenterControllerClicked();
-    void onKillAllAppClicked();
-    void onAppSwitcherClicked();
-    void onFileClicked();
-    void onRecorderClicked();
-    void onAppListClicked();
-    void onScreenshotClicked();
-    void onRebootClicked();
-    void onDeleteAllPhotosClicked();
-    void onLockClicked();
-    void onUnlockClicked();
-    void onVolumeUpClicked();
-    void onVolumeDownClicked();
-
     void addVideoFrameWidget(VideoFrameWidget* videoFrameWidget);
 
 protected:
     void showOverlay(const QString &text);
     void hideOverlay();
-    virtual QMenu* createContextMenu();
     void contextMenuEvent(QContextMenuEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
