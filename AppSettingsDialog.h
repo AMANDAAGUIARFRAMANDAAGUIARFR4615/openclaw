@@ -58,17 +58,20 @@ private:
         mainLayout->setSpacing(15);
         mainLayout->setContentsMargins(25, 20, 25, 20);
 
-        addSettingGroup(mainLayout, "MainScreen", "主窗口投屏显示【分组单独设置后不受此选项影响】", {"竖屏显示", "横屏显示"}, 0, true);
+        addSettingGroup(mainLayout, "diaplayMode", "主窗口投屏显示【分组单独设置后不受此选项影响】", {"竖屏显示", "横屏显示"}, 0);
 
-        addSortableGroup(mainLayout, "TabMenu", "分组标签页右键菜单 (拖拽调整)", 
-            {"横竖屏切换", "重命名分组", "添加分组", "删除分组"});
+        addSortableGroup(mainLayout, "sideBarMenu", "左侧栏 (拖拽调整)", 
+            {"🔗设备连接", "🕹️同屏操作", "⚙️设置", "💡帮助", "📲越狱助手", "💬客服", "📜日志", "🛠️开发者"}, false);
 
-        addSortableGroup(mainLayout, "WinMenu", "投屏窗口右键菜单 (拖拽调整)", 
-            {"🏠主屏幕", "🧹清理应用", "📁文件管理", "⏺️录制+回放", "🧩应用列表", "📸截图", "🔄重启", "🔒锁屏", "🗑️清空相册", "🔊音量+", "🔈 音量-", "🔧修改分组"});
+        addSortableGroup(mainLayout, "windowMenu", "投屏窗口右键菜单 (拖拽调整)", 
+            {"🏠主屏幕", "🧹清理应用", "📁文件管理", "⏺️录制+回放", "🧩应用列表", "📸截图", "🔄重启", "🔒锁屏", "🗑️清空相册", "🔊音量+", "🔈 音量-", "🔧修改分组"}, true);
 
-        addSettingGroup(mainLayout, "AutoScan", "自动扫描局域网设备", {"开启", "关闭"}, 0);
-        addSettingGroup(mainLayout, "ConnMethod", "默认连接方式【分组单独设置后不受此选项影响】", {"WIFI优先", "USB优先"}, 0);
-        addSettingGroup(mainLayout, "VideoQuality", "默认视频清晰度【分组单独设置后不受此选项影响】", {"图片流", "标清", "高清", "超清"}, 1, true);
+        addSortableGroup(mainLayout, "tabMenu", "分组标签页右键菜单 (拖拽调整)", 
+            {"横竖屏切换", "重命名分组", "添加分组", "删除分组"}, true);
+
+        addSettingGroup(mainLayout, "autoScan", "自动扫描局域网设备", {"开启", "关闭"}, 0);
+        addSettingGroup(mainLayout, "connectionMethod", "默认连接方式【分组单独设置后不受此选项影响】", {"WIFI优先", "USB优先"}, 0);
+        addSettingGroup(mainLayout, "videoQuality", "默认视频清晰度【分组单独设置后不受此选项影响】", {"图片流", "标清", "高清", "超清"}, 1);
 
         setModal(true);
     }
@@ -79,7 +82,7 @@ signals:
     void configurationChanged(const QString &key);
 
 private:
-    void addSortableGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, const QStringList &defaults, bool notify = false)
+    void addSortableGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, const QStringList &defaults, bool checkable)
     {
         QVBoxLayout *groupLayout = new QVBoxLayout();
         groupLayout->setSpacing(5);
@@ -119,8 +122,10 @@ private:
 
         for (const auto &itemState : items) {
             QListWidgetItem *item = new QListWidgetItem(itemState.text);
-            item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-            item->setCheckState(itemState.checked ? Qt::Checked : Qt::Unchecked);
+            if (checkable) {
+                item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+                item->setCheckState(itemState.checked ? Qt::Checked : Qt::Unchecked);
+            }
             listWidget->addItem(item);
         }
 
@@ -138,14 +143,14 @@ private:
                 saveList << QStringList{it->text(), it->checkState() == Qt::Checked ? "1" : "0"};
             }
             settings.setValue(key, saveList);
-            if(notify) emit configurationChanged(key);
+            emit configurationChanged(key);
         };
 
         connect(listWidget->model(), &QAbstractItemModel::rowsMoved, this, saveFunc);
         connect(listWidget, &QListWidget::itemChanged, this, saveFunc);
     }
 
-    void addSettingGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, const QStringList &options, int defaultIndex, bool notify = false)
+    void addSettingGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, const QStringList &options, int defaultIndex)
     {
         QVBoxLayout *groupLayout = new QVBoxLayout();
         groupLayout->setSpacing(5);
@@ -171,7 +176,7 @@ private:
 
         connect(group, QOverload<int>::of(&QButtonGroup::idClicked), [=](int id){
             settings.setValue(key, id);
-            if(notify) emit configurationChanged(key);
+            emit configurationChanged(key);
         });
 
         optionsLayout->addStretch();
