@@ -72,9 +72,9 @@ private:
         QVBoxLayout *boxLayout = new QVBoxLayout(defaultBox);
         boxLayout->setSpacing(5);
 
-        addSettingGroup(boxLayout, "diaplayMode", "默认投屏显示", {"竖屏显示", "横屏显示"}, 0);
-        addSettingGroup(boxLayout, "connectionMethod", "默认连接方式", {"WIFI优先", "USB优先"}, 0);
-        addSettingGroup(boxLayout, "videoQuality", "默认视频清晰度", {"图片流", "标清", "高清", "超清"}, 1);
+        addSettingGroup(boxLayout, "diaplayMode", "投屏显示", {"竖屏显示", "横屏显示"}, 0);
+        addSettingGroup(boxLayout, "connectionMethod", "连接方式", {"WIFI优先", "USB优先"}, 0);
+        addSettingGroup(boxLayout, "videoQuality", "视频清晰度", {"图片流", "标清", "高清", "超清"}, 1);
         addSettingGroup(boxLayout, "autoScan", "自动扫描局域网设备", {"开启", "关闭"}, 0);
 
         mainLayout->addWidget(defaultBox);
