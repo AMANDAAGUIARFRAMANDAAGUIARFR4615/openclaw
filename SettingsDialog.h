@@ -57,6 +57,8 @@ private:
         
         for (const QString &text : options) {
             QListWidgetItem *item = new QListWidgetItem(text);
+            item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+            item->setCheckState(Qt::Checked);
             listWidget->addItem(item);
         }
 
