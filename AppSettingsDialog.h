@@ -7,12 +7,11 @@
 #include <QLabel>
 #include <QRadioButton>
 #include <QButtonGroup>
-#include <QFont>
-#include <QStringList>
 #include <QListWidget>
-#include <QCoreApplication>
-#include <QMap>
-#include <QVariant>
+#include <QSet>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
 
 class AppSettingsDialog : public QDialog
 {
@@ -27,43 +26,42 @@ public:
 
     QStringList getEnabledList(const QString &key) {
         QStringList defaults = m_listDefaults.value(key);
+        QByteArray data = settings.value(key).toByteArray();
 
-        QStringList saved = settings.value(key).toStringList();
-        
-        if (saved.isEmpty()) return defaults;
+        if (data.isEmpty()) return defaults;
 
         QStringList result;
-        QStringList allSavedKeys;
+        QSet<QString> savedKeys;
 
-        for (const auto& itemStr : saved) {
-            // 使用分隔符解析数据 "Name|1"
-            QStringList parts = itemStr.split("|");
-            if (parts.size() >= 2) {
-                QString name = parts[0];
-                bool enabled = (parts[1] == "1");
-                
-                allSavedKeys << name;
-                if (enabled) {
-                    result.append(name);
-                }
+        QJsonDocument doc = QJsonDocument::fromJson(data);
+        QJsonArray array = doc.array();
+
+        for (const auto &val : array) {
+            QJsonObject obj = val.toObject();
+            QString name = obj["name"].toString();
+            bool enabled = obj["enable"].toBool();
+
+            if (!name.isEmpty()) {
+                savedKeys.insert(name);
+                if (enabled) result.append(name);
             }
         }
-        
-        // 检查是否有默认项在更新后被遗漏
-        for(const auto& def : defaults) {
-            if(!allSavedKeys.contains(def)) result.append(def);
+
+        for (const auto& def : defaults) {
+            if (!savedKeys.contains(def)) result.append(def);
         }
 
         return result;
     }
 
 private:
-    QMap<QString, int> m_intDefaults;
     QMap<QString, QStringList> m_listDefaults;
+    QMap<QString, int> m_intDefaults;
 
     explicit AppSettingsDialog(QWidget *parent = nullptr) : QDialog(parent)
     {
         setWindowTitle("设置");
+        setModal(true);
 
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
         mainLayout->setSpacing(15);
@@ -82,8 +80,6 @@ private:
 
         addSortableGroup(mainLayout, "tabMenu", "分组标签页右键菜单 (拖拽调整)", 
             {"横竖屏切换", "重命名分组", "添加分组", "删除分组"}, true);
-
-        setModal(true);
     }
 
     ~AppSettingsDialog() = default;
@@ -97,7 +93,6 @@ private:
         m_listDefaults.insert(key, defaults);
 
         QVBoxLayout *groupLayout = new QVBoxLayout();
-        groupLayout->setSpacing(5);
 
         QLabel *titleLabel = new QLabel(title, this);
         QFont font = titleLabel->font();
@@ -110,60 +105,58 @@ private:
         listWidget->setDefaultDropAction(Qt::MoveAction);
         listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
-        QStringList saved = settings.value(key).toStringList();
-        
-        struct ItemState { QString text; bool checked; };
-        QList<ItemState> items;
+        auto addItem = [&](const QString &text, bool checked) {
+            QListWidgetItem *item = new QListWidgetItem(text);
+            item->setFlags(item->flags() ^ (checkable ? Qt::NoItemFlags : Qt::ItemIsUserCheckable));
+            if (checkable) item->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
+            listWidget->addItem(item);
+        };
 
-        if (saved.isEmpty()) {
-            for(const auto &t : defaults) items.append({t, true});
+        QByteArray data = settings.value(key).toByteArray();
+        QSet<QString> loadedKeys;
+
+        if (data.isEmpty()) {
+            for (const auto &t : defaults) addItem(t, true);
         } else {
-            QStringList loadedKeys;
-            for(const auto &itemStr : saved) {
-                // 解析 "Name|1"
-                QStringList parts = itemStr.split("|");
-                if(parts.size() >= 2) {
-                    QString name = parts[0];
-                    bool checked = (parts[1] == "1");
-                    items.append({name, checked});
-                    loadedKeys << name;
+            QJsonDocument doc = QJsonDocument::fromJson(data);
+            QJsonArray array = doc.array();
+            
+            for (const auto &val : array) {
+                QJsonObject obj = val.toObject();
+                QString name = obj["name"].toString();
+                if (!name.isEmpty()) {
+                    addItem(name, obj["enable"].toBool());
+                    loadedKeys.insert(name);
                 }
             }
             // 补充缺失的默认项
-            for(const auto &def : defaults) {
-                if(!loadedKeys.contains(def)) items.append({def, true});
+            for (const auto &def : defaults) {
+                if (!loadedKeys.contains(def)) addItem(def, true);
             }
         }
 
-        for (const auto &itemState : items) {
-            QListWidgetItem *item = new QListWidgetItem(itemState.text);
-            if (checkable) 
-                item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-            else
-                item->setFlags(item->flags() & ~Qt::ItemIsUserCheckable);
-                
-            item->setCheckState(itemState.checked ? Qt::Checked : Qt::Unchecked);
-            listWidget->addItem(item);
+        if (listWidget->count() > 0) {
+            int h = listWidget->sizeHintForRow(0) * listWidget->count() + listWidget->frameWidth() * 2;
+            listWidget->setFixedHeight(h);
         }
-
-        int totalHeight = (listWidget->fontMetrics().height() + 4) * defaults.size();
-        listWidget->setFixedHeight(totalHeight);
 
         groupLayout->addWidget(titleLabel);
         groupLayout->addWidget(listWidget);
         parentLayout->addLayout(groupLayout);
 
         auto saveFunc = [=]() {
-            QStringList saveList;
-            for(int i = 0; i < listWidget->count(); ++i) {
+            QJsonArray jsonArray;
+            for (int i = 0; i < listWidget->count(); ++i) {
                 QListWidgetItem *it = listWidget->item(i);
-                bool isChecked = ((it->flags() & Qt::ItemIsUserCheckable) == 0 || it->checkState() == Qt::Checked);
+                bool checked = !checkable || it->checkState() == Qt::Checked;
                 
-                // 拼接字符串，用 | 分隔
-                QString entry = QString("%1|%2").arg(it->text()).arg(isChecked ? "1" : "0");
-                saveList << entry;
+                QJsonObject obj;
+                obj["name"] = it->text();
+                obj["enable"] = checked;
+                jsonArray.append(obj);
             }
-            settings.setValue(key, saveList);
+            // 使用 Compact 模式保存为紧凑的 JSON 字符串/字节数组
+            settings.setValue(key, QJsonDocument(jsonArray).toJson(QJsonDocument::Compact));
             emit configurationChanged(key);
         };
 
@@ -176,7 +169,6 @@ private:
         m_intDefaults.insert(key, defaultIndex);
 
         QVBoxLayout *groupLayout = new QVBoxLayout();
-        groupLayout->setSpacing(5);
 
         QLabel *titleLabel = new QLabel(title, this);
         QFont font = titleLabel->font();
