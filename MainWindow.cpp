@@ -238,6 +238,63 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (text == "帮助") {
+            QDialog *helpDialog = new QDialog(this);
+            helpDialog->setWindowTitle("帮助");
+            helpDialog->resize(600, 500);
+
+            QVBoxLayout *layout = new QVBoxLayout(helpDialog);
+
+            QTextBrowser *textBrowser = new QTextBrowser(helpDialog);
+            
+            QString helpContent = R"(
+                <style>
+                    h3 { color: #333; }
+                    h4 { color: #2E86C1; margin-bottom: 5px; }
+                    li { margin-bottom: 5px; }
+                    b { color: #444; }
+                </style>
+
+                <h3>📱 设备投屏与控制使用指南</h3>
+                <hr>
+
+                <h4>🔌 连接与显示</h4>
+                <ul>
+                    <li><b>连接方式：</b>支持 USB 有线及 Wi-Fi 无线连接，支持多设备同时控制。</li>
+                    <li><b>设备分组：</b>支持创建自定义设备分组，便于分类管理大量设备。</li>
+                    <li><b>灵活归属：</b>**一个设备可同时属于多个分组**，极大提高设备管理的灵活性。</li>
+                </ul>
+
+                <h4>⌨️ 输入与多语言</h4>
+                <ul>
+                    <li><b>多国语言输入：</b>支持通过电脑键盘输入各种语言文字。</li>
+                    <li><b>切换技巧：</b>需配合手机端键盘状态，使用 <b>Ctrl + Space</b> 可快捷切换手机输入法。</li>
+                </ul>
+
+                <h4>🖱️ 常用操作</h4>
+                <ul>
+                    <li><b>智能剪贴板（双向互通）：</b>
+                        <br> - <b>Ctrl + C / V：</b> 在电脑和手机间**双向复制粘贴**（高效支持文本和图片）。
+                        <br> - <b>Ctrl + Z / Y：</b> 支持文本编辑操作中的**撤销与重做**。
+                    </li>
+                    <li><b>基础交互：</b>鼠标左键实现点击、滑动操作；滚轮用于屏幕内容的快速翻页。</li>
+                    <li><b>键盘导航：</b>方向键用于光标移动；使用 **Shift + 方向键** 可快速选中目标文本。</li>
+                    <li><b>文件管理：</b>支持文件**重命名、删除、新建文件夹**等操作，以及 Zip/Rar 文件的**压缩与解压**。</li>
+                    <li><b>多媒体：</b>电脑图片/视频导入手机相册；截图直接粘贴；脚本录制回放。</li>
+                </ul>
+            )";
+
+            textBrowser->setHtml(helpContent);
+            textBrowser->setOpenExternalLinks(true);
+
+            layout->addWidget(textBrowser);
+
+            QTimer::singleShot(0, [=](){
+                auto docHeight = textBrowser->document()->size().height();
+                helpDialog->resize(helpDialog->width(), docHeight + 30);
+            });
+
+            helpDialog->setModal(true);
+            helpDialog->exec();
             return;
         }
 
