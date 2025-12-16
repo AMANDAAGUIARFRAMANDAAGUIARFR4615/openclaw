@@ -90,8 +90,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     connect(AppSettingsDialog::getInstance(), &AppSettingsDialog::configurationChanged, updateSideBar);
 
-    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🛠️"), "开发者"));
-
     connect(sideBarList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
         QString text = item->text();
 

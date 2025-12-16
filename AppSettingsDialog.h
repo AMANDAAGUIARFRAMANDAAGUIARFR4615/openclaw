@@ -10,7 +10,6 @@
 #include <QFont>
 #include <QStringList>
 #include <QListWidget>
-#include <QSettings>
 #include <QCoreApplication>
 #include <QMap>
 #include <QVariant>
@@ -29,22 +28,28 @@ public:
     QStringList getEnabledList(const QString &key) {
         QStringList defaults = m_listDefaults.value(key);
 
-        QVariantList saved = settings.value(key).toList();
+        QStringList saved = settings.value(key).toStringList();
         
         if (saved.isEmpty()) return defaults;
 
         QStringList result;
+        QStringList allSavedKeys;
 
-        for (const auto& var : saved) {
-            QStringList itemData = var.toStringList();
-            if (itemData.size() == 2 && itemData[1] == "1") {
-                result.append(itemData[0]);
+        for (const auto& itemStr : saved) {
+            // 使用分隔符解析数据 "Name|1"
+            QStringList parts = itemStr.split("|");
+            if (parts.size() >= 2) {
+                QString name = parts[0];
+                bool enabled = (parts[1] == "1");
+                
+                allSavedKeys << name;
+                if (enabled) {
+                    result.append(name);
+                }
             }
         }
         
         // 检查是否有默认项在更新后被遗漏
-        QStringList allSavedKeys;
-        for(const auto& var : saved) allSavedKeys << var.toStringList().first();
         for(const auto& def : defaults) {
             if(!allSavedKeys.contains(def)) result.append(def);
         }
@@ -105,7 +110,8 @@ private:
         listWidget->setDefaultDropAction(Qt::MoveAction);
         listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
-        QVariantList saved = settings.value(key).toList();
+        QStringList saved = settings.value(key).toStringList();
+        
         struct ItemState { QString text; bool checked; };
         QList<ItemState> items;
 
@@ -113,13 +119,17 @@ private:
             for(const auto &t : defaults) items.append({t, true});
         } else {
             QStringList loadedKeys;
-            for(const auto &var : saved) {
-                QStringList data = var.toStringList();
-                if(data.size() == 2) {
-                    items.append({data[0], data[1] == "1"});
-                    loadedKeys << data[0];
+            for(const auto &itemStr : saved) {
+                // 解析 "Name|1"
+                QStringList parts = itemStr.split("|");
+                if(parts.size() >= 2) {
+                    QString name = parts[0];
+                    bool checked = (parts[1] == "1");
+                    items.append({name, checked});
+                    loadedKeys << name;
                 }
             }
+            // 补充缺失的默认项
             for(const auto &def : defaults) {
                 if(!loadedKeys.contains(def)) items.append({def, true});
             }
@@ -127,10 +137,12 @@ private:
 
         for (const auto &itemState : items) {
             QListWidgetItem *item = new QListWidgetItem(itemState.text);
-            if (checkable) {
+            if (checkable) 
                 item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-                item->setCheckState(itemState.checked ? Qt::Checked : Qt::Unchecked);
-            }
+            else
+                item->setFlags(item->flags() & ~Qt::ItemIsUserCheckable);
+                
+            item->setCheckState(itemState.checked ? Qt::Checked : Qt::Unchecked);
             listWidget->addItem(item);
         }
 
@@ -142,10 +154,14 @@ private:
         parentLayout->addLayout(groupLayout);
 
         auto saveFunc = [=]() {
-            QVariantList saveList;
+            QStringList saveList;
             for(int i = 0; i < listWidget->count(); ++i) {
                 QListWidgetItem *it = listWidget->item(i);
-                saveList << QStringList{it->text(), ((it->flags() & Qt::ItemIsUserCheckable) == 0 || it->checkState() == Qt::Checked) ? "1" : "0"};
+                bool isChecked = ((it->flags() & Qt::ItemIsUserCheckable) == 0 || it->checkState() == Qt::Checked);
+                
+                // 拼接字符串，用 | 分隔
+                QString entry = QString("%1|%2").arg(it->text()).arg(isChecked ? "1" : "0");
+                saveList << entry;
             }
             settings.setValue(key, saveList);
             emit configurationChanged(key);
