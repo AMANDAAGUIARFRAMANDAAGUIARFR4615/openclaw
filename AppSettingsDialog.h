@@ -12,6 +12,8 @@
 #include <QListWidget>
 #include <QSettings>
 #include <QCoreApplication>
+#include <QMap>
+#include <QVariant>
 
 class AppSettingsDialog : public QDialog
 {
@@ -20,26 +22,27 @@ class AppSettingsDialog : public QDialog
 public:
     static AppSettingsDialog* getInstance() { static AppSettingsDialog instance; return &instance; }
 
-    int getValue(const QString &key, int defaultValue = 0) {
-        return settings.value(key, defaultValue).toInt();
+    int getValue(const QString &key) {
+        return settings.value(key, m_intDefaults.value(key)).toInt();
     }
 
-    // 获取排序且选中的菜单列表
-    QStringList getEnabledList(const QString &key, const QStringList &defaults) {
-        QStringList result;
+    QStringList getEnabledList(const QString &key) {
+        QStringList defaults = m_listDefaults.value(key);
+
         QVariantList saved = settings.value(key).toList();
         
-        if (saved.isEmpty()) return defaults; // 首次运行返回默认
+        if (saved.isEmpty()) return defaults;
+
+        QStringList result;
 
         for (const auto& var : saved) {
             QStringList itemData = var.toStringList();
-            // 格式: [名称, 状态("1"/"0")]。只返回状态为"1"的
             if (itemData.size() == 2 && itemData[1] == "1") {
                 result.append(itemData[0]);
             }
         }
         
-        // 检查是否有默认项在更新后被遗漏（追加到末尾）
+        // 检查是否有默认项在更新后被遗漏
         QStringList allSavedKeys;
         for(const auto& var : saved) allSavedKeys << var.toStringList().first();
         for(const auto& def : defaults) {
@@ -50,6 +53,9 @@ public:
     }
 
 private:
+    QMap<QString, int> m_intDefaults;
+    QMap<QString, QStringList> m_listDefaults;
+
     explicit AppSettingsDialog(QWidget *parent = nullptr) : QDialog(parent)
     {
         setWindowTitle("设置");
@@ -83,6 +89,8 @@ signals:
 private:
     void addSortableGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, const QStringList &defaults, bool checkable)
     {
+        m_listDefaults.insert(key, defaults);
+
         QVBoxLayout *groupLayout = new QVBoxLayout();
         groupLayout->setSpacing(5);
 
@@ -97,7 +105,6 @@ private:
         listWidget->setDefaultDropAction(Qt::MoveAction);
         listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
-        // 加载数据：需要显示所有项(包括未勾选的)以便用户管理
         QVariantList saved = settings.value(key).toList();
         struct ItemState { QString text; bool checked; };
         QList<ItemState> items;
@@ -113,7 +120,6 @@ private:
                     loadedKeys << data[0];
                 }
             }
-            // 补全新增的默认项
             for(const auto &def : defaults) {
                 if(!loadedKeys.contains(def)) items.append({def, true});
             }
@@ -151,6 +157,8 @@ private:
 
     void addSettingGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, const QStringList &options, int defaultIndex)
     {
+        m_intDefaults.insert(key, defaultIndex);
+
         QVBoxLayout *groupLayout = new QVBoxLayout();
         groupLayout->setSpacing(5);
 
