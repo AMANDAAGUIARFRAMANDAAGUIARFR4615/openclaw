@@ -78,7 +78,7 @@ private:
         addSortableGroup(mainLayout, "windowMenu", "投屏窗口右键菜单 (拖拽调整)", 
             {"🏠主屏幕", "🧹清理应用", "📁文件管理", "⏺️录制+回放", "🧩应用列表", "📸截图", "🔄重启", "🔒锁屏", "🗑️清空相册", "🔊音量+", "🔈 音量-", "🔧修改分组"}, true);
 
-        addSortableGroup(mainLayout, "tabMenu", "分组标签页右键菜单 (拖拽调整)", 
+        addSortableGroup(mainLayout, "tabBarMenu", "分组标签页右键菜单 (拖拽调整)", 
             {"横竖屏切换", "重命名分组", "添加分组", "删除分组"}, true);
     }
 

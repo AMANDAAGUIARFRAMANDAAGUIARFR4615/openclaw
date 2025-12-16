@@ -711,71 +711,84 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
     if (index < 0)
         return;
 
+    auto tabBarMenu = AppSettingsDialog::getInstance()->getEnabledList("tabBarMenu");
+    if (tabBarMenu.count() == 0)
+        return;
+
     auto& [bit, _, __, isLandscape] = tabs[index];
 
     QMenu menu(this);
 
-    menu.addAction(isLandscape ? "切换为竖屏" : "切换为横屏", [=]() {
-        tabs[tabWidget->currentIndex()].isLandscape = !isLandscape;
-        saveTabs(tabWidget->currentIndex());
-        relayoutDevices();
-    });
-
-    menu.addAction("重命名", [=]() {
-        bool ok = false;
-        QString currentText = tabWidget->tabText(index);
-        QString newName = QInputDialog::getText(
-            this,
-            "重命名分组",
-            "请输入新的分组名称：",
-            QLineEdit::Normal,
-            currentText,
-            &ok
-        );
-        if (ok && !newName.trimmed().isEmpty()) {
-            tabWidget->setTabText(index, newName.trimmed());
-            tabs[index].name = newName.trimmed();
+    for (int i = 0; i < tabBarMenu.count(); i++) {
+        auto text = tabBarMenu[i];
+        
+        if (text == "横竖屏切换") {
+            menu.addAction(text, [=]() {
+                tabs[tabWidget->currentIndex()].isLandscape = !isLandscape;
+                saveTabs(tabWidget->currentIndex());
+                relayoutDevices();
+            });
         }
-    });
-    
-    menu.addAction("删除", [&]() {
-        if (QMessageBox::question(this, "删除确认", "分组内所有设备将被移除，\n确定删除？") != QMessageBox::Yes)
-            return;
-
-        auto page = tabWidget->widget(index);
-        tabWidget->removeTab(index);
-        delete page;
-        tabs.remove(index);
-        auto tab = tabs.takeAt(index);
-        auto mask = 1U << bit;
-        auto devices = DeviceInfo::getDevices(mask);
-        for (auto& deviceInfo : devices) {
-            deviceInfo->groupMask &= ~mask;
-            settings.setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
+        else if (text == "重命名分组") {
+            menu.addAction(text, [=]() {
+                bool ok = false;
+                QString currentText = tabWidget->tabText(index);
+                QString newName = QInputDialog::getText(
+                    this,
+                    "重命名分组",
+                    "请输入新的分组名称：",
+                    QLineEdit::Normal,
+                    currentText,
+                    &ok
+                );
+                if (ok && !newName.trimmed().isEmpty()) {
+                    tabWidget->setTabText(index, newName.trimmed());
+                    tabs[index].name = newName.trimmed();
+                }
+            });
         }
-    })->setEnabled(bit != 0);
+        else if (text == "删除分组") {
+            menu.addAction(text, [&]() {
+                if (QMessageBox::question(this, "删除确认", "分组内所有设备将被移除，\n确定删除？") != QMessageBox::Yes)
+                    return;
 
-    menu.addAction("添加", [&]() {
-        int newId = findAvailableTabId();
-        if (newId == -1) {
-            new ToastWidget("已达到最大分组数", this);
-            return;
+                auto page = tabWidget->widget(index);
+                tabWidget->removeTab(index);
+                delete page;
+                tabs.remove(index);
+                auto tab = tabs.takeAt(index);
+                auto mask = 1U << bit;
+                auto devices = DeviceInfo::getDevices(mask);
+                for (auto& deviceInfo : devices) {
+                    deviceInfo->groupMask &= ~mask;
+                    settings.setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
+                }
+            })->setEnabled(bit != 0);
         }
+        else if (text == "添加分组") {
+            menu.addAction(text, [&]() {
+                int newId = findAvailableTabId();
+                if (newId == -1) {
+                    new ToastWidget("已达到最大分组数", this);
+                    return;
+                }
 
-        bool ok = false;
-        QString newName = QInputDialog::getText(
-            this,
-            "添加分组",
-            "请输入新分组名称：",
-            QLineEdit::Normal,
-            "新分组",
-            &ok
-        );
-        if (ok && !newName.trimmed().isEmpty()) {
-            tabs.insert(index + 1, BitMaskEditorDialog::Item({newId, newName.trimmed()}));
-            tabWidget->insertTab(index + 1, new QWidget(), newName.trimmed());
+                bool ok = false;
+                QString newName = QInputDialog::getText(
+                    this,
+                    "添加分组",
+                    "请输入新分组名称：",
+                    QLineEdit::Normal,
+                    "新分组",
+                    &ok
+                );
+                if (ok && !newName.trimmed().isEmpty()) {
+                    tabs.insert(index + 1, BitMaskEditorDialog::Item({newId, newName.trimmed()}));
+                    tabWidget->insertTab(index + 1, new QWidget(), newName.trimmed());
+                }
+            });
         }
-    });
+    }
 
     menu.exec(tabWidget->tabBar()->mapToGlobal(pos));
 }
