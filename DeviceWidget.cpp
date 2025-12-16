@@ -17,11 +17,21 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     deviceInfoLabel->setFixedHeight(24);
     auto ipLabel = new QLabel(connection->type == DeviceConnection::Usb ? "" : deviceInfo->localIp, this);
     ipLabel->setAlignment(Qt::AlignCenter);
-    ipLabel->setFixedHeight(24);
-    
+    auto versionLabel = new QLabel("版本：" + deviceInfo->version, this);
+    versionLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+
+    auto hLayout = new QHBoxLayout;
+    hLayout->setContentsMargins(5, 0, 5, 0);
+    hLayout->setSpacing(0);
+
+    hLayout->addStretch();
+    hLayout->addWidget(ipLabel);
+    hLayout->addStretch();
+    hLayout->addWidget(versionLabel);
+
     layout->addWidget(deviceInfoLabel);
     layout->addWidget(overlay);
-    layout->addWidget(ipLabel);
+    layout->addLayout(hLayout);
     setLayout(layout);
 
     EventHub::on(this, "clipboard", [this](const QJsonValue &data, DeviceConnection* connection) {
