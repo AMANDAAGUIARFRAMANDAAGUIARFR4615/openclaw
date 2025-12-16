@@ -8,7 +8,6 @@
 #include "UsbDeviceManager.h"
 #include "TcpServer.h"
 #include "DeviceWidget.h"
-#include "DeviceManager.h"
 #include "ToastWidget.h"
 #include "SettingsViewer.h"
 #include "FileTransfer.h"
@@ -70,7 +69,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🔗"), "设备连接"));
     // sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("👥"), "分组群控"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("🕹️", 64, !isMultiControlEnabled), "同屏操作"));
-    sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("📱"), "设备列表"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("⚙️"), "设置"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("💡"), "帮助"));
     sideBarList->addItem(new QListWidgetItem(EmojiIconProvider::createIcon("📲"), "越狱助手"));
@@ -219,16 +217,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             QIcon icon = EmojiIconProvider::createIcon("🕹️", 64, !isMultiControlEnabled);
             item->setIcon(icon);
             new ToastWidget(isMultiControlEnabled ? "同屏操作已开启" : "同屏操作已关闭", this);
-            return;
-        }
-
-        if (text == "设备列表") {
-            // auto window = new DeviceManager();
-            // window->show();
-
-            showFullScreen();
-            // QKeyEvent event;
-            // if (event->matches(QKeySequence::FullScreen))
             return;
         }
 

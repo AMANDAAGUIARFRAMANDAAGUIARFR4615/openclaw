@@ -41,7 +41,7 @@ add_executable(${PROJECT_NAME}
     LoginWidget.h
     MainWindow.h MainWindow.cpp
     VideoFrameWidget.h
-    DeviceInfo.h DeviceManager.h
+    DeviceInfo.h
     UsbDeviceManager.h UsbDeviceManager.cpp
     DeviceConnection.h
     DeviceView.h DeviceView.cpp
