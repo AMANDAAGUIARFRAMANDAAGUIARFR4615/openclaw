@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     setMinimumSize(800, 600);
 
     QSize screenSize = QApplication::primaryScreen()->size();
-    resize(screenSize.width() * 0.8, screenSize.height() * 0.8);
+    resize(settings.value("mainWindowSize", screenSize * 0.8).toSize());
 
     int x = (screenSize.width() - width()) / 2;
     int y = (screenSize.height() - height()) / 2;
@@ -98,7 +98,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         auto value = AppSettingsDialog::getInstance()->getValue(key);
 
         if (key == "diaplayMode") {
-            
+
             return;
         }
 
@@ -510,6 +510,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    if (!this->isMinimized())
+        settings.setValue("mainWindowSize", normalGeometry().size());
+
     saveTabs();
     QApplication::quit();
 }
