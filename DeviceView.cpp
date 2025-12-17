@@ -183,7 +183,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 
 void DeviceView::dragEnterEvent(QDragEnterEvent *event)
 {
-    qDebugEx() << "dragEnterEvent";
+    qDebugEx() << "dragEnterEvent" << this;
 
     QStringList allowedSuffixes = {
         "deb", "ipa",
@@ -208,7 +208,7 @@ void DeviceView::dragEnterEvent(QDragEnterEvent *event)
 
 void DeviceView::dropEvent(QDropEvent *event)
 {
-    qDebugEx() << "dropEvent";
+    qDebugEx() << "dropEvent" << this;
 
     const QList<QUrl> urls = event->mimeData()->urls();
 
