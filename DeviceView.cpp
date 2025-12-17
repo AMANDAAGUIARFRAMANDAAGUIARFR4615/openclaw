@@ -107,20 +107,34 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         }
     )");
 
+    auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
+        if (MainWindow::getInstance()->isMultiControl()) {
+            auto bit = MainWindow::getInstance()->getTab().bit;
+            auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+
+            for (const auto& device : devices) {
+                device->connection->send(event, jsonValue);
+            }
+        }
+        else {
+            connection->send(event, jsonValue);
+        }
+    };
+
     for (int i = 0; i < windowMenu.count(); i++) {
         auto text = windowMenu[i];
 
         if (text == "🏠主屏幕") {
-            menu->addAction(text, [this](){connection->send("homeScreen");});
+            menu->addAction(text, [&](){send("homeScreen");});
         }
         if (text == "🎛️控制中心") {
-            menu->addAction(text, [this](){connection->send("showCenterController");});
+            menu->addAction(text, [&](){send("showCenterController");});
         }
         if (text == "↕️应用切换") {
-            menu->addAction(text, [this](){connection->send("appSwitcher");});
+            menu->addAction(text, [&](){send("appSwitcher");});
         }
         else if (text == "🧹清理应用") {
-            menu->addAction(text, [this](){connection->send("killAllApp");});
+            menu->addAction(text, [&](){send("killAllApp");});
         }
         else if (text == "📁文件管理") {
             menu->addAction(text, [this](){RemoteFileExplorer::open(connection);});
@@ -135,17 +149,17 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
             menu->addAction(text, [this](){connection->send("screenshot");});
         }
         else if (text == "🔄重启") {
-            menu->addAction(text, [this](){connection->send("reboot");});
+            menu->addAction(text, [&](){send("reboot");});
         }
         else if (text == "🔒锁屏") {
             if (deviceInfo->lockedStatus) {
-                menu->addAction("🔓解锁", [this](){connection->send("changeScreenLockedStatus", 0);});
+                menu->addAction("🔓解锁", [&](){send("changeScreenLockedStatus", 0);});
             } else {
-                menu->addAction("🔒锁屏", [this](){connection->send("changeScreenLockedStatus", 1);});
+                menu->addAction("🔒锁屏", [&](){send("changeScreenLockedStatus", 1);});
             }
         }
         else if (text == "🗑️清空相册") {
-            menu->addAction(text, [this](){connection->send("deleteAllPhotos");});
+            menu->addAction(text, [&](){send("deleteAllPhotos");});
         }
         else if (text == "🔧修改分组") {
             menu->addAction(text, [this]() {
