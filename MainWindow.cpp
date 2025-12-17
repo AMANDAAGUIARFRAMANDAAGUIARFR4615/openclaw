@@ -409,6 +409,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     );
 
     auto broadcastTask = [=]() {
+        if (AppSettingsDialog::getInstance()->getValue("autoScan") == 0)
+            return;
+
         const auto& ips = TcpServer::getInstance()->getConnectedIps();
         for (const auto &localIP : localIPs) {
             QList<QHostAddress> subnetIPs = NetworkUtils::getSubnetIPs(localIP);
