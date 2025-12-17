@@ -471,15 +471,15 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
         return false;
 
     QEvent::Type type = event->type();
-    bool isMouseEvent = (type == QEvent::MouseButtonPress ||
-                         type == QEvent::MouseButtonRelease ||
-                         type == QEvent::MouseButtonDblClick ||
-                         type == QEvent::MouseMove);
-    bool isWheelEvent = (type == QEvent::Wheel);
-    bool isKeyEvent = (type == QEvent::KeyPress ||
-                       type == QEvent::KeyRelease);
+    bool isMouseEvent = type == QEvent::MouseButtonPress ||
+                        type == QEvent::MouseButtonRelease ||
+                        type == QEvent::MouseButtonDblClick ||
+                        type == QEvent::MouseMove;
+    bool isWheelEvent = type == QEvent::Wheel;
+    bool isKeyEvent = type == QEvent::KeyPress || type == QEvent::KeyRelease;
+    bool isDragEvent = type == QEvent::Drop;
 
-    if (isMouseEvent || isWheelEvent || isKeyEvent) {
+    if (isMouseEvent || isWheelEvent || isKeyEvent || isDragEvent) {
         isDispatching = true;
 
         for (int i = 0; i < deviceListWidget->count(); i++) {
@@ -514,6 +514,9 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                                        ke->nativeScanCode(), ke->nativeVirtualKey(), ke->nativeModifiers(), 
                                        ke->text(), ke->isAutoRepeat(), ke->count());
                     QApplication::sendEvent(targetWidget, &newEvent);
+                }
+                else if (isDragEvent) {
+                    QMetaObject::invokeMethod(targetWidget, "dropEvent", Qt::DirectConnection, Q_ARG(QDropEvent*, static_cast<QDropEvent*>(event)));
                 }
             }
         }
