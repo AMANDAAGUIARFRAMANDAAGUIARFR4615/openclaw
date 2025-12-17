@@ -71,7 +71,7 @@ private:
         QGroupBox *defaultBox = new QGroupBox("全局默认配置 (分组单独设置优先)", this);
         defaultBox->setStyleSheet(R"(
             QGroupBox {
-                border: 2px solid #AAAAAA;  /* 线宽 2px，颜色灰色 */
+                border: 2px solid #AAAAAA;
                 border-radius: 5px;
                 margin-top: 10px;
             }
@@ -87,8 +87,8 @@ private:
         boxLayout->setSpacing(5);
 
         addSettingGroup(boxLayout, "diaplayMode", "投屏显示", {"竖屏显示", "横屏显示"}, 0);
-        addSettingGroup(boxLayout, "connectionMethod", "连接方式", {"WIFI优先", "USB优先"}, 0);
         addSettingGroup(boxLayout, "videoQuality", "视频清晰度", {"图片流", "标清", "高清", "超清"}, 1);
+        addSettingGroup(boxLayout, "connectionMethod", "连接方式", {"WIFI优先", "USB优先"}, 0);
         addSettingGroup(boxLayout, "autoScan", "自动扫描局域网设备", {"关闭", "开启"}, 1);
 
         mainLayout->addWidget(defaultBox);
@@ -100,7 +100,7 @@ private:
             {"🏠主屏幕", "🎛️控制中心", "↕️应用切换", "🧹清理应用", "📁文件管理", "⏺️录制+回放", "🧩应用列表", "📸截图", "🔄重启", "🔒锁屏", "🗑️清空相册", "🔧修改分组"}, true);
 
         addSortableGroup(mainLayout, "tabBarMenu", "分组标签页右键菜单 (拖拽调整)", 
-            {"横竖屏切换", "重命名分组", "添加分组", "删除分组"}, true);
+            {"横竖屏切换", "重命名分组", "添加分组", "删除分组", "投屏显示", "视频清晰度", "连接方式", "自动扫描局域网设备"}, true);
     }
 
     ~AppSettingsDialog() = default;
@@ -119,7 +119,6 @@ private:
         QLabel *titleLabel = new QLabel(title, this);
         QFont font = titleLabel->font();
         font.setBold(true);
-        font.setPointSize(9);
         titleLabel->setFont(font);
 
         QListWidget *listWidget = new QListWidget(this);
@@ -136,9 +135,11 @@ private:
 
         QByteArray data = settings.value(key).toByteArray();
         QSet<QString> loadedKeys;
+        bool needSave = false;
 
         if (data.isEmpty()) {
-            for (const auto &t : defaults) addItem(t, true);
+            for (const auto &t : defaults)
+                addItem(t, true);
         } else {
             QJsonDocument doc = QJsonDocument::fromJson(data);
             QJsonArray array = doc.array();
@@ -153,7 +154,10 @@ private:
             }
             // 补充缺失的默认项
             for (const auto &def : defaults) {
-                if (!loadedKeys.contains(def)) addItem(def, true);
+                if (!loadedKeys.contains(def)) {
+                    addItem(def, true);
+                    needSave = true;
+                }
             }
         }
 
@@ -177,13 +181,15 @@ private:
                 obj["enable"] = checked;
                 jsonArray.append(obj);
             }
-            // 使用 Compact 模式保存为紧凑的 JSON 字符串/字节数组
             settings.setValue(key, QJsonDocument(jsonArray).toJson(QJsonDocument::Compact));
             emit configurationChanged(key);
         };
 
         connect(listWidget->model(), &QAbstractItemModel::rowsMoved, this, saveFunc);
         connect(listWidget, &QListWidget::itemChanged, this, saveFunc);
+
+        if (needSave)
+            saveFunc();
     }
 
     void addSettingGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, const QStringList &options, int defaultIndex)
@@ -196,7 +202,6 @@ private:
         QLabel *titleLabel = new QLabel(title, this);
         QFont font = titleLabel->font();
         font.setBold(true);
-        font.setPointSize(9);
         titleLabel->setFont(font);
 
         QHBoxLayout *optionsLayout = new QHBoxLayout();
