@@ -458,9 +458,6 @@ void MainWindow::changeEvent(QEvent *event)
             tabWidget->tabBar()->show();
             zoomSlider->parentWidget()->show();
         }
-        
-        // 如果需要在切换时重新布局设备，可以在这里调用
-        // relayoutDevices(); 
     }
 }
 
