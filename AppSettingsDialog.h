@@ -42,7 +42,7 @@ public:
             QString name = obj["name"].toString();
             bool enabled = obj["enable"].toBool();
 
-            if (!name.isEmpty()) {
+            if (!name.isEmpty() && defaults.contains(name)) {
                 savedKeys.insert(name);
                 if (enabled) result.append(name);
             }
@@ -71,7 +71,7 @@ private:
         QGroupBox *defaultBox = new QGroupBox("全局默认配置 (分组单独设置优先)", this);
         defaultBox->setStyleSheet(R"(
             QGroupBox {
-                border: 2px solid #AAAAAA;  /* 线宽 2px，颜色灰色 */
+                border: 2px solid #AAAAAA;
                 border-radius: 5px;
                 margin-top: 10px;
             }
@@ -146,7 +146,7 @@ private:
             for (const auto &val : array) {
                 QJsonObject obj = val.toObject();
                 QString name = obj["name"].toString();
-                if (!name.isEmpty()) {
+                if (!name.isEmpty() && defaults.contains(name)) {
                     addItem(name, obj["enable"].toBool());
                     loadedKeys.insert(name);
                 }
