@@ -2,6 +2,7 @@
 #include "DeviceWindow.h"
 #include "EventHub.h"
 #include "ToastWidget.h"
+#include "MainWindow.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -139,6 +140,10 @@ void DeviceWidget::launchDeviceWindow() {
 
     showOverlay("设备控制中");
 
+    auto tab = MainWindow::getInstance()->getTab();
+    auto videoQuality = tab.getVideoQuality();
+    connection->send("setVideoQuality", qMax(videoQuality, 2) + 1);
+
     auto videoFrameWidgetLocal = videoFrameWidget;
     QPointer<QWidget> placeholder = new QWidget();
 
@@ -146,6 +151,8 @@ void DeviceWidget::launchDeviceWindow() {
     connect(deviceWindow, &QObject::destroyed, [=]() {
         if (!placeholder)
             return;
+
+        connection->send("setVideoQuality", videoQuality + 1);
 
         addVideoFrameWidget(videoFrameWidgetLocal);
 

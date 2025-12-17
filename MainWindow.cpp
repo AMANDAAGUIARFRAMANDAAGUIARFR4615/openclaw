@@ -103,6 +103,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (key == "videoQuality") {
+            auto tab = getTab();
+            auto videoQuality = tab.getVideoQuality();
+            const auto& devices = DeviceInfo::getDevices(tab.bit == 0 ? 0 : (1U << tab.bit));
+            for (const auto& device : devices) {
+                device->connection->send("setVideoQuality", videoQuality + 1);
+            }
             return;
         }
     });
@@ -333,7 +339,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     percentLabel->setAlignment(Qt::AlignCenter);
 
     connect(zoomSlider, &QSlider::valueChanged, this, [=](int value) {
-        tabs[tabWidget->currentIndex()].scale = value;
+        getTab().scale = value;
         percentLabel->setText(QString::number(value) + "%");
         relayoutDevices();
     });
@@ -360,6 +366,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     connect(tabBar, &QTabBar::currentChanged, this, [=](int index) {
         qDebugEx() << "onTabChanged" << index;
 
+        auto tab = tabs[index];
+        auto videoQuality = tab.getVideoQuality();
+        const auto& devices = DeviceInfo::getDevices(tab.bit == 0 ? 0 : (1U << tab.bit));
+        for (const auto& device : devices) {
+            device->connection->send("setVideoQuality", videoQuality + 1);
+        }
+
         auto widget = tabWidget->currentWidget();
         auto layout = widget->layout();
         if (!layout) {
@@ -371,7 +384,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             layout->addWidget(deviceListWidget);
         }
 
-        zoomSlider->setValue(tabs[index].scale);
+        zoomSlider->setValue(tab.scale);
 
         relayoutDevices();
     });
@@ -566,7 +579,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 void MainWindow::relayoutDevices()
 {
-    auto& [bit, _, rawScale, isLandscape] = tabs[tabWidget->currentIndex()];
+    auto& [bit, _, rawScale, isLandscape, __] = getTab();
     
     const auto& devicesInGroup = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
     
@@ -661,7 +674,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
     if (tabBarMenu.count() == 0)
         return;
 
-    auto& [bit, _, __, isLandscape] = tabs[index];
+    auto& [bit, _, __, isLandscape, ___] = tabs[index];
 
     QMenu menu(this);
 
@@ -670,7 +683,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
         
         if (text == "横竖屏切换") {
             menu.addAction(text, [=]() {
-                tabs[tabWidget->currentIndex()].isLandscape = !isLandscape;
+                getTab().isLandscape = !isLandscape;
                 saveTabs(tabWidget->currentIndex());
                 relayoutDevices();
             });
@@ -773,12 +786,17 @@ void MainWindow::saveTabs(int index)
     }
     
     for (int i = start; i < end; i++) {
-        auto& [bit, name, scale, isLandscape] = tabs[i];
+        auto& [bit, name, scale, isLandscape, videoQuality] = tabs[i];
         settings.setArrayIndex(i);
         settings.setValue("bit", bit);
         settings.setValue("name", name);
         settings.setValue("scale", scale);
-        settings.setValue("isLandscape", isLandscape); 
+
+        if (isLandscape.has_value())
+            settings.setValue("isLandscape", isLandscape.value());
+
+        if (videoQuality.has_value())
+            settings.setValue("videoQuality", videoQuality.value());
     }
 
     settings.endArray();

@@ -18,7 +18,7 @@ public:
 
     void addItem(DeviceConnection* connection);
     const QList<BitMaskEditorDialog::Item>& getTabs() const { return tabs; }
-    const BitMaskEditorDialog::Item& getTab() const { return tabs[tabWidget->currentIndex()]; }
+    BitMaskEditorDialog::Item& getTab() { return tabs[tabWidget->currentIndex()]; }
 
     bool isMultiControl() const { return isMultiControlEnabled; }
 

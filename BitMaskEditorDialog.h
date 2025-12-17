@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AppSettingsDialog.h"
 #include <QDialog>
 #include <QCheckBox>
 #include <QDialogButtonBox>
@@ -16,7 +17,11 @@ public:
         int bit;
         QString name;
         int scale;
-        bool isLandscape;
+        std::optional<bool> isLandscape;
+        std::optional<int> videoQuality;
+
+        bool getIsLandscape() { return isLandscape.value_or(AppSettingsDialog::getInstance()->getValue("isLandscape")); }
+        int getVideoQuality() { return videoQuality.value_or(AppSettingsDialog::getInstance()->getValue("videoQuality")); }
     };
 
     explicit BitMaskEditorDialog(const QList<Item>& items,
