@@ -69,6 +69,20 @@ private:
         mainLayout->setContentsMargins(25, 20, 25, 20);
 
         QGroupBox *defaultBox = new QGroupBox("全局默认配置 (分组单独设置优先)", this);
+        defaultBox->setStyleSheet(R"(
+            QGroupBox {
+                border: 2px solid #AAAAAA;  /* 线宽 2px，颜色灰色 */
+                border-radius: 5px;
+                margin-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                left: 10px;
+                padding: 0 5px;
+            }
+        )");
+        
         QVBoxLayout *boxLayout = new QVBoxLayout(defaultBox);
         boxLayout->setSpacing(5);
 
