@@ -100,25 +100,6 @@ void DeviceWindow::changeOrientation(int orientation)
     });
 }
 
-void DeviceWindow::mouseDoubleClickEvent(QMouseEvent *event)
-{
-    DeviceView::mouseDoubleClickEvent(event);
-
-    qDebugEx() << "双击" << event->button();
-
-    if (event->button() == Qt::LeftButton) {
-        QMouseEvent *pressEvent = new QMouseEvent(QEvent::MouseButtonPress, event->pos(), event->button(), event->button(), event->modifiers());
-
-        QMouseEvent *releaseEvent = new QMouseEvent(QEvent::MouseButtonRelease, event->pos(), event->button(), event->button(), event->modifiers());
-
-        QApplication::postEvent(this, pressEvent);
-
-        QTimer::singleShot(100, [=]() {
-            QApplication::postEvent(this, releaseEvent);
-        });
-    }
-}
-
 bool DeviceWindow::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
 {
     float ratio = 1.0f * deviceInfo->screenWidth / deviceInfo->screenHeight;

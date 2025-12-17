@@ -419,6 +419,18 @@ void DeviceView::keyReleaseEvent(QKeyEvent *event)
     QWidget::keyReleaseEvent(event);
 }
 
+void DeviceView::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    QWidget::mouseDoubleClickEvent(event);
+
+    qDebugEx() << "双击" << event->button();
+
+    if (event->button() == Qt::LeftButton) {
+        QApplication::postEvent(this, new QMouseEvent(QEvent::MouseButtonPress, event->pos(), event->button(), event->button(), event->modifiers()));
+        QApplication::postEvent(this, new QMouseEvent(QEvent::MouseButtonRelease, event->pos(), event->button(), event->button(), event->modifiers()));
+    }
+}
+
 void DeviceView::wheelEvent(QWheelEvent *event)
 {
     // if (QOperatingSystemVersion::current().type() == QOperatingSystemVersion::MacOS)

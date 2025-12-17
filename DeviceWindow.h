@@ -15,7 +15,6 @@ public:
 protected:
     void changeOrientation(int orientation);
     void showEvent(QShowEvent *event) override;
-    void mouseDoubleClickEvent(QMouseEvent *event) override;
     bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 
     QMediaPlayer* audioPlayer = nullptr;

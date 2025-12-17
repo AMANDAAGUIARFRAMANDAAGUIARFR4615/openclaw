@@ -12,7 +12,6 @@ public:
     ~DeviceWidget();
 
 protected:
-    void mouseDoubleClickEvent(QMouseEvent *event) override;
     void launchDeviceWindow();
 
     DeviceWindow* deviceWindow = nullptr;

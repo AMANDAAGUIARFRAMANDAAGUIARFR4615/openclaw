@@ -3,7 +3,10 @@
 #include "EventHub.h"
 #include "ToastWidget.h"
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QPushButton>
+#include <QStyle>
 #include <QClipboard>
 #include <QMouseEvent>
 
@@ -13,9 +16,26 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
+    auto topLayout = new QHBoxLayout;
+    topLayout->setContentsMargins(5, 0, 5, 0);
+    topLayout->setSpacing(0);
+
     auto deviceInfoLabel = new QLabel(connection->displayName(), this);
     deviceInfoLabel->setAlignment(Qt::AlignCenter);
+    deviceInfoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     deviceInfoLabel->setFixedHeight(24);
+
+    auto launchButton = new QPushButton(this);
+    launchButton->setIcon(style()->standardIcon(QStyle::SP_TitleBarMaxButton));
+    launchButton->setFlat(true);
+    launchButton->setCursor(Qt::PointingHandCursor);
+    launchButton->setToolTip("在独立窗口中打开");
+    
+    connect(launchButton, &QPushButton::clicked, this, &DeviceWidget::launchDeviceWindow);
+
+    topLayout->addWidget(deviceInfoLabel);
+    topLayout->addWidget(launchButton);
+
     auto ipLabel = new QLabel(connection->type == DeviceConnection::Usb ? "" : deviceInfo->localIp, this);
     ipLabel->setAlignment(Qt::AlignCenter);
     ipLabel->setFixedHeight(24);
@@ -23,18 +43,18 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     versionLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     versionLabel->setFixedHeight(24);
 
-    auto hLayout = new QHBoxLayout;
-    hLayout->setContentsMargins(5, 0, 5, 0);
-    hLayout->setSpacing(0);
+    auto bottomLayout = new QHBoxLayout;
+    bottomLayout->setContentsMargins(5, 0, 5, 0);
+    bottomLayout->setSpacing(0);
 
-    hLayout->addStretch();
-    hLayout->addWidget(ipLabel);
-    hLayout->addStretch();
-    hLayout->addWidget(versionLabel);
+    bottomLayout->addStretch();
+    bottomLayout->addWidget(ipLabel);
+    bottomLayout->addStretch();
+    bottomLayout->addWidget(versionLabel);
 
-    layout->addWidget(deviceInfoLabel);
+    layout->addLayout(topLayout); 
     layout->addWidget(overlay);
-    layout->addLayout(hLayout);
+    layout->addLayout(bottomLayout);
     setLayout(layout);
 
     EventHub::on(this, "clipboard", [this](const QJsonValue &data, DeviceConnection* connection) {
@@ -103,18 +123,6 @@ DeviceWidget::~DeviceWidget()
         deviceWindow->deleteLater();
 
     delete connection->deviceInfo;
-}
-
-void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
-{
-    DeviceView::mouseDoubleClickEvent(event);
-
-    qDebugEx() << "双击" << event->button();
-
-    if (event->button() == Qt::LeftButton) {
-        QApplication::postEvent(this, new QMouseEvent(QEvent::MouseButtonPress, event->pos(), event->button(), event->button(), event->modifiers()));
-        QApplication::postEvent(this, new QMouseEvent(QEvent::MouseButtonRelease, event->pos(), event->button(), event->button(), event->modifiers()));
-    }
 }
 
 void DeviceWidget::launchDeviceWindow() {
