@@ -160,11 +160,11 @@ bool DeviceWindow::nativeEvent(const QByteArray &eventType, void *message, qintp
             }
             
             // --- 步骤 4: 限制检查 (基于内容区域 ClientSize) ---
-            // [新增] 获取当前屏幕的可用区域（减去任务栏等）
+            // 获取当前屏幕的可用区域（减去任务栏等）
             QScreen *screen = windowHandle() ? windowHandle()->screen() : QGuiApplication::primaryScreen();
             QRect screenRect = screen ? screen->availableGeometry() : QRect(0, 0, 1920, 1080);
 
-            // [新增] 计算允许的最大内容宽高：取 (Qt最大值) 和 (屏幕可用宽高 - 边框) 中的较小值
+            // 计算允许的最大内容宽高：取 (Qt最大值) 和 (屏幕可用宽高 - 边框) 中的较小值
             int maxClientW = qMin(this->maximumWidth(), screenRect.width() - borderW);
             int maxClientH = qMin(this->maximumHeight(), screenRect.height() - borderH);
 

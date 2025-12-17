@@ -8,7 +8,7 @@
 #include <QProgressBar>
 #include <QComboBox>
 #include <QLineEdit>
-#include <QTextEdit> // 新增：用于显示日志
+#include <QTextEdit>
 #include <QTimer>
 #include <QFrame>
 #include <QScrollArea>
