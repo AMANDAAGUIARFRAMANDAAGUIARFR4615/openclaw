@@ -5,6 +5,7 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QClipboard>
+#include <QMouseEvent>
 
 DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo): DeviceView(connection, deviceInfo)
 {
@@ -108,6 +109,15 @@ void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
 {
     DeviceView::mouseDoubleClickEvent(event);
 
+    qDebugEx() << "双击" << event->button();
+
+    if (event->button() == Qt::LeftButton) {
+        QApplication::postEvent(this, new QMouseEvent(QEvent::MouseButtonPress, event->pos(), event->button(), event->button(), event->modifiers()));
+        QApplication::postEvent(this, new QMouseEvent(QEvent::MouseButtonRelease, event->pos(), event->button(), event->button(), event->modifiers()));
+    }
+}
+
+void DeviceWidget::launchDeviceWindow() {
     if (deviceWindow) {
         deviceWindow->activateWindow();
         return;
