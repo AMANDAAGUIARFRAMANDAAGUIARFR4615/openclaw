@@ -23,8 +23,11 @@ public:
         std::optional<int> autoScanLANDevices;
         std::optional<int> autoConnectUSBDevices;
 
-        bool getIsLandscape() { return isLandscape.value_or(AppSettingsDialog::getInstance()->getValue("isLandscape")); }
+        int getIsLandscape() { return isLandscape.value_or(AppSettingsDialog::getInstance()->getValue("isLandscape")); }
         int getVideoQuality() { return videoQuality.value_or(AppSettingsDialog::getInstance()->getValue("videoQuality")); }
+        int getConnectionMethod() { return connectionMethod.value_or(AppSettingsDialog::getInstance()->getValue("connectionMethod")); }
+        int getAutoScanLANDevices() { return autoScanLANDevices.value_or(AppSettingsDialog::getInstance()->getValue("autoScanLANDevices")); }
+        int getAutoConnectUSBDevices() { return autoConnectUSBDevices.value_or(AppSettingsDialog::getInstance()->getValue("autoConnectUSBDevices")); }
 
         void load(int index)
         {
