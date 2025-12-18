@@ -100,7 +100,7 @@ private:
         if (var.typeId() == QMetaType::QString || var.typeId() == QMetaType::QByteArray)
             return;
 
-        if (var.typeId() == QMetaType::QJsonObject) {
+        if (var.canConvert<QJsonObject>()) {
             QJsonObject jsonObject = var.value<QJsonObject>();
 
             for (auto it = jsonObject.constBegin(); it != jsonObject.constEnd(); ++it) {
@@ -109,7 +109,7 @@ private:
             return;
         }
 
-        if (var.typeId() == QMetaType::QJsonArray) {
+        if (var.canConvert<QJsonArray>()) {
             QJsonArray jsonArray = var.value<QJsonArray>();
 
             for (int i = 0; i < jsonArray.size(); ++i) {
