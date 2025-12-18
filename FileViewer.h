@@ -199,9 +199,14 @@ protected:
             return;
         }
 
-        auto btn = QMessageBox::question(this, "保存", "文件已修改，是否保存？");
+        auto button = QMessageBox::question(this, "保存", "文件已修改，是否保存？", QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+
+        if (button == QMessageBox::Cancel) {
+            event->ignore();
+            return;
+        }
         
-        if (btn == QMessageBox::No) {
+        if (button == QMessageBox::No) {
             event->accept();
             return;
         }
