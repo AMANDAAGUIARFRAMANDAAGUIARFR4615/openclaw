@@ -17,7 +17,7 @@ public:
         int bit;
         QString name;
         int scale;
-        std::optional<bool> isLandscape;
+        std::optional<int> isLandscape;
         std::optional<int> videoQuality;
 
         bool getIsLandscape() { return isLandscape.value_or(AppSettingsDialog::getInstance()->getValue("isLandscape")); }
