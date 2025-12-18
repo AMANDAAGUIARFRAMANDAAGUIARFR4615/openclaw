@@ -9,7 +9,6 @@
 #include <QButtonGroup>
 #include <QListWidget>
 #include <QSet>
-#include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QGroupBox>
@@ -27,15 +26,12 @@ public:
 
     QStringList getEnabledList(const QString &key) {
         QStringList defaults = m_listDefaults.value(key);
-        QByteArray data = settings.value(key).toByteArray();
+        QJsonArray array = settings.value(key).toJsonArray();
 
-        if (data.isEmpty()) return defaults;
+        if (array.isEmpty()) return defaults;
 
         QStringList result;
         QSet<QString> savedKeys;
-
-        QJsonDocument doc = QJsonDocument::fromJson(data);
-        QJsonArray array = doc.array();
 
         for (const auto &val : array) {
             QJsonObject obj = val.toObject();
@@ -135,15 +131,12 @@ private:
             listWidget->addItem(item);
         };
 
-        QByteArray data = settings.value(key).toByteArray();
+        QJsonArray array = settings.value(key).toJsonArray();
         QSet<QString> loadedKeys;
 
-        if (data.isEmpty()) {
+        if (array.isEmpty()) {
             for (const auto &t : defaults) addItem(t, true);
         } else {
-            QJsonDocument doc = QJsonDocument::fromJson(data);
-            QJsonArray array = doc.array();
-            
             for (const auto &val : array) {
                 QJsonObject obj = val.toObject();
                 QString name = obj["name"].toString();
@@ -179,7 +172,7 @@ private:
                 jsonArray.append(obj);
             }
             // 使用 Compact 模式保存为紧凑的 JSON 字符串/字节数组
-            settings.setValue(key, QJsonDocument(jsonArray).toJson(QJsonDocument::Compact));
+            settings.setValue(key, jsonArray);
             emit configurationChanged(key);
         };
 
