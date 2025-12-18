@@ -107,7 +107,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             auto videoQuality = tab.getVideoQuality();
             const auto& devices = DeviceInfo::getDevices(tab.bit == 0 ? 0 : (1U << tab.bit));
             for (const auto& device : devices) {
-                device->connection->send("setVideoQuality", videoQuality + 1);
+                device->connection->send("setVideoQuality", videoQuality);
             }
             return;
         }
@@ -370,7 +370,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         auto videoQuality = tab.getVideoQuality();
         const auto& devices = DeviceInfo::getDevices(tab.bit == 0 ? 0 : (1U << tab.bit));
         for (const auto& device : devices) {
-            device->connection->send("setVideoQuality", videoQuality + 1);
+            device->connection->send("setVideoQuality", videoQuality);
         }
 
         auto widget = tabWidget->currentWidget();

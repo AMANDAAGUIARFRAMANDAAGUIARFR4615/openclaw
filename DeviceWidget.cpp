@@ -142,7 +142,7 @@ void DeviceWidget::launchDeviceWindow() {
 
     auto tab = MainWindow::getInstance()->getTab();
     auto videoQuality = tab.getVideoQuality();
-    connection->send("setVideoQuality", qMax(videoQuality, 2) + 1);
+    connection->send("setVideoQuality", qMax(videoQuality, 3));
 
     auto videoFrameWidgetLocal = videoFrameWidget;
     QPointer<QWidget> placeholder = new QWidget();
@@ -152,7 +152,7 @@ void DeviceWidget::launchDeviceWindow() {
         if (!placeholder)
             return;
 
-        connection->send("setVideoQuality", videoQuality + 1);
+        connection->send("setVideoQuality", videoQuality);
 
         addVideoFrameWidget(videoFrameWidgetLocal);
 

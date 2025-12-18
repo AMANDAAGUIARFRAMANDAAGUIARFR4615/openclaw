@@ -88,7 +88,7 @@ private:
 
         addSettingGroup(boxLayout, "diaplayMode", "投屏显示", {"竖屏显示", "横屏显示"}, 0);
         addSettingGroup(boxLayout, "connectionMethod", "连接方式", {"WIFI优先", "USB优先"}, 0);
-        addSettingGroup(boxLayout, "videoQuality", "视频清晰度", {"图片流", "标清", "高清", "超清"}, 1);
+        addSettingGroup(boxLayout, "videoQuality", "视频清晰度", {"", "图片流", "标清", "高清", "超清"}, 1);
         addSettingGroup(boxLayout, "autoScan", "自动扫描局域网设备", {"关闭", "开启"}, 1);
 
         mainLayout->addWidget(defaultBox);
@@ -206,6 +206,9 @@ private:
         int currentVal = settings.value(key, defaultIndex).toInt();
 
         for (int i = 0; i < options.size(); ++i) {
+            if (options[i].isEmpty())
+                continue;
+
             QRadioButton *radio = new QRadioButton(options[i], this);
             if (i == currentVal) radio->setChecked(true);
             group->addButton(radio, i);
