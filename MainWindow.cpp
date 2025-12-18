@@ -422,7 +422,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     );
 
     auto broadcastTask = [=]() {
-        if (AppSettingsDialog::getInstance()->getValue("autoScan") == 0)
+        if (AppSettingsDialog::getInstance()->getValue("autoScanLANDevices") == 0)
             return;
 
         const auto& ips = TcpServer::getInstance()->getConnectedIps();
