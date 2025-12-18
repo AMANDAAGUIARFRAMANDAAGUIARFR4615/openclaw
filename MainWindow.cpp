@@ -99,7 +99,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
         auto value = AppSettingsDialog::getInstance()->getValue(key);
 
-        if (key == "diaplayMode") {
+        if (key == "isLandscape") {
             relayoutDevices();
             return;
         }
@@ -704,7 +704,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
     if (tabBarMenu.count() == 0)
         return;
 
-    auto& [bit, _, __, isLandscape, videoQuality] = tabs[index];
+    auto& [bit, _, __, isLandscape, videoQuality, connectionMethod, autoScanLANDevices, autoConnectUSBDevices] = tabs[index];
 
     QMenu menu(this);
 
@@ -726,6 +726,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
                 if (ok && !newName.trimmed().isEmpty()) {
                     tabWidget->setTabText(index, newName.trimmed());
                     tabs[index].name = newName.trimmed();
+                    saveTabs(index);
                 }
             });
         }
@@ -737,7 +738,6 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
                 auto page = tabWidget->widget(index);
                 tabWidget->removeTab(index);
                 delete page;
-                tabs.remove(index);
                 auto tab = tabs.takeAt(index);
                 auto mask = 1U << bit;
                 auto devices = DeviceInfo::getDevices(mask);
@@ -745,6 +745,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
                     deviceInfo->groupMask &= ~mask;
                     settings.setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
                 }
+                saveTabs();
             })->setEnabled(bit != 0);
         }
         else if (text == "添加分组") {
@@ -767,6 +768,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
                 if (ok && !newName.trimmed().isEmpty()) {
                     tabs.insert(index + 1, BitMaskEditorDialog::Item({newId, newName.trimmed()}));
                     tabWidget->insertTab(index + 1, new QWidget(), newName.trimmed());
+                    saveTabs();
                 }
             });
         }
@@ -788,6 +790,24 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
                     syncVideoQualityToDevices();
             });
         }
+        else if (text == "连接方式") {
+            QStringList list = {"默认", "USB优先", "WIFI优先"};
+            addOptionMenu(&menu, text, list, &connectionMethod, [=]() {
+                saveTabs(index);
+            });
+        }
+        else if (text == "自动扫描局域网设备") {
+            QStringList list = {"默认", "关闭", "开启"};
+            addOptionMenu(&menu, text, list, &autoScanLANDevices, [=]() {
+                saveTabs(index);
+            });
+        }
+        else if (text == "自动连接USB设备") {
+            QStringList list = {"默认", "关闭", "开启"};
+            addOptionMenu(&menu, text, list, &autoConnectUSBDevices, [=]() {
+                saveTabs(index);
+            });
+        }
     }
 
     menu.exec(tabWidget->tabBar()->mapToGlobal(pos));
@@ -797,13 +817,10 @@ void MainWindow::loadTabs()
 {
     int size = settings.beginReadArray("tabs");
     for (int i = 0; i < size; ++i) {
-        settings.setArrayIndex(i);
-        auto bit = settings.value("bit").toInt();
-        auto name = settings.value("name").toString();
-        auto scale = settings.value("scale").toInt();
-        auto isLandscape = settings.value("isLandscape").toBool();
-        tabs.append(BitMaskEditorDialog::Item({bit, name, scale, isLandscape}));
-        tabWidget->addTab(new QWidget(), name);
+        BitMaskEditorDialog::Item item;
+        item.load(i);
+        tabs.append(item);
+        tabWidget->addTab(new QWidget(), item.name);
     }
     settings.endArray();
 
@@ -827,21 +844,7 @@ void MainWindow::saveTabs(int index)
     }
     
     for (int i = start; i < end; i++) {
-        auto& [bit, name, scale, isLandscape, videoQuality] = tabs[i];
-        settings.setArrayIndex(i);
-        settings.setValue("bit", bit);
-        settings.setValue("name", name);
-        settings.setValue("scale", scale);
-
-        if (isLandscape.has_value())
-            settings.setValue("isLandscape", isLandscape.value());
-        else
-            settings.remove("isLandscape");
-
-        if (videoQuality.has_value())
-            settings.setValue("videoQuality", videoQuality.value());
-        else
-            settings.remove("videoQuality");
+        tabs[i].save(i);
     }
 
     settings.endArray();

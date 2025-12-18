@@ -86,7 +86,7 @@ private:
         QVBoxLayout *boxLayout = new QVBoxLayout(defaultBox);
         boxLayout->setSpacing(5);
 
-        addSettingGroup(boxLayout, "diaplayMode", "投屏显示", {"竖屏显示", "横屏显示"}, 0);
+        addSettingGroup(boxLayout, "isLandscape", "投屏显示", {"竖屏显示", "横屏显示"}, 0);
         addSettingGroup(boxLayout, "videoQuality", "视频清晰度", {"", "图片流", "标清", "高清", "超清"}, 1);
         addSettingGroup(boxLayout, "connectionMethod", "连接方式", {"USB优先", "WIFI优先"}, 0);
         addSettingGroup(boxLayout, "autoScanLANDevices", "自动扫描局域网设备", {"关闭", "开启"}, 1);
