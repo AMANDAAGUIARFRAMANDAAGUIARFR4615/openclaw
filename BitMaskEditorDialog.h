@@ -16,7 +16,7 @@ public:
     struct Item {
         int bit;
         QString name;
-        int scale;
+        int scale = 100;
         std::optional<int> isLandscape;
         std::optional<int> videoQuality;
         std::optional<int> connectionMethod;
