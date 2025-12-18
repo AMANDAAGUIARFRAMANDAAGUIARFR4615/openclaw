@@ -87,8 +87,8 @@ private:
         boxLayout->setSpacing(5);
 
         addSettingGroup(boxLayout, "diaplayMode", "投屏显示", {"竖屏显示", "横屏显示"}, 0);
-        addSettingGroup(boxLayout, "connectionMethod", "连接方式", {"WIFI优先", "USB优先"}, 0);
         addSettingGroup(boxLayout, "videoQuality", "视频清晰度", {"", "图片流", "标清", "高清", "超清"}, 1);
+        addSettingGroup(boxLayout, "connectionMethod", "连接方式", {"USB优先", "WIFI优先"}, 0);
         addSettingGroup(boxLayout, "autoScan", "自动扫描局域网设备", {"关闭", "开启"}, 1);
 
         mainLayout->addWidget(defaultBox);
@@ -100,7 +100,7 @@ private:
             {"🏠主屏幕", "🎛️控制中心", "↕️应用切换", "🧹清理应用", "📁文件管理", "⏺️录制+回放", "🧩应用列表", "📸截图", "🔄重启", "🔒锁屏", "🗑️清空相册", "🔧修改分组"}, true);
 
         addSortableGroup(mainLayout, "tabBarMenu", "分组标签页右键菜单 (拖拽调整)", 
-            {"横竖屏切换", "重命名分组", "添加分组", "删除分组"}, true);
+            {"横竖屏切换", "重命名分组", "添加分组", "删除分组", "投屏显示", "视频清晰度", "连接方式", "自动扫描局域网设备"}, true);
     }
 
     ~AppSettingsDialog() = default;
