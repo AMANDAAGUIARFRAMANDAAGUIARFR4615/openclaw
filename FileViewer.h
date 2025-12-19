@@ -171,7 +171,13 @@ public:
 
             QLabel *imageLabel = new QLabel;
             imageLabel->setAlignment(Qt::AlignCenter);
-            imageLabel->setPixmap(pixmap.scaled(size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+           
+            QSize maxSize = QApplication::primaryScreen()->size();
+            if (pixmap.width() > maxSize.width() || pixmap.height() > maxSize.height())
+                imageLabel->setPixmap(pixmap.scaled(maxSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            else
+                imageLabel->setPixmap(pixmap);
+    
             layout->addWidget(imageLabel);
         }
         else {
