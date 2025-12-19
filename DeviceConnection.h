@@ -27,14 +27,6 @@ public:
         usbConnectionToDevice[usbConnection] = this;
     }
 
-    ~DeviceConnection() {
-        if (type == Tcp)
-        {
-            tcpSocket->close();
-            tcpSocket->deleteLater();
-        }
-    }
-
     static DeviceConnection* find(QTcpSocket* socket) {
         return tcpSocketToDevice.value(socket, nullptr);
     }
