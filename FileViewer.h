@@ -143,12 +143,11 @@ public:
         setAttribute(Qt::WA_DeleteOnClose);
         
         setWindowTitle(QFileInfo(filePath).fileName());
-        resize(parent->size());
-        move(parent->pos());
         show();
 
         QVBoxLayout *layout = new QVBoxLayout(this);
-        layout->setContentsMargins(0, 0, 0, 0); 
+        layout->setContentsMargins(0, 0, 0, 0);
+        setLayout(layout);
 
         if (isTextFile()) {
             QFile file(filePath);
@@ -169,7 +168,7 @@ public:
                 return;
             }
 
-            QLabel *imageLabel = new QLabel;
+            QLabel *imageLabel = new QLabel(this);
             imageLabel->setAlignment(Qt::AlignCenter);
            
             QSize maxSize = QApplication::primaryScreen()->size();
@@ -179,6 +178,7 @@ public:
                 imageLabel->setPixmap(pixmap);
     
             layout->addWidget(imageLabel);
+            resize(pixmap.size());
         }
         else {
             QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
@@ -186,7 +186,10 @@ public:
             return;
         }
 
-        setLayout(layout);
+        QRect geometry = parent ? parent->window()->geometry() : QGuiApplication::primaryScreen()->availableGeometry();
+        int x = (geometry.width() - width()) / 2;
+        int y = (geometry.height() - height()) / 2;
+        move(x, y);
     }
 
 protected:
