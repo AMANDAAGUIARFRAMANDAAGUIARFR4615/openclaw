@@ -47,11 +47,11 @@ public:
 
         line = new QFrame;
         line->setFixedWidth(2);
-        line->setStyleSheet("background-color: #e0e0e0;");
+        line->setStyleSheet("border: none; background-color: #cccccc;"); 
         line->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
 
-        leftLayout->addWidget(statusIcon, 0, Qt::AlignCenter);
-        leftLayout->addWidget(line, 0, Qt::AlignCenter);
+        leftLayout->addWidget(statusIcon, 0, Qt::AlignTop | Qt::AlignHCenter);
+        leftLayout->addWidget(line, 1, Qt::AlignHCenter);
 
         QWidget *rightSide = new QWidget;
         QVBoxLayout *rightLayout = new QVBoxLayout(rightSide);
@@ -98,8 +98,8 @@ public:
     void finish() {
         statusIcon->setText("✔");
         statusIcon->setStyleSheet("background-color: #28a745; color: white; border-radius: 15px; font-weight: bold;");
-        line->setStyleSheet("background-color: #28a745;"); 
-        contentArea->setDisabled(true); 
+        line->setStyleSheet("border: none; background-color: #28a745;");
+        contentArea->setDisabled(true);
         emit finished(); 
     }
 
