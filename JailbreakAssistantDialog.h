@@ -192,7 +192,7 @@ private slots:
         connect(reply, &QNetworkReply::finished, [=]() {
             if (file) {
                 file->close();
-                delete file;
+                file->deleteLater();
             }
 
             if (reply->error() == QNetworkReply::NoError) {

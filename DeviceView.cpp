@@ -178,7 +178,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     }
 
     menu->exec(event->globalPos());
-    delete menu;
+    menu->deleteLater();
 }
 
 void DeviceView::dragEnterEvent(QDragEnterEvent *event)

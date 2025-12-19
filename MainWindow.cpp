@@ -669,12 +669,12 @@ void MainWindow::addItem(DeviceConnection* connection)
         player->setSourceDevice(device);
 
         connect(player, &QObject::destroyed, [=]() {
-            delete server;
+            server->deleteLater();
         });
     }
 
     connect(player, &QObject::destroyed, [=]() {
-        delete device;
+        device->deleteLater();
     });
 
     auto frame = new QFrame();
@@ -737,7 +737,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
 
                 auto page = tabWidget->widget(index);
                 tabWidget->removeTab(index);
-                delete page;
+                page->deleteLater();
                 auto tab = tabs.takeAt(index);
                 auto mask = 1U << bit;
                 auto devices = DeviceInfo::getDevices(mask);

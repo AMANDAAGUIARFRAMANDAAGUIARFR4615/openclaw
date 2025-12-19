@@ -93,6 +93,11 @@ void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
     UsbDeviceContext* ctx = connToContext.value(conn, nullptr);
     if (!ctx) return;
 
+    if (ctx->handler != conn) {
+        qCriticalEx() << "disconnectDevice" << conn;
+        return;
+    }
+
     connToContext.remove(conn);
 
     if (ctx->port == 32839)
@@ -100,8 +105,11 @@ void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
 
     qDebugEx() << "❌ 断开设备:" << ctx << ctx->udid + ":" + QString::number(ctx->port);
 
+    delete ctx->handler;
+    ctx->handler = nullptr;
+
     if (ctx->notifier) {
-        delete ctx->notifier;
+        ctx->notifier->deleteLater();
         ctx->notifier = nullptr;
     }
 

@@ -100,7 +100,7 @@ protected:
         filterAction->setChecked(showOnlyErrors);
 
         menu->exec(event->globalPos());
-        delete menu;
+        menu->deleteLater();
     }
 
     inline static LogWindow* instance;

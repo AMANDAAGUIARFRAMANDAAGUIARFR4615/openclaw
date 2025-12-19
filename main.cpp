@@ -32,7 +32,7 @@ void onDataReceived(DeviceConnection *connection, const QJsonObject &jsonObject)
 void onClientDisconnected(QTcpSocket* socket) {
     DeviceConnection *connection = DeviceConnection::find(socket);
     EventHub::trigger("disconnected", QJsonValue(), connection);
-    delete connection;
+    connection->deleteLater();
 }
 
 void onError(QTcpSocket* socket, QAbstractSocket::SocketError socketError) {
