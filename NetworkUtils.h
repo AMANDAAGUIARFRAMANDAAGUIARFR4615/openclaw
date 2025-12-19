@@ -18,32 +18,40 @@ public:
         QString name = humanName.toLower();
         QString dName = devName.toLower();
 
-        // 常见的虚拟网卡关键字黑名单
         QStringList keywords = {
+            // --- Windows Hyper-V 虚拟化系列 ---
+            "vethernet",    // ✅ 完美覆盖 vEthernet (nat), vEthernet (WSL), vEthernet (Default Switch)
+            "hyper-v",      // ✅ 覆盖 Hyper-V Virtual Ethernet Adapter
+
             // --- VPN 与 隧道协议 ---
-            "zerotier",     // ZeroTier 异地组网虚拟网卡
-            "tap-windows",  // OpenVPN 等 VPN 软件使用的虚拟 TAP 驱动
-            "vpn",          // 各类 VPN 软件的通用标识
-            "utun",         // macOS/iOS 用户态网络隧道 (User Tunnel)
-            "pseudo",       // 伪设备接口 / 隧道接口
-            "gif",          // IPv4 到 IPv6 的通用隧道接口
-            "stf",          // 6to4 隧道接口
+            "zerotier",
+            "tap-windows",
+            "vpn",
+            "utun",
+            "pseudo",
+            "gif",
+            "stf",
 
             // --- 虚拟机 与 容器 ---
-            "vmware",       // VMware 虚拟机网卡 (VMnet系列)
-            "virtualbox",   // VirtualBox 虚拟机网卡
-            "vbox",         // VirtualBox 的缩写标识
-            "docker",       // Docker 容器默认网桥 (docker0)
-            "wsl",          // Windows Subsystem for Linux (WSL2) 虚拟网卡
+            "vmware",
+            "virtualbox",
+            "vbox",
+            "docker",
+            "wsl",          // 虽然 vEthernet 能覆盖一部分，但保留这个双重保险
+
+            // --- 容器网络 (K8s/Docker/Linux) ---
+            "cni",          // K8s 容器网络接口 (cni0)
+            "flannel",      // Flannel 网络插件
+            "calico",       // Calico 网络插件
 
             // --- 特定硬件与协议 ---
-            "awdl",         // Apple Wireless Direct Link (AirDrop 专用)
-            "llw",          // Apple Low Latency WLAN (Sidecar 专用)
-            "feth",         // Linux veth pair (容器间通信接口)
+            "awdl",
+            "llw",
+            "feth",
 
-            // --- 特殊的虚拟交换与热点 (精确匹配，避免误杀物理网卡) ---
-            "default switch",               // Hyper-V 强制生成的内部 NAT 交换机
-            "microsoft wi-fi direct virtual" // Windows 移动热点虚拟适配器
+            // --- 特殊的虚拟交换与热点 ---
+            "default switch",
+            "microsoft wi-fi direct virtual"
         };
 
         for (const QString &kw : keywords) {
