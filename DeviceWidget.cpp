@@ -123,7 +123,7 @@ DeviceWidget::~DeviceWidget()
     if (deviceWindow)
         deviceWindow->deleteLater();
 
-    delete connection->deviceInfo;
+    delete deviceInfo;
 }
 
 void DeviceWidget::launchDeviceWindow() {

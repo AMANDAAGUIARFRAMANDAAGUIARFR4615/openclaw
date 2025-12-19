@@ -674,7 +674,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     }
 
     connect(player, &QObject::destroyed, [=]() {
-        device->deleteLater();
+        delete device;//此处不能用deleteLater();
     });
 
     auto frame = new QFrame();
