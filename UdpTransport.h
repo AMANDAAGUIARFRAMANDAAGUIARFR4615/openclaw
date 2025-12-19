@@ -68,7 +68,7 @@ public:
         dataToSend.append(jsonData);
 
         if (socket->writeDatagram(dataToSend, host, port) != dataToSend.size()) 
-            qWarningEx() << "发送失败" << host.toString() + ":" + QString::number(port);
+            qCriticalEx() << "发送失败" << host.toString() + ":" + QString::number(port);
     }
 
 private:
