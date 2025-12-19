@@ -83,22 +83,22 @@ int main(int argc, char *argv[])
             onDataReceived(connection, jsonObject);
         }, onClientDisconnected, onError);
 
-        QObject::connect(g_usbDeviceManager, &UsbDeviceManager::deviceDisconnected, [](DeviceConnection* conn){
+        QObject::connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::deviceDisconnected, [](DeviceConnection* conn){
             EventHub::trigger("disconnected", QJsonValue(), conn);
         });
 
-        QObject::connect(g_usbDeviceManager, &UsbDeviceManager::dataReceived, [](DeviceConnection* conn, const QJsonObject& data){
+        QObject::connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::dataReceived, [](DeviceConnection* conn, const QJsonObject& data){
             onDataReceived(conn, data);
         });
 
-        QObject::connect(g_usbDeviceManager, &UsbDeviceManager::errorOccurred, [](DeviceConnection* conn, const QString& msg){
+        QObject::connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::errorOccurred, [](DeviceConnection* conn, const QString& msg){
             qCriticalEx() << "⚠️ 设备错误:" << msg;
         });
 
-        g_usbDeviceManager->start();
+        UsbDeviceManager::getInstance()->start();
 
         QObject::connect(qApp, &QApplication::aboutToQuit, [=]() {
-            g_usbDeviceManager->stop();
+            UsbDeviceManager::getInstance()->stop();
         });
 
         MainWindow::getInstance()->show();

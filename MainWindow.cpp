@@ -645,8 +645,8 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     if (connection->type == DeviceConnection::Usb)
     {
-        auto ctx = g_usbDeviceManager->getContext(connection);
-        g_usbDeviceManager->connectDevice(ctx->udid, deviceInfo->videoPort, [=](DeviceConnection* conn, const QByteArray& data){
+        auto ctx = UsbDeviceManager::getInstance()->getContext(connection);
+        UsbDeviceManager::getInstance()->connectDevice(ctx->udid, deviceInfo->videoPort, [=](DeviceConnection* conn, const QByteArray& data){
             device->appendData(data);
         });
 

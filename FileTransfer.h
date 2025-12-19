@@ -46,9 +46,9 @@ public:
                 if (data["id"] != id)
                     return;
 
-                auto ctx = g_usbDeviceManager->getContext(connection);
+                auto ctx = UsbDeviceManager::getInstance()->getContext(connection);
 
-                transferConnection = g_usbDeviceManager->connectDevice(ctx->udid, data["port"].toInt(), [=](DeviceConnection* conn, const QByteArray& data){
+                transferConnection = UsbDeviceManager::getInstance()->connectDevice(ctx->udid, data["port"].toInt(), [=](DeviceConnection* conn, const QByteArray& data){
                     handleDataRead(data);
                 });
 
@@ -70,7 +70,7 @@ public:
         if (connection->type != DeviceConnection::Usb)
             delete transferConnection;
         else
-            g_usbDeviceManager->disconnectDevice(transferConnection);
+            UsbDeviceManager::getInstance()->disconnectDevice(transferConnection);
 
         connection = nullptr;
     }

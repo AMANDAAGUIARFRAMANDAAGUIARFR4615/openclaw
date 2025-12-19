@@ -63,7 +63,7 @@ DeviceWindow::~DeviceWindow()
     EventHub::off(this, "lockedStatus");
     EventHub::off(this, "audioPort");
 
-    g_usbDeviceManager->disconnectDevice(audioDeviceConnection);
+    UsbDeviceManager::getInstance()->disconnectDevice(audioDeviceConnection);
     
     if (audioPlayer) {
         audioPlayer->stop();
