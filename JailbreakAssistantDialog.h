@@ -428,9 +428,47 @@ private:
 class StepScan : public StepBase {
     Q_OBJECT
 public:
-    StepScan(QString title, QString desc, QString url, QWidget *parent = nullptr) 
-        : StepBase(title, desc, parent), m_url(url) 
+    StepScan(QString title, QString desc, QString urlNoRoot, QString urlSilentRoot, QWidget *parent = nullptr) 
+        : StepBase(title, desc, parent) 
     {
+        QHBoxLayout *qrContainerLayout = new QHBoxLayout;
+        qrContainerLayout->setSpacing(30);
+        qrContainerLayout->setAlignment(Qt::AlignCenter);
+
+        qrContainerLayout->addLayout(createQrBlock("无根版本", urlNoRoot));
+        qrContainerLayout->addLayout(createQrBlock("隐根版本", urlSilentRoot));
+
+        QHBoxLayout *btnLayout = new QHBoxLayout;
+        btnLayout->addStretch();
+
+        QPushButton *btnFinish = new QPushButton("我已完成下载");
+        btnFinish->setCursor(Qt::PointingHandCursor);
+        btnFinish->setMinimumWidth(150);
+        btnFinish->setStyleSheet("QPushButton { background-color: #28a745; color: white; border-radius: 4px; padding: 8px; font-weight: bold; }"
+                                 "QPushButton:hover { background-color: #218838; }");
+
+        btnLayout->addWidget(btnFinish);
+        btnLayout->addStretch();
+
+        contentLayout->addLayout(qrContainerLayout);
+        contentLayout->addSpacing(20);
+        contentLayout->addLayout(btnLayout);
+
+        connect(btnFinish, &QPushButton::clicked, this, [this](){ finish(); });
+    }
+
+protected:
+    void onActivated() override {}
+
+private:
+    QVBoxLayout* createQrBlock(QString name, QString url) {
+        QVBoxLayout *layout = new QVBoxLayout;
+        layout->setSpacing(10);
+        layout->setAlignment(Qt::AlignCenter);
+
+        QLabel *nameLabel = new QLabel(name);
+        nameLabel->setAlignment(Qt::AlignCenter);
+
         int qrSize = 200;
         QImage img = Tools::generateQrImage(url);
         QPixmap pixmap = QPixmap::fromImage(img).scaled(
@@ -442,58 +480,12 @@ public:
         QLabel *qrLabel = new QLabel;
         qrLabel->setPixmap(pixmap);
         qrLabel->setAlignment(Qt::AlignCenter);
-        qrLabel->setStyleSheet("border: 1px solid #ddd; padding: 5px; background: white; border-radius: 4px;");
 
-        QLineEdit *urlEdit = new QLineEdit(url);
-        urlEdit->setReadOnly(true);
-        urlEdit->setCursorPosition(0);
-        urlEdit->setStyleSheet("color: #555; background: #f5f5f5; border: 1px solid #ccc; padding: 5px; border-radius: 4px;");
+        layout->addWidget(nameLabel);
+        layout->addWidget(qrLabel);
 
-        QHBoxLayout *btnLayout = new QHBoxLayout;
-        btnLayout->setSpacing(10);
-
-        btnCopy = new QPushButton("复制链接");
-        btnCopy->setCursor(Qt::PointingHandCursor);
-        btnCopy->setStyleSheet("QPushButton { background-color: #17a2b8; color: white; border-radius: 4px; padding: 6px; }"
-                               "QPushButton:hover { background-color: #138496; }");
-
-        QPushButton *btnFinish = new QPushButton("我已完成下载");
-        btnFinish->setCursor(Qt::PointingHandCursor);
-        btnFinish->setStyleSheet("QPushButton { background-color: #28a745; color: white; border-radius: 4px; padding: 6px; }"
-                                 "QPushButton:hover { background-color: #218838; }");
-
-        btnLayout->addWidget(btnCopy);
-        btnLayout->addWidget(btnFinish);
-
-        contentLayout->addWidget(qrLabel);
-        contentLayout->addWidget(urlEdit);
-        contentLayout->addLayout(btnLayout);
-
-        connect(btnCopy, &QPushButton::clicked, this, &StepScan::copyUrl);
-        connect(btnFinish, &QPushButton::clicked, this, [this](){ finish(); });
+        return layout;
     }
-
-protected:
-    void onActivated() override {}
-
-private slots:
-    void copyUrl() {
-        QClipboard *clipboard = qApp->clipboard();
-        clipboard->setText(m_url);
-        
-        QString originalText = btnCopy->text();
-        btnCopy->setText("已复制！");
-        btnCopy->setEnabled(false);
-        
-        QTimer::singleShot(1500, [=](){
-            btnCopy->setText(originalText);
-            btnCopy->setEnabled(true);
-        });
-    }
-
-private:
-    QString m_url;
-    QPushButton *btnCopy;
 };
 
 class StepFinal : public StepBase {
@@ -528,7 +520,7 @@ public:
         auto step1 = new StepDownload("下载TrollRestore", "帮你给手机装上“巨魔商店”，解锁随意安装App且永不过期的强大功能。", url);
         auto step2 = new StepSelectApp("选择一个将被替换的系统应用", "请选择一个已安装在手机上的系统应用进行注入：");
         auto step3 = new StepExecute("开始注入", "运行程序并将 Helper 注入目标应用。（请确保仅有一台手机连接并已信任此电脑）");
-        auto step4 = new StepScan("使用相机app扫码下载Dopamine", "稳定且现代化的无根越狱工具", "https://gitee.com/coding202208/pandora/releases/download/v1/Dopamine.tipa");
+        auto step4 = new StepScan("使用相机app扫码下载Dopamine", "稳定且现代化的越狱工具", "https://gitee.com/coding202208/pandora/releases/download/v1/Dopamine.tipa", "https://gitee.com/coding202208/pandora/releases/download/v1/Dopamine2.tipa");
         auto step5 = new StepFinal("最后一步", "在手机上打开巨魔商店（TrollStore）\n点击右上角加号\n选择Install IPA File就可以安装Dopamine\n安装后打开Dopamine点击越狱等待完成即可。");
 
         QList<StepBase*> steps;
