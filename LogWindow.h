@@ -24,7 +24,7 @@ public:
     {
         instance = this;
 
-        const auto& filePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/app_log.txt";
+        const auto& filePath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/app_log.txt";
 
         logFile.setFileName(filePath);
         if (!logFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {

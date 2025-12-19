@@ -63,7 +63,7 @@ private:
 
         setAttribute(Qt::WA_DeleteOnClose);
 
-        recorderPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/recorder";
+        recorderPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/recorder";
 
         static QDir dir;
         if (!dir.exists(recorderPath))

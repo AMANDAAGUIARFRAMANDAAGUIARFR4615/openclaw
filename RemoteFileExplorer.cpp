@@ -500,7 +500,7 @@ void RemoteFileExplorer::onDirectoryExpanded(const QModelIndex &index)
 }
 
 QString RemoteFileExplorer::getLocalPath(const QString& remotePath) {
-    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/" + connection->deviceInfo->deviceId + "/" + QFileInfo(remotePath).fileName();
+    return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + connection->deviceInfo->deviceId + "/" + QFileInfo(remotePath).fileName();
 }
 
 void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, const QString &remotePath, int size)
