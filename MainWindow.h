@@ -3,6 +3,7 @@
 #include "DeviceInfo.h"
 #include "DeviceConnection.h"
 #include "BitMaskEditorDialog.h"
+#include "VideoVisibilityManager.h"
 #include <QMainWindow>
 #include <QKeyEvent>
 #include <QDialog>
@@ -54,4 +55,6 @@ protected:
 
     bool isMultiControlEnabled = false;
     bool isDispatching = false;
+
+    VideoVisibilityManager* videoVisibilityManager;
 };

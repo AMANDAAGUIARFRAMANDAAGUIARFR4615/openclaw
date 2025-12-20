@@ -17,7 +17,7 @@ protected:
     Q_INVOKABLE void play() {
         static int count = 0;
         count++;
-        qCriticalEx() << "################################" << "播放" << count;
+        qCriticalEx() << "播放" << count << this;
         if (videoFrameWidget)
             videoFrameWidget->mediaPlayer->play();
     }
@@ -25,7 +25,7 @@ protected:
     Q_INVOKABLE void pause() {
         static int count = 0;
         count++;
-        qCriticalEx() << "################################" << "暂停" << count;
+        qCriticalEx() << "暂停" << count << this;
         if (videoFrameWidget)
             videoFrameWidget->mediaPlayer->pause();
     }

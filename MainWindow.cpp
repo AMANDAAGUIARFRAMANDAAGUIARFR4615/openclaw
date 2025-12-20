@@ -360,6 +360,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     deviceListWidget->setLocale(chineseLocale);
     deviceListWidget->sortItems(Qt::AscendingOrder);
 
+    videoVisibilityManager = new VideoVisibilityManager(deviceListWidget, this);
+
     connect(tabBar, &QTabBar::currentChanged, this, [=](int index) {
         qDebugEx() << "onTabChanged" << index;
 
@@ -414,7 +416,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     );
 
     auto broadcastTask = [=]() {
-        if (getTab().autoScanLANDevices == 0)
+        if (getTab().getAutoScanLANDevices() == 0)
             return;
 
         const auto& ips = TcpServer::getInstance()->getConnectedIps();
@@ -632,6 +634,8 @@ void MainWindow::relayoutDevices()
             widget->setFixedSize(targetSize);
         }
     }
+
+    // videoVisibilityManager->refresh();
 }
 
 void MainWindow::addItem(DeviceConnection* connection)
