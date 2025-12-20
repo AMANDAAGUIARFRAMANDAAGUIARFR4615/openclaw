@@ -1,4 +1,5 @@
 #include "UsbDeviceManager.h"
+#include "MainWindow.h"
 #include <QJsonDocument>
 #include <magic_enum/magic_enum.hpp>
 
@@ -121,9 +122,11 @@ void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
 }
 
 void UsbDeviceManager::pollDevices() {
-    if (watcher->isRunning()) {
+    if (MainWindow::getInstance()->getTab().getAutoConnectUSBDevices() == 0)
+        return;
+
+    if (watcher->isRunning())
         return; // 避免多次并发轮询
-    }
 
     auto future = QtConcurrent::run([=]() -> QSet<QString> {
         char** deviceList = nullptr;
