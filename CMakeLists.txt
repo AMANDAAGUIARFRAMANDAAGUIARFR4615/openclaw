@@ -34,7 +34,7 @@ endif()
 
 add_executable(${PROJECT_NAME}
     main.cpp
-    global.h global.cpp KeyMapping.h
+    global.h global.cpp KeyMapping.h VideoVisibilityManager.h
     EmojiIconProvider.h Tools.h SettingsViewer.h JailbreakAssistantDialog.h
     Logger.h LogWindow.h EventHub.h
     BitMaskEditorDialog.h LiveStreamDevice.h

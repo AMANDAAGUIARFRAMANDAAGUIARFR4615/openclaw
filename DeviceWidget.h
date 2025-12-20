@@ -14,7 +14,21 @@ public:
 protected:
     void launchDeviceWindow();
 
-    DeviceWindow* deviceWindow = nullptr;
+    Q_INVOKABLE void play() {
+        static int count = 0;
+        count++;
+        qCriticalEx() << "################################" << "播放" << count;
+        if (videoFrameWidget)
+            videoFrameWidget->mediaPlayer->play();
+    }
 
-    friend DeviceWindow;
+    Q_INVOKABLE void pause() {
+        static int count = 0;
+        count++;
+        qCriticalEx() << "################################" << "暂停" << count;
+        if (videoFrameWidget)
+            videoFrameWidget->mediaPlayer->pause();
+    }
+
+    DeviceWindow* deviceWindow = nullptr;
 };
