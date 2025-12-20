@@ -1,63 +1,57 @@
 #pragma once
 
 #include "Logger.h"
+#include <QGraphicsView>
+#include <QGraphicsScene>
+#include <QGraphicsVideoItem>
 #include <QMediaPlayer>
-#include <QVideoWidget>
-#include <QEvent>
+#include <QResizeEvent>
 
-class VideoFrameWidget : public QVideoWidget
+class VideoFrameWidget : public QGraphicsView
 {
     Q_OBJECT
 
 public:
     explicit VideoFrameWidget(QWidget *parent = nullptr) 
-        : QVideoWidget(parent),
+        : QGraphicsView(parent),
           mediaPlayer(new QMediaPlayer(this))
     {
-        mediaPlayer->setVideoOutput(this);
+        auto scene = new QGraphicsScene(this);
+        setScene(scene);
+
+        auto videoItem = new QGraphicsVideoItem();
+        scene->addItem(videoItem);
+
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        
+        setFrameShape(QFrame::NoFrame);
+
+        setBackgroundBrush(Qt::black);
+
+        setAlignment(Qt::AlignCenter);
+
+        connect(videoItem, &QGraphicsVideoItem::nativeSizeChanged, this, [=](const QSizeF &size){
+            videoItem->setSize(size);
+            fitInView(videoItem, Qt::KeepAspectRatio);
+        });
+
+        mediaPlayer->setVideoOutput(videoItem);
         mediaPlayer->setAudioOutput(nullptr);
 
-        connect(mediaPlayer, &QMediaPlayer::mediaStatusChanged, [this](QMediaPlayer::MediaStatus status) {
+        connect(mediaPlayer, &QMediaPlayer::mediaStatusChanged, this, [=](QMediaPlayer::MediaStatus status) {
             qDebugEx() << "Media Status Changed: " << status;
             if (status == QMediaPlayer::LoadedMedia) {
                 qDebugEx() << "播放...";
+                // 视频加载好后，强制刷新一次视图适应
+                fitInView(videoItem, Qt::KeepAspectRatio);
             }
         });
 
-        connect(mediaPlayer, &QMediaPlayer::errorOccurred, [this](QMediaPlayer::Error error, const QString &errorString) {
+        connect(mediaPlayer, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error error, const QString &errorString) {
             qCriticalEx() << "errorOccurred" << error << errorString;
         });
-
-        QMetaObject::invokeMethod(this, [this]() {
-            if (auto child = findChildWidget())
-                child->installEventFilter(this);
-            else
-                qCriticalEx() << "QWindowContainer not found!";
-        }, Qt::QueuedConnection);
     }
 
     QMediaPlayer* const mediaPlayer;
-
-protected:
-    bool eventFilter(QObject *obj, QEvent *event) override
-    {
-        switch (event->type()) {
-        case QEvent::DragEnter:
-        case QEvent::DragMove:
-        case QEvent::Drop:
-            return true;
-        }
-
-        return QVideoWidget::eventFilter(obj, event);
-    }
-
-    QWidget* findChildWidget() const
-    {
-        for (QWidget *child : findChildren<QWidget*>()) {
-            if (child->metaObject()->className() == QString("QWindowContainer"))
-                return child;
-        }
-
-        return nullptr;
-    }
 };
