@@ -1,5 +1,6 @@
-#include "Logger.h"
+#pragma once
 
+#include "Logger.h"
 #include <QByteArray>
 #include <QString>
 #include <QDebug>
@@ -62,7 +63,7 @@ private:
 
         if (!lib.isLoaded()) return false;
 
-        qDebugEx() << "libcrypto加载成功" << lib.fileName();
+        // qDebugEx() << "libcrypto加载成功" << lib.fileName();
 
         ctx_new = (Func_EVP_CIPHER_CTX_new)lib.resolve("EVP_CIPHER_CTX_new");
         ctx_free = (Func_EVP_CIPHER_CTX_free)lib.resolve("EVP_CIPHER_CTX_free");

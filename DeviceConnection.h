@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Logger.h"
 #include "DeviceInfo.h"
+#include "AesCrypto.h"
 #include <magic_enum/magic_enum.hpp>
 #include <QByteArray>
 #include <QJsonObject>
@@ -52,13 +52,14 @@ public:
         quint64 identifier = 0xc6e8f3de9a654d6b;
 
         QByteArray jsonData = QJsonDocument(jsonObject).toJson();
+        const auto& data = AesCrypto::encrypt(jsonData);
 
-        quint32 jsonDataLength = jsonData.size();
+        quint32 size = data.size();
 
         QByteArray dataToSend;
         dataToSend.append(reinterpret_cast<const char*>(&identifier), sizeof(identifier));
-        dataToSend.append(reinterpret_cast<const char*>(&jsonDataLength), sizeof(jsonDataLength));
-        dataToSend.append(jsonData);
+        dataToSend.append(reinterpret_cast<const char*>(&size), sizeof(size));
+        dataToSend.append(data);
 
         write(dataToSend);
     }

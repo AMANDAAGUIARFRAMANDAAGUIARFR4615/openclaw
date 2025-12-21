@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NetworkUtils.h"
+#include "AesCrypto.h"
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QByteArray>
@@ -159,17 +160,24 @@ private:
                 return;
             }
 
-            auto jsonDataLength = *reinterpret_cast<quint32*>(buffer.data() + sizeof(quint64));
+            auto size = *reinterpret_cast<quint32*>(buffer.data() + sizeof(quint64));
 
-            if (buffer.size() < static_cast<int>(sizeof(quint64) + sizeof(quint32) + jsonDataLength)) {
-                // qDebugEx() << "数据不完整，等待更多数据" << buffer.size() << sizeof(quint64) + sizeof(quint32) + jsonDataLength;
+            if (buffer.size() < static_cast<int>(sizeof(quint64) + sizeof(quint32) + size)) {
+                // qDebugEx() << "数据不完整，等待更多数据";
                 return;
             }
 
-            QByteArray jsonData = buffer.mid(sizeof(quint64) + sizeof(quint32), jsonDataLength);
+            const auto& data = buffer.mid(sizeof(quint64) + sizeof(quint32), size);
             // 移除已处理的数据包
-            buffer.remove(0, sizeof(quint64) + sizeof(quint32) + jsonDataLength);
-            QJsonDocument doc = QJsonDocument::fromJson(jsonData);
+            buffer.remove(0, sizeof(quint64) + sizeof(quint32) + size);
+
+            const auto& jsonData = AesCrypto::decrypt(data);
+            if (jsonData.size() == 0) {
+                qCriticalEx() << "解密失败";
+                return;
+            }
+
+            const auto& doc = QJsonDocument::fromJson(jsonData);
             
             if (!doc.isNull()) {
                 if (onDataReceivedCallback) {
