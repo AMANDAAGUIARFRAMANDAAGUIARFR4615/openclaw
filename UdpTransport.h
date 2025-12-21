@@ -59,7 +59,7 @@ public:
 
         quint64 identifier = 0xc6e8f3de9a654d6b;
 
-        const auto& jsonData = QJsonDocument(jsonObject).toJson();
+        const auto& jsonData = QJsonDocument(jsonObject).toJson(QJsonDocument::Compact);
         const auto& data = AesCrypto::encrypt(jsonData);
 
         quint32 size = data.size();

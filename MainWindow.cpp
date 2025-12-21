@@ -126,7 +126,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
             for (const QString &localIP : localIPs) {
                 QJsonObject hostInfo = TcpServer::getInstance()->getHostInfo(localIP);
-                QByteArray data = QJsonDocument(hostInfo).toJson().toBase64();
+                QByteArray data = QJsonDocument(hostInfo).toJson(QJsonDocument::Compact).toBase64();
                 
                 int qrSize = qMax(200, 500 - (localIPs.size() * 100));
 
