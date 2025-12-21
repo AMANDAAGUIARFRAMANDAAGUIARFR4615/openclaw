@@ -90,7 +90,8 @@ public:
             webSocketClient.ignoreSslErrors();
         });
 
-        webSocketClient.open(QUrl("ws://192.168.0.111:443"));
+        webSocketClient.open(QUrl("wss://192.168.0.111:443"));
+        // webSocketClient.open(QUrl("ws://192.168.0.111:3000"));
     }
 
 protected:
