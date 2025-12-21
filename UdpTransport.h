@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Logger.h"
+#include "AesCrypto.h"
 #include <QUdpSocket>
 #include <functional>
 #include <QByteArray>
@@ -58,14 +60,15 @@ public:
 
         quint64 identifier = 0xc6e8f3de9a654d6b;
 
-        QByteArray jsonData = QJsonDocument(jsonObject).toJson();
+        const auto& jsonData = QJsonDocument(jsonObject).toJson();
+        const auto& data = AesCrypto::encrypt(jsonData);
 
-        quint32 jsonDataLength = jsonData.size();
+        quint32 size = data.size();
 
         QByteArray dataToSend;
         dataToSend.append(reinterpret_cast<const char*>(&identifier), sizeof(identifier));
-        dataToSend.append(reinterpret_cast<const char*>(&jsonDataLength), sizeof(jsonDataLength));
-        dataToSend.append(jsonData);
+        dataToSend.append(reinterpret_cast<const char*>(&size), sizeof(size));
+        dataToSend.append(data);
 
         if (socket->writeDatagram(dataToSend, host, port) != dataToSend.size()) 
             qCriticalEx() << "发送失败" << host.toString() + ":" + QString::number(port);
