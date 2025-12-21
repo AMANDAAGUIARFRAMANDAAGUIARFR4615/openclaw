@@ -71,7 +71,7 @@ public:
         dataToSend.append(data);
 
         if (socket->writeDatagram(dataToSend, host, port) != dataToSend.size()) 
-            qCriticalEx() << "发送失败" << host.toString() + ":" + QString::number(port);
+            qCriticalEx() << "发送失败" << dataToSend.size() << host.toString() + ":" + QString::number(port);
     }
 
 private:
