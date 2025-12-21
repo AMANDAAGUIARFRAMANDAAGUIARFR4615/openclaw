@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Logger.h"
 #include "AesCrypto.h"
 #include <QUdpSocket>
 #include <functional>
