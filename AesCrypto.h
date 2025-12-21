@@ -42,14 +42,21 @@ private:
 
     static bool initOpenSSL() {
         if (m_loaded) return true;
-        static QLibrary lib;
-        if (lib.isLoaded()) { m_loaded = true; return true; }
 
-        const QStringList libNames = { "libcrypto-3-x64", "libcrypto-1_1-x64", "libcrypto", "crypto" };
-        for (const QString &name : libNames) {
-            lib.setFileName(name);
-            if (lib.load()) break;
-        }
+        static QLibrary lib;
+
+#ifdef Q_OS_WIN
+        lib.setFileName("libcrypto-3-x64.dll");
+#else
+        QString libName = "libcrypto.3.dylib";
+        QString frameworksDir = QCoreApplication::applicationDirPath() + "/../Frameworks/";
+        if (QDir(frameworksDir).exists())
+            lib.setFileName(frameworksDir + libName);
+        else
+            lib.setFileName(QString("/opt/homebrew/opt/openssl/lib/") + libName);
+#endif
+
+        lib.load();
 
         if (!lib.isLoaded()) return false;
 
