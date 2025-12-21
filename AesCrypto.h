@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QLibrary>
 #include <QRandomGenerator>
+#include <QVector>
 
 class AesCrypto {
 private:
@@ -12,7 +13,7 @@ private:
 
     typedef void* (*Func_EVP_CIPHER_CTX_new)();
     typedef void (*Func_EVP_CIPHER_CTX_free)(void*);
-    typedef const void* (*Func_EVP_aes_128_gcm)(); // Changed to 128
+    typedef const void* (*Func_EVP_aes_128_gcm)();
     typedef int (*Func_EVP_CIPHER_CTX_ctrl)(void*, int, int, void*);
     typedef int (*Func_EVP_EncryptInit_ex)(void*, const void*, void*, const unsigned char*, const unsigned char*);
     typedef int (*Func_EVP_EncryptUpdate)(void*, unsigned char*, int*, const unsigned char*, int);
@@ -33,6 +34,11 @@ private:
     static inline Func_EVP_DecryptFinal_ex    decrypt_final = nullptr;
 
     static inline bool m_loaded = false;
+    static inline QVector<QByteArray> m_keyTable;
+
+    static const quint32 RANDOM_SEED = 0x6D2B79F5; // 随机种子
+    static const int KEY_COUNT = 4096;             // 密钥数量
+    static const quint16 OBFUSCATE_MASK = 0xA55A;  // 混淆掩码
 
     static bool initOpenSSL() {
         if (m_loaded) return true;
@@ -66,13 +72,51 @@ private:
         return m_loaded;
     }
 
-public:
-    static QByteArray encrypt(const QByteArray &plainText, const QByteArray &key) {
-        if (!initOpenSSL()) return QByteArray();
-        if (key.size() != 16) return QByteArray(); // AES-128 需要 16 字节 Key
+    // -----------------------------------------------------------
+    // LCG 伪随机数算法
+    // -----------------------------------------------------------
+    static inline quint32 m_seedState = 0;
 
-        QByteArray iv(12, 0); // GCM 标准 IV 长度 12
+    static void my_srand(quint32 seed) {
+        m_seedState = seed;
+    }
+
+    static int my_rand() {
+        m_seedState = m_seedState * 214013 + 2531011;
+        return (m_seedState >> 16) & 0x7FFF;
+    }
+
+    static void initKeys() {
+        if (!m_keyTable.isEmpty()) return;
+
+        my_srand(RANDOM_SEED);
+
+        m_keyTable.reserve(KEY_COUNT);
+        for (int i = 0; i < KEY_COUNT; ++i) {
+            QByteArray key(16, 0);
+            unsigned char* p = (unsigned char*)key.data();
+            for(int j = 0; j < 16; ++j) {
+                p[j] = (unsigned char)(my_rand() & 0xFF);
+            }
+            m_keyTable.append(key);
+        }
+    }
+
+public:
+    static QByteArray encrypt(const QByteArray &plainText) {
+        if (!initOpenSSL()) return QByteArray();
+        
+        initKeys();
+
+        quint16 keyIndex = (quint16)QRandomGenerator::global()->bounded(KEY_COUNT);
+        QByteArray key = m_keyTable[keyIndex];
+
+        QByteArray iv(12, 0);
         QRandomGenerator::securelySeeded().fillRange(reinterpret_cast<quint32*>(iv.data()), 3);
+
+        quint16 ivPart = *reinterpret_cast<const quint16*>(iv.data());
+        
+        quint16 storedValue = (keyIndex ^ OBFUSCATE_MASK) + ivPart;
 
         void* ctx = ctx_new();
         if (!ctx) return QByteArray();
@@ -82,28 +126,46 @@ public:
         if (encrypt_init(ctx, nullptr, nullptr, (const unsigned char*)key.data(), (const unsigned char*)iv.data()) != 1) { ctx_free(ctx); return QByteArray(); }
 
         QByteArray cipherBody(plainText.size(), 0);
-        int len = 0, cipherLen = 0;
-
+        int len = 0;
         encrypt_update(ctx, (unsigned char*)cipherBody.data(), &len, (const unsigned char*)plainText.data(), plainText.size());
-        cipherLen = len;
-        encrypt_final(ctx, (unsigned char*)cipherBody.data() + len, &len);
-        cipherLen += len;
+        int finalLen = 0;
+        encrypt_final(ctx, (unsigned char*)cipherBody.data() + len, &finalLen);
 
         QByteArray tag(16, 0);
         ctx_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, 16, tag.data());
         ctx_free(ctx);
 
-        return iv + cipherBody + tag;
+        QByteArray result;
+        result.append(reinterpret_cast<const char*>(&storedValue), sizeof(storedValue));
+        result.append(iv);
+        result.append(cipherBody);
+        result.append(tag);
+        return result;
     }
 
-    static QByteArray decrypt(const QByteArray &encryptedData, const QByteArray &key) {
+    static QByteArray decrypt(const QByteArray &encryptedData) {
         if (!initOpenSSL()) return QByteArray();
-        if (key.size() != 16) return QByteArray();
-        if (encryptedData.size() < 28) return QByteArray(); // IV(12) + Tag(16)
 
-        QByteArray iv = encryptedData.left(12);
+        initKeys();
+
+        // 校验长度：2(Index) + 12(IV) + 16(Tag) = 30
+        if (encryptedData.size() < 30) return QByteArray();
+
+        quint16 storedValue = *reinterpret_cast<const quint16*>(encryptedData.data());
+
+        QByteArray iv = encryptedData.mid(2, 12);
+        quint16 ivPart = *reinterpret_cast<const quint16*>(iv.data());
+
+        quint16 keyIndex = (storedValue - ivPart) ^ OBFUSCATE_MASK;
+
+        // 索引越界，说明数据损坏或被篡改
+        if (keyIndex >= m_keyTable.size())
+            return QByteArray();
+        
+        QByteArray key = m_keyTable[keyIndex];
+
         QByteArray tag = encryptedData.right(16);
-        QByteArray cipherBody = encryptedData.mid(12, encryptedData.size() - 28);
+        QByteArray cipherBody = encryptedData.mid(14, encryptedData.size() - 30);
 
         void* ctx = ctx_new();
         if (!ctx) return QByteArray();
@@ -114,14 +176,13 @@ public:
 
         QByteArray plainText(cipherBody.size(), 0);
         int len = 0, plainLen = 0;
-
         decrypt_update(ctx, (unsigned char*)plainText.data(), &len, (const unsigned char*)cipherBody.data(), cipherBody.size());
         plainLen = len;
 
         ctx_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, 16, tag.data());
         if (decrypt_final(ctx, (unsigned char*)plainText.data() + len, &len) != 1) {
             ctx_free(ctx);
-            return QByteArray(); // 验证失败
+            return QByteArray(); 
         }
         plainLen += len;
         ctx_free(ctx);
