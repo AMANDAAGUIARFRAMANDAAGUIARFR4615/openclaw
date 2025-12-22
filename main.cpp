@@ -104,8 +104,6 @@ int main(int argc, char *argv[])
         MainWindow::getInstance()->show();
     });
 
-    loginWidget->close();
-
     return app.exec();
 }
 

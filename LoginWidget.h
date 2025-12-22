@@ -90,14 +90,14 @@ public:
             webSocketClient.ignoreSslErrors();
         });
 
-        webSocketClient.open(QUrl("wss://192.168.0.111:443"));
         // webSocketClient.open(QUrl("ws://192.168.0.111:3000"));
+        webSocketClient.open(QUrl("ws://43.167.226.242:9000"));
     }
 
 protected:
     void keyPressEvent(QKeyEvent *event) override {
         if (event->key() == Qt::Key_Escape)
-            close();
+            qApp->quit();
         else
             QWidget::keyPressEvent(event);
     }    
