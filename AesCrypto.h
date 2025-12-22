@@ -8,6 +8,7 @@
 #include <QRandomGenerator>
 #include <QVector>
 #include <QDir>
+#include <QApplication>
 
 class AesCrypto {
 private:
@@ -53,7 +54,7 @@ private:
         lib.setFileName("libcrypto-3-x64.dll");
 #else
         QString libName = "libcrypto.3.dylib";
-        QString frameworksDir = QCoreApplication::applicationDirPath() + "/../Frameworks/";
+        QString frameworksDir = qApp->applicationDirPath() + "/../Frameworks/";
         if (QDir(frameworksDir).exists())
             lib.setFileName(frameworksDir + libName);
         else
