@@ -7,6 +7,7 @@
 #include <QLibrary>
 #include <QRandomGenerator>
 #include <QVector>
+#include <QDir>
 
 class AesCrypto {
 private:

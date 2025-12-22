@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AesCrypto.h"
 #include <QWebSocket>
 #include <QJsonObject>
 #include <QJsonDocument>
@@ -15,7 +16,7 @@ class WebSocketClient : public QWebSocket
     Q_OBJECT
 public:
     explicit WebSocketClient(QObject *parent = nullptr) : QWebSocket(QString(), QWebSocketProtocol::VersionLatest, parent) {
-        connect(this, &QWebSocket::textMessageReceived, this, &WebSocketClient::handleMessage);
+        connect(this, &QWebSocket::binaryMessageReceived, this, &WebSocketClient::handleMessage);
     }
 
     template <typename Func>
@@ -45,11 +46,18 @@ private:
     int m_nextId = 0;
 
     void sendJson(const QJsonObject &obj) {
-        sendTextMessage(QString::fromUtf8(QJsonDocument(obj).toJson(QJsonDocument::Compact)));
+        const auto& jsonData = QJsonDocument(obj).toJson(QJsonDocument::Compact);
+        sendBinaryMessage(AesCrypto::encrypt(jsonData));
     }
 
-    void handleMessage(const QString &msg) {
-        QJsonDocument doc = QJsonDocument::fromJson(msg.toUtf8());
+    void handleMessage(const QByteArray &message) {
+        const auto& jsonData = AesCrypto::decrypt(message);
+        if (jsonData.size() == 0) {
+            qCriticalEx() << "解密失败";
+            return;
+        }
+
+        const auto& doc = QJsonDocument::fromJson(jsonData);
         if (!doc.isObject()) return;
 
         QJsonObject obj = doc.object();
