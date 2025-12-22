@@ -16,14 +16,7 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QFile>
-#include <QFileInfo>
-#include <QDir>
-#include <QCoreApplication>
-#include <QMessageBox>
-#include <QUrl>
-#include <QMap>
 #include <QProcess>
-#include <QClipboard>
 
 class StepBase : public QFrame {
     Q_OBJECT

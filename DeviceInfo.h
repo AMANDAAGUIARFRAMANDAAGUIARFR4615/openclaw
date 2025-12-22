@@ -26,7 +26,7 @@ public:
         lockedStatus(json["lockedStatus"].toBool()),
         version(json["version"].toString()) {
             
-        auto screenSize = QApplication::primaryScreen()->size();
+        auto screenSize = qApp->primaryScreen()->size();
         auto maxWidth = screenSize.width() * 0.8;
         auto maxHeight = screenSize.height() * 0.8;
 

@@ -50,7 +50,7 @@ public:
 
         auto explorer = new RemoteFileExplorer(connection, rootPath);
         explorer->setWindowTitle(connection->displayName());
-        QSize screenSize = QApplication::primaryScreen()->size();
+        QSize screenSize = qApp->primaryScreen()->size();
         explorer->resize(screenSize.width() * 0.7, screenSize.height() * 0.7);
         explorer->show();
         return explorer;

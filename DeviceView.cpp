@@ -426,8 +426,8 @@ void DeviceView::mouseDoubleClickEvent(QMouseEvent *event)
     qDebugEx() << "双击" << event->button();
 
     if (event->button() == Qt::LeftButton) {
-        QApplication::postEvent(this, new QMouseEvent(QEvent::MouseButtonPress, event->pos(), event->button(), event->button(), event->modifiers()));
-        QApplication::postEvent(this, new QMouseEvent(QEvent::MouseButtonRelease, event->pos(), event->button(), event->button(), event->modifiers()));
+        qApp->postEvent(this, new QMouseEvent(QEvent::MouseButtonPress, event->pos(), event->button(), event->button(), event->modifiers()));
+        qApp->postEvent(this, new QMouseEvent(QEvent::MouseButtonRelease, event->pos(), event->button(), event->button(), event->modifiers()));
     }
 }
 
@@ -448,7 +448,7 @@ void DeviceView::wheelEvent(QWheelEvent *event)
             Qt::LeftButton,
             Qt::NoModifier
         );
-        QApplication::postEvent(this, moveEvent);
+        qApp->postEvent(this, moveEvent);
         return;
     }
 
@@ -467,7 +467,7 @@ void DeviceView::wheelEvent(QWheelEvent *event)
         Qt::LeftButton,
         Qt::NoModifier
     );
-    QApplication::postEvent(this, pressEvent);
+    qApp->postEvent(this, pressEvent);
 
     wheelTimer->callOnTimeout([=]() mutable {
         int stepDelta;
@@ -488,7 +488,7 @@ void DeviceView::wheelEvent(QWheelEvent *event)
             Qt::LeftButton,
             Qt::NoModifier
         );
-        QApplication::postEvent(this, moveEvent);
+        qApp->postEvent(this, moveEvent);
 
         if (stepCount >= maxSteps) {
             auto releaseEvent = new QMouseEvent(
@@ -498,7 +498,7 @@ void DeviceView::wheelEvent(QWheelEvent *event)
                 Qt::LeftButton,
                 Qt::NoModifier
             );
-            QApplication::postEvent(this, releaseEvent);
+            qApp->postEvent(this, releaseEvent);
 
             wheelTimer->stop();
             wheelTimer->deleteLater();

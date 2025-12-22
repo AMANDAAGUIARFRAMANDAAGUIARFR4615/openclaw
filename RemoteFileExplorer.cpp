@@ -304,7 +304,7 @@ bool RemoteFileExplorer::eventFilter(QObject* obj, QEvent* event)
         else if (event->type() == QEvent::MouseMove) {
             auto me = static_cast<QMouseEvent*>(event);
             if (!(me->buttons() & Qt::LeftButton)) return false;
-            if ((me->pos() - m_dragStartPos).manhattanLength() < QApplication::startDragDistance()) return false;
+            if ((me->pos() - m_dragStartPos).manhattanLength() < qApp->startDragDistance()) return false;
 
             QModelIndex index = treeView->indexAt(m_dragStartPos);
             if (!index.isValid()) return false;

@@ -20,7 +20,6 @@
 #include <QFrame>
 #include <QApplication>
 #include <QScreen>
-#include <QApplication>
 #include <QTabBar>
 #include <QSplitter>
 #include <QListWidgetItem>
@@ -46,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
     setMinimumSize(800, 600);
 
-    QSize screenSize = QApplication::primaryScreen()->size();
+    QSize screenSize = qApp->primaryScreen()->size();
     resize(settings.value("mainWindowSize", screenSize * 0.8).toSize());
 
     int x = (screenSize.width() - width()) / 2;
@@ -447,7 +446,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         settings.setValue("mainWindowSize", normalGeometry().size());
 
     saveTabs();
-    QApplication::quit();
+    qApp->quit();
 }
 
 void MainWindow::changeEvent(QEvent *event)
@@ -505,7 +504,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 
                     QMouseEvent newEvent(type, localPos, me->windowPos(), globalPos,
                                          me->button(), me->buttons(), me->modifiers(), me->source());
-                    QApplication::sendEvent(targetWidget, &newEvent);
+                    qApp->sendEvent(targetWidget, &newEvent);
                 } 
                 else if (isWheelEvent) {
                     QWheelEvent* we = static_cast<QWheelEvent*>(event);
@@ -513,14 +512,14 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                     
                     QWheelEvent newEvent(we->position(), globalPos, we->pixelDelta(), we->angleDelta(),
                                          we->buttons(), we->modifiers(), we->phase(), we->inverted(), we->source());
-                    QApplication::sendEvent(targetWidget, &newEvent);
+                    qApp->sendEvent(targetWidget, &newEvent);
                 }
                 else if (isKeyEvent) {
                     QKeyEvent* ke = static_cast<QKeyEvent*>(event);
                     QKeyEvent newEvent(type, ke->key(), ke->modifiers(), 
                                        ke->nativeScanCode(), ke->nativeVirtualKey(), ke->nativeModifiers(), 
                                        ke->text(), ke->isAutoRepeat(), ke->count());
-                    QApplication::sendEvent(targetWidget, &newEvent);
+                    qApp->sendEvent(targetWidget, &newEvent);
                 }
                 else if (isDragEvent) {
                     QMetaObject::invokeMethod(targetWidget, "dropEvent", Qt::DirectConnection, Q_ARG(QDropEvent*, static_cast<QDropEvent*>(event)));

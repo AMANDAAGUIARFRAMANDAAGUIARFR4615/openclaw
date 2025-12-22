@@ -171,7 +171,7 @@ public:
             QLabel *imageLabel = new QLabel(this);
             imageLabel->setAlignment(Qt::AlignCenter);
            
-            QSize maxSize = QApplication::primaryScreen()->size();
+            QSize maxSize = qApp->primaryScreen()->size();
             if (pixmap.width() > maxSize.width() || pixmap.height() > maxSize.height())
                 imageLabel->setPixmap(pixmap.scaled(maxSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
             else
