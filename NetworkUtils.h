@@ -80,7 +80,7 @@ public:
             if (!isWifi) {
                 // 如果不是 Wifi (通常是 Ethernet)，则检查名字是否包含虚拟关键字
                 if (isVirtualAdapter(interface.humanReadableName(), interface.name())) {
-                    qDebug() << "过滤掉虚拟网卡:" << interface.humanReadableName();
+                    qDebugEx() << "过滤掉虚拟网卡:" << interface.humanReadableName();
                     continue; 
                 }
             }

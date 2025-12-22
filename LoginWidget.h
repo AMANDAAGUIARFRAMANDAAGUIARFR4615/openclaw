@@ -74,19 +74,19 @@ public:
         });
 
         connect(&webSocketClient, &QWebSocket::sslErrors, this, [&](const QList<QSslError> &errors) {
-            qDebug() << "====== 捕获到 SSL 错误 ======";
+            qDebugEx() << "====== 捕获到 SSL 错误 ======";
 
             for (const auto &error : errors) {
-                qDebug() << "错误描述:" << error.errorString();
+                qDebugEx() << "错误描述:" << error.errorString();
 
                 // 如果是主机名不匹配，打印证书里的名字看看
                 if (error.error() == QSslError::HostNameMismatch) {
-                    qDebug() << "证书内的 Common Name:"
+                    qDebugEx() << "证书内的 Common Name:"
                              << error.certificate().subjectInfo(QSslCertificate::CommonName);
                 }
             }
 
-            qDebug() << "正在执行 ignoreSslErrors() 以忽略上述错误...";
+            qDebugEx() << "正在执行 ignoreSslErrors() 以忽略上述错误...";
             webSocketClient.ignoreSslErrors();
         });
 

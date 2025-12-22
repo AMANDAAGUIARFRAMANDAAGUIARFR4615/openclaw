@@ -334,9 +334,9 @@ bool RemoteFileExplorer::eventFilter(QObject* obj, QEvent* event)
             auto result = drag->exec(Qt::CopyAction);
 
             if (result == Qt::IgnoreAction) {
-                qDebug() << "拖拽取消，删除占位文件";
+                qDebugEx() << "拖拽取消，删除占位文件";
             } else if (result == Qt::CopyAction) {
-                qDebug() << "拖拽完成，开始下载远程文件";
+                qDebugEx() << "拖拽完成，开始下载远程文件";
             }
         }
     }
