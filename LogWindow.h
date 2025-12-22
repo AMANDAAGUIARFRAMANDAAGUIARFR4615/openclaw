@@ -11,7 +11,6 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QClipboard>
-#include <QGuiApplication>
 #include <QPainter>
 #include <QPixmap>
 #include <magic_enum/magic_enum.hpp>
@@ -79,7 +78,7 @@ protected:
             QPainter painter(&pixmap);
             document()->drawContents(&painter);
             
-            QGuiApplication::clipboard()->setPixmap(pixmap);
+            qApp->clipboard()->setPixmap(pixmap);
         });
 
         menu->addAction("清空日志", [this]() {

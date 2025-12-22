@@ -186,7 +186,7 @@ public:
             return;
         }
 
-        QRect geometry = parent ? parent->window()->geometry() : QGuiApplication::primaryScreen()->availableGeometry();
+        QRect geometry = parent ? parent->window()->geometry() : qApp->primaryScreen()->availableGeometry();
         int x = (geometry.width() - width()) / 2;
         int y = (geometry.height() - height()) / 2;
         move(x, y);
