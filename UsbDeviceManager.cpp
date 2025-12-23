@@ -65,7 +65,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
             quint32 bytes = 0;
             idevice_error_t err = idevice_connection_receive(ctx->connection, buffer, sizeof(buffer), &bytes);
             if (err == IDEVICE_E_SUCCESS && bytes > 0) {
-                const auto& data = AesCrypto::decrypt(QByteArray(buffer, bytes));
+                QByteArray data(buffer, bytes);
 
                 if (rawDataCallback)
                 {
