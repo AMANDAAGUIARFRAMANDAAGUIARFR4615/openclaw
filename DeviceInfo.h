@@ -76,19 +76,6 @@ public:
     float scaleFactor = 1;
     quint32 groupMask = 0;
 
-    QString uniqueName() const {
-        int sameCount = 0;
-        for (auto dev : allDevices) {
-            if (dev->deviceName == deviceName)
-                sameCount++;
-        }
-
-        if (sameCount == 1)
-            return deviceName;
-
-        return QString("%1_%2").arg(deviceName, deviceId);
-    }
-
 private:
     inline static QList<DeviceInfo*> allDevices;
 };
