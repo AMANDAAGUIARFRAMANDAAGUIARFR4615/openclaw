@@ -20,15 +20,24 @@ public:
         titleLabel->setAlignment(Qt::AlignCenter);
         titleLabel->setStyleSheet("font: bold 26px; color: #2c3e50; margin: 20px;");
 
+        auto phoneValidator = new QRegularExpressionValidator(QRegularExpression("^1[3-9]\\d{9}$"), this);
+        auto passwordValidator = new QRegularExpressionValidator(QRegularExpression("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{6,16}$"), this);
+
         phoneLineEdit = new QLineEdit;
         phoneLineEdit->setPlaceholderText("手机号");
+        phoneLineEdit->setValidator(phoneValidator);
+        phoneLineEdit->setMaxLength(11);
+
+        
 
         passwordLineEdit = new QLineEdit;
-        passwordLineEdit->setPlaceholderText("密码");
+        passwordLineEdit->setPlaceholderText("密码 (6-16位字母+数字)");
+        passwordLineEdit->setValidator(passwordValidator);
         passwordLineEdit->setEchoMode(QLineEdit::Password);
 
         confirmLineEdit = new QLineEdit;
         confirmLineEdit->setPlaceholderText("确认密码");
+        confirmLineEdit->setValidator(passwordValidator);
         confirmLineEdit->setEchoMode(QLineEdit::Password);
         confirmLineEdit->setVisible(false);
 
@@ -90,8 +99,8 @@ public:
             webSocketClient.ignoreSslErrors();
         });
 
-        // webSocketClient.open(QUrl("ws://192.168.0.111:3000"));
-        webSocketClient.open(QUrl("ws://43.167.226.242:9000"));
+        webSocketClient.open(QUrl("ws://192.168.0.111:3000"));
+        // webSocketClient.open(QUrl("ws://43.167.226.242:9000"));
     }
 
 protected:
@@ -131,11 +140,21 @@ protected:
 
     void onAction()
     {
-        QString phone = phoneLineEdit->text().trimmed();
-        QString password = passwordLineEdit->text();
+        const auto& phone = phoneLineEdit->text().trimmed();
+        const auto& password = passwordLineEdit->text();
 
         if (phone.isEmpty() || password.isEmpty()) {
-            new ToastWidget("请输入完整信息", this);
+            new ToastWidget("手机号和密码不能为空", this);
+            return;
+        }
+
+        if (!phoneLineEdit->hasAcceptableInput()) {
+            new ToastWidget("请输入正确的11位手机号", this);
+            return;
+        }
+
+        if (!passwordLineEdit->hasAcceptableInput()) {
+            new ToastWidget("密码需为6-16位字母+数字组合", this);
             return;
         }
 
@@ -148,7 +167,14 @@ protected:
         actionButton->setEnabled(false);
 
         if (isRegisterMode) {
-            if (password != confirmLineEdit->text()) {
+            const auto& confirm = confirmLineEdit->text();
+
+            if (confirm.isEmpty()) {
+                new ToastWidget("请确认密码", this);
+                return;
+            }
+
+            if (password != confirm) {
                 new ToastWidget("两次密码不一致", this);
                 actionButton->setEnabled(true);
                 return;
