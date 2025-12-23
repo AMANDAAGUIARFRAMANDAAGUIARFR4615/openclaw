@@ -262,6 +262,7 @@ protected:
                 }
    
                 setStatus(res["msg"].toString(), true);
+                actionButton->setEnabled(true);
             });
         } else {
             webSocketClient.emitEvent("login", QJsonObject{{"phone", phone}, {"password", password}}, [=](const QJsonValue &res) {
@@ -274,6 +275,7 @@ protected:
                 }
 
                 setStatus(res["msg"].toString(), true);
+                actionButton->setEnabled(true);
             });
         }
     }
