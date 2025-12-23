@@ -9,6 +9,7 @@
 #include <QJsonObject>
 #include <QCheckBox>
 #include <QByteArray>
+#include <QRandomGenerator>
 
 class LoginWidget : public QWidget
 {
@@ -105,8 +106,8 @@ public:
             webSocketClient.ignoreSslErrors();
         });
 
-        webSocketClient.open(QUrl("ws://192.168.0.111:3000"));
-        // webSocketClient.open(QUrl("ws://43.167.226.242:9000"));
+        // webSocketClient.open(QUrl("ws://192.168.0.111:3000"));
+        webSocketClient.open(QUrl("ws://43.167.226.242:9000"));
     }
 
 protected:
@@ -128,22 +129,41 @@ protected:
     bool isRegisterMode = false;
 
     QString encrypt(const QString &input) {
-        if(input.isEmpty()) return "";
         QByteArray data = input.toUtf8();
-        const QByteArray key = "MySecretSaltKey2025";
+        // 1. 生成 4 字节随机盐
+        QByteArray salt;
+        for(int i=0; i<4; ++i) salt.append(static_cast<char>(QRandomGenerator::global()->generate() % 256));
+
+        // 2. 将原始 Key 与 Salt 混合生成真正的运行密钥
+        QByteArray baseKey = "MySecretSaltKey";
+        QByteArray realKey = QCryptographicHash::hash(baseKey + salt, QCryptographicHash::Sha1);
+
+        // 3. 执行加密 (使用之前提到的 XOR 逻辑)
         for(int i = 0; i < data.size(); ++i) {
-            data[i] = data[i] ^ key[i % key.size()];
+            data[i] = data[i] ^ realKey[i % realKey.size()];
         }
-        return data.toBase64(); // 转为Base64存储
+
+        // 4. 将 Salt 放在密文头部一起返回
+        return (salt + data).toBase64();
     }
 
     QString decrypt(const QString &input) {
-        if(input.isEmpty()) return "";
-        QByteArray data = QByteArray::fromBase64(input.toUtf8());
-        const QByteArray key = "MySecretSaltKey2025"; 
+        QByteArray rawData = QByteArray::fromBase64(input.toUtf8());
+        if(rawData.size() < 4) return "";
+
+        // 1. 提取前 4 字节盐值
+        QByteArray salt = rawData.left(4);
+        QByteArray data = rawData.mid(4);
+
+        // 2. 用同样的逻辑合成密钥
+        QByteArray baseKey = "MySecretSaltKey";
+        QByteArray realKey = QCryptographicHash::hash(baseKey + salt, QCryptographicHash::Sha1);
+
+        // 3. 还原
         for(int i = 0; i < data.size(); ++i) {
-            data[i] = data[i] ^ key[i % key.size()];
+            data[i] = data[i] ^ realKey[i % realKey.size()];
         }
+
         return QString::fromUtf8(data);
     }
 
