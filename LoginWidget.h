@@ -7,6 +7,8 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QJsonObject>
+#include <QCheckBox>
+#include <QByteArray>
 
 class LoginWidget : public QWidget
 {
@@ -28,8 +30,6 @@ public:
         phoneLineEdit->setValidator(phoneValidator);
         phoneLineEdit->setMaxLength(11);
 
-        
-
         passwordLineEdit = new QLineEdit;
         passwordLineEdit->setPlaceholderText("密码 (6-16位字母+数字)");
         passwordLineEdit->setValidator(passwordValidator);
@@ -40,6 +40,9 @@ public:
         confirmLineEdit->setValidator(passwordValidator);
         confirmLineEdit->setEchoMode(QLineEdit::Password);
         confirmLineEdit->setVisible(false);
+
+        rememberCheckBox = new QCheckBox("记住账号和密码");
+        rememberCheckBox->setCursor(Qt::PointingHandCursor);
 
         actionButton = new QPushButton("登录");
         actionButton->setObjectName("mainBtn");
@@ -63,12 +66,15 @@ public:
         mainLayout->addWidget(phoneLineEdit);
         mainLayout->addWidget(passwordLineEdit);
         mainLayout->addWidget(confirmLineEdit);
+        mainLayout->addWidget(rememberCheckBox);
         mainLayout->addLayout(buttonLayout);
         mainLayout->addWidget(statusLabel);
         mainLayout->addStretch();
 
         setMinimumWidth(400);
         updateStyle();
+
+        loadCredentials();
 
         connect(actionButton, &QPushButton::clicked, this, &LoginWidget::onAction);
         connect(switchButton, &QPushButton::clicked, this, &LoginWidget::toggleMode);
@@ -115,10 +121,53 @@ protected:
     QLineEdit *phoneLineEdit;
     QLineEdit *passwordLineEdit;
     QLineEdit *confirmLineEdit;
+    QCheckBox *rememberCheckBox;
     QPushButton *actionButton;
     QPushButton *switchButton;
     QLabel *statusLabel;
     bool isRegisterMode = false;
+
+    QString encrypt(const QString &input) {
+        if(input.isEmpty()) return "";
+        QByteArray data = input.toUtf8();
+        const QByteArray key = "MySecretSaltKey2025";
+        for(int i = 0; i < data.size(); ++i) {
+            data[i] = data[i] ^ key[i % key.size()];
+        }
+        return data.toBase64(); // 转为Base64存储
+    }
+
+    QString decrypt(const QString &input) {
+        if(input.isEmpty()) return "";
+        QByteArray data = QByteArray::fromBase64(input.toUtf8());
+        const QByteArray key = "MySecretSaltKey2025"; 
+        for(int i = 0; i < data.size(); ++i) {
+            data[i] = data[i] ^ key[i % key.size()];
+        }
+        return QString::fromUtf8(data);
+    }
+
+    void loadCredentials() {
+        bool remember = settings.value("remember", true).toBool();
+        if (remember) {
+            phoneLineEdit->setText(settings.value("phone").toString());
+            QString encryptedPass = settings.value("password").toString();
+            passwordLineEdit->setText(decrypt(encryptedPass));
+            rememberCheckBox->setChecked(true);
+        }
+    }
+
+    void saveCredentials(const QString &phone, const QString &password) {
+        if (rememberCheckBox->isChecked()) {
+            settings.setValue("remember", true);
+            settings.setValue("phone", phone);
+            settings.setValue("password", encrypt(password));
+        } else {
+            settings.setValue("remember", false);
+            settings.remove("phone");
+            settings.remove("password");
+        }
+    }
 
     void toggleMode()
     {
@@ -126,6 +175,9 @@ protected:
         confirmLineEdit->setVisible(isRegisterMode);
         confirmLineEdit->clear();
         
+        // 注册模式下隐藏“记住密码”
+        rememberCheckBox->setVisible(!isRegisterMode);
+
         if (isRegisterMode) {
             titleLabel->setText("创建账号");
             actionButton->setText("立即注册");
@@ -180,10 +232,11 @@ protected:
                 return;
             }
 
-            webSocketClient.emitEvent("register", QJsonObject{{"phone", phone}, {"password", password}}, [this](const QJsonValue &res) {
+            webSocketClient.emitEvent("register", QJsonObject{{"phone", phone}, {"password", password}}, [=](const QJsonValue &res) {
                 actionButton->setEnabled(true);
 
                 if (res["msg"].isUndefined()) {
+                    saveCredentials(phone, password);
                     close();
                     return;
                 }
@@ -191,10 +244,11 @@ protected:
                 setStatus(res["msg"].toString(), true);
             });
         } else {
-            webSocketClient.emitEvent("login", QJsonObject{{"phone", phone}, {"password", password}}, [this](const QJsonValue &res) {
+            webSocketClient.emitEvent("login", QJsonObject{{"phone", phone}, {"password", password}}, [=](const QJsonValue &res) {
                 actionButton->setEnabled(true);
 
                 if (res["msg"].isUndefined()) {
+                    saveCredentials(phone, password);
                     close();
                     return;
                 }
