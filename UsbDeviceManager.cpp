@@ -66,6 +66,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
             idevice_error_t err = idevice_connection_receive(ctx->connection, buffer, sizeof(buffer), &bytes);
             if (err == IDEVICE_E_SUCCESS && bytes > 0) {
                 QByteArray data(buffer, bytes);
+                // qDebugEx() << "接收到数据字节数" << bytes;
 
                 if (rawDataCallback)
                 {
@@ -185,13 +186,20 @@ void UsbDeviceManager::processBufferedData(UsbDeviceContext* ctx) {
             return;
         }
 
-        auto jsonDataLength = *reinterpret_cast<const quint32*>(buffer.constData() + sizeof(quint64));
-        if (buffer.size() < static_cast<int>(sizeof(quint64) + sizeof(quint32) + jsonDataLength))
+        auto size = *reinterpret_cast<const quint32*>(buffer.constData() + sizeof(quint64));
+        if (buffer.size() < static_cast<int>(sizeof(quint64) + sizeof(quint32) + size))
             return;
 
-        QByteArray jsonData = buffer.mid(sizeof(quint64) + sizeof(quint32), jsonDataLength);
-        buffer.remove(0, sizeof(quint64) + sizeof(quint32) + jsonDataLength);
-        QJsonDocument doc = QJsonDocument::fromJson(jsonData);
+        const auto& data = buffer.mid(sizeof(quint64) + sizeof(quint32), size);
+        buffer.remove(0, sizeof(quint64) + sizeof(quint32) + size);
+
+        const auto& jsonData = AesCrypto::decrypt(data);
+        if (jsonData.size() == 0) {
+            // qCriticalEx() << "解密失败";
+            return;
+        }
+
+        const auto& doc = QJsonDocument::fromJson(jsonData);
 
         if (!doc.isNull()) {
             emit dataReceived(ctx->handler, doc.object());

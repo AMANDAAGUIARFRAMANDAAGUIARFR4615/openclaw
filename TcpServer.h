@@ -173,7 +173,7 @@ private:
 
             const auto& jsonData = AesCrypto::decrypt(data);
             if (jsonData.size() == 0) {
-                qCriticalEx() << "解密失败";
+                // qCriticalEx() << "解密失败";
                 return;
             }
 
