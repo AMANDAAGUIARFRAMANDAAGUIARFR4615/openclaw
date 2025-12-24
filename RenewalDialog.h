@@ -32,35 +32,35 @@ public:
         resize(650, 700);
 
         QHBoxLayout *filterLayout = new QHBoxLayout();
-        QLabel *lblFilter = new QLabel("分组筛选:");
-        m_comboFilter = new QComboBox();
+        QLabel *filterLabel = new QLabel("分组筛选:");
+        filterComboBox = new QComboBox();
 
         const auto& items = MainWindow::getInstance()->getTabs();
         for (const auto& item : items) {
-            m_comboFilter->addItem(item.name, item.bit);
+            filterComboBox->addItem(item.name, item.bit);
         }
 
-        filterLayout->addWidget(lblFilter);
-        filterLayout->addWidget(m_comboFilter);
+        filterLayout->addWidget(filterLabel);
+        filterLayout->addWidget(filterComboBox);
         filterLayout->addStretch();
 
-        m_tableWidget = new QTableWidget(this);
-        m_tableWidget->setColumnCount(3);
-        m_tableWidget->setHorizontalHeaderLabels({"", "设备名称", "到期时间"});
-        m_tableWidget->setFrameShape(QFrame::NoFrame);
-        m_tableWidget->setShowGrid(false);
-        m_tableWidget->setAlternatingRowColors(true);
-        m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
-        m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        m_tableWidget->setFocusPolicy(Qt::NoFocus);
+        tableWidget = new QTableWidget(this);
+        tableWidget->setColumnCount(3);
+        tableWidget->setHorizontalHeaderLabels({"", "设备名称", "到期时间"});
+        tableWidget->setFrameShape(QFrame::NoFrame);
+        tableWidget->setShowGrid(false);
+        tableWidget->setAlternatingRowColors(true);
+        tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+        tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        tableWidget->setFocusPolicy(Qt::NoFocus);
 
-        QHeaderView *header = m_tableWidget->horizontalHeader();
-        header->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-        header->setSectionResizeMode(1, QHeaderView::Stretch);
-        header->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-        header->setSectionsClickable(false);
+        QHeaderView *headerView = tableWidget->horizontalHeader();
+        headerView->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+        headerView->setSectionResizeMode(1, QHeaderView::Stretch);
+        headerView->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+        headerView->setSectionsClickable(false);
 
-        m_tableWidget->setStyleSheet(R"(
+        tableWidget->setStyleSheet(R"(
             QTableWidget { font-size: 13px; border: 1px solid #e0e0e0; alternate-background-color: #f9f9f9; }
             QTableWidget::item { border-bottom: 1px solid #f0f0f0; }
             QTableWidget::item:selected { background-color: #e6f7ff; color: #000000; }
@@ -70,102 +70,102 @@ public:
         QVBoxLayout *optionsLayout = new QVBoxLayout();
         optionsLayout->setSpacing(15);
 
-        QGroupBox *grpDuration = new QGroupBox("续费周期");
-        QHBoxLayout *layDuration = new QHBoxLayout(grpDuration);
+        QGroupBox *durationGroupBox = new QGroupBox("续费周期");
+        QHBoxLayout *durationLayout = new QHBoxLayout(durationGroupBox);
 
-        m_radioMonth = new QRadioButton(QString("月付 (¥%1/台)").arg(BASE_PRICE_PER_MONTH));
+        monthRadioButton = new QRadioButton(QString("月付 (¥%1/台)").arg(BASE_PRICE_PER_MONTH));
         int yearPrice = BASE_PRICE_PER_MONTH * 12 / 2; // 年付5折
-        m_radioYear = new QRadioButton(QString("年付 (¥%1/台 - 5折特惠)").arg(yearPrice));
-        m_radioYear->setStyleSheet("color: #d32f2f; font-weight: bold;");
-        m_radioMonth->setChecked(true);
+        yearRadioButton = new QRadioButton(QString("年付 (¥%1/台 - 5折特惠)").arg(yearPrice));
+        yearRadioButton->setStyleSheet("color: #d32f2f; font-weight: bold;");
+        monthRadioButton->setChecked(true);
 
-        layDuration->addWidget(m_radioMonth);
-        layDuration->addWidget(m_radioYear);
-        layDuration->addStretch();
+        durationLayout->addWidget(monthRadioButton);
+        durationLayout->addWidget(yearRadioButton);
+        durationLayout->addStretch();
 
-        QGroupBox *grpVoucher = new QGroupBox("代金券充值");
-        QVBoxLayout *layVoucher = new QVBoxLayout(grpVoucher);
+        QGroupBox *voucherGroupBox = new QGroupBox("代金券");
+        QVBoxLayout *voucherLayout = new QVBoxLayout(voucherGroupBox);
 
         QHBoxLayout *balanceLayout = new QHBoxLayout();
-        balanceLayout->addWidget(new QLabel("当前可用余额:"));
-        m_lblBalanceAmount = new QLabel();
+        balanceLayout->addWidget(new QLabel("可用余额:"));
+        balanceLabel = new QLabel();
         updateBalanceLabel();
-        m_lblBalanceAmount->setStyleSheet("font-weight: bold; color: #E65100; font-size: 14px;");
-        balanceLayout->addWidget(m_lblBalanceAmount);
+        balanceLabel->setStyleSheet("font-weight: bold; color: #E65100; font-size: 14px;");
+        balanceLayout->addWidget(balanceLabel);
         balanceLayout->addStretch();
 
         QHBoxLayout *redeemLayout = new QHBoxLayout();
-        m_editVoucherCode = new QPlainTextEdit();
-        m_editVoucherCode->setPlaceholderText("请输入兑换码，每行一个...");
-        m_editVoucherCode->setFixedHeight(80);
-        m_editVoucherCode->setStyleSheet("QPlainTextEdit { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }");
+        voucherPlainTextEdit = new QPlainTextEdit();
+        voucherPlainTextEdit->setPlaceholderText("请输入兑换码，每行一个...");
+        voucherPlainTextEdit->setFixedHeight(80);
+        voucherPlainTextEdit->setStyleSheet("QPlainTextEdit { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }");
 
-        m_btnRedeem = new QPushButton("批量兑换");
-        m_btnRedeem->setFixedHeight(80);
+        redeemButton = new QPushButton("批量兑换");
+        redeemButton->setFixedHeight(80);
 
-        redeemLayout->addWidget(m_editVoucherCode, 1);
-        redeemLayout->addWidget(m_btnRedeem);
+        redeemLayout->addWidget(voucherPlainTextEdit, 1);
+        redeemLayout->addWidget(redeemButton);
 
-        layVoucher->addLayout(balanceLayout);
-        layVoucher->addLayout(redeemLayout);
+        voucherLayout->addLayout(balanceLayout);
+        voucherLayout->addLayout(redeemLayout);
 
-        QGroupBox *grpPay = new QGroupBox("付款方式");
-        QVBoxLayout *layPayMain = new QVBoxLayout(grpPay);
+        QGroupBox *paymentGroupBox = new QGroupBox("付款方式");
+        QVBoxLayout *paymentMainLayout = new QVBoxLayout(paymentGroupBox);
 
-        QHBoxLayout *layPayRadios = new QHBoxLayout();
-        m_radioWeChat = new QRadioButton("微信支付");
-        m_radioVoucher = new QRadioButton("余额支付");
-        m_radioWeChat->setChecked(true);
-        layPayRadios->addWidget(m_radioWeChat);
-        layPayRadios->addWidget(m_radioVoucher);
-        layPayRadios->addStretch();
+        QHBoxLayout *paymentRadiosLayout = new QHBoxLayout();
+        wechatRadioButton = new QRadioButton("微信支付");
+        voucherRadioButton = new QRadioButton("余额支付");
+        wechatRadioButton->setChecked(true);
+        paymentRadiosLayout->addWidget(wechatRadioButton);
+        paymentRadiosLayout->addWidget(voucherRadioButton);
+        paymentRadiosLayout->addStretch();
 
-        QHBoxLayout *layTotal = new QHBoxLayout();
-        QLabel *lblTotalTitle = new QLabel("应付总额:");
-        lblTotalTitle->setStyleSheet("font-size: 14px; font-weight: bold;");
-        m_lblTotalAmount = new QLabel("¥ 0.00");
-        m_lblTotalAmount->setStyleSheet("font-size: 20px; font-weight: bold; color: #d32f2f;");
-        layTotal->addStretch();
-        layTotal->addWidget(lblTotalTitle);
-        layTotal->addWidget(m_lblTotalAmount);
+        QHBoxLayout *totalLayout = new QHBoxLayout();
+        QLabel *totalTitleLabel = new QLabel("应付总额:");
+        totalTitleLabel->setStyleSheet("font-size: 14px; font-weight: bold;");
+        totalAmountLabel = new QLabel("¥ 0.00");
+        totalAmountLabel->setStyleSheet("font-size: 20px; font-weight: bold; color: #d32f2f;");
+        totalLayout->addStretch();
+        totalLayout->addWidget(totalTitleLabel);
+        totalLayout->addWidget(totalAmountLabel);
 
-        layPayMain->addLayout(layPayRadios);
-        layPayMain->addLayout(layTotal);
+        paymentMainLayout->addLayout(paymentRadiosLayout);
+        paymentMainLayout->addLayout(totalLayout);
 
-        optionsLayout->addWidget(grpDuration);
-        optionsLayout->addWidget(grpVoucher);
-        optionsLayout->addWidget(grpPay);
+        optionsLayout->addWidget(durationGroupBox);
+        optionsLayout->addWidget(voucherGroupBox);
+        optionsLayout->addWidget(paymentGroupBox);
 
         // --- 4. 布局组装 ---
-        QDialogButtonBox *btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-        connect(btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-        connect(btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+        QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+        connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+        connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
         mainLayout->setContentsMargins(20, 20, 20, 20);
         mainLayout->setSpacing(15);
 
         mainLayout->addLayout(filterLayout); // 顶部筛选
-        mainLayout->addWidget(m_tableWidget, 1);
+        mainLayout->addWidget(tableWidget, 1);
         mainLayout->addLayout(optionsLayout);
-        mainLayout->addWidget(btnBox);
+        mainLayout->addWidget(buttonBox);
 
         // --- 5. 逻辑处理与连接 ---
 
         // 筛选框改变时，调用独立的加载函数
-        connect(m_comboFilter, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
-            auto bit = m_comboFilter->itemData(index).toUInt();
+        connect(filterComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
+            auto bit = filterComboBox->itemData(index).toUInt();
             loadDeviceTable(bit); 
         });
 
-        connect(m_tableWidget, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item){
+        connect(tableWidget, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item){
             if (item->column() == 0) updateTotalPrice();
         });
         
-        connect(m_radioMonth, &QRadioButton::toggled, this, &RenewalDialog::updateTotalPrice);
+        connect(monthRadioButton, &QRadioButton::toggled, this, &RenewalDialog::updateTotalPrice);
 
-        connect(m_btnRedeem, &QPushButton::clicked, this, [this](){
-            QString content = m_editVoucherCode->toPlainText();
+        connect(redeemButton, &QPushButton::clicked, this, [this](){
+            QString content = voucherPlainTextEdit->toPlainText();
             if (content.trimmed().isEmpty()) return;
 
             QStringList lines = content.split('\n', Qt::SkipEmptyParts);
@@ -179,14 +179,14 @@ public:
 
             if (!validCodes.isEmpty()) {
                 emit redeemVouchersRequested(validCodes);
-                m_editVoucherCode->clear();
+                voucherPlainTextEdit->clear();
             }
         });
 
         // --- 6. 初始加载 ---
         // 加载默认选项（通常是第一个选项）的数据
-        if (m_comboFilter->count() > 0) {
-            loadDeviceTable(m_comboFilter->itemData(0).toUInt());
+        if (filterComboBox->count() > 0) {
+            loadDeviceTable(filterComboBox->itemData(0).toUInt());
         }
 
         setModal(true);
@@ -198,11 +198,11 @@ public:
     {
         auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
 
-        m_tableWidget->blockSignals(true);
+        tableWidget->blockSignals(true);
 
-        m_tableWidget->clearContents();
-        m_tableWidget->setRowCount(0);
-        m_tableWidget->setRowCount(devices.size());
+        tableWidget->clearContents();
+        tableWidget->setRowCount(0);
+        tableWidget->setRowCount(devices.size());
 
         for (int i = 0; i < devices.size(); ++i) {
             const auto &info = devices[i];
@@ -214,20 +214,20 @@ public:
             // checkItem->setData(Qt::UserRole + 1, info.group);
 
             checkItem->setTextAlignment(Qt::AlignCenter);
-            m_tableWidget->setItem(i, 0, checkItem);
+            tableWidget->setItem(i, 0, checkItem);
             
-            m_tableWidget->setItem(i, 1, new QTableWidgetItem(info->deviceName));
-            m_tableWidget->setItem(i, 2, new QTableWidgetItem(info->expireAt.toString("yyyy-MM-dd HH:mm:ss")));
+            tableWidget->setItem(i, 1, new QTableWidgetItem(info->deviceName));
+            tableWidget->setItem(i, 2, new QTableWidgetItem(info->expireAt.toString("yyyy-MM-dd HH:mm:ss")));
         }
 
-        m_tableWidget->blockSignals(false);
+        tableWidget->blockSignals(false);
         updateTotalPrice();
     }
 
     QList<QString> getSelectedDeviceIds() const {
         QList<QString> result;
-        for (int i = 0; i < m_tableWidget->rowCount(); ++i) {
-            auto *item = m_tableWidget->item(i, 0);
+        for (int i = 0; i < tableWidget->rowCount(); ++i) {
+            auto *item = tableWidget->item(i, 0);
             if (item && item->checkState() == Qt::Checked) {
                 result.append(item->data(Qt::UserRole).toString());
             }
@@ -236,20 +236,20 @@ public:
     }
 
     DurationType getDuration() const {
-        return m_radioYear->isChecked() ? Yearly : Monthly;
+        return yearRadioButton->isChecked() ? Yearly : Monthly;
     }
 
     PaymentMethod getPaymentMethod() const {
-        return m_radioVoucher->isChecked() ? Voucher : WeChat;
+        return voucherRadioButton->isChecked() ? Voucher : WeChat;
     }
 
     int getTotalPrice() const {
-        return m_currentTotalPrice;
+        return currentTotalPrice;
     }
 
 public slots:
     void setVoucherBalance(int newBalance) {
-        m_voucherBalance = newBalance;
+        voucherBalance = newBalance;
         updateBalanceLabel();
         autoCheckPaymentMethod();
     }
@@ -259,54 +259,54 @@ signals:
 
 private:
     void updateBalanceLabel() {
-        m_lblBalanceAmount->setText(QString("¥ %1").arg(QString::number(m_voucherBalance, 'f', 2)));
+        balanceLabel->setText(QString("¥ %1").arg(QString::number(voucherBalance, 'f', 2)));
     }
 
     void updateTotalPrice() {
         int selectedCount = 0;
-        for (int i = 0; i < m_tableWidget->rowCount(); ++i) {
+        for (int i = 0; i < tableWidget->rowCount(); ++i) {
             // 只要勾选了就计算价格，不管是否被筛选器隐藏
-            if (m_tableWidget->item(i, 0)->checkState() == Qt::Checked) {
+            if (tableWidget->item(i, 0)->checkState() == Qt::Checked) {
                 selectedCount++;
             }
         }
 
         int unitPrice = BASE_PRICE_PER_MONTH;
-        if (m_radioYear->isChecked()) {
+        if (yearRadioButton->isChecked()) {
             unitPrice = BASE_PRICE_PER_MONTH * 12 / 2; 
         }
 
-        m_currentTotalPrice = unitPrice * selectedCount;
-        m_lblTotalAmount->setText(QString("¥ %1").arg(QString::number(m_currentTotalPrice, 'f', 2)));
+        currentTotalPrice = unitPrice * selectedCount;
+        totalAmountLabel->setText(QString("¥ %1").arg(QString::number(currentTotalPrice, 'f', 2)));
         
         autoCheckPaymentMethod();
     }
 
     void autoCheckPaymentMethod() {
-        if (m_currentTotalPrice > 0 && m_voucherBalance >= m_currentTotalPrice) {
-            if (!m_radioVoucher->isChecked()) {
-                m_radioVoucher->setChecked(true);
+        if (currentTotalPrice > 0 && voucherBalance >= currentTotalPrice) {
+            if (!voucherRadioButton->isChecked()) {
+                voucherRadioButton->setChecked(true);
             }
         } else {
-            if (!m_radioWeChat->isChecked()) {
-                m_radioWeChat->setChecked(true);
+            if (!wechatRadioButton->isChecked()) {
+                wechatRadioButton->setChecked(true);
             }
         }
     }
 
-    QTableWidget *m_tableWidget;
-    QComboBox *m_comboFilter; 
-    QRadioButton *m_radioMonth;
-    QRadioButton *m_radioYear;
+    QTableWidget *tableWidget;
+    QComboBox *filterComboBox; 
+    QRadioButton *monthRadioButton;
+    QRadioButton *yearRadioButton;
     
-    QLabel *m_lblBalanceAmount;
-    QPlainTextEdit *m_editVoucherCode;
-    QPushButton *m_btnRedeem;
+    QLabel *balanceLabel;
+    QPlainTextEdit *voucherPlainTextEdit;
+    QPushButton *redeemButton;
 
-    QRadioButton *m_radioWeChat;
-    QRadioButton *m_radioVoucher;
-    QLabel *m_lblTotalAmount;
+    QRadioButton *wechatRadioButton;
+    QRadioButton *voucherRadioButton;
+    QLabel *totalAmountLabel;
 
-    int m_voucherBalance = 0;
-    int m_currentTotalPrice = 0;
+    int voucherBalance = 0;
+    int currentTotalPrice = 0;
 };
