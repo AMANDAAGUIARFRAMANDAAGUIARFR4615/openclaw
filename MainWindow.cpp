@@ -14,6 +14,7 @@
 #include "UdpTransport.h"
 #include "AppSettingsDialog.h"
 #include "JailbreakAssistantDialog.h"
+#include "RenewalDialog.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -182,7 +183,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (text == "帮助") {
-            QDialog *helpDialog = new QDialog(this);
+            auto helpDialog = new QDialog(this);
             helpDialog->setAttribute(Qt::WA_DeleteOnClose);
             helpDialog->setWindowTitle("帮助");
             helpDialog->resize(600, 500);
@@ -245,6 +246,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
         if (text == "越狱助手") {
             JailbreakAssistantDialog dialog(this);
+            return;
+        }
+
+        if (text == "续费") {
+            RenewalDialog dialog(this);
             return;
         }
 
