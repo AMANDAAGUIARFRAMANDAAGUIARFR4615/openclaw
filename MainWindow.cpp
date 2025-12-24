@@ -125,8 +125,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             qDebugEx() << "本机内网IP:" << localIPs;
 
             for (const QString &localIP : localIPs) {
-                QJsonObject hostInfo = TcpServer::getInstance()->getHostInfo(localIP);
-                QByteArray data = QJsonDocument(hostInfo).toJson(QJsonDocument::Compact).toBase64();
+                const auto& hostInfo = TcpServer::getInstance()->getHostInfo(localIP);
+                const auto& data = QJsonDocument(hostInfo).toJson(QJsonDocument::Compact).toBase64();
                 
                 int qrSize = qMax(200, 500 - (localIPs.size() * 100));
 
@@ -137,16 +137,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                     Qt::SmoothTransformation
                 );
 
-                QWidget *itemWidget = new QWidget(qrDialog);
-                QVBoxLayout *itemLayout = new QVBoxLayout(itemWidget);
+                auto itemWidget = new QWidget(qrDialog);
+                auto itemLayout = new QVBoxLayout(itemWidget);
 
-                QLabel *imgLabel = new QLabel(itemWidget);
+                auto imgLabel = new QLabel(itemWidget);
                 imgLabel->setPixmap(pixmap);
                 imgLabel->setAlignment(Qt::AlignCenter);
 
-                QLabel *textLabel = new QLabel(localIP, itemWidget);
+                auto textLabel = new QLabel(localIP, itemWidget);
                 textLabel->setAlignment(Qt::AlignCenter);
-                QFont font = textLabel->font();
+                auto font = textLabel->font();
                 font.setPointSize(16);
                 font.setBold(true);
                 textLabel->setFont(font);
@@ -158,7 +158,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             }
 
             if (localIPs.isEmpty()) {
-                QLabel *errLabel = new QLabel("未检测到有效网卡", qrDialog);
+                auto errLabel = new QLabel("未检测到有效网卡", qrDialog);
                 mainLayout->addWidget(errLabel);
             }
 
@@ -168,7 +168,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
         if (text == "同屏操作") {
             isMultiControlEnabled = !isMultiControlEnabled;
-            QIcon icon = EmojiIconProvider::createIcon("🕹️", 64, !isMultiControlEnabled);
+            const auto& icon = EmojiIconProvider::createIcon("🕹️", 64, !isMultiControlEnabled);
             item->setIcon(icon);
             new ToastWidget(isMultiControlEnabled ? "同屏操作已开启" : "同屏操作已关闭", this);
             return;
@@ -188,9 +188,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             helpDialog->setWindowTitle("帮助");
             helpDialog->resize(600, 500);
 
-            QVBoxLayout *layout = new QVBoxLayout(helpDialog);
+            auto layout = new QVBoxLayout(helpDialog);
 
-            QTextBrowser *textBrowser = new QTextBrowser(helpDialog);
+            auto textBrowser = new QTextBrowser(helpDialog);
             
             QString helpContent = R"(
                 <style>
@@ -268,7 +268,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 Qt::SmoothTransformation
             );
 
-            QLabel *imgLabel = new QLabel(supportDialog);
+            auto imgLabel = new QLabel(supportDialog);
             imgLabel->setPixmap(pixmap);
             imgLabel->setAlignment(Qt::AlignCenter);
 
