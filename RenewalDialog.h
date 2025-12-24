@@ -31,13 +31,11 @@ public:
         setWindowTitle(tr("续费"));
         resize(650, 700);
 
-        // --- 1. 顶部筛选区域 ---
         QHBoxLayout *filterLayout = new QHBoxLayout();
         QLabel *lblFilter = new QLabel(tr("分组筛选:"));
         m_comboFilter = new QComboBox();
 
         const auto& items = MainWindow::getInstance()->getTabs();
-        // 假设 items 包含 {name, bit}
         for (const auto& item : items) {
             m_comboFilter->addItem(item.name, item.bit);
         }
@@ -46,7 +44,6 @@ public:
         filterLayout->addWidget(m_comboFilter);
         filterLayout->addStretch();
 
-        // --- 2. 表格初始化 (只做UI设置，不填数据) ---
         m_tableWidget = new QTableWidget(this);
         m_tableWidget->setColumnCount(3);
         m_tableWidget->setHorizontalHeaderLabels({"", tr("设备名称"), tr("到期时间")});
@@ -70,12 +67,10 @@ public:
             QHeaderView::section { background-color: #f5f5f5; border: none; border-bottom: 1px solid #d0d0d0; padding: 8px; font-weight: bold; color: #555555; }
         )");
 
-        // --- 3. 底部选项区域 ---
         QVBoxLayout *optionsLayout = new QVBoxLayout();
         optionsLayout->setSpacing(15);
 
-        // A. 续费方案
-        QGroupBox *grpDuration = new QGroupBox(tr("续费方案"));
+        QGroupBox *grpDuration = new QGroupBox(tr("续费周期"));
         QHBoxLayout *layDuration = new QHBoxLayout(grpDuration);
 
         m_radioMonth = new QRadioButton(tr("月付 (¥%1/台)").arg(BASE_PRICE_PER_MONTH));
@@ -88,14 +83,13 @@ public:
         layDuration->addWidget(m_radioYear);
         layDuration->addStretch();
 
-        // B. 代金券充值
         QGroupBox *grpVoucher = new QGroupBox(tr("代金券充值"));
         QVBoxLayout *layVoucher = new QVBoxLayout(grpVoucher);
 
         QHBoxLayout *balanceLayout = new QHBoxLayout();
         balanceLayout->addWidget(new QLabel(tr("当前可用余额:")));
         m_lblBalanceAmount = new QLabel();
-        // updateBalanceLabel(); // 假设你有这个函数
+        updateBalanceLabel();
         m_lblBalanceAmount->setStyleSheet("font-weight: bold; color: #E65100; font-size: 14px;");
         balanceLayout->addWidget(m_lblBalanceAmount);
         balanceLayout->addStretch();
@@ -115,8 +109,7 @@ public:
         layVoucher->addLayout(balanceLayout);
         layVoucher->addLayout(redeemLayout);
 
-        // C. 支付结算
-        QGroupBox *grpPay = new QGroupBox(tr("支付结算"));
+        QGroupBox *grpPay = new QGroupBox(tr("付款方式"));
         QVBoxLayout *layPayMain = new QVBoxLayout(grpPay);
 
         QHBoxLayout *layPayRadios = new QHBoxLayout();
@@ -204,10 +197,6 @@ public:
     void loadDeviceTable(int bit)
     {
         auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
-
-        // std::sort(devices.begin(), devices.end(), [](const DeviceInfo& a, const DeviceInfo& b) {
-        //     return a.expireTime < b.expireTime;
-        // });
 
         m_tableWidget->blockSignals(true);
 
