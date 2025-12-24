@@ -97,6 +97,8 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     if (windowMenu.count() == 0)
         return;
 
+    auto isMultiControl = MainWindow::getInstance()->isMultiControl();
+
     auto menu = new QMenu(this);
     menu->setStyleSheet(R"(
         QMenu::item {
@@ -108,7 +110,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     )");
 
     auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
-        if (MainWindow::getInstance()->isMultiControl()) {
+        if (isMultiControl) {
             auto bit = MainWindow::getInstance()->getTab().bit;
             auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
 
@@ -146,7 +148,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
             menu->addAction(text, [this](){AppListWidget::open(connection);});
         }
         else if (text == "📸截图") {
-            menu->addAction(text, [this](){connection->send("screenshot");});
+            menu->addAction(text, [this](){connection->send("screenshot");})->setEnabled(!isMultiControl);
         }
         else if (text == "🔄重启") {
             menu->addAction(text, [&](){send("reboot");});
