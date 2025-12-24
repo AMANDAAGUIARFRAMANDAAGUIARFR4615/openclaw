@@ -104,7 +104,7 @@ public:
         , m_items(items)
         , m_maskRef(maskRef)
     {
-        setWindowTitle(tr("位掩码编辑器"));
+        setWindowTitle("位掩码编辑器");
         setModal(true);
         setupUi();
     }
@@ -142,8 +142,8 @@ private:
         mainLayout->addStretch();
 
         auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-        buttonBox->button(QDialogButtonBox::Ok)->setText(tr("确定"));
-        buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("取消"));
+        buttonBox->button(QDialogButtonBox::Ok)->setText("确定");
+        buttonBox->button(QDialogButtonBox::Cancel)->setText("取消");
 
         mainLayout->addWidget(buttonBox);
 
