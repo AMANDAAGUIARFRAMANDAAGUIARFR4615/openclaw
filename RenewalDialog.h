@@ -11,9 +11,8 @@
 #include <QRadioButton>
 #include <QLabel>
 #include <QPushButton>
-#include <QLineEdit>
+#include <QPlainTextEdit>
 #include <QGroupBox>
-#include <QRegularExpression>
 
 struct DeviceInfo {
     QString id;
@@ -28,18 +27,18 @@ public:
     enum DurationType { Monthly, Yearly };
     enum PaymentMethod { WeChat, Voucher };
 
-    // 这里设定基础单价，你可以根据实际业务传入或修改
-    const double BASE_PRICE_PER_MONTH = 30.0; 
+    // 基础单价设置
+    const int BASE_PRICE_PER_MONTH = 10;
 
-    explicit RenewalDialog(QList<DeviceInfo> devices, double initialBalance = 0.0, QWidget *parent = nullptr)
+    explicit RenewalDialog(QList<DeviceInfo> devices, int initialBalance, QWidget *parent = nullptr)
         : QDialog(parent), 
           m_tableWidget(new QTableWidget(this)),
           m_voucherBalance(initialBalance)
     {
-        setWindowTitle(tr("设备续费"));
-        resize(650, 600);
+        setWindowTitle(tr("续费"));
+        resize(650, 650);
 
-        // --- 表格部分 ---
+        // --- 1. 表格部分 ---
         std::sort(devices.begin(), devices.end(), [](const DeviceInfo& a, const DeviceInfo& b) {
             return a.expireTime < b.expireTime;
         });
@@ -78,61 +77,63 @@ public:
             m_tableWidget->setItem(i, 2, new QTableWidgetItem(info.expireTime.toString("yyyy-MM-dd HH:mm:ss")));
         }
 
-        // --- 底部选项区域 ---
+        // --- 2. 底部选项区域 ---
         QVBoxLayout *optionsLayout = new QVBoxLayout();
-        optionsLayout->setSpacing(10);
+        optionsLayout->setSpacing(15);
 
-        // 1. 续费时长 & 价格预览
+        // A. 续费方案
         QGroupBox *grpDuration = new QGroupBox(tr("续费方案"));
         QHBoxLayout *layDuration = new QHBoxLayout(grpDuration);
         
         m_radioMonth = new QRadioButton(tr("月付 (¥%1/台)").arg(BASE_PRICE_PER_MONTH));
-        // 年付计算：月费 * 12 * 0.5
-        double yearPrice = BASE_PRICE_PER_MONTH * 12.0 * 0.5;
+        int yearPrice = BASE_PRICE_PER_MONTH * 12 / 2; // 年付5折
         m_radioYear = new QRadioButton(tr("年付 (¥%1/台 - 5折特惠)").arg(yearPrice));
-        m_radioYear->setStyleSheet("color: #d32f2f; font-weight: bold;"); // 突出优惠
+        m_radioYear->setStyleSheet("color: #d32f2f; font-weight: bold;");
         m_radioMonth->setChecked(true);
 
         layDuration->addWidget(m_radioMonth);
         layDuration->addWidget(m_radioYear);
         layDuration->addStretch();
         
-        // 2. 代金券 (支持批量)
+        // B. 代金券充值
         QGroupBox *grpVoucher = new QGroupBox(tr("代金券充值"));
         QVBoxLayout *layVoucher = new QVBoxLayout(grpVoucher);
-        QHBoxLayout *balanceLayout = new QHBoxLayout();
         
+        QHBoxLayout *balanceLayout = new QHBoxLayout();
         balanceLayout->addWidget(new QLabel(tr("当前可用余额:")));
         m_lblBalanceAmount = new QLabel();
-        updateBalanceLabel();
+        updateBalanceLabel(); // 初始化显示余额
         m_lblBalanceAmount->setStyleSheet("font-weight: bold; color: #E65100; font-size: 14px;");
         balanceLayout->addWidget(m_lblBalanceAmount);
         balanceLayout->addStretch();
 
         QHBoxLayout *redeemLayout = new QHBoxLayout();
-        m_editVoucherCode = new QLineEdit();
-        m_editVoucherCode->setPlaceholderText(tr("输入兑换码，支持批量(逗号隔开)"));
-        m_btnRedeem = new QPushButton(tr("立即兑换"));
+        m_editVoucherCode = new QPlainTextEdit();
+        m_editVoucherCode->setPlaceholderText(tr("请输入兑换码，每行一个..."));
+        m_editVoucherCode->setFixedHeight(80);
+        m_editVoucherCode->setStyleSheet("QPlainTextEdit { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }");
+        
+        m_btnRedeem = new QPushButton(tr("批量兑换"));
+        m_btnRedeem->setFixedHeight(80);
+        
         redeemLayout->addWidget(m_editVoucherCode, 1);
         redeemLayout->addWidget(m_btnRedeem);
         
         layVoucher->addLayout(balanceLayout);
         layVoucher->addLayout(redeemLayout);
         
-        // 3. 支付方式与总金额
+        // C. 支付结算
         QGroupBox *grpPay = new QGroupBox(tr("支付结算"));
         QVBoxLayout *layPayMain = new QVBoxLayout(grpPay);
         
-        // 支付单选
         QHBoxLayout *layPayRadios = new QHBoxLayout();
         m_radioWeChat = new QRadioButton(tr("微信支付"));
         m_radioVoucher = new QRadioButton(tr("余额支付"));
-        m_radioWeChat->setChecked(true);
+        m_radioWeChat->setChecked(true); // 默认先选微信，后面 autoCheckPaymentMethod 会根据余额修正
         layPayRadios->addWidget(m_radioWeChat);
         layPayRadios->addWidget(m_radioVoucher);
         layPayRadios->addStretch();
 
-        // 总金额显示
         QHBoxLayout *layTotal = new QHBoxLayout();
         QLabel *lblTotalTitle = new QLabel(tr("应付总额:"));
         lblTotalTitle->setStyleSheet("font-size: 14px; font-weight: bold;");
@@ -143,16 +144,17 @@ public:
         layTotal->addWidget(m_lblTotalAmount);
 
         layPayMain->addLayout(layPayRadios);
-        layPayMain->addLayout(layTotal); // 把总金额放在支付方式下面
+        layPayMain->addLayout(layTotal);
 
         optionsLayout->addWidget(grpDuration);
         optionsLayout->addWidget(grpVoucher);
         optionsLayout->addWidget(grpPay);
 
-        // --- 底部按钮 ---
+        // --- 3. 布局组装 ---
         QDialogButtonBox *btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+        connect(btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+        connect(btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
-        // --- 主布局 ---
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
         mainLayout->setContentsMargins(20, 20, 20, 20);
         mainLayout->setSpacing(15);
@@ -160,32 +162,35 @@ public:
         mainLayout->addLayout(optionsLayout);
         mainLayout->addWidget(btnBox);
         
-        // --- 逻辑连接 ---
-        connect(btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-        connect(btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+        // --- 4. 逻辑处理 ---
         
-        // 监控复选框变化 -> 更新价格
+        // 价格更新
         connect(m_tableWidget, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item){
             if (item->column() == 0) updateTotalPrice();
         });
-
-        // 监控时长变化 -> 更新价格
         connect(m_radioMonth, &QRadioButton::toggled, this, &RenewalDialog::updateTotalPrice);
         
-        // 批量兑换逻辑
+        // 兑换按钮点击
         connect(m_btnRedeem, &QPushButton::clicked, this, [this](){
-            QString text = m_editVoucherCode->text().trimmed();
-            if (text.isEmpty()) return;
+            QString content = m_editVoucherCode->toPlainText();
+            if (content.trimmed().isEmpty()) return;
 
-            // 使用正则分割：逗号、分号、空格、换行
-            QStringList codes = text.split(QRegularExpression("[,;\\s\\n]+"), Qt::SkipEmptyParts);
-            if (!codes.isEmpty()) {
-                emit redeemVouchersRequested(codes);
+            QStringList lines = content.split('\n', Qt::SkipEmptyParts);
+            QStringList validCodes;
+            for (const QString& line : lines) {
+                QString code = line.trimmed();
+                if (!code.isEmpty()) {
+                    validCodes.append(code);
+                }
+            }
+
+            if (!validCodes.isEmpty()) {
+                emit redeemVouchersRequested(validCodes);
                 m_editVoucherCode->clear();
             }
         });
 
-        // 初始化计算一次
+        // 初始计算价格并判断支付方式
         updateTotalPrice();
     }
 
@@ -208,19 +213,20 @@ public:
         return m_radioVoucher->isChecked() ? Voucher : WeChat;
     }
 
-    // 获取当前计算后的总价 (供外部使用)
-    double getTotalPrice() const {
+    int getTotalPrice() const {
         return m_currentTotalPrice;
     }
 
 public slots:
-    void setVoucherBalance(double newBalance) {
+    // 外部调用此函数更新余额（例如兑换成功后）
+    void setVoucherBalance(int newBalance) {
         m_voucherBalance = newBalance;
         updateBalanceLabel();
+        // 余额变化了，尝试自动选择支付方式
+        autoCheckPaymentMethod();
     }
 
 signals:
-    // 发送多个兑换码
     void redeemVouchersRequested(const QStringList& codes);
 
 private:
@@ -228,6 +234,7 @@ private:
         m_lblBalanceAmount->setText(QString("¥ %1").arg(QString::number(m_voucherBalance, 'f', 2)));
     }
 
+    // 更新总价并触发支付方式检查
     void updateTotalPrice() {
         int selectedCount = 0;
         for (int i = 0; i < m_tableWidget->rowCount(); ++i) {
@@ -236,28 +243,45 @@ private:
             }
         }
 
-        double unitPrice = BASE_PRICE_PER_MONTH;
+        int unitPrice = BASE_PRICE_PER_MONTH;
         if (m_radioYear->isChecked()) {
-            unitPrice = BASE_PRICE_PER_MONTH * 12.0 * 0.5; // 年付5折
+            unitPrice = BASE_PRICE_PER_MONTH * 12 / 2; // 5折
         }
 
         m_currentTotalPrice = unitPrice * selectedCount;
         m_lblTotalAmount->setText(QString("¥ %1").arg(QString::number(m_currentTotalPrice, 'f', 2)));
+        
+        // 价格变化了，尝试自动选择支付方式
+        autoCheckPaymentMethod();
+    }
+
+    // 核心逻辑：自动选择支付方式
+    void autoCheckPaymentMethod() {
+        if (m_currentTotalPrice > 0 && m_voucherBalance >= m_currentTotalPrice) {
+            // 余额充足，自动勾选余额支付
+            if (!m_radioVoucher->isChecked()) {
+                m_radioVoucher->setChecked(true);
+            }
+        } else {
+            // 余额不足，自动勾选微信支付
+            if (!m_radioWeChat->isChecked()) {
+                m_radioWeChat->setChecked(true);
+            }
+        }
     }
 
     QTableWidget *m_tableWidget;
-    
     QRadioButton *m_radioMonth;
     QRadioButton *m_radioYear;
     
     QLabel *m_lblBalanceAmount;
-    QLineEdit *m_editVoucherCode;
+    QPlainTextEdit *m_editVoucherCode;
     QPushButton *m_btnRedeem;
 
     QRadioButton *m_radioWeChat;
     QRadioButton *m_radioVoucher;
     QLabel *m_lblTotalAmount;
 
-    double m_voucherBalance;
-    double m_currentTotalPrice = 0.0;
+    int m_voucherBalance;
+    int m_currentTotalPrice = 0;
 };
