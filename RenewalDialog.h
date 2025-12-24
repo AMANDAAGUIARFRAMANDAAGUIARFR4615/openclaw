@@ -5,8 +5,15 @@
 #include <QHeaderView>
 #include <QDialogButtonBox>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QDateTime>
 #include <algorithm>
+#include <QRadioButton>
+#include <QButtonGroup>
+#include <QLabel>
+#include <QPushButton>
+#include <QLineEdit>
+#include <QGroupBox>
 
 struct DeviceInfo {
     QString id;
@@ -18,12 +25,18 @@ class RenewalDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit RenewalDialog(QList<DeviceInfo> devices, QWidget *parent = nullptr)
-        : QDialog(parent), m_tableWidget(new QTableWidget(this))
-    {
-        setWindowTitle(tr("设备续费列表"));
-        resize(600, 450);
+    enum DurationType { Monthly, Yearly };
+    enum PaymentMethod { WeChat, Voucher };
 
+    explicit RenewalDialog(QList<DeviceInfo> devices, double initialBalance = 0.0, QWidget *parent = nullptr)
+        : QDialog(parent), 
+          m_tableWidget(new QTableWidget(this)),
+          m_voucherBalance(initialBalance)
+    {
+        setWindowTitle(tr("设备续费"));
+        resize(600, 600);
+
+        // --- 表格部分 (与原代码基本一致) ---
         std::sort(devices.begin(), devices.end(), [](const DeviceInfo& a, const DeviceInfo& b) {
             return a.expireTime < b.expireTime;
         });
@@ -53,27 +66,85 @@ public:
         m_tableWidget->setRowCount(devices.size());
         for (int i = 0; i < devices.size(); ++i) {
             const auto &info = devices[i];
-
             QTableWidgetItem *checkItem = new QTableWidgetItem();
             checkItem->setCheckState(Qt::Checked);
             checkItem->setData(Qt::UserRole, info.id);
             checkItem->setTextAlignment(Qt::AlignCenter);
-
             m_tableWidget->setItem(i, 0, checkItem);
             m_tableWidget->setItem(i, 1, new QTableWidgetItem(info.name));
             m_tableWidget->setItem(i, 2, new QTableWidgetItem(info.expireTime.toString("yyyy-MM-dd HH:mm:ss")));
         }
 
+        // --- 新增：底部选项与操作区域 ---
+        QVBoxLayout *optionsLayout = new QVBoxLayout();
+        optionsLayout->setSpacing(10);
+
+        // 1. 续费时长
+        QGroupBox *grpDuration = new QGroupBox(tr("续费时长"));
+        QHBoxLayout *layDuration = new QHBoxLayout(grpDuration);
+        m_radioMonth = new QRadioButton(tr("月付"));
+        m_radioYear = new QRadioButton(tr("年付"));
+        m_radioMonth->setChecked(true);
+        layDuration->addWidget(m_radioMonth);
+        layDuration->addWidget(m_radioYear);
+        layDuration->addStretch();
+        
+        // 2. 代金券
+        QGroupBox *grpVoucher = new QGroupBox(tr("代金券"));
+        QVBoxLayout *layVoucher = new QVBoxLayout(grpVoucher);
+        QHBoxLayout *balanceLayout = new QHBoxLayout();
+        balanceLayout->addWidget(new QLabel(tr("当前余额:")));
+        m_lblBalanceAmount = new QLabel(QString("¥ %1").arg(QString::number(m_voucherBalance, 'f', 2)));
+        m_lblBalanceAmount->setStyleSheet("font-weight: bold; color: #d32f2f;");
+        balanceLayout->addWidget(m_lblBalanceAmount);
+        balanceLayout->addStretch();
+
+        QHBoxLayout *redeemLayout = new QHBoxLayout();
+        m_editVoucherCode = new QLineEdit();
+        m_editVoucherCode->setPlaceholderText(tr("请输入代金券兑换码"));
+        m_btnRedeem = new QPushButton(tr("兑换"));
+        redeemLayout->addWidget(m_editVoucherCode, 1);
+        redeemLayout->addWidget(m_btnRedeem);
+        
+        layVoucher->addLayout(balanceLayout);
+        layVoucher->addLayout(redeemLayout);
+        
+        // 3. 支付方式
+        QGroupBox *grpPay = new QGroupBox(tr("支付方式"));
+        QHBoxLayout *layPay = new QHBoxLayout(grpPay);
+        m_radioWeChat = new QRadioButton(tr("微信支付"));
+        m_radioVoucher = new QRadioButton(tr("余额支付"));
+        m_radioWeChat->setChecked(true);
+        layPay->addWidget(m_radioWeChat);
+        layPay->addWidget(m_radioVoucher);
+        layPay->addStretch();
+        
+        optionsLayout->addWidget(grpDuration);
+        optionsLayout->addWidget(grpVoucher);
+        optionsLayout->addWidget(grpPay);
+
+        // --- 底部确认/取消按钮 ---
         QDialogButtonBox *btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
 
-        QVBoxLayout *layout = new QVBoxLayout(this);
-        layout->setContentsMargins(20, 20, 20, 20);
-        layout->setSpacing(15);
-        layout->addWidget(m_tableWidget);
-        layout->addWidget(btnBox);
-
+        // --- 整体布局 ---
+        QVBoxLayout *mainLayout = new QVBoxLayout(this);
+        mainLayout->setContentsMargins(20, 20, 20, 20);
+        mainLayout->setSpacing(15);
+        mainLayout->addWidget(m_tableWidget, 1);
+        mainLayout->addLayout(optionsLayout);
+        mainLayout->addWidget(btnBox);
+        
+        // --- 信号连接 ---
         connect(btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
         connect(btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+        
+        connect(m_btnRedeem, &QPushButton::clicked, this, [this](){
+            QString code = m_editVoucherCode->text().trimmed();
+            if (!code.isEmpty()) {
+                emit redeemVoucherRequested(code);
+                m_editVoucherCode->clear();
+            }
+        });
     }
 
     QList<QString> getSelectedDeviceIds() const {
@@ -87,6 +158,35 @@ public:
         return result;
     }
 
+    DurationType getDuration() const {
+        return m_radioYear->isChecked() ? Yearly : Monthly;
+    }
+
+    PaymentMethod getPaymentMethod() const {
+        return m_radioVoucher->isChecked() ? Voucher : WeChat;
+    }
+
+public slots:
+    void setVoucherBalance(double newBalance) {
+        m_voucherBalance = newBalance;
+        m_lblBalanceAmount->setText(QString("¥ %1").arg(QString::number(m_voucherBalance, 'f', 2)));
+    }
+
+signals:
+    void redeemVoucherRequested(const QString& code);
+
 private:
     QTableWidget *m_tableWidget;
+    
+    QRadioButton *m_radioMonth;
+    QRadioButton *m_radioYear;
+    
+    QLabel *m_lblBalanceAmount;
+    QLineEdit *m_editVoucherCode;
+    QPushButton *m_btnRedeem;
+
+    QRadioButton *m_radioWeChat;
+    QRadioButton *m_radioVoucher;
+
+    double m_voucherBalance;
 };
