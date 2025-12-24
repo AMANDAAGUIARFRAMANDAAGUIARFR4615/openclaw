@@ -1,5 +1,4 @@
-#ifndef RENEWALDIALOG_H
-#define RENEWALDIALOG_H
+#pragma once
 
 #include <QDialog>
 #include <QTableWidget>
@@ -91,5 +90,3 @@ public:
 private:
     QTableWidget *m_tableWidget;
 };
-
-#endif // RENEWALDIALOG_H
