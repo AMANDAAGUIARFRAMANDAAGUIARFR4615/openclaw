@@ -42,7 +42,7 @@
 #include <QActionGroup>
 #include <optional>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTabWidget(this))
 {
     setMinimumSize(800, 600);
 
@@ -299,7 +299,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     rightLayout->setContentsMargins(0, 0, 0, 0);
     rightLayout->setSpacing(0);
 
-    tabWidget = new QTabWidget(this);
     auto tabBar = tabWidget->tabBar();
     tabBar->setMovable(true);
     tabBar->setToolTip("右键点击可修改分组");

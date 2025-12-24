@@ -29,10 +29,10 @@ public:
     explicit RenewalDialog(QWidget *parent) : QDialog(parent)
     {
         setWindowTitle("续费");
-        resize(650, 700);
+        setMinimumSize(480, 720);
 
-        QHBoxLayout *filterLayout = new QHBoxLayout();
-        QLabel *filterLabel = new QLabel("分组筛选:");
+        auto filterLayout = new QHBoxLayout();
+        auto filterLabel = new QLabel("分组筛选:");
         filterComboBox = new QComboBox();
 
         const auto& items = MainWindow::getInstance()->getTabs();
@@ -45,8 +45,8 @@ public:
         filterLayout->addStretch();
 
         tableWidget = new QTableWidget(this);
-        tableWidget->setColumnCount(3);
-        tableWidget->setHorizontalHeaderLabels({"", "设备名称", "到期时间"});
+        tableWidget->setColumnCount(4);
+        tableWidget->setHorizontalHeaderLabels({"", "设备名称", "机型", "到期时间"});
         tableWidget->setFrameShape(QFrame::NoFrame);
         tableWidget->setShowGrid(false);
         tableWidget->setAlternatingRowColors(true);
@@ -54,10 +54,9 @@ public:
         tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
         tableWidget->setFocusPolicy(Qt::NoFocus);
 
-        QHeaderView *headerView = tableWidget->horizontalHeader();
-        headerView->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+        auto headerView = tableWidget->horizontalHeader();
+        headerView->setSectionResizeMode(QHeaderView::ResizeToContents);
         headerView->setSectionResizeMode(1, QHeaderView::Stretch);
-        headerView->setSectionResizeMode(2, QHeaderView::ResizeToContents);
         headerView->setSectionsClickable(false);
 
         tableWidget->setStyleSheet(R"(
@@ -67,10 +66,10 @@ public:
             QHeaderView::section { background-color: #f5f5f5; border: none; border-bottom: 1px solid #d0d0d0; padding: 8px; font-weight: bold; color: #555555; }
         )");
 
-        QVBoxLayout *optionsLayout = new QVBoxLayout();
+        auto optionsLayout = new QVBoxLayout();
         optionsLayout->setSpacing(15);
 
-        QGroupBox *durationGroupBox = new QGroupBox("续费周期");
+        auto durationGroupBox = new QGroupBox("续费周期");
         QHBoxLayout *durationLayout = new QHBoxLayout(durationGroupBox);
 
         monthRadioButton = new QRadioButton(QString("月付 (¥%1/台)").arg(BASE_PRICE_PER_MONTH));
@@ -83,10 +82,10 @@ public:
         durationLayout->addWidget(yearRadioButton);
         durationLayout->addStretch();
 
-        QGroupBox *voucherGroupBox = new QGroupBox("代金券");
-        QVBoxLayout *voucherLayout = new QVBoxLayout(voucherGroupBox);
+        auto voucherGroupBox = new QGroupBox("代金券");
+        auto voucherLayout = new QVBoxLayout(voucherGroupBox);
 
-        QHBoxLayout *balanceLayout = new QHBoxLayout();
+        auto balanceLayout = new QHBoxLayout();
         balanceLayout->addWidget(new QLabel("可用余额:"));
         balanceLabel = new QLabel();
         updateBalanceLabel();
@@ -94,7 +93,7 @@ public:
         balanceLayout->addWidget(balanceLabel);
         balanceLayout->addStretch();
 
-        QHBoxLayout *redeemLayout = new QHBoxLayout();
+        auto redeemLayout = new QHBoxLayout();
         voucherPlainTextEdit = new QPlainTextEdit();
         voucherPlainTextEdit->setPlaceholderText("请输入兑换码，每行一个...");
         voucherPlainTextEdit->setFixedHeight(80);
@@ -109,10 +108,10 @@ public:
         voucherLayout->addLayout(balanceLayout);
         voucherLayout->addLayout(redeemLayout);
 
-        QGroupBox *paymentGroupBox = new QGroupBox("付款方式");
-        QVBoxLayout *paymentMainLayout = new QVBoxLayout(paymentGroupBox);
+        auto paymentGroupBox = new QGroupBox("付款方式");
+        auto paymentMainLayout = new QVBoxLayout(paymentGroupBox);
 
-        QHBoxLayout *paymentRadiosLayout = new QHBoxLayout();
+        auto paymentRadiosLayout = new QHBoxLayout();
         wechatRadioButton = new QRadioButton("微信支付");
         voucherRadioButton = new QRadioButton("余额支付");
         wechatRadioButton->setChecked(true);
@@ -120,8 +119,8 @@ public:
         paymentRadiosLayout->addWidget(voucherRadioButton);
         paymentRadiosLayout->addStretch();
 
-        QHBoxLayout *totalLayout = new QHBoxLayout();
-        QLabel *totalTitleLabel = new QLabel("应付总额:");
+        auto totalLayout = new QHBoxLayout();
+        auto totalTitleLabel = new QLabel("应付总额:");
         totalTitleLabel->setStyleSheet("font-size: 14px; font-weight: bold;");
         totalAmountLabel = new QLabel("¥ 0.00");
         totalAmountLabel->setStyleSheet("font-size: 20px; font-weight: bold; color: #d32f2f;");
@@ -136,12 +135,11 @@ public:
         optionsLayout->addWidget(voucherGroupBox);
         optionsLayout->addWidget(paymentGroupBox);
 
-        // --- 4. 布局组装 ---
-        QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+        auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
         connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
         connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
-        QVBoxLayout *mainLayout = new QVBoxLayout(this);
+        auto mainLayout = new QVBoxLayout(this);
         mainLayout->setContentsMargins(20, 20, 20, 20);
         mainLayout->setSpacing(15);
 
@@ -150,10 +148,11 @@ public:
         mainLayout->addLayout(optionsLayout);
         mainLayout->addWidget(buttonBox);
 
-        // --- 5. 逻辑处理与连接 ---
-
-        // 筛选框改变时，调用独立的加载函数
         connect(filterComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
+            qDebugEx() << "QComboBox::currentIndexChanged" << index;
+            if (index < 0)
+                return;
+
             auto bit = filterComboBox->itemData(index).toUInt();
             loadDeviceTable(bit); 
         });
@@ -183,17 +182,13 @@ public:
             }
         });
 
-        // --- 6. 初始加载 ---
-        // 加载默认选项（通常是第一个选项）的数据
-        if (filterComboBox->count() > 0) {
-            loadDeviceTable(filterComboBox->itemData(0).toUInt());
-        }
+        filterComboBox->setCurrentIndex(-1);
+        filterComboBox->setCurrentIndex(MainWindow::getInstance()->tabWidget->currentIndex());
 
         setModal(true);
         exec();
     }
 
-    // --- 新提取的函数实现 ---
     void loadDeviceTable(int bit)
     {
         auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
@@ -206,18 +201,15 @@ public:
 
         for (int i = 0; i < devices.size(); ++i) {
             const auto &info = devices[i];
-            QTableWidgetItem *checkItem = new QTableWidgetItem();
+            auto checkItem = new QTableWidgetItem();
             checkItem->setCheckState(Qt::Checked);
-            // checkItem->setData(Qt::UserRole, info.id);
-            
-            // 存储分组信息 (UserRole + 1)
-            // checkItem->setData(Qt::UserRole + 1, info.group);
+            checkItem->setData(Qt::UserRole, info->deviceId);
 
-            checkItem->setTextAlignment(Qt::AlignCenter);
             tableWidget->setItem(i, 0, checkItem);
             
             tableWidget->setItem(i, 1, new QTableWidgetItem(info->deviceName));
-            tableWidget->setItem(i, 2, new QTableWidgetItem(info->expireAt.toString("yyyy-MM-dd HH:mm:ss")));
+            tableWidget->setItem(i, 2, new QTableWidgetItem(info->model));
+            tableWidget->setItem(i, 3, new QTableWidgetItem(info->expireAt.toString("yyyy-MM-dd HH:mm:ss")));
         }
 
         tableWidget->blockSignals(false);
@@ -265,7 +257,6 @@ private:
     void updateTotalPrice() {
         int selectedCount = 0;
         for (int i = 0; i < tableWidget->rowCount(); ++i) {
-            // 只要勾选了就计算价格，不管是否被筛选器隐藏
             if (tableWidget->item(i, 0)->checkState() == Qt::Checked) {
                 selectedCount++;
             }

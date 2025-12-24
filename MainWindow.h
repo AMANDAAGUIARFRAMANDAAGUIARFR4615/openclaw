@@ -23,6 +23,8 @@ public:
 
     bool isMultiControl() const { return isMultiControlEnabled; }
 
+    QTabWidget* const tabWidget;
+
 private:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
@@ -49,7 +51,6 @@ protected:
     const int spacing = 10;
 
     QListWidget* sideBarList;
-    QTabWidget* tabWidget;
     QListWidget* deviceListWidget;
     QSlider* zoomSlider;
 
