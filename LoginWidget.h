@@ -109,10 +109,13 @@ public:
         // webSocketClient.open(QUrl("ws://43.167.226.242:9000"));
     }
 
+signals:
+    void authorized();
+
 protected:
     void keyPressEvent(QKeyEvent *event) override {
         if (event->key() == Qt::Key_Escape)
-            qApp->quit();
+            close();
         else
             QWidget::keyPressEvent(event);
     }    
@@ -257,6 +260,7 @@ protected:
 
                 if (res["msg"].isUndefined()) {
                     saveCredentials(phone, password);
+                    emit authorized();
                     close();
                     return;
                 }
@@ -269,6 +273,7 @@ protected:
 
                 if (res["msg"].isUndefined()) {
                     saveCredentials(phone, password);
+                    emit authorized();
                     close();
                     return;
                 }

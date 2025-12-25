@@ -74,14 +74,7 @@ int main(int argc, char *argv[])
     auto loginWidget = new LoginWidget();
     loginWidget->show();
 
-    QObject::connect(qApp, &QCoreApplication::aboutToQuit, [](){
-        qApp->setProperty("quit", true);
-    });
-
-    QObject::connect(loginWidget, &QObject::destroyed, [=]() {
-        if (qApp->property("quit").toBool())
-            return;
-
+    QObject::connect(loginWidget, &LoginWidget::authorized, [=]() {
         auto tcpServer = new TcpServer(onClientConnected, [](QTcpSocket* socket, const QJsonObject &jsonObject) {
             DeviceConnection *connection = DeviceConnection::find(socket);
             if (!connection)
