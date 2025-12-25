@@ -105,8 +105,11 @@ public:
             webSocketClient.ignoreSslErrors();
         });
 
+#ifdef QT_DEBUG
         webSocketClient.open(QUrl("ws://192.168.0.111:3000"));
-        // webSocketClient.open(QUrl("ws://43.167.226.242:9000"));
+#else
+        webSocketClient.open(QUrl("ws://43.167.226.242:9000"));
+#endif
     }
 
 signals:
