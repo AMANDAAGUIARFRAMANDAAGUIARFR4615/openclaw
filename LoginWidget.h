@@ -1,7 +1,6 @@
 #pragma once
 
 #include "global.h"
-#include "ToastWidget.h"
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -106,8 +105,8 @@ public:
             webSocketClient.ignoreSslErrors();
         });
 
-        // webSocketClient.open(QUrl("ws://192.168.0.111:3000"));
-        webSocketClient.open(QUrl("ws://43.167.226.242:9000"));
+        webSocketClient.open(QUrl("ws://192.168.0.111:3000"));
+        // webSocketClient.open(QUrl("ws://43.167.226.242:9000"));
     }
 
 protected:
@@ -216,22 +215,22 @@ protected:
         const auto& password = passwordLineEdit->text();
 
         if (phone.isEmpty() || password.isEmpty()) {
-            new ToastWidget("手机号和密码不能为空", this);
+            setStatus("手机号和密码不能为空");
             return;
         }
 
         if (!phoneLineEdit->hasAcceptableInput()) {
-            new ToastWidget("请输入正确的11位手机号", this);
+            setStatus("请输入正确的11位手机号", this);
             return;
         }
 
         if (!passwordLineEdit->hasAcceptableInput()) {
-            new ToastWidget("密码需为6-16位字母+数字组合", this);
+            setStatus("密码需为6-16位字母+数字组合", this);
             return;
         }
 
         if (!webSocketClient.isValid()) {
-            new ToastWidget("未连接服务器", this);
+            setStatus("未连接服务器", this);
             return;
         }
 
@@ -242,12 +241,13 @@ protected:
             const auto& confirm = confirmLineEdit->text();
 
             if (confirm.isEmpty()) {
-                new ToastWidget("请确认密码", this);
+                setStatus("请确认密码");
+                actionButton->setEnabled(true);
                 return;
             }
 
             if (password != confirm) {
-                new ToastWidget("两次密码不一致", this);
+                setStatus("两次密码不一致");
                 actionButton->setEnabled(true);
                 return;
             }
@@ -262,7 +262,6 @@ protected:
                 }
    
                 setStatus(res["msg"].toString(), true);
-                actionButton->setEnabled(true);
             });
         } else {
             webSocketClient.emitEvent("login", QJsonObject{{"phone", phone}, {"password", password}}, [=](const QJsonValue &res) {
@@ -275,7 +274,6 @@ protected:
                 }
 
                 setStatus(res["msg"].toString(), true);
-                actionButton->setEnabled(true);
             });
         }
     }
