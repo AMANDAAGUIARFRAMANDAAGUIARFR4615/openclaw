@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ToastWidget.h"
 #include "MainWindow.h"
 #include <QDialog>
 #include <QTableWidget>
@@ -8,7 +9,6 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QDateTime>
-#include <algorithm>
 #include <QRadioButton>
 #include <QLabel>
 #include <QPushButton>
@@ -138,7 +138,16 @@ public:
 
         auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
         connect(buttonBox, &QDialogButtonBox::accepted, this, [this]() {
-            new ToastWidget("暂不支持微信支付", this);
+            if (wechatRadioButton->isChecked()) {
+                new ToastWidget("暂不支持微信支付", this);
+                return;
+            }
+
+            if (voucherBalance < currentTotalPrice) {
+                new ToastWidget("余额不足", this);
+                return;
+            }
+
             accept();
         });
         connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
