@@ -177,8 +177,12 @@ public:
             }
 
             if (!validCodes.isEmpty()) {
-                emit redeemVouchersRequested(validCodes);
-                voucherPlainTextEdit->clear();
+                redeemButton->setEnabled(false);
+                webSocketClient.emitEvent("redeem", QJsonArray::fromStringList(validCodes), [=](const QJsonValue &res) {
+                    redeemButton->setEnabled(true);
+
+                    voucherPlainTextEdit->clear();
+                });
             }
         });
 
@@ -245,9 +249,6 @@ public slots:
         updateBalanceLabel();
         autoCheckPaymentMethod();
     }
-
-signals:
-    void redeemVouchersRequested(const QStringList& codes);
 
 private:
     void updateBalanceLabel() {
