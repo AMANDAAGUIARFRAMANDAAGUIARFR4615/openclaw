@@ -287,7 +287,39 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         }
 
         if (text == "开发者") {
-            SettingsViewer dialog(&settings, this);
+            QMenu menu(this);
+            menu.addAction("数据查看", [=]() {
+                SettingsViewer dialog(&settings, this);
+            });
+            menu.addAction("兑换码生成", [=]() {
+                bool ok;
+                int count = QInputDialog::getInt(this, "生成兑换码", "请输入生成的个数:", 1, 1, 1000, 1, &ok);
+                
+                if (!ok)
+                    return;
+
+                webSocketClient.emitEvent("generate_codes", count, [=](const QJsonValue &res) {
+                    if (res.isString()) {
+                        new ToastWidget(res.toString(), this);
+                        return;
+                    }
+
+                    const auto& codeArray = res.toArray();
+                    QStringList codes;
+
+                    for (const QJsonValue &value : codeArray) {
+                        codes << value.toString(); 
+                    }
+
+                    qApp->clipboard()->setText(codes.join("\n"));
+
+                    new ToastWidget("兑换码已复制到剪切板");
+                });
+            });
+
+            QRect rect = sideBarList->visualItemRect(item);
+            QPoint globalPos = sideBarList->viewport()->mapToGlobal(rect.topRight());
+            menu.exec(globalPos);
             return;
         }
     });
