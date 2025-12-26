@@ -8,6 +8,7 @@
 #include "UsbDeviceManager.h"
 #include "LoginWidget.h"
 #include "LogWindow.h"
+#include "Account.h"
 #include <QApplication>
 #include <QNetworkProxy>
 #include <QLoggingCategory>
@@ -106,7 +107,11 @@ int main(int argc, char *argv[])
     auto loginWidget = new LoginWidget();
     loginWidget->show();
 
-    QObject::connect(loginWidget, &LoginWidget::authorized, [=]() {
+    QObject::connect(loginWidget, &LoginWidget::authorized, [=](const QJsonValue &account) {
+        Account::getInstance()->id = account["_id"].toString();
+        Account::getInstance()->phone = account["phone"].toString();
+        Account::getInstance()->balance = account["balance"].toInt();
+
         auto tcpServer = new TcpServer(onClientConnected, [](QTcpSocket* socket, const QJsonObject &jsonObject) {
             DeviceConnection *connection = DeviceConnection::find(socket);
             if (!connection)

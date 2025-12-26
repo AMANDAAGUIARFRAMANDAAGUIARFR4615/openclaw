@@ -2,6 +2,7 @@
 
 #include "ToastWidget.h"
 #include "MainWindow.h"
+#include "Account.h"
 #include <QDialog>
 #include <QTableWidget>
 #include <QHeaderView>
@@ -224,6 +225,8 @@ public:
 
         filterComboBox->setCurrentIndex(-1);
         filterComboBox->setCurrentIndex(MainWindow::getInstance()->tabWidget->currentIndex());
+
+        setVoucherBalance(Account::getInstance()->balance);
     }
 
 protected:

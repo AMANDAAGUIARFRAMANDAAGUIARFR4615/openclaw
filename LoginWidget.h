@@ -113,7 +113,7 @@ public:
     }
 
 signals:
-    void authorized();
+    void authorized(const QJsonValue &account);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override {
@@ -263,7 +263,7 @@ protected:
 
                 if (res["msg"].isUndefined()) {
                     saveCredentials(phone, password);
-                    emit authorized();
+                    emit authorized(res);
                     close();
                     return;
                 }
@@ -276,7 +276,7 @@ protected:
 
                 if (res["msg"].isUndefined()) {
                     saveCredentials(phone, password);
-                    emit authorized();
+                    emit authorized(res);
                     close();
                     return;
                 }
