@@ -9,6 +9,7 @@ public:
     static Account* getInstance() { static Account instance; return &instance; }
 
     QString id;
+    QString phone;
     int balance = 0;
 
 private:
