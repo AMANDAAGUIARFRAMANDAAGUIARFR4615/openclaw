@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QByteArray>
 #include <QDataStream>
 #include <QRandomGenerator>
@@ -8,6 +10,8 @@
 template <typename T>
 class SafeObject {
 public:
+    SafeObject() {}
+
     SafeObject(const T& value) {
         set(value);
     }
@@ -19,15 +23,14 @@ public:
         stream.setVersion(QDataStream::Qt_6_10);
         stream << value;
 
-        // 2. 生成随机 Key (长度与数据一致，类似于一次性密码本)
+        // 2. 生成随机 Key
         m_key = QByteArray(rawData.size(), Qt::Uninitialized);
         QRandomGenerator::global()->fillRange(reinterpret_cast<quint32*>(m_key.data()), m_key.size() / 4);
 
-        // 3. 计算原始数据的校验和 (用于检测篡改)
-        // 使用 CRC-16 (qChecksum) 比较轻量，也可以用 MD5
+        // 3. 计算原始数据的校验和
         m_checksum = qChecksum(QByteArrayView(rawData));
 
-        // 4. 加密 (异或运算)
+        // 4. 加密
         m_encryptedData = xorBytes(rawData, m_key);
     }
 
@@ -49,16 +52,6 @@ public:
         stream >> value;
 
         return value;
-    }
-
-    // --- 模拟内存被修改 ---
-    void simulateHack() {
-        if (!m_encryptedData.isEmpty()) {
-            // 攻击者通常通过内存搜索修改字节，这里我们强行修改加密数据的一个字节
-            // 由于攻击者不知道 Key，他修改后的数据解密出来肯定无法通过校验
-            m_encryptedData[0] = ~m_encryptedData[0];
-            qDebug() << ">> Simulating external modification (HACKING)...";
-        }
     }
 
 private:

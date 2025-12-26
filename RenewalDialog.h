@@ -181,6 +181,8 @@ public:
                 webSocketClient.emitEvent("redeem", QJsonArray::fromStringList(validCodes), [=](const QJsonValue &res) {
                     redeemButton->setEnabled(true);
 
+                    setVoucherBalance(res["balance"].toInt());
+                    new ToastWidget(res["msg"].toString(), this);
                     voucherPlainTextEdit->clear();
                 });
             }
@@ -192,6 +194,8 @@ public:
         setModal(true);
         exec();
     }
+
+protected:
 
     void loadDeviceTable(int bit)
     {
@@ -213,7 +217,7 @@ public:
             
             tableWidget->setItem(i, 1, new QTableWidgetItem(info->deviceName));
             tableWidget->setItem(i, 2, new QTableWidgetItem(info->model));
-            tableWidget->setItem(i, 3, new QTableWidgetItem(info->expireAt.toString("yyyy-MM-dd HH:mm:ss")));
+            tableWidget->setItem(i, 3, new QTableWidgetItem(info->expireAt.get().toString("yyyy-MM-dd HH:mm:ss")));
         }
 
         tableWidget->blockSignals(false);
@@ -243,14 +247,12 @@ public:
         return currentTotalPrice;
     }
 
-public slots:
     void setVoucherBalance(int newBalance) {
         voucherBalance = newBalance;
         updateBalanceLabel();
         autoCheckPaymentMethod();
     }
 
-private:
     void updateBalanceLabel() {
         balanceLabel->setText(QString("¥ %1").arg(QString::number(voucherBalance, 'f', 2)));
     }

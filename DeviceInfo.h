@@ -1,6 +1,7 @@
 #pragma once
 
 #include "global.h"
+#include "SafeObject.h"
 #include <QJsonObject>
 #include <QString>
 #include <QApplication>
@@ -75,6 +76,7 @@ public:
     bool lockedStatus;
     float scaleFactor = 1;
     quint32 groupMask = 0;
+    SafeObject<QDateTime> expireAt;
 
 private:
     inline static QList<DeviceInfo*> allDevices;
