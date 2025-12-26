@@ -491,6 +491,7 @@ protected:
 class JailbreakAssistantDialog : public QDialog {
 public:
     JailbreakAssistantDialog(QWidget *parent = nullptr) : QDialog(parent) {
+        setModal(true);
         setWindowTitle("越狱助手【只支持15.0 - 16.5.1系统】");
         resize(600, 800);
 
@@ -540,8 +541,5 @@ public:
         mainLayout->addWidget(scroll);
 
         QTimer::singleShot(100, step1, &StepBase::activate);
-
-        setModal(true);
-        exec();
     }
 };

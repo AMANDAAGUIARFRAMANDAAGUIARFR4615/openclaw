@@ -28,6 +28,7 @@ public:
 
     explicit RenewalDialog(QWidget *parent) : QDialog(parent)
     {
+        setModal(true);
         setWindowTitle("续费");
         setMinimumSize(480, 720);
 
@@ -136,7 +137,10 @@ public:
         optionsLayout->addWidget(paymentGroupBox);
 
         auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-        connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+        connect(buttonBox, &QDialogButtonBox::accepted, this, [this]() {
+            new ToastWidget("暂不支持微信支付", this);
+            accept();
+        });
         connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
         auto mainLayout = new QVBoxLayout(this);
@@ -190,9 +194,6 @@ public:
 
         filterComboBox->setCurrentIndex(-1);
         filterComboBox->setCurrentIndex(MainWindow::getInstance()->tabWidget->currentIndex());
-
-        setModal(true);
-        exec();
     }
 
 protected:

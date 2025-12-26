@@ -19,15 +19,13 @@ public:
     explicit SettingsViewer(QSettings* settings, QWidget* parent = nullptr)
         : QDialog(parent), m_settings(settings), m_tree(nullptr)
     {
+        setModal(true);
         setWindowTitle("QSettings 数据编辑器");
         setMinimumSize(600, 400);
         
         setupUI();
         populateTree();
         m_tree->expandAll();
-
-        setModal(true);
-        exec();
     }
 
 private:

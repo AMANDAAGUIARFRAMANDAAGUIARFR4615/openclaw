@@ -246,11 +246,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
         if (text == "越狱助手") {
             JailbreakAssistantDialog dialog(this);
+            dialog.exec();
             return;
         }
 
         if (text == "续费") {
             RenewalDialog dialog(this);
+            dialog.exec();
             return;
         }
 
@@ -290,6 +292,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             QMenu menu(this);
             menu.addAction("数据查看", [=]() {
                 SettingsViewer dialog(&settings, this);
+                dialog.exec();
             });
             menu.addAction("兑换码生成", [=]() {
                 bool ok;
