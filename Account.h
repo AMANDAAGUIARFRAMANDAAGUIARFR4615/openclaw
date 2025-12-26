@@ -12,5 +12,5 @@ public:
     int balance = 0;
 
 private:
-    explicit Account(QObject *parent = nullptr);
+    explicit Account(QObject *parent = nullptr) : QObject(parent) {}
 };
