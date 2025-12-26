@@ -54,7 +54,7 @@ public:
 
         show();
 
-        QTimer::singleShot(2000, [this] {
+        QTimer::singleShot(2000, parent, [this] {
             auto fadeOut = new QPropertyAnimation(this, "windowOpacity");
             fadeOut->setDuration(300);
             fadeOut->setStartValue(1);
