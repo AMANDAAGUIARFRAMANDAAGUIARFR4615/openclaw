@@ -173,10 +173,11 @@ public:
 
                 setVoucherBalance(res["balance"].toInt());
 
-                const auto& array = res.toArray();
+                const auto& devices = res["devices"].toArray();
 
-                for (const QJsonValue &item : array) {
-                    // deviceInfo->expireAt.set(QDateTime::fromMSecsSinceEpoch(item.toInteger()));
+                for (const QJsonValue &item : devices) {
+                    auto deviceInfo = DeviceInfo::getDevice(item["udid"].toString());
+                    deviceInfo->expireAt.set(QDateTime::fromMSecsSinceEpoch(item["expireAt"].toInteger()));
                 }
 
                 accept();
@@ -291,8 +292,9 @@ protected:
         return currentTotalPrice;
     }
 
-    void setVoucherBalance(int newBalance) {
-        voucherBalance = newBalance;
+    void setVoucherBalance(int balance) {
+        voucherBalance = balance;
+        Account::getInstance()->balance = balance;
         updateBalanceLabel();
         autoCheckPaymentMethod();
     }

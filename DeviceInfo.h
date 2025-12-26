@@ -39,10 +39,17 @@ public:
         groupMask = settings.value(deviceId + "/groupMask", 0u).toUInt();
 
         allDevices.append(this);
+        devices.insert(deviceId, this);
     }
     
     ~DeviceInfo() {
         allDevices.removeOne(this);
+        devices.remove(deviceId);
+    }
+
+    static DeviceInfo* getDevice(const QString& udid)
+    {
+        return devices[udid];
     }
 
     static QList<DeviceInfo*> getDevices(quint32 mask)
@@ -80,4 +87,5 @@ public:
 
 private:
     inline static QList<DeviceInfo*> allDevices;
+    inline static QHash<QString, DeviceInfo*> devices;
 };
