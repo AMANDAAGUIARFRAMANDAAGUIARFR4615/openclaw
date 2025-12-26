@@ -149,28 +149,38 @@ public:
                 return;
             }
 
+            QList<QString> selectedIds = getSelectedDeviceIds();
+            if (selectedIds.isEmpty()) {
+                new ToastWidget("请至少选择一台设备", this);
+                return;
+            }
+
+            QJsonObject payload;
+            payload["ids"] = QJsonArray::fromStringList(selectedIds);
+            payload["isYearly"] = getDuration() == Yearly;
+
             setEnabled(false); 
             setCursor(Qt::WaitCursor);
 
-            // webSocketClient.emitEvent("deviceRenew", QJsonArray::fromStringList(), [=](const QJsonValue &res) {
-            //     setEnabled(true);
-            //     unsetCursor();
+            webSocketClient.emitEvent("deviceRenew", payload, [=](const QJsonValue &res) {
+                setEnabled(true);
+                unsetCursor();
 
-            //     if (res.isString()) {
-            //         new ToastWidget(res.toString(), this);
-            //         return;
-            //     }
+                if (res.isString()) {
+                    new ToastWidget(res.toString(), this);
+                    return;
+                }
 
-            //     setVoucherBalance(res["balance"].toInt());
+                setVoucherBalance(res["balance"].toInt());
 
-            //     const auto& array = res.toArray();
+                const auto& array = res.toArray();
 
-            //     for (const QJsonValue &item : array) {
-            //         // deviceInfo->expireAt.set(QDateTime::fromMSecsSinceEpoch(item.toInteger()));
-            //     }
+                for (const QJsonValue &item : array) {
+                    // deviceInfo->expireAt.set(QDateTime::fromMSecsSinceEpoch(item.toInteger()));
+                }
 
-            //     accept();
-            // });
+                accept();
+            });
         });
         connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
