@@ -148,7 +148,28 @@ public:
                 return;
             }
 
-            accept();
+            setEnabled(false); 
+            setCursor(Qt::WaitCursor);
+
+            webSocketClient.emitEvent("deviceRenew", QJsonArray::fromStringList(), [=](const QJsonValue &res) {
+                setEnabled(true);
+                unsetCursor();
+
+                if (res.isString()) {
+                    new ToastWidget(res.toString(), this);
+                    return;
+                }
+
+                setVoucherBalance(res["balance"].toInt());
+
+                const auto& array = res.toArray();
+
+                for (const QJsonValue &item : array) {
+                    // deviceInfo->expireAt.set(QDateTime::fromMSecsSinceEpoch(item.toInteger()));
+                }
+
+                accept();
+            });
         });
         connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 

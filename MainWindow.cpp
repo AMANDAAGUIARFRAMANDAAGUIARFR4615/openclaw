@@ -307,11 +307,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
                         return;
                     }
 
-                    const auto& codeArray = res.toArray();
+                    const auto& array = res.toArray();
                     QStringList codes;
 
-                    for (const QJsonValue &value : codeArray) {
-                        codes << value.toString(); 
+                    for (const QJsonValue &item : array) {
+                        codes << item.toString(); 
                     }
 
                     qApp->clipboard()->setText(codes.join("\n"));
