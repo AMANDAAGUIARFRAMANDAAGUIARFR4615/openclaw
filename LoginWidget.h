@@ -1,6 +1,7 @@
 #pragma once
 
 #include "global.h"
+#include "SafeObject.h"
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -9,6 +10,7 @@
 #include <QCheckBox>
 #include <QByteArray>
 #include <QRandomGenerator>
+#include <QJsonArray>
 
 class LoginWidget : public QWidget
 {
@@ -112,6 +114,8 @@ public:
 #endif
     }
 
+    inline static QHash<QString, SafeObject<QDateTime>> expirations;
+    
 signals:
     void authorized(const QJsonValue &account);
 
@@ -263,7 +267,7 @@ protected:
 
                 if (res["msg"].isUndefined()) {
                     saveCredentials(phone, password);
-                    emit authorized(res);
+                    emit authorized(res["account"]);
                     close();
                     return;
                 }
@@ -276,7 +280,13 @@ protected:
 
                 if (res["msg"].isUndefined()) {
                     saveCredentials(phone, password);
-                    emit authorized(res);
+                    const auto& devices = res["devices"].toArray();
+                    for (const QJsonValue& device: devices) {
+                        const auto& udid = device["udid"].toString();
+                        const auto& expireAt = QDateTime::fromString(device["expireAt"].toString(), Qt::ISODateWithMs);
+                        expirations[udid] = expireAt.toLocalTime();
+                    }
+                    emit authorized(res["account"]);
                     close();
                     return;
                 }

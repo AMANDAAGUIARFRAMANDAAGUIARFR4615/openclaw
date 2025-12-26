@@ -16,6 +16,7 @@
 #include "JailbreakAssistantDialog.h"
 #include "RenewalDialog.h"
 #include "Account.h"
+#include "LoginWidget.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -684,6 +685,14 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     auto deviceInfo = connection->deviceInfo;
 
+    deviceInfo->expireAt = LoginWidget::expirations.value(deviceInfo->deviceId);
+    if (!deviceInfo->expireAt.get().isValid())
+    {
+        webSocketClient.emitEvent("deviceExpireAt", deviceInfo->deviceId, [=](const QJsonValue &res) {
+            deviceInfo->expireAt = QDateTime::fromMSecsSinceEpoch(res.toInteger());
+        });
+    }
+
     auto player = new DeviceWidget(connection, deviceInfo);
     player->installEventFilter(this);
 
@@ -692,8 +701,9 @@ void MainWindow::addItem(DeviceConnection* connection)
     if (connection->type == DeviceConnection::Usb)
     {
         auto ctx = UsbDeviceManager::getInstance()->getContext(connection);
-        UsbDeviceManager::getInstance()->connectDevice(ctx->udid, deviceInfo->videoPort, [=](DeviceConnection* conn, const QByteArray& data){
-            device->appendData(data);
+        UsbDeviceManager::getInstance()->connectDevice(ctx->udid, deviceInfo->videoPort, [=](DeviceConnection* conn, const QByteArray& data) {
+            if (deviceInfo->expireAt.get().isValid())
+                device->appendData(data);
         });
 
         player->setSourceDevice(device);
@@ -705,8 +715,11 @@ void MainWindow::addItem(DeviceConnection* connection)
             QTcpSocket *socket = server->nextPendingConnection();
             qDebugEx() << "Client connected:" << socket->peerAddress().toString();
             connect(socket, &QTcpSocket::readyRead, this, [=]() {
-                QTcpSocket *socket = qobject_cast<QTcpSocket*>(sender());
-                device->appendData(socket->readAll());
+                auto socket = qobject_cast<QTcpSocket*>(sender());
+                const auto& data = socket->readAll();
+
+                if (deviceInfo->expireAt.get().isValid())
+                    device->appendData(data);
             });
         });
         server->listen(QHostAddress::Any, 0);

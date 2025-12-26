@@ -177,7 +177,7 @@ public:
 
                 for (const QJsonValue &item : devices) {
                     auto deviceInfo = DeviceInfo::getDevice(item["udid"].toString());
-                    deviceInfo->expireAt.set(QDateTime::fromMSecsSinceEpoch(item["expireAt"].toInteger()));
+                    deviceInfo->expireAt = QDateTime::fromMSecsSinceEpoch(item["expireAt"].toInteger());
                 }
 
                 accept();
