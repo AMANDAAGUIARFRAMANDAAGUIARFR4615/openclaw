@@ -10,9 +10,7 @@
 template <typename T>
 class SafeObject {
 public:
-    SafeObject() {}
-
-    SafeObject(const T& value) {
+    SafeObject(const T& value = T()) {
         set(value);
     }
 

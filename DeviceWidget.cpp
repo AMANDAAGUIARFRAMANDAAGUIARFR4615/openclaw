@@ -58,6 +58,12 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     layout->addLayout(bottomLayout);
     setLayout(layout);
 
+    if (deviceInfo->expireAt.get().isNull()) {
+        webSocketClient.emitEvent("deviceExpireAt", deviceInfo->deviceId, [=](const QJsonValue &res) {
+            deviceInfo->expireAt.set(QDateTime::fromMSecsSinceEpoch(res.toInteger()));
+        });
+    }
+
     EventHub::on(this, "clipboard", [this](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
