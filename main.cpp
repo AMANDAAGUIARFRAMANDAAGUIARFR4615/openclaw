@@ -53,6 +53,34 @@ int main(int argc, char *argv[])
 
     new LogWindow();
 
+#ifndef QT_DEBUG
+    QTimer* timer = new QTimer();
+    timer->setInterval(1000 + (rand() % 500));
+    QObject::connect(timer, &QTimer::timeout, [](){
+        bool detected = false;
+
+        if (IsDebuggerPresent())
+            detected = true;
+
+        BOOL isRemote = FALSE;
+        CheckRemoteDebuggerPresent(GetCurrentProcess(), &isRemote);
+        if (isRemote)
+            detected = true;
+
+#ifdef _WIN64
+        auto peb = (char*)__readgsqword(0x60);
+#else
+        auto peb = (char*)__readfsdword(0x30);
+#endif
+        if (peb[2])
+            detected = true;
+
+        if (detected)
+            __fastfail(7);
+    });
+    timer->start();
+#endif
+
     QObject::connect(&app, &QApplication::focusChanged, [](QWidget *old, QWidget *now) {
         qDebugEx() << "焦点从" << old << "变为" << now;
 
