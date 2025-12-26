@@ -38,7 +38,7 @@ add_executable(${PROJECT_NAME}
     EmojiIconProvider.h Tools.h SettingsViewer.h JailbreakAssistantDialog.h
     Logger.h LogWindow.h EventHub.h
     BitMaskEditorDialog.h LiveStreamDevice.h
-    LoginWidget.h
+    LoginWidget.h Account.h
     MainWindow.h MainWindow.cpp
     VideoFrameWidget.h
     DeviceInfo.h RenewalDialog.h
