@@ -33,7 +33,7 @@ if(WIN32)
 endif()
 
 add_executable(${PROJECT_NAME}
-    main.cpp
+    main.cpp SafeObject.h
     global.h global.cpp AesCrypto.h KeyMapping.h VideoVisibilityManager.h
     EmojiIconProvider.h Tools.h SettingsViewer.h JailbreakAssistantDialog.h
     Logger.h LogWindow.h EventHub.h
