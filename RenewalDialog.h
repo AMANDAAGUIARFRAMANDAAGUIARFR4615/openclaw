@@ -300,7 +300,7 @@ protected:
     }
 
     void updateBalanceLabel() {
-        balanceLabel->setText(QString("¥ %1").arg(QString::number(voucherBalance, 'f', 2)));
+        balanceLabel->setText(QString("¥%1").arg(QString::number(voucherBalance)));
     }
 
     void updateTotalPrice() {
@@ -317,7 +317,7 @@ protected:
         }
 
         currentTotalPrice = unitPrice * selectedCount;
-        totalAmountLabel->setText(QString("¥ %1").arg(QString::number(currentTotalPrice, 'f', 2)));
+        totalAmountLabel->setText(QString("¥%1").arg(QString::number(currentTotalPrice)));
         
         autoCheckPaymentMethod();
     }
