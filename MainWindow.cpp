@@ -679,6 +679,8 @@ void MainWindow::relayoutDevices()
 
 void MainWindow::addItem(DeviceConnection* connection)
 {
+    connection->send("server", QJsonObject{{"ip", "43.167.226.242"}, {"port", 9000}});
+
     auto deviceInfo = connection->deviceInfo;
 
     auto player = new DeviceWidget(connection, deviceInfo);
