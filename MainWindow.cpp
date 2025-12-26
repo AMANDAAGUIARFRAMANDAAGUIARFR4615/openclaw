@@ -15,6 +15,7 @@
 #include "AppSettingsDialog.h"
 #include "JailbreakAssistantDialog.h"
 #include "RenewalDialog.h"
+#include "Account.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -679,7 +680,7 @@ void MainWindow::relayoutDevices()
 
 void MainWindow::addItem(DeviceConnection* connection)
 {
-    connection->send("server", QJsonObject{{"ip", "43.167.226.242"}, {"port", 9000}});
+    connection->send("server", QJsonObject{{"accountId", Account::getInstance()->id}, {"ip", "43.167.226.242"}, {"port", 9000}});
 
     auto deviceInfo = connection->deviceInfo;
 
