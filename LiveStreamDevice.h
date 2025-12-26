@@ -11,32 +11,12 @@
 class LiveStreamDevice : public QIODevice {
     Q_OBJECT
 public:
-    explicit LiveStreamDevice(const QString &hostName = nullptr, quint16 port = 0, QObject *parent = nullptr)
-        : QIODevice(parent) {
-        if (!port)
-            return;
-
-        m_socket = new QTcpSocket();
-        connect(m_socket, &QTcpSocket::errorOccurred, [=](QAbstractSocket::SocketError socketError) {
-            qCriticalEx() << "errorOccurred" << socketError << m_socket->errorString();
-        });
-        
-        connect(m_socket, &QTcpSocket::readyRead, [=]() {
-            appendData(m_socket->readAll());
-        });
-
-        m_socket->connectToHost(hostName, port);
-    }
+    explicit LiveStreamDevice(QObject *parent = nullptr) : QIODevice(parent) {}
 
     ~LiveStreamDevice() {
         QMutexLocker locker(&m_mutex);
         m_stopped = true;
         m_dataAvailable.wakeAll();
-
-        if (m_socket) {
-            m_socket->disconnectFromHost();
-            m_socket->deleteLater();
-        }
     }
 
     bool isSequential() const override { return true; }
@@ -86,7 +66,6 @@ protected:
         return false;
     }
 
-    QTcpSocket* m_socket = nullptr;
     QByteArray m_buffer;
     mutable QMutex m_mutex;
     QWaitCondition m_dataAvailable;

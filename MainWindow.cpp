@@ -684,7 +684,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     auto player = new DeviceWidget(connection, deviceInfo);
     player->installEventFilter(this);
 
-    auto device = new LiveStreamDevice(nullptr, 0, this);
+    auto device = new LiveStreamDevice(this);
 
     if (connection->type == DeviceConnection::Usb)
     {
@@ -697,7 +697,6 @@ void MainWindow::addItem(DeviceConnection* connection)
     }
     else
     {
-        // auto device = new LiveStreamDevice(deviceInfo->localIp, deviceInfo->videoPort, this);
         auto server = new QTcpServer(this);
         connect(server, &QTcpServer::newConnection, this, [=]() {
             QTcpSocket *socket = server->nextPendingConnection();
