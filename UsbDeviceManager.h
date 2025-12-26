@@ -35,12 +35,6 @@ public:
     explicit UsbDeviceManager(QObject* parent = nullptr);
     ~UsbDeviceManager() override = default;
 
-    // 禁止拷贝和移动（保持单例安全）
-    UsbDeviceManager(const UsbDeviceManager&) = delete;
-    UsbDeviceManager& operator=(const UsbDeviceManager&) = delete;
-    UsbDeviceManager(UsbDeviceManager&&) = delete;
-    UsbDeviceManager& operator=(UsbDeviceManager&&) = delete;
-
 private slots:
     void handlePollFinished();
 
