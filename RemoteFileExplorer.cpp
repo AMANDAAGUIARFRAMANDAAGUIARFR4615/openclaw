@@ -7,7 +7,6 @@
 #include "FileViewer.h"
 #include <QVBoxLayout>
 #include <QNetworkReply>
-#include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QUrl>

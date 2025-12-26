@@ -96,7 +96,7 @@ private:
             QByteArray jsonData = buffer.mid(sizeof(quint64) + sizeof(quint32), jsonDataLength);
             // 移除已处理的数据包
             buffer.remove(0, sizeof(quint64) + sizeof(quint32) + jsonDataLength);
-            QJsonDocument doc = QJsonDocument::fromJson(jsonData);
+            const auto& doc = QJsonDocument::fromJson(jsonData);
             
             if (!doc.isNull()) {
                 if (onDataReceivedCallback) {
