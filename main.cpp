@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 
     new LogWindow();
 
-#ifndef QT_DEBUG
+#if defined(Q_OS_WIN) && defined(QT_DEBUG)
     QTimer* timer = new QTimer();
     timer->setInterval(1000 + (rand() % 500));
     QObject::connect(timer, &QTimer::timeout, [](){
