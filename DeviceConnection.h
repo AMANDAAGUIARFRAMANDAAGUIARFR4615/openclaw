@@ -19,13 +19,8 @@ public:
         Tcp
     };
 
-    explicit DeviceConnection(QTcpSocket *socket) : type(Tcp), tcpSocket(socket), usbConnection(nullptr), QObject(socket) {
-        tcpSocketToDevice[tcpSocket] = this;
-    }
-
-    explicit DeviceConnection(idevice_connection_t connection) : type(Usb), tcpSocket(nullptr), usbConnection(connection), QObject(nullptr) {
-        usbConnectionToDevice[usbConnection] = this;
-    }
+    explicit DeviceConnection(QTcpSocket *socket) : type(Tcp), tcpSocket(socket), usbConnection(nullptr), QObject(socket) {}
+    explicit DeviceConnection(idevice_connection_t connection) : type(Usb), tcpSocket(nullptr), usbConnection(connection), QObject(nullptr) {}
 
     void send(const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
         QJsonObject jsonObject;
@@ -87,7 +82,4 @@ public:
 protected:
     QTcpSocket *tcpSocket;
     idevice_connection_t usbConnection;
-
-    inline static QHash<QTcpSocket*, DeviceConnection*> tcpSocketToDevice;
-    inline static QHash<idevice_connection_t, DeviceConnection*> usbConnectionToDevice;
 };
