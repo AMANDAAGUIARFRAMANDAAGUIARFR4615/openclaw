@@ -450,11 +450,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     auto localIPs = NetworkUtils::getPhysicalIPs();
     qDebugEx() << "本机内网IP:" << localIPs;
 
-    auto udpTransport = new UdpTransport(
-        [](const QJsonObject &jsonObject) {
-            qDebugEx() << "Received Data:" << jsonObject;
-        }
-    );
+    auto udpTransport = new UdpTransport(0, this);
 
     auto broadcastTask = [=]() {
         if (getTab().getAutoScanLANDevices() == 0)

@@ -2,9 +2,9 @@
 
 #include "AesCrypto.h"
 #include <QUdpSocket>
-#include <functional>
 #include <QByteArray>
 #include <QJsonObject>
+#include <QJsonDocument>
 #include <QTimer>
 
 class UdpTransport : public QObject
@@ -12,12 +12,7 @@ class UdpTransport : public QObject
     Q_OBJECT
 
 public:
-    UdpTransport(const std::function<void(const QJsonObject &jsonObject)> &onDataReceived,
-              const std::function<void(QAbstractSocket::SocketError)> &onError = nullptr,
-              quint16 listenPort = 0)
-    : onDataReceivedCallback(onDataReceived),
-      onErrorCallback(onError),
-      listenPort(listenPort)
+    explicit UdpTransport(quint16 listenPort = 0, QObject *parent = nullptr) : listenPort(listenPort), QObject(parent)
     {
         socket = new QUdpSocket(this);
 
@@ -43,10 +38,7 @@ public:
         });
 
         connect(socket, &QUdpSocket::errorOccurred, this,  [this](QAbstractSocket::SocketError error) {
-            // qCriticalEx() << "errorOccurred" << error << "|" << socket->errorString();
-
-            if (onErrorCallback)
-                onErrorCallback(error);
+            emit errorOccurred(error);
         });
     }
 
@@ -74,10 +66,11 @@ public:
         //     qCriticalEx() << "发送失败" << dataToSend.size() << host.toString() + ":" + QString::number(port);
     }
 
-private:
-    std::function<void(const QJsonObject &jsonObject)> onDataReceivedCallback;
-    std::function<void(QAbstractSocket::SocketError)> onErrorCallback;
+signals:
+    void dataReceived(const QJsonObject &jsonObject);
+    void errorOccurred(QAbstractSocket::SocketError error);
 
+private:
     void processBufferedData() {
         while (buffer.size() >= sizeof(quint64) + sizeof(quint32)) {
             quint64 identifier = *reinterpret_cast<quint64*>(buffer.data());
@@ -97,15 +90,13 @@ private:
             QByteArray jsonData = buffer.mid(sizeof(quint64) + sizeof(quint32), jsonDataLength);
             // 移除已处理的数据包
             buffer.remove(0, sizeof(quint64) + sizeof(quint32) + jsonDataLength);
+            
             const auto& doc = QJsonDocument::fromJson(jsonData);
             
-            if (!doc.isNull()) {
-                if (onDataReceivedCallback) {
-                    onDataReceivedCallback(doc.object());
-                }
-            } else {
+            if (!doc.isNull())
+                emit dataReceived(doc.object());
+            else
                 qCriticalEx() << "JSON 解析失败，丢弃数据";
-            }
         }
     }
 
