@@ -26,15 +26,6 @@ public:
         screenHeight(json["screenHeight"].toInt()),
         lockedStatus(json["lockedStatus"].toBool()),
         version(json["version"].toString()) {
-            
-        auto screenSize = qApp->primaryScreen()->size();
-        auto maxWidth = screenSize.width() * 0.8;
-        auto maxHeight = screenSize.height() * 0.8;
-
-        if (screenWidth > maxWidth || screenHeight > maxHeight) {
-            scaleFactor = qMin(maxWidth / static_cast<float>(screenWidth),
-                                maxHeight / static_cast<float>(screenHeight));
-        }
 
         groupMask = settings.value(deviceId + "/groupMask", 0u).toUInt();
 
@@ -81,7 +72,6 @@ public:
 
     int orientation;
     bool lockedStatus;
-    float scaleFactor = 1;
     quint32 groupMask = 0;
     SafeObject<QDateTime> expireAt;
 

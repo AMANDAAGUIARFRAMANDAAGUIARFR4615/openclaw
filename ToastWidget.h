@@ -75,8 +75,7 @@ private:
             y = parentCenter.y() - height() / 2;
         } else {
             // 居中于屏幕
-            QScreen *screen = QApplication::primaryScreen();
-            QRect screenGeom = screen->availableGeometry();
+            QRect screenGeom = qApp->primaryScreen()->availableGeometry();
             x = screenGeom.center().x() - width() / 2;
             y = screenGeom.center().y() - height() / 2;
         }

@@ -160,7 +160,10 @@ void DeviceWidget::launchDeviceWindow() {
         placeholder->deleteLater();
     });
 
-    deviceWindow->setFixedSize(deviceInfo->screenWidth * deviceInfo->scaleFactor, deviceInfo->screenHeight * deviceInfo->scaleFactor);
+    float limitW = qApp->primaryScreen()->size().width() * 0.8f;
+    float limitH = qApp->primaryScreen()->size().height() * 0.8f;
+    float scale = std::min({1.0f, limitW / deviceInfo->screenWidth, limitH / deviceInfo->screenHeight});
+    deviceWindow->setFixedSize(deviceInfo->screenWidth * scale, deviceInfo->screenHeight * scale);
     deviceWindow->addVideoFrameWidget(videoFrameWidget);
     deviceWindow->show();
     qobject_cast<QBoxLayout*>(layout())->addWidget(placeholder);
