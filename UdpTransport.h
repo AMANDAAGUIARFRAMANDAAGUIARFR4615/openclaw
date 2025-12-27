@@ -7,27 +7,25 @@
 #include <QJsonDocument>
 #include <QTimer>
 
-class UdpTransport : public QObject
+class UdpTransport : public QUdpSocket
 {
     Q_OBJECT
 
 public:
-    explicit UdpTransport(quint16 listenPort = 0, QObject *parent = nullptr) : listenPort(listenPort), QObject(parent)
+    explicit UdpTransport(quint16 listenPort = 0, QObject *parent = nullptr) : QUdpSocket(parent)
     {
-        socket = new QUdpSocket(this);
-
-        if (!socket->bind(QHostAddress::Any, listenPort)) {
+        if (!bind(QHostAddress::Any, listenPort)) {
             qCriticalEx() << "无法绑定端口";
             return;
         }
 
-        qDebugEx() << "udp绑定端口：" << socket->localPort();
+        qDebugEx() << "udp绑定端口：" << localPort();
 
-        connect(socket, &QUdpSocket::readyRead, this,  [this]() {
+        connect(this, &QUdpSocket::readyRead, this,  [this]() {
             QByteArray receivedData;
-            while (socket->hasPendingDatagrams()) {
-                receivedData.resize(int(socket->pendingDatagramSize()));
-                socket->readDatagram(receivedData.data(), receivedData.size());
+            while (hasPendingDatagrams()) {
+                receivedData.resize(pendingDatagramSize());
+                readDatagram(receivedData.data(), receivedData.size());
 
                 // 将接收到的数据缓存到缓冲区
                 buffer.append(receivedData);
@@ -36,14 +34,10 @@ public:
                 processBufferedData();
             }
         });
-
-        connect(socket, &QUdpSocket::errorOccurred, this,  [this](QAbstractSocket::SocketError error) {
-            emit errorOccurred(error);
-        });
     }
 
     void sendData(const QJsonObject &jsonObject, const QHostAddress &host, quint16 port, quint16 retryCount = 5) {
-        if (socket->state() != QAbstractSocket::BoundState) {
+        if (state() != QAbstractSocket::BoundState) {
             qCriticalEx() << "UDP 套接字未绑定，无法发送数据！";
             return;
         }
@@ -60,7 +54,7 @@ public:
         dataToSend.append(reinterpret_cast<const char*>(&size), sizeof(size));
         dataToSend.append(data);
 
-        auto sent = socket->writeDatagram(dataToSend, host, port);
+        auto sent = writeDatagram(dataToSend, host, port);
 
         // if (sent != dataToSend.size())
         //     qCriticalEx() << "发送失败" << dataToSend.size() << host.toString() + ":" + QString::number(port);
@@ -68,7 +62,6 @@ public:
 
 signals:
     void dataReceived(const QJsonObject &jsonObject);
-    void errorOccurred(QAbstractSocket::SocketError error);
 
 private:
     void processBufferedData() {
@@ -100,7 +93,5 @@ private:
         }
     }
 
-    quint16 listenPort;
-    QUdpSocket *socket;
     QByteArray buffer;
 };
