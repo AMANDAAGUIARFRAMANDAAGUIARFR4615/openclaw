@@ -7,7 +7,6 @@
 #include <QByteArray>
 #include <QJsonObject>
 #include <QMap>
-#include <functional>
 #include <QJsonDocument>
 #include <QHostInfo>
 
@@ -25,29 +24,19 @@ class TcpServer : public QTcpServer
     Q_OBJECT
 
 public:
-    TcpServer(const std::function<void(QTcpSocket*)> &onClientConnected,
-              const std::function<void(QTcpSocket*, const QJsonObject&)> &onDataReceived,
-              const std::function<void(QTcpSocket*)> &onClientDisconnected,
-              const std::function<void(QTcpSocket*, QAbstractSocket::SocketError)> &onError,
-              quint16 port = 0)
-    : onDataReceivedCallback(onDataReceived),
-      onClientConnectedCallback(onClientConnected),
-      onClientDisconnectedCallback(onClientDisconnected),
-      onErrorCallback(onError)
+    explicit TcpServer(QObject *parent = nullptr) : QTcpServer(parent)
     {
-        instance = this;
-
         connect(this, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
 
-        if (!this->listen(QHostAddress::Any, port)) {
-            qCriticalEx() << "无法启动服务器" << port;
+        if (!this->listen(QHostAddress::Any, 0)) {
+            qCriticalEx() << "无法启动服务器";
             return;
         }
 
         qDebugEx() << "服务器已启动,监听端口:" << serverPort();
     }
 
-    static TcpServer* getInstance() {return instance;}
+    static TcpServer* getInstance() { static TcpServer instance; return &instance; }
 
     QSet<QString> getConnectedIps() const {
         QSet<QString> ips;
@@ -67,6 +56,12 @@ public:
     QJsonObject getHostInfo(const QString& ip) {
         return QJsonObject{{"version", "1.0"}, {"ip", ip}, {"port", serverPort()}, {"remoteDeviceName", QHostInfo::localHostName()}};
     }
+
+signals:
+    void clientConnected(QTcpSocket* socket);
+    void dataReceived(QTcpSocket* socket, const QJsonObject& jsonObject);
+    void clientDisconnected(QTcpSocket* socket);
+    void clientError(QTcpSocket* socket, QAbstractSocket::SocketError error);
 
 private slots:
     void onNewConnection() {
@@ -105,9 +100,8 @@ private slots:
         connect(socket, &QTcpSocket::errorOccurred, this, &TcpServer::onErrorOccurred);
 
         clientBuffers[socket] = QByteArray();
-        if (onClientConnectedCallback) {
-            onClientConnectedCallback(socket);
-        }
+        
+        emit clientConnected(socket);
     }
 
     void onReadyRead() {
@@ -126,29 +120,22 @@ private slots:
         qDebugEx() << "连接断开" << ip + ":" + QString::number(port);
 
         clientBuffers.remove(socket);
-        if (onClientDisconnectedCallback) {
-            onClientDisconnectedCallback(socket);
-        }
+        
+        emit clientDisconnected(socket);
+        
         socket->deleteLater();
     }
 
-    void onErrorOccurred(QAbstractSocket::SocketError socketError) {
+    void onErrorOccurred(QAbstractSocket::SocketError error) {
         auto socket = qobject_cast<QTcpSocket*>(sender());
-        qCriticalEx() << "Socket error:" << socketError;
-        if (onErrorCallback && socket) {
-            onErrorCallback(socket, socketError);
-        }
+        qCriticalEx() << "onErrorOccurred" << error << socket->errorString();
+        
+        emit clientError(socket, error);
     }
 
 private:
-    inline static TcpServer* instance;
-
     QMap<QTcpSocket*, QByteArray> clientBuffers; // 保存每个客户端的缓冲区
-    std::function<void(QTcpSocket*)> onClientConnectedCallback;
-    std::function<void(QTcpSocket*, const QJsonObject&)> onDataReceivedCallback;
-    std::function<void(QTcpSocket*)> onClientDisconnectedCallback;
-    std::function<void(QTcpSocket*, QAbstractSocket::SocketError)> onErrorCallback;
-
+ 
     void processBufferedData(QTcpSocket* socket) {
         auto &buffer = clientBuffers[socket];
 
@@ -179,13 +166,10 @@ private:
 
             const auto& doc = QJsonDocument::fromJson(jsonData);
             
-            if (!doc.isNull()) {
-                if (onDataReceivedCallback) {
-                    onDataReceivedCallback(socket, doc.object());
-                }
-            } else {
+            if (!doc.isNull())
+                emit dataReceived(socket, doc.object());
+            else
                 qCriticalEx() << "JSON 解析失败，丢弃数据";
-            }
         }
     }
 };
