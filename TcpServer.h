@@ -2,6 +2,7 @@
 
 #include "NetworkUtils.h"
 #include "AesCrypto.h"
+#include "DeviceConnection.h"
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QByteArray>
@@ -58,10 +59,10 @@ public:
     }
 
 signals:
-    void clientConnected(QTcpSocket* socket);
-    void dataReceived(QTcpSocket* socket, const QJsonObject& jsonObject);
-    void clientDisconnected(QTcpSocket* socket);
-    void clientError(QTcpSocket* socket, QAbstractSocket::SocketError error);
+    void clientConnected(DeviceConnection* connection);
+    void dataReceived(DeviceConnection* connection, const QJsonObject& jsonObject);
+    void clientDisconnected(DeviceConnection* connection);
+    void clientError(DeviceConnection* connection, QAbstractSocket::SocketError error);
 
 private slots:
     void onNewConnection() {
@@ -101,7 +102,10 @@ private slots:
 
         clientBuffers[socket] = QByteArray();
         
-        emit clientConnected(socket);
+        auto connection = new DeviceConnection(socket);
+        connections.insert(socket, connection);
+        
+        emit clientConnected(connection);
     }
 
     void onReadyRead() {
@@ -119,9 +123,13 @@ private slots:
 
         qDebugEx() << "连接断开" << ip + ":" + QString::number(port);
 
+        auto connection = connections.value(socket, nullptr);
+
         clientBuffers.remove(socket);
+        connections.remove(socket);
         
-        emit clientDisconnected(socket);
+        if (connection)
+            emit clientDisconnected(connection);
         
         socket->deleteLater();
     }
@@ -130,11 +138,14 @@ private slots:
         auto socket = qobject_cast<QTcpSocket*>(sender());
         qCriticalEx() << "onErrorOccurred" << error << socket->errorString();
         
-        emit clientError(socket, error);
+        auto connection = connections.value(socket, nullptr);
+        if (connection)
+            emit clientError(connection, error);
     }
 
 private:
-    QMap<QTcpSocket*, QByteArray> clientBuffers; // 保存每个客户端的缓冲区
+    QMap<QTcpSocket*, QByteArray> clientBuffers;
+    QMap<QTcpSocket*, DeviceConnection*> connections;
  
     void processBufferedData(QTcpSocket* socket) {
         auto &buffer = clientBuffers[socket];
@@ -166,10 +177,13 @@ private:
 
             const auto& doc = QJsonDocument::fromJson(jsonData);
             
-            if (!doc.isNull())
-                emit dataReceived(socket, doc.object());
-            else
+            if (!doc.isNull()) {
+                auto connection = connections.value(socket, nullptr);
+                if (connection)
+                    emit dataReceived(connection, doc.object());
+            } else {
                 qCriticalEx() << "JSON 解析失败，丢弃数据";
+            }
         }
     }
 };

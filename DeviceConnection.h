@@ -19,20 +19,12 @@ public:
         Tcp
     };
 
-    explicit DeviceConnection(QTcpSocket *socket) : type(Tcp), tcpSocket(socket), usbConnection(nullptr) {
+    explicit DeviceConnection(QTcpSocket *socket) : type(Tcp), tcpSocket(socket), usbConnection(nullptr), QObject(socket) {
         tcpSocketToDevice[tcpSocket] = this;
     }
 
-    explicit DeviceConnection(idevice_connection_t connection) : type(Usb), tcpSocket(nullptr), usbConnection(connection) {
+    explicit DeviceConnection(idevice_connection_t connection) : type(Usb), tcpSocket(nullptr), usbConnection(connection), QObject(nullptr) {
         usbConnectionToDevice[usbConnection] = this;
-    }
-
-    static DeviceConnection* find(QTcpSocket* socket) {
-        return tcpSocketToDevice.value(socket, nullptr);
-    }
-
-    static DeviceConnection* find(idevice_connection_t connection) {
-        return usbConnectionToDevice.value(connection, nullptr);
     }
 
     void send(const QString& event, const QJsonValue &jsonValue = QJsonValue()) {

@@ -1,8 +1,6 @@
 #include "Logger.h"
 #include "MainWindow.h"
 #include "TcpServer.h"
-#include "NetworkUtils.h"
-#include "DeviceInfo.h"
 #include "EventHub.h"
 #include "DeviceWindow.h"
 #include "UsbDeviceManager.h"
@@ -12,32 +10,14 @@
 #include <QApplication>
 #include <QNetworkProxy>
 #include <QLoggingCategory>
-#include <QHostInfo>
-
-void onClientConnected(QTcpSocket* socket) {
-
-}
 
 void onDataReceived(DeviceConnection *connection, const QJsonObject &jsonObject) {
     auto event = jsonObject["event"].toString();
     auto data = jsonObject["data"];
 
-    if (event == "ping")
-        return;
-
     qDebugEx() << event << data;
 
     EventHub::trigger(event, data, connection);
-}
-
-void onClientDisconnected(QTcpSocket* socket) {
-    DeviceConnection *connection = DeviceConnection::find(socket);
-    EventHub::trigger("disconnected", QJsonValue(), connection);
-    connection->deleteLater();
-}
-
-void onError(QTcpSocket* socket, QAbstractSocket::SocketError socketError) {
-    qCriticalEx() << "发生错误：" << socketError;
 }
 
 int main(int argc, char *argv[])
@@ -112,21 +92,17 @@ int main(int argc, char *argv[])
         Account::getInstance()->phone = account["phone"].toString();
         Account::getInstance()->balance = account["balance"].toInt();
 
-        auto tcpServer = new TcpServer(onClientConnected, [](QTcpSocket* socket, const QJsonObject &jsonObject) {
-            DeviceConnection *connection = DeviceConnection::find(socket);
-            if (!connection)
-                connection = new DeviceConnection(socket);
+        QObject::connect(TcpServer::getInstance(), &TcpServer::clientDisconnected, [](DeviceConnection* conn){
+            EventHub::trigger("disconnected", QJsonValue(), conn);
+        });
 
-            onDataReceived(connection, jsonObject);
-        }, onClientDisconnected, onError);
+        QObject::connect(TcpServer::getInstance(), &TcpServer::dataReceived, onDataReceived);
 
         QObject::connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::deviceDisconnected, [](DeviceConnection* conn){
             EventHub::trigger("disconnected", QJsonValue(), conn);
         });
 
-        QObject::connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::dataReceived, [](DeviceConnection* conn, const QJsonObject& data){
-            onDataReceived(conn, data);
-        });
+        QObject::connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::dataReceived, onDataReceived);
 
         QObject::connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::errorOccurred, [](DeviceConnection* conn, const QString& msg){
             qCriticalEx() << "⚠️ 设备错误:" << msg;
