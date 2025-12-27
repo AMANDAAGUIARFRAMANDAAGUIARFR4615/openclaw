@@ -272,7 +272,7 @@ protected:
     QList<QString> getSelectedDeviceIds() const {
         QList<QString> result;
         for (int i = 0; i < tableWidget->rowCount(); ++i) {
-            auto *item = tableWidget->item(i, 0);
+            auto item = tableWidget->item(i, 0);
             if (item && item->checkState() == Qt::Checked) {
                 result.append(item->data(Qt::UserRole).toString());
             }

@@ -56,11 +56,11 @@ public:
         statusLabel = new QLabel("正在连接服务器...");
         statusLabel->setAlignment(Qt::AlignCenter);
 
-        auto *buttonLayout = new QHBoxLayout;
+        auto buttonLayout = new QHBoxLayout;
         buttonLayout->addWidget(actionButton);
         buttonLayout->addWidget(switchButton);
 
-        auto *mainLayout = new QVBoxLayout(this);
+        auto mainLayout = new QVBoxLayout(this);
         mainLayout->setContentsMargins(40, 30, 40, 30);
         mainLayout->setSpacing(16);
         mainLayout->addStretch();
