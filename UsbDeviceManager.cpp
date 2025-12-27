@@ -22,8 +22,9 @@ void UsbDeviceManager::start() {
 void UsbDeviceManager::stop() {
     qDebugEx() << "🛑 停止设备管理器...";
 
-    for (const auto& it : connToContext) {
-        disconnectDevice(it->handler);
+    const auto connections = connToContext.keys();
+    for (auto conn : connections) {
+        disconnectDevice(conn);
     }
 }
 
@@ -152,15 +153,17 @@ void UsbDeviceManager::handlePollFinished() {
         }
     }
 
-    // 检测设备拔出
-    for (const QString& udid : previousDevices) {
-        if (!currentDevices.contains(udid)) {
-            qDebugEx() << "❌ 检测到设备拔出:" << udid;
-            for (const auto& it : connToContext) {
-                if (it->udid == udid)
-                    disconnectDevice(it->handler);
-            }
+    QList<UsbDeviceContext*> list;
+    
+    for (const auto& ctx : connToContext) {
+        if (!currentDevices.contains(ctx->udid)) {
+            list.append(ctx);
         }
+    }
+
+    for (auto ctx : list) {
+        qDebugEx() << "❌ 检测到设备拔出:" << ctx->udid;
+        disconnectDevice(ctx->handler);
     }
 
     previousDevices = currentDevices;
