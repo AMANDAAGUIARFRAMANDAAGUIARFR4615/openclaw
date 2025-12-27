@@ -84,16 +84,20 @@ void DeviceWindow::changeOrientation(int orientation)
     auto width = size().width();
     auto height = size().height();
 
-    if (orientation == 3 || orientation == 4)
+    if ((orientation == 1 || orientation == 2) && height < width || (orientation == 3 || orientation == 4) && height > width)
     {
         std::swap(width, height);
     }
 
+#ifdef Q_OS_WIN
     this->layout()->setSizeConstraint(QLayout::SetFixedSize);
+#endif
     setFixedSize(width, height);
 
     QTimer::singleShot(0, [=]() {
+#ifdef Q_OS_WIN
         this->layout()->setSizeConstraint(QLayout::SetNoConstraint);
+#endif
         setMinimumSize(0, 0);
         setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
         resize(width, height);
