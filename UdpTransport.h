@@ -43,11 +43,10 @@ public:
         });
 
         connect(socket, &QUdpSocket::errorOccurred, this,  [this](QAbstractSocket::SocketError error) {
-            qCriticalEx() << "errorOccurred" << error << "|" << socket->errorString();
+            // qCriticalEx() << "errorOccurred" << error << "|" << socket->errorString();
 
-            if (onErrorCallback) {
+            if (onErrorCallback)
                 onErrorCallback(error);
-            }
         });
     }
 
@@ -69,8 +68,10 @@ public:
         dataToSend.append(reinterpret_cast<const char*>(&size), sizeof(size));
         dataToSend.append(data);
 
-        if (socket->writeDatagram(dataToSend, host, port) != dataToSend.size()) 
-            qCriticalEx() << "发送失败" << dataToSend.size() << host.toString() + ":" + QString::number(port);
+        auto sent = socket->writeDatagram(dataToSend, host, port);
+
+        // if (sent != dataToSend.size())
+        //     qCriticalEx() << "发送失败" << dataToSend.size() << host.toString() + ":" + QString::number(port);
     }
 
 private:
