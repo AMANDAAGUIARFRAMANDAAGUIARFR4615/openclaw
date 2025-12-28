@@ -64,7 +64,6 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     treeView->setFont(font);
     treeView->setIconSize(QSize(24, 24));
 
-    treeView->viewport()->installEventFilter(this);
     treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     auto layout = new QVBoxLayout(this);
@@ -290,40 +289,6 @@ RemoteFileExplorer::~RemoteFileExplorer()
 
     QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(rootPath);
     instanceMap.remove(key);
-}
-
-bool RemoteFileExplorer::eventFilter(QObject* obj, QEvent* event)
-{
-    if (obj == treeView->viewport()) {
-        if (event->type() == QEvent::MouseButtonPress) {
-            auto me = static_cast<QMouseEvent*>(event);
-            if (me->button() == Qt::LeftButton)
-                m_dragStartPos = me->pos();
-        }
-        else if (event->type() == QEvent::MouseMove) {
-            auto me = static_cast<QMouseEvent*>(event);
-            if (!(me->buttons() & Qt::LeftButton)) return false;
-            if ((me->pos() - m_dragStartPos).manhattanLength() < qApp->startDragDistance()) return false;
-
-            QModelIndex index = treeView->indexAt(m_dragStartPos);
-            if (!index.isValid()) return false;
-
-            QString path = getLocalPath(index.data(Qt::UserRole).toString());
-            if (!QFile::exists(path)) return false;
-
-            QDrag drag(treeView);
-
-            auto mime = new QMimeData();
-            mime->setUrls({ QUrl::fromLocalFile(path) });
-
-            drag.setMimeData(mime);
-
-            const auto& result = drag.exec(Qt::CopyAction);
-
-            qDebugEx() << result;
-        }
-    }
-    return QObject::eventFilter(obj, event);
 }
 
 void RemoteFileExplorer::setStatusMessage(const QString &message)

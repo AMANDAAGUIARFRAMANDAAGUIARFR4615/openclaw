@@ -61,7 +61,6 @@ private:
     ~RemoteFileExplorer();
 
 protected:
-    bool eventFilter(QObject* obj, QEvent* event) override;
     void setStatusMessage(const QString &message);
     void fetchDirectoryContents(const QString &path);
     void addItemToTreeView(const QString& fullPath, const QString& type, const QString& date, int size, const QString& symbolicLink = "");
