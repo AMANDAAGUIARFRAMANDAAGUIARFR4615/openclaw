@@ -3,20 +3,31 @@
 #include <QJsonDocument>
 #include <magic_enum/magic_enum.hpp>
 
-UsbDeviceManager::UsbDeviceManager(QObject* parent)
-    : QObject(parent)
+UsbDeviceManager::UsbDeviceManager(QObject* parent) : QObject(parent)
 {
-    timer = new QTimer(this);
-    timer->callOnTimeout(this, &UsbDeviceManager::pollDevices);
-
-    watcher = new QFutureWatcher<QSet<QString>>(this);
-    connect(watcher, &QFutureWatcher<QSet<QString>>::finished, this, &UsbDeviceManager::handlePollFinished);
+    
 }
 
 void UsbDeviceManager::start() {
     qInfoEx() << "🚀 启动设备管理器...";
+
+    watcher = new QFutureWatcher<QSet<QString>>(this);
+    connect(watcher, &QFutureWatcher<QSet<QString>>::finished, this, &UsbDeviceManager::handlePollFinished);
+    
     pollDevices();
+
+    auto timer = new QTimer(this);
+    timer->callOnTimeout(this, &UsbDeviceManager::pollDevices);
     timer->start(2000);
+
+    auto connectTimer = new QTimer(this);
+    connectTimer->callOnTimeout([this]() {
+        for (auto it = devices.keyValueBegin(); it != devices.keyValueEnd(); ++it) {
+            if (!it->second)
+                connectDevice(it->first, 32839, false);
+        }
+    });
+    connectTimer->start(2000);
 }
 
 void UsbDeviceManager::stop() {
@@ -81,6 +92,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
         });
     }
 
+    devices[udid] = true;
     connToContext.insert(ctx->handler, ctx);
     qDebugEx() << "✅ 连接设备:" << ctx << ctx->udid + ":" + QString::number(ctx->port);
     emit deviceConnected(ctx->handler);
@@ -98,6 +110,7 @@ void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
         return;
     }
 
+    devices[ctx->udid] = false;
     connToContext.remove(conn);
 
     if (ctx->port == 32839)
@@ -149,6 +162,7 @@ void UsbDeviceManager::handlePollFinished() {
     for (const QString& udid : currentDevices) {
         if (!previousDevices.contains(udid)) {
             qInfoEx() << "📱 检测到新设备:" << udid;
+            devices[udid] = false;
             connectDevice(udid, 32839, false);
         }
     }
@@ -163,6 +177,7 @@ void UsbDeviceManager::handlePollFinished() {
 
     for (auto ctx : list) {
         qInfoEx() << "❌ 检测到设备拔出:" << ctx->udid;
+        devices.remove(ctx->udid);
         disconnectDevice(ctx->handler);
     }
 

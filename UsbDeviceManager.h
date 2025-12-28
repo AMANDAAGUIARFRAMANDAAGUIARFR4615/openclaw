@@ -41,11 +41,11 @@ private:
     void pollDevices();
     void processBufferedData(UsbDeviceContext* usbDeviceContext);
 
-    QTimer* timer = nullptr;
     QSet<QString> previousDevices;
     QHash<UsbDeviceContext*, QByteArray> deviceBuffers;
 
     QHash<DeviceConnection*, UsbDeviceContext*> connToContext;
+    QHash<QString, bool> devices;
 
     QFutureWatcher<QSet<QString>>* watcher = nullptr;
 };
