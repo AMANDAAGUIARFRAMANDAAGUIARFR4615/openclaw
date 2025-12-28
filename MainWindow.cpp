@@ -849,7 +849,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
                 saveTabs(index);
             });
         }
-        else if (text == "自动扫描局域网设备") {
+        else if (text == "自动连接局域网设备") {
             QStringList list = {"默认", "关闭", "开启"};
             addOptionMenu(&menu, text, list, &autoScanLANDevices, [=]() {
                 saveTabs(index);
