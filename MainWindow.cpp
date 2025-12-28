@@ -712,6 +712,9 @@ void MainWindow::addItem(DeviceConnection* connection)
             qDebugEx() << "Client connected:" << socket->peerAddress().toString();
             connect(socket, &QTcpSocket::readyRead, socket, [=]() {
                 auto socket = qobject_cast<QTcpSocket*>(sender());
+                if (!socket)
+                    return;
+                    
                 const auto& data = socket->readAll();
 
                 if (deviceInfo->expireAt.get().isValid())

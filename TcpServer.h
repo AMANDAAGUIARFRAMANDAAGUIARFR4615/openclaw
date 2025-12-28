@@ -110,6 +110,9 @@ private slots:
 
     void onReadyRead() {
         auto socket = qobject_cast<QTcpSocket*>(sender());
+        if (!socket)
+            return;
+
         auto data = socket->readAll();
         clientBuffers[socket].append(data);
         processBufferedData(socket);
@@ -117,6 +120,8 @@ private slots:
 
     void onDisconnected() {
         auto socket = qobject_cast<QTcpSocket*>(sender());
+        if (!socket)
+            return;
     
         auto ip = socket->peerAddress().toString();
         auto port = socket->peerPort();
@@ -136,6 +141,9 @@ private slots:
 
     void onErrorOccurred(QAbstractSocket::SocketError error) {
         auto socket = qobject_cast<QTcpSocket*>(sender());
+        if (!socket)
+            return;
+            
         qCriticalEx() << "onErrorOccurred" << error << socket->errorString();
         
         auto connection = connections.value(socket, nullptr);

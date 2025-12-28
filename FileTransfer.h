@@ -110,6 +110,9 @@ protected:
     void onReadyRead()
     {
         auto socket = qobject_cast<QTcpSocket *>(sender());
+        if (!socket)
+            return;
+            
         auto data = socket->readAll();
         handleDataRead(data);
     }
