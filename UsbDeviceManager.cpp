@@ -92,10 +92,16 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
         });
     }
 
-    devices[udid] = true;
     connToContext.insert(ctx->handler, ctx);
-    qDebugEx() << "✅ 连接设备:" << ctx << ctx->udid + ":" + QString::number(ctx->port);
-    emit deviceConnected(ctx->handler);
+
+    if (ctx->port == 32839)
+    {
+        devices[udid] = true;
+        emit deviceConnected(ctx->handler);
+    }
+
+    qDebugEx() << "✅ 连接设备:" << ctx->udid + ":" + QString::number(ctx->port);
+    
     return ctx->handler;
 }
 
@@ -110,13 +116,15 @@ void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
         return;
     }
 
-    devices[ctx->udid] = false;
     connToContext.remove(conn);
 
     if (ctx->port == 32839)
+    {
+        devices[ctx->udid] = false;
         emit deviceDisconnected(conn);
+    }
 
-    qDebugEx() << "❌ 断开设备:" << ctx << ctx->udid + ":" + QString::number(ctx->port);
+    qDebugEx() << "❌ 断开设备:" << ctx->udid + ":" + QString::number(ctx->port);
 
     ctx->handler->deleteLater();
 
