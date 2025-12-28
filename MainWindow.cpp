@@ -710,7 +710,7 @@ void MainWindow::addItem(DeviceConnection* connection)
         connect(server, &QTcpServer::newConnection, this, [=]() {
             QTcpSocket *socket = server->nextPendingConnection();
             qDebugEx() << "Client connected:" << socket->peerAddress().toString();
-            connect(socket, &QTcpSocket::readyRead, this, [=]() {
+            connect(socket, &QTcpSocket::readyRead, socket, [=]() {
                 auto socket = qobject_cast<QTcpSocket*>(sender());
                 const auto& data = socket->readAll();
 
