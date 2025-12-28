@@ -376,7 +376,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     percentLabel->setFixedWidth(40);
     percentLabel->setAlignment(Qt::AlignCenter);
 
-    connect(zoomSlider, &QSlider::valueChanged, this, [=](int value) {
+    connect(zoomSlider, &QSlider::valueChanged, [=](int value) {
         getTab().scale = value;
         percentLabel->setText(QString::number(value) + "%");
         relayoutDevices();
@@ -403,7 +403,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
     videoVisibilityManager = new VideoVisibilityManager(deviceListWidget, this);
 
-    connect(tabBar, &QTabBar::currentChanged, this, [=](int index) {
+    connect(tabBar, &QTabBar::currentChanged, [=](int index) {
         qDebugEx() << "onTabChanged" << index;
 
         syncVideoQualityToDevices();
@@ -692,7 +692,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     auto player = new DeviceWidget(connection, deviceInfo);
     player->installEventFilter(this);
 
-    auto device = new LiveStreamDevice(this);
+    auto device = new LiveStreamDevice(player);
 
     if (connection->type == DeviceConnection::Usb)
     {
@@ -706,15 +706,15 @@ void MainWindow::addItem(DeviceConnection* connection)
     }
     else
     {
-        auto server = new QTcpServer(this);
-        connect(server, &QTcpServer::newConnection, this, [=]() {
+        auto server = new QTcpServer(player);
+        connect(server, &QTcpServer::newConnection, [=]() {
             QTcpSocket *socket = server->nextPendingConnection();
             qDebugEx() << "Client connected:" << socket->peerAddress().toString();
-            connect(socket, &QTcpSocket::readyRead, socket, [=]() {
+            connect(socket, &QTcpSocket::readyRead, [=]() {
                 auto socket = qobject_cast<QTcpSocket*>(sender());
                 if (!socket)
                     return;
-                    
+
                 const auto& data = socket->readAll();
 
                 if (deviceInfo->expireAt.get().isValid())
@@ -724,15 +724,7 @@ void MainWindow::addItem(DeviceConnection* connection)
         server->listen(QHostAddress::Any, 0);
         connection->send("videoPort", server->serverPort());
         player->setSourceDevice(device);
-
-        connect(player, &QObject::destroyed, [=]() {
-            server->deleteLater();
-        });
     }
-
-    connect(player, &QObject::destroyed, [=]() {
-        delete device;//此处不能用deleteLater();
-    });
 
     auto frame = new QFrame();
     frame->setFrameShape(QFrame::Box);

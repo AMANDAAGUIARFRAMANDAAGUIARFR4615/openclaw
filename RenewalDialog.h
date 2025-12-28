@@ -138,7 +138,7 @@ public:
         optionsLayout->addWidget(paymentGroupBox);
 
         auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-        connect(buttonBox, &QDialogButtonBox::accepted, this, [this]() {
+        connect(buttonBox, &QDialogButtonBox::accepted, [this]() {
             if (wechatRadioButton->isChecked()) {
                 new ToastWidget("暂不支持微信支付", this);
                 return;
@@ -194,7 +194,7 @@ public:
         mainLayout->addLayout(optionsLayout);
         mainLayout->addWidget(buttonBox);
 
-        connect(filterComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
+        connect(filterComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int index) {
             qDebugEx() << "QComboBox::currentIndexChanged" << index;
             if (index < 0)
                 return;
@@ -203,13 +203,13 @@ public:
             loadDeviceTable(bit); 
         });
 
-        connect(tableWidget, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item){
+        connect(tableWidget, &QTableWidget::itemChanged, [this](QTableWidgetItem *item){
             if (item->column() == 0) updateTotalPrice();
         });
         
         connect(monthRadioButton, &QRadioButton::toggled, this, &RenewalDialog::updateTotalPrice);
 
-        connect(redeemButton, &QPushButton::clicked, this, [this](){
+        connect(redeemButton, &QPushButton::clicked, [this](){
             QString content = voucherPlainTextEdit->toPlainText();
             if (content.trimmed().isEmpty()) return;
 

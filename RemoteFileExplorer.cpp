@@ -531,7 +531,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
         transferTable->setItem(row, col, item);
     }
 
-    connect(transfer, &FileTransfer::progressUpdated, [=](quint64 transferred, quint64 total) {
+    connect(transfer, &FileTransfer::progressUpdated, this, [=](quint64 transferred, quint64 total) {
         double percent = (double)transferred / total * 100;
         transferTable->item(row, 3)->setText(QString::number(percent, 'f', 1) + "%");
         transferTable->item(row, 4)->setText(QString("%1/%2").arg(Tools::formatByteSize(transferred)).arg(Tools::formatByteSize(total)));
