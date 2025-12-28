@@ -677,7 +677,11 @@ void MainWindow::relayoutDevices()
 
 void MainWindow::addItem(DeviceConnection* connection)
 {
+#ifdef QT_DEBUG
+    connection->send("server", QJsonObject{{"accountId", Account::getInstance()->id}, {"ip", "192.168.0.111"}, {"port", 3000}});
+#else
     connection->send("server", QJsonObject{{"accountId", Account::getInstance()->id}, {"ip", "43.167.226.242"}, {"port", 9000}});
+#endif
 
     auto deviceInfo = connection->deviceInfo;
 
