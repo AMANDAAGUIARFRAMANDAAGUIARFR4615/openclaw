@@ -73,13 +73,8 @@ public:
         if (tcpServer)
             tcpServer->deleteLater();
         
-        if (connection->type != DeviceConnection::Usb) {
-            if (transferConnection)
-                transferConnection->deleteLater();
-        }
-        else {
+        if (connection->type == DeviceConnection::Usb)
             UsbDeviceManager::getInstance()->disconnectDevice(transferConnection);
-        }
 
         connection = nullptr;
     }
