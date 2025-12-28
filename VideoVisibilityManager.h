@@ -6,14 +6,16 @@
 #include <QSet>
 #include <QEvent>
 #include <QRect>
+#include <QAbstractItemModel>
 
 class VideoVisibilityManager : public QObject {
     Q_OBJECT
 public:
-    explicit VideoVisibilityManager(QListWidget* listWidget, QObject* parent = nullptr)
-        : QObject(parent), m_list(listWidget)
+    explicit VideoVisibilityManager(QListWidget* listWidget, QObject* parent = nullptr) : m_list(listWidget), QObject(parent)
     {
         connect(m_list->verticalScrollBar(), &QScrollBar::valueChanged, this, &VideoVisibilityManager::checkVisibility);
+        connect(m_list->model(), &QAbstractItemModel::rowsAboutToBeRemoved, this, &VideoVisibilityManager::onRowsAboutToBeRemoved);
+
         m_list->installEventFilter(this);
         m_list->viewport()->installEventFilter(this);
     }
@@ -29,6 +31,19 @@ protected:
             checkVisibility();
         
         return QObject::eventFilter(obj, event);
+    }
+
+private slots:
+    void onRowsAboutToBeRemoved(const QModelIndex& parent, int start, int end) {
+        Q_UNUSED(parent);
+        
+        for (int i = start; i <= end; ++i) {
+            QListWidgetItem* item = m_list->item(i);
+            if (m_lastVisibleItems.contains(item)) {
+                setPlayState(item, false);
+                m_lastVisibleItems.remove(item);
+            }
+        }
     }
 
 private:
@@ -48,7 +63,7 @@ private:
             if (itemRect.bottom() < viewRect.top())
                 continue;
 
-            // 2. 如果 Item 顶部已经跑出视口底部，后续的 item 肯定也在下面，直接结束循环 (性能优化关键)
+            // 2. 如果 Item 顶部已经跑出视口底部，后续的 item 肯定也在下面，直接结束循环
             if (itemRect.top() > viewRect.bottom())
                 break;
 
