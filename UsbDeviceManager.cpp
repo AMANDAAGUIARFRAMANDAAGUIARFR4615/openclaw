@@ -100,7 +100,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
         emit deviceConnected(ctx->handler);
     }
 
-    qDebugEx() << "✅ 连接设备:" << ctx->udid + ":" + QString::number(ctx->port);
+    qDebugEx() << "✅连接设备:" << ctx->udid + ":" + QString::number(ctx->port);
     
     return ctx->handler;
 }
@@ -124,7 +124,7 @@ void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
         emit deviceDisconnected(conn);
     }
 
-    qDebugEx() << "❌ 断开设备:" << ctx->udid + ":" + QString::number(ctx->port);
+    qDebugEx() << "❌断开设备:" << ctx->udid + ":" + QString::number(ctx->port);
 
     ctx->handler->deleteLater();
 
@@ -169,7 +169,7 @@ void UsbDeviceManager::handlePollFinished() {
 
     for (const QString& udid : currentDevices) {
         if (!previousDevices.contains(udid)) {
-            qInfoEx() << "📱 检测到新设备:" << udid;
+            qInfoEx() << "📱检测到新设备:" << udid;
             devices[udid] = false;
             connectDevice(udid, 32839, false);
         }
@@ -184,7 +184,7 @@ void UsbDeviceManager::handlePollFinished() {
     }
 
     for (auto ctx : list) {
-        qInfoEx() << "❌ 检测到设备拔出:" << ctx->udid;
+        qInfoEx() << "❌检测到设备拔出:" << ctx->udid;
         devices.remove(ctx->udid);
         disconnectDevice(ctx->handler);
     }
