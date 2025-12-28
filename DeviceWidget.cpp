@@ -145,13 +145,10 @@ void DeviceWidget::launchDeviceWindow() {
     connection->send("setVideoQuality", qMax(videoQuality, 3));
 
     auto videoFrameWidgetLocal = videoFrameWidget;
-    QPointer<QWidget> placeholder = new QWidget();
+    auto placeholder = new QWidget();
 
     deviceWindow = new DeviceWindow(connection, deviceInfo);
-    connect(deviceWindow, &QObject::destroyed, [=]() {
-        if (!placeholder)
-            return;
-
+    connect(deviceWindow, &QObject::destroyed, this, [=]() {
         connection->send("setVideoQuality", videoQuality);
 
         addVideoFrameWidget(videoFrameWidgetLocal);
