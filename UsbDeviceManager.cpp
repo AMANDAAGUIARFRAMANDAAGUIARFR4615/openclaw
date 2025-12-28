@@ -14,13 +14,13 @@ UsbDeviceManager::UsbDeviceManager(QObject* parent)
 }
 
 void UsbDeviceManager::start() {
-    qDebugEx() << "🚀 启动设备管理器...";
+    qInfoEx() << "🚀 启动设备管理器...";
     pollDevices();
     timer->start(2000);
 }
 
 void UsbDeviceManager::stop() {
-    qDebugEx() << "🛑 停止设备管理器...";
+    qInfoEx() << "🛑 停止设备管理器...";
 
     const auto connections = connToContext.keys();
     for (auto conn : connections) {
@@ -151,7 +151,7 @@ void UsbDeviceManager::handlePollFinished() {
 
     for (const QString& udid : currentDevices) {
         if (!previousDevices.contains(udid)) {
-            qDebugEx() << "📱 检测到新设备:" << udid;
+            qInfoEx() << "📱 检测到新设备:" << udid;
             connectDevice(udid, 32839, false);
         }
     }
@@ -165,7 +165,7 @@ void UsbDeviceManager::handlePollFinished() {
     }
 
     for (auto ctx : list) {
-        qDebugEx() << "❌ 检测到设备拔出:" << ctx->udid;
+        qInfoEx() << "❌ 检测到设备拔出:" << ctx->udid;
         disconnectDevice(ctx->handler);
     }
 

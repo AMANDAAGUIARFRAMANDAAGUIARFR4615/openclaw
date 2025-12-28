@@ -31,6 +31,11 @@ public:
         }
 
         qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &message) {
+#ifndef QT_DEBUG
+            if (type == QtDebugMsg)
+                return;
+#endif
+
             QMetaObject::invokeMethod(instance, [=]() {
                 QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss.zzz");
                 QString formattedMessage = QString("[%1] %2 | %3").arg(time).arg(magic_enum::enum_name(type)).arg(message);

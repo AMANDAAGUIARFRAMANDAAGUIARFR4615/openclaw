@@ -124,7 +124,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             mainLayout->setSizeConstraint(QLayout::SetFixedSize); 
 
             auto localIPs = NetworkUtils::getPhysicalIPs();
-            qDebugEx() << "本机内网IP:" << localIPs;
+            qInfoEx() << "本机内网IP:" << localIPs;
 
             for (const QString &localIP : localIPs) {
                 const auto& hostInfo = TcpServer::getInstance()->getHostInfo(localIP);
@@ -448,7 +448,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     loadTabs();
 
     auto localIPs = NetworkUtils::getPhysicalIPs();
-    qDebugEx() << "本机内网IP:" << localIPs;
+    qInfoEx() << "本机内网IP:" << localIPs;
 
     auto udpTransport = new UdpTransport(0, this);
 

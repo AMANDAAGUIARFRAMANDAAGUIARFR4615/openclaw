@@ -34,7 +34,7 @@ public:
             return;
         }
 
-        qDebugEx() << "服务器已启动,监听端口:" << serverPort();
+        qInfoEx() << "服务器已启动,监听端口:" << serverPort();
     }
 
     static TcpServer* getInstance() { static TcpServer instance; return &instance; }
