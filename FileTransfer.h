@@ -46,12 +46,10 @@ public:
                 if (data["id"] != id)
                     return;
 
-                auto ctx = UsbDeviceManager::getInstance()->getContext(connection);
-
-                transferConnection = UsbDeviceManager::getInstance()->connectDevice(ctx->udid, data["port"].toInt(), true);
+                transferConnection = UsbDeviceManager::getInstance()->connectDevice(connection->deviceInfo->deviceId, data["port"].toInt(), true);
 
                 if (!transferConnection) {
-                    qCriticalEx() << "连接设备失败" << ctx->udid << data["port"];
+                    qCriticalEx() << "连接设备失败" << connection->deviceInfo->deviceId << data["port"];
                     return;
                 }
 

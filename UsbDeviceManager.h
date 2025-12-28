@@ -23,8 +23,6 @@ public:
     DeviceConnection* connectDevice(const QString& udid, uint16_t port, bool rawMode);
     void disconnectDevice(DeviceConnection* conn);
 
-    UsbDeviceContext* getContext(DeviceConnection* conn) const;
-
 signals:
     void deviceConnected(DeviceConnection* conn);
     void deviceDisconnected(DeviceConnection* conn);
