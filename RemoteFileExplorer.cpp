@@ -308,35 +308,19 @@ bool RemoteFileExplorer::eventFilter(QObject* obj, QEvent* event)
             QModelIndex index = treeView->indexAt(m_dragStartPos);
             if (!index.isValid()) return false;
 
-            QString path = index.data(Qt::UserRole).toString();
-            if (path.isEmpty()) return false;
+            QString path = getLocalPath(index.data(Qt::UserRole).toString());
+            if (!QFile::exists(path)) return false;
 
-            auto drag = new QDrag(treeView);
+            QDrag drag(treeView);
+
             auto mime = new QMimeData();
-      
-            QString tempPath = QDir::temp().filePath(QFileInfo(path).fileName());
+            mime->setUrls({ QUrl::fromLocalFile(path) });
 
-            QFile tempFile(tempPath);
-            if (!tempFile.exists()) {
-                if (tempFile.open(QIODevice::WriteOnly)) {
-                    tempFile.write("");  // 创建一个空文件占位
-                    tempFile.close();
-                } else {
-                    qCriticalEx() << "无法创建临时文件：" << tempPath;
-                    return false;
-                }
-            }
+            drag.setMimeData(mime);
 
-            mime->setUrls({ QUrl::fromLocalFile(tempPath) });
+            const auto& result = drag.exec(Qt::CopyAction);
 
-            drag->setMimeData(mime);
-            auto result = drag->exec(Qt::CopyAction);
-
-            if (result == Qt::IgnoreAction) {
-                qDebugEx() << "拖拽取消，删除占位文件";
-            } else if (result == Qt::CopyAction) {
-                qDebugEx() << "拖拽完成，开始下载远程文件";
-            }
+            qDebugEx() << result;
         }
     }
     return QObject::eventFilter(obj, event);
