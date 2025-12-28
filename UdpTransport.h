@@ -21,7 +21,7 @@ public:
 
         qDebugEx() << "udp绑定端口：" << localPort();
 
-        connect(this, &QUdpSocket::readyRead, this,  [this]() {
+        connect(this, &QUdpSocket::readyRead, [this]() {
             QByteArray receivedData;
             while (hasPendingDatagrams()) {
                 receivedData.resize(pendingDatagramSize());

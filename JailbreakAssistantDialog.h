@@ -169,7 +169,7 @@ private slots:
 
         QNetworkRequest request(m_url);
         auto reply = manager->get(request);
-        connect(reply, &QNetworkReply::downloadProgress, [this](qint64 bytesReceived, qint64 bytesTotal){
+        connect(reply, &QNetworkReply::downloadProgress, this, [this](qint64 bytesReceived, qint64 bytesTotal){
             if (bytesTotal > 0) {
                 int percent = (bytesReceived * 100) / bytesTotal;
                 bar->setValue(percent);
@@ -178,11 +178,11 @@ private slots:
                                         .arg(bytesTotal / 1024));
             }
         });
-        connect(reply, &QNetworkReply::readyRead, [=]() {
+        connect(reply, &QNetworkReply::readyRead, this, [=]() {
             if (file->isOpen())
                 file->write(reply->readAll());
         });
-        connect(reply, &QNetworkReply::finished, [=]() {
+        connect(reply, &QNetworkReply::finished, this, [=]() {
             if (file) {
                 file->close();
                 file->deleteLater();
@@ -532,7 +532,7 @@ public:
             containerLayout->addWidget(step);
         }
 
-        connect(step2, &StepBase::finished, [=]() {
+        connect(step2, &StepBase::finished, step3, [=]() {
             step3->setTargetAppName(step2->getSelectedAppValue());
         });
 
