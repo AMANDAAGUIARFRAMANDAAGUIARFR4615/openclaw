@@ -77,6 +77,9 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
             } else if (err != IDEVICE_E_SUCCESS) {
                 emit errorOccurred(ctx->handler, QString("%1端口通信错误: %2").arg(port).arg(magic_enum::enum_name(err)));
                 disconnectDevice(ctx->handler);
+
+                if (!rawMode)
+                    connectDevice(udid, port, rawMode);
             }
         });
     }
