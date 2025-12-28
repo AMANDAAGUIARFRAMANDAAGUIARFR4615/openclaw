@@ -697,7 +697,12 @@ void MainWindow::addItem(DeviceConnection* connection)
     if (connection->type == DeviceConnection::Usb)
     {
         auto ctx = UsbDeviceManager::getInstance()->getContext(connection);
-        UsbDeviceManager::getInstance()->connectDevice(ctx->udid, deviceInfo->videoPort, [=](DeviceConnection* conn, const QByteArray& data) {
+        auto videoConnection = UsbDeviceManager::getInstance()->connectDevice(ctx->udid, deviceInfo->videoPort, true);
+
+        connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::rawDataReceived, player, [=](DeviceConnection* sender, const QByteArray& data){
+            if (sender != videoConnection)
+                return;
+
             if (deviceInfo->expireAt.get().isValid())
                 device->appendData(data);
         });

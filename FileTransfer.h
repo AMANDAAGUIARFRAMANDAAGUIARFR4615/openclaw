@@ -48,14 +48,19 @@ public:
 
                 auto ctx = UsbDeviceManager::getInstance()->getContext(connection);
 
-                transferConnection = UsbDeviceManager::getInstance()->connectDevice(ctx->udid, data["port"].toInt(), [=](DeviceConnection* conn, const QByteArray& data){
-                    handleDataRead(data);
-                });
+                transferConnection = UsbDeviceManager::getInstance()->connectDevice(ctx->udid, data["port"].toInt(), true);
 
                 if (!transferConnection) {
                     qCriticalEx() << "连接设备失败" << ctx->udid << data["port"];
                     return;
                 }
+
+                connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::rawDataReceived, this, [=](DeviceConnection* sender, const QByteArray& data){
+                    if (sender != transferConnection)
+                        return;
+
+                    handleDataRead(data);
+                });
 
                 handleNewConnection();
             });

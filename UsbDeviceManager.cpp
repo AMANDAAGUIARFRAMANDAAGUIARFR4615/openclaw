@@ -28,7 +28,7 @@ void UsbDeviceManager::stop() {
     }
 }
 
-DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t port, std::function<void(DeviceConnection*, const QByteArray&)> rawDataCallback) {
+DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t port, bool rawMode) {
     UsbDeviceContext* ctx = new UsbDeviceContext();
     ctx->udid = udid;
     ctx->port = port;
@@ -48,7 +48,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
 
     ctx->handler = new DeviceConnection(ctx->connection);
     
-    if (!rawDataCallback)
+    if (!rawMode)
     {
         ctx->handler->send("deviceInfo", QJsonObject{
             {"remoteDeviceName", QHostInfo::localHostName()}
@@ -66,9 +66,9 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
                 QByteArray data(buffer, bytes);
                 // qDebugEx() << "接收到数据字节数" << bytes;
 
-                if (rawDataCallback)
+                if (rawMode)
                 {
-                    rawDataCallback(ctx->handler, data);
+                    emit rawDataReceived(ctx->handler, data);
                     return;
                 }
 
@@ -149,7 +149,7 @@ void UsbDeviceManager::handlePollFinished() {
     for (const QString& udid : currentDevices) {
         if (!previousDevices.contains(udid)) {
             qDebugEx() << "📱 检测到新设备:" << udid;
-            connectDevice(udid, 32839);
+            connectDevice(udid, 32839, false);
         }
     }
 

@@ -20,7 +20,7 @@ public:
     void start();
     void stop();
 
-    DeviceConnection* connectDevice(const QString& udid, uint16_t port, std::function<void(DeviceConnection*, const QByteArray&)> rawDataCallback = nullptr);
+    DeviceConnection* connectDevice(const QString& udid, uint16_t port, bool rawMode);
     void disconnectDevice(DeviceConnection* conn);
 
     UsbDeviceContext* getContext(DeviceConnection* conn) const;
@@ -30,6 +30,7 @@ signals:
     void deviceDisconnected(DeviceConnection* conn);
     void dataReceived(DeviceConnection* conn, const QJsonObject& json);
     void errorOccurred(DeviceConnection* conn, const QString& message);
+    void rawDataReceived(DeviceConnection* conn, const QByteArray& data);
 
 public:
     explicit UsbDeviceManager(QObject* parent = nullptr);
