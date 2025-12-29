@@ -113,12 +113,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     });
 
     connect(sideBarList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
-        QString text = item->text();
+        QString title = item->text();
 
-        if (text == "设备连接") {
+        if (title == "设备连接") {
             auto qrDialog = new QDialog(this);
             qrDialog->setAttribute(Qt::WA_DeleteOnClose);
-            qrDialog->setWindowTitle("扫码连接");
+            qrDialog->setWindowTitle("用手机APP扫码连接");
 
             auto mainLayout = new QHBoxLayout(qrDialog);
             mainLayout->setSizeConstraint(QLayout::SetFixedSize); 
@@ -168,7 +168,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             return;
         }
 
-        if (text == "同屏操作") {
+        if (title == "同屏操作") {
             isMultiControlEnabled = !isMultiControlEnabled;
             const auto& icon = EmojiIconProvider::createIcon("🕹️", 64, !isMultiControlEnabled);
             item->setIcon(icon);
@@ -176,7 +176,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             return;
         }
 
-        if (text == "设置") {
+        if (title == "设置") {
             auto appSettingsDialog = AppSettingsDialog::getInstance();
             appSettingsDialog->setParent(this);
             appSettingsDialog->setWindowFlags(Qt::Dialog);
@@ -184,10 +184,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             return;
         }
 
-        if (text == "帮助") {
+        if (title == "帮助") {
             auto helpDialog = new QDialog(this);
             helpDialog->setAttribute(Qt::WA_DeleteOnClose);
-            helpDialog->setWindowTitle("帮助");
+            helpDialog->setWindowTitle(title);
             helpDialog->resize(600, 500);
 
             auto layout = new QVBoxLayout(helpDialog);
@@ -246,16 +246,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             return;
         }
 
-        if (text == "越狱助手") {
+        if (title == "越狱助手") {
             JailbreakAssistantDialog dialog(this);
             dialog.exec();
             return;
         }
 
-        if (text == "手机软件源") {
+        if (title == "手机软件源") {
             auto repoDialog = new QDialog(this);
             repoDialog->setAttribute(Qt::WA_DeleteOnClose);
-            repoDialog->setWindowTitle("软件源");
+            repoDialog->setWindowTitle(title);
 
             auto mainLayout = new QVBoxLayout(repoDialog);
 
@@ -299,16 +299,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             return;
         }
 
-        if (text == "续费") {
+        if (title == "续费") {
             RenewalDialog dialog(this);
             dialog.exec();
             return;
         }
 
-        if (text == "客服") {
+        if (title == "客服") {
             auto supportDialog = new QDialog(this);
             supportDialog->setAttribute(Qt::WA_DeleteOnClose);
-            supportDialog->setWindowTitle("客服");
+            supportDialog->setWindowTitle(title);
 
             auto mainLayout = new QHBoxLayout(supportDialog);
             mainLayout->setSizeConstraint(QLayout::SetFixedSize);
@@ -329,7 +329,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             return;
         }
 
-        if (text == "日志") {
+        if (title == "日志") {
             auto logWindow = LogWindow::getInstance();
             logWindow->setParent(deviceListWidget);
             logWindow->resize(deviceListWidget->size());
@@ -337,7 +337,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             return;
         }
 
-        if (text == "开发者") {
+        if (title == "开发者") {
             QMenu menu(this);
             menu.addAction("数据查看", [=]() {
                 SettingsViewer dialog(&settings, this);
