@@ -57,20 +57,6 @@ add_executable(${PROJECT_NAME}
     ${RESOURCE_SOURCES}
 )
 
-if(MINGW OR UNIX)
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        # 链接选项：-s 会去除所有符号表和重定位信息
-        target_link_options(${PROJECT_NAME} PRIVATE -s)
-        
-        # 编译选项：-O3 最高级优化
-        target_compile_options(${PROJECT_NAME} PRIVATE -O3)
-    endif()
-endif()
-
-if(MSVC)
-    target_link_options(${PROJECT_NAME} PRIVATE /OPT:REF /OPT:ICF)
-endif()
-
 set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE TRUE
     MACOSX_BUNDLE TRUE
