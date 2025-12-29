@@ -69,51 +69,6 @@ jobs:
           
           perl -pi -e "s|setApplicationDisplayName\(\"RemotePro\"\)|setApplicationDisplayName\(\"$SAFE_MSG $BUILD_TIME\"\)|g" main.cpp
 
-      - name: Write to frpc.toml
-        if: false
-        shell: bash
-        run: |
-          cat << EOF > frpc.toml
-          user = "RemotePro"
-
-          serverAddr = "165.154.244.104"
-          serverPort = 7000
-          loginFailExit = true
-
-          auth.method = "token"
-          auth.token = "2f1d3a0e-9b64-4b91-b76b-8cb4a2f2e5d3"
-
-          [[proxies]]
-          name = "rdp"
-          type = "tcp"
-          localIP = "${{ runner.os == 'Windows' && '127.0.0.1' || '172.17.0.1' }}"
-          localPort = 1234
-          remotePort = 9005
-
-          EOF
-
-      - name: 运行Windows
-        if: false
-        run: |
-          net user runneradmin mynewpassword@112233
-
-          tzutil /s "China Standard Time"
-          # 显示文件扩展名
-          reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v HideFileExt /t REG_DWORD /d 0 /f
-          # 显示隐藏文件
-          reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v Hidden /t REG_DWORD /d 1 /f
-          # 重启生效
-          taskkill /f /im explorer.exe
-          start explorer.exe
-
-          reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v UserAuthentication /t REG_DWORD /d 0 /f
-    
-          net stop termservice /y
-          net start termservice
-
-          netsh interface portproxy add v4tov4 listenport=1234 listenaddress=0.0.0.0 connectport=3389 connectaddress=127.0.0.1
-          Start-Process -FilePath "frpc" -ArgumentList "-c frpc.toml" -NoNewWindow
-
       - name: Set Env
         shell: bash
         run: |
@@ -337,9 +292,3 @@ jobs:
             -H "Content-Type: application/octet-stream" \
             --data-binary @RemotePro.zip \
             "${{ needs.create_release.outputs.upload_url }}?name=${{ needs.create_release.outputs.tag_name }}-${{ matrix.os }}.zip"
-
-
-      - name: 等待
-        if: false
-        run: |
-          Start-Sleep -Seconds 86400
