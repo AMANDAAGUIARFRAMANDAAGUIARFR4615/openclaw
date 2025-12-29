@@ -98,6 +98,8 @@ add_executable(${PROJECT_NAME}
 # =========================================================
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_definitions(${PROJECT_NAME} PRIVATE QT_NO_DEBUG_OUTPUT QT_NO_WARNING_OUTPUT)
+
     # --- MinGW / GCC / Clang ---
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         target_compile_options(${PROJECT_NAME} PRIVATE
