@@ -87,6 +87,11 @@ int main(int argc, char *argv[])
     auto loginWidget = new LoginWidget();
     loginWidget->show();
 
+    QObject::connect(webSocketClient, &QWebSocket::connected, []() {
+        if (!Account::getInstance()->id.isEmpty())
+            webSocketClient->emitEvent("reconnect", Account::getInstance()->id);
+    });
+
     QObject::connect(loginWidget, &LoginWidget::authorized, [=](const QJsonValue &account) {
         Account::getInstance()->id = account["_id"].toString();
         Account::getInstance()->phone = account["phone"].toString();
