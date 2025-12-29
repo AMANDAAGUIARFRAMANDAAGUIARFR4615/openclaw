@@ -15,8 +15,7 @@ class ToastWidget : public QWidget {
 public:
     explicit ToastWidget(const QString &message, QWidget *parent = nullptr) : QWidget(parent) {
         setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
-        setAttribute(Qt::WA_TranslucentBackground); 
-        setAttribute(Qt::WA_DeleteOnClose);
+        setAttribute(Qt::WA_TranslucentBackground);
 
         QLabel *label = new QLabel(message, this);
         
@@ -54,14 +53,14 @@ public:
 
         show();
 
-        QTimer::singleShot(2000, parent, [this] {
+        QTimer::singleShot(2000, this, [this] {
             auto fadeOut = new QPropertyAnimation(this, "windowOpacity");
             fadeOut->setDuration(300);
             fadeOut->setStartValue(1);
             fadeOut->setEndValue(0);
             fadeOut->start(QAbstractAnimation::DeleteWhenStopped);
 
-            connect(fadeOut, &QPropertyAnimation::finished, this, &ToastWidget::close);
+            connect(fadeOut, &QPropertyAnimation::finished, this, &ToastWidget::deleteLater);
         });
     }
 
