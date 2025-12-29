@@ -90,7 +90,7 @@ private:
 
         mainLayout->addWidget(defaultBox);
 
-        QStringList sideBarMenu{"🔗设备连接", "🕹️同屏操作", "⚙️设置", "💡帮助", "📲越狱助手", "⏳续费", "💬客服", "📜日志"};
+        QStringList sideBarMenu{"🔗设备连接", "🕹️同屏操作", "⚙️设置", "💡帮助", "📲越狱助手", "📱手机软件源", "⏳续费", "💬客服", "📜日志"};
 
 #ifdef QT_DEBUG
         sideBarMenu.append("🛠️开发者");

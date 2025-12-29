@@ -252,6 +252,53 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             return;
         }
 
+        if (text == "手机软件源") {
+            auto repoDialog = new QDialog(this);
+            repoDialog->setAttribute(Qt::WA_DeleteOnClose);
+            repoDialog->setWindowTitle("软件源");
+
+            auto mainLayout = new QVBoxLayout(repoDialog);
+
+            auto tabWidget = new QTabWidget(repoDialog);
+
+            struct SourceInfo { QString title; QString url; };
+            QList<SourceInfo> sources = {
+                {"Sileo", "sileo://source/https://remotepro.cn/"},
+                {"Cydia", "cydia://url/https://cydia.saurik.com/api/share#?source=https://remotepro.cn/cydia/"}
+            };
+
+            int qrSize = 400;
+
+            for (const auto& source : sources) {
+                auto page = new QWidget();
+                auto vLayout = new QVBoxLayout(page);
+                
+                auto img = Tools::generateQrImage(source.url);
+                QPixmap pixmap = QPixmap::fromImage(img).scaled(
+                    qrSize, qrSize, 
+                    Qt::KeepAspectRatio, 
+                    Qt::SmoothTransformation
+                );
+                
+                auto imgLabel = new QLabel(page);
+                imgLabel->setPixmap(pixmap);
+                imgLabel->setAlignment(Qt::AlignCenter);
+                
+                auto textLabel = new QLabel(source.url, page);
+                textLabel->setAlignment(Qt::AlignCenter);
+                textLabel->setWordWrap(true);
+                
+                vLayout->addWidget(imgLabel);
+                vLayout->addWidget(textLabel);
+                
+                tabWidget->addTab(page, source.title);
+            }
+
+            mainLayout->addWidget(tabWidget);
+            repoDialog->exec();
+            return;
+        }
+
         if (text == "续费") {
             RenewalDialog dialog(this);
             dialog.exec();
