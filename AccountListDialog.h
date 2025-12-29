@@ -1,12 +1,13 @@
 #pragma once
 
-#include "WebSocketClient.h"
+#include "global.h"
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QClipboard>
 
 class AccountListDialog : public QDialog {
 public:
@@ -15,17 +16,17 @@ public:
         setWindowTitle("在线账号列表");
         setMinimumWidth(300);
         
-        auto *mainLayout = new QVBoxLayout(this);
-        auto *scrollArea = new QScrollArea(this);
-        auto *scrollWidget = new QWidget();
-        auto *listLayout = new QVBoxLayout(scrollWidget);
+        auto mainLayout = new QVBoxLayout(this);
+        auto scrollArea = new QScrollArea(this);
+        auto scrollWidget = new QWidget();
+        auto listLayout = new QVBoxLayout(scrollWidget);
 
         for (const QString &phone : numbers) {
-            auto *rowWidget = new QWidget();
-            auto *rowLayout = new QHBoxLayout(rowWidget);
+            auto rowWidget = new QWidget();
+            auto rowLayout = new QHBoxLayout(rowWidget);
             
-            auto *label = new QLabel(phone);
-            auto *btnScreenshot = new QPushButton("截图");
+            auto label = new QLabel(phone);
+            auto btnScreenshot = new QPushButton("截图");
             
             rowLayout->addWidget(label);
             rowLayout->addStretch();
@@ -59,9 +60,5 @@ public:
         scrollArea->setWidget(scrollWidget);
         scrollArea->setWidgetResizable(true);
         mainLayout->addWidget(scrollArea);
-        
-        auto *btnClose = new QPushButton("关闭");
-        connect(btnClose, &QPushButton::clicked, this, &QDialog::accept);
-        mainLayout->addWidget(btnClose);
     }
 };

@@ -71,7 +71,7 @@ endif()
 add_executable(${PROJECT_NAME}
     main.cpp SafeObject.h
     global.h global.cpp AesCrypto.h KeyMapping.h VideoVisibilityManager.h
-    EmojiIconProvider.h Tools.h SettingsViewer.h JailbreakAssistantDialog.h
+    EmojiIconProvider.h Tools.h SettingsViewer.h JailbreakAssistantDialog.h AccountListDialog.h
     Logger.h LogWindow.h EventHub.h
     BitMaskEditorDialog.h LiveStreamDevice.h
     LoginWidget.h Account.h

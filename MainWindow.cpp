@@ -346,7 +346,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
                 SettingsViewer dialog(&settings, this);
                 dialog.exec();
             });
-            menu.addAction("兑换码生成", [=]() {
+            menu.addAction("兑换码生成", [this]() {
                 bool ok;
                 int count = QInputDialog::getInt(this, "生成兑换码", "请输入生成的个数:", 1, 1, 1000, 1, &ok);
                 
@@ -371,7 +371,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
                     new ToastWidget("兑换码已复制到剪切板");
                 });
             });
-            menu.addAction("在线用户", [=]() {
+            menu.addAction("在线用户", [this]() {
                 webSocketClient.emitEvent("online_accounts", QJsonValue(), [=](const QJsonValue &res) {
                     if (res.isString()) {
                         new ToastWidget(res.toString(), this);
@@ -517,7 +517,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         relayoutDevices();
     });
 
-    webSocketClient.on("screenshot", [=](const QJsonValue &data, AckCallback callback) {
+    webSocketClient.on("screenshot", [this](const QJsonValue &data, AckCallback callback) {
         qDebugEx() << "请求截图";
 
         QByteArray byteArray;
