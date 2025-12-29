@@ -6,20 +6,32 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Network Concurrent Multimedia Multi
 qt_standard_project_setup()
 
 # =========================================================
+#  将 __FILE__ 映射为相对路径
+# =========================================================
+if(MSVC)
+    # Visual Studio 2019 16.10+ 支持
+    add_compile_options(/d1trimfile:${CMAKE_SOURCE_DIR})
+else()
+    # GCC / Clang / MinGW 支持
+    add_compile_options("-fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=")
+endif()
+
+# =========================================================
 # 1. 全局配置 (必须放在 add_executable 之前)
 # =========================================================
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    # 符号隐藏：默认隐藏所有符号，极大增加逆向分析难度
+    set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
-# 符号隐藏：默认隐藏所有符号，极大增加逆向分析难度
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
-
-# LTO/IPO 优化：开启跨模块优化，打乱函数布局
-include(CheckIPOSupported)
-check_ipo_supported(RESULT result OUTPUT output)
-if(result)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-else()
-    message(WARNING "IPO is not supported: ${output}")
+    # LTO/IPO 优化：开启跨模块优化，打乱函数布局
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT result OUTPUT output)
+    if(result)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    else()
+        message(WARNING "IPO is not supported: ${output}")
+    endif()
 endif()
 
 # =========================================================
@@ -100,16 +112,28 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         else()
             target_link_options(${PROJECT_NAME} PRIVATE 
                 -s              # 移除符号表
-                -Wl,--strip-all 
+                -Wl,--strip-all # 彻底移除
             )
         endif()
     endif()
 
     # --- MSVC ---
     if(MSVC)
-        target_compile_options(${PROJECT_NAME} PRIVATE /O2 /Ob2 /Oi /Ot /GR- /Gy /GS)
-        target_link_options(${PROJECT_NAME} PRIVATE /OPT:REF /OPT:ICF /LTCG)
-        set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY "" PDB_OUTPUT_DIRECTORY "")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            /O2 /Ob2            # 最大优化，激进内联
+            /Oi /Ot             # 内部函数优化，代码速度优先
+            /GR-                # 禁用 RTTI (对应 gcc 的 -fno-rtti)
+            /Gy                 # 启用函数级链接 (允许链接器移除未使用的函数)
+            /GS                 # 缓冲区安全检查 (增加逆向时的栈分析干扰)
+        )
+        target_link_options(${PROJECT_NAME} PRIVATE
+            /OPT:REF            # 移除未引用的函数
+            /OPT:ICF            # 相同的函数合并 (COMDAT Folding)，让逆向者困惑
+            /LTCG               # 链接时代码生成 (配合 CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+        )
+        # 禁用生成 PDB 文件 (这是调试符号文件)
+        set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY "")
+        set_target_properties(${PROJECT_NAME} PROPERTIES PDB_OUTPUT_DIRECTORY "")
     endif()
 endif()
 
@@ -143,8 +167,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Concurrent Qt6::Multimedia Qt6::MultimediaWidgets Qt6::WebSockets 
     ${THIRD_PARTY_LIBS}
 )
-
-add_definitions(-DPROJECT_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\")
 
 # Debug 辅助目标
 file(GLOB_RECURSE DEBUG_SOURCES
