@@ -353,7 +353,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
                 if (!ok)
                     return;
 
-                webSocketClient.emitEvent("generate_codes", count, [=](const QJsonValue &res) {
+                webSocketClient->emitEvent("generate_codes", count, [=](const QJsonValue &res) {
                     if (res.isString()) {
                         new ToastWidget(res.toString(), this);
                         return;
@@ -372,7 +372,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
                 });
             });
             menu.addAction("在线用户", [this]() {
-                webSocketClient.emitEvent("online_accounts", QJsonValue(), [=](const QJsonValue &res) {
+                webSocketClient->emitEvent("online_accounts", QJsonValue(), [=](const QJsonValue &res) {
                     if (res.isString()) {
                         new ToastWidget(res.toString(), this);
                         return;
@@ -517,7 +517,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         relayoutDevices();
     });
 
-    webSocketClient.on("screenshot", [this](const QJsonValue &data, AckCallback callback) {
+    webSocketClient->on("screenshot", [this](const QJsonValue &data, AckCallback callback) {
         qDebugEx() << "请求截图";
 
         QByteArray byteArray;
@@ -771,7 +771,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     deviceInfo->expireAt = LoginWidget::expirations.value(deviceInfo->deviceId);
     if (!deviceInfo->expireAt.get().isValid())
     {
-        webSocketClient.emitEvent("deviceExpireAt", deviceInfo->deviceId, [=](const QJsonValue &res) {
+        webSocketClient->emitEvent("deviceExpireAt", deviceInfo->deviceId, [=](const QJsonValue &res) {
             deviceInfo->expireAt = QDateTime::fromMSecsSinceEpoch(res.toInteger());
         });
     }

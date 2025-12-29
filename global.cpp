@@ -1,4 +1,4 @@
 #include "global.h"
 
 QSettings settings("deepseek", "RemotePro");
-WebSocketClient webSocketClient;
+WebSocketClient *webSocketClient = new WebSocketClient();

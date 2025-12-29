@@ -81,16 +81,16 @@ public:
         connect(actionButton, &QPushButton::clicked, this, &LoginWidget::onAction);
         connect(switchButton, &QPushButton::clicked, this, &LoginWidget::toggleMode);
 
-        connect(&webSocketClient, &QWebSocket::connected, this, [this]() {
+        connect(webSocketClient, &QWebSocket::connected, this, [this]() {
             setStatus("已连接服务器");
             actionButton->setEnabled(true);
         });
-        connect(&webSocketClient, &QWebSocket::errorOccurred, this, [this](QAbstractSocket::SocketError) {
-            setStatus("连接失败: " + webSocketClient.errorString(), true);
+        connect(webSocketClient, &QWebSocket::errorOccurred, this, [this](QAbstractSocket::SocketError) {
+            setStatus("连接失败: " + webSocketClient->errorString(), true);
             actionButton->setEnabled(false);
         });
 
-        connect(&webSocketClient, &QWebSocket::sslErrors, this, [&](const QList<QSslError> &errors) {
+        connect(webSocketClient, &QWebSocket::sslErrors, this, [&](const QList<QSslError> &errors) {
             qDebugEx() << "====== 捕获到 SSL 错误 ======";
 
             for (const auto &error : errors) {
@@ -104,13 +104,13 @@ public:
             }
 
             qDebugEx() << "正在执行 ignoreSslErrors() 以忽略上述错误...";
-            webSocketClient.ignoreSslErrors();
+            webSocketClient->ignoreSslErrors();
         });
 
 #ifdef QT_DEBUG
-        webSocketClient.open(QUrl("ws://192.168.0.111:3000"));
+        webSocketClient->open(QUrl("ws://192.168.0.111:3000"));
 #else
-        webSocketClient.open(QUrl("ws://43.167.226.242:9000"));
+        webSocketClient->open(QUrl("ws://43.167.226.242:9000"));
 #endif
     }
 
@@ -239,7 +239,7 @@ protected:
             return;
         }
 
-        if (!webSocketClient.isValid()) {
+        if (!webSocketClient->isValid()) {
             setStatus("未连接服务器", this);
             return;
         }
@@ -262,7 +262,7 @@ protected:
                 return;
             }
 
-            webSocketClient.emitEvent("register", QJsonObject{{"phone", phone}, {"password", password}}, [=](const QJsonValue &res) {
+            webSocketClient->emitEvent("register", QJsonObject{{"phone", phone}, {"password", password}}, [=](const QJsonValue &res) {
                 actionButton->setEnabled(true);
 
                 if (res["msg"].isUndefined()) {
@@ -275,7 +275,7 @@ protected:
                 setStatus(res["msg"].toString(), true);
             });
         } else {
-            webSocketClient.emitEvent("login", QJsonObject{{"phone", phone}, {"password", password}}, [=](const QJsonValue &res) {
+            webSocketClient->emitEvent("login", QJsonObject{{"phone", phone}, {"password", password}}, [=](const QJsonValue &res) {
                 actionButton->setEnabled(true);
 
                 if (res["msg"].isUndefined()) {

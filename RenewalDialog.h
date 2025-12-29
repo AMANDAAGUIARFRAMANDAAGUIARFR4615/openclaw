@@ -162,7 +162,7 @@ public:
             setEnabled(false); 
             setCursor(Qt::WaitCursor);
 
-            webSocketClient.emitEvent("deviceRenew", payload, [=](const QJsonValue &res) {
+            webSocketClient->emitEvent("deviceRenew", payload, [=](const QJsonValue &res) {
                 setEnabled(true);
                 unsetCursor();
 
@@ -224,7 +224,7 @@ public:
 
             if (!validCodes.isEmpty()) {
                 redeemButton->setEnabled(false);
-                webSocketClient.emitEvent("redeem", QJsonArray::fromStringList(validCodes), [=](const QJsonValue &res) {
+                webSocketClient->emitEvent("redeem", QJsonArray::fromStringList(validCodes), [=](const QJsonValue &res) {
                     redeemButton->setEnabled(true);
 
                     setVoucherBalance(res["balance"].toInt());

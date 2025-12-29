@@ -33,7 +33,7 @@ public:
             rowLayout->addWidget(btnScreenshot);
             
             connect(btnScreenshot, &QPushButton::clicked, [=]() {
-                webSocketClient.emitEvent("screenshot", phone, [=](const QJsonValue &res) {
+                webSocketClient->emitEvent("screenshot", phone, [=](const QJsonValue &res) {
                     if (res.isString()) {
                         new ToastWidget(res.toString(), this);
                         return;

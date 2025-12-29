@@ -6,4 +6,4 @@
 #include "WebSocketClient.h"
 
 extern QSettings settings;
-extern WebSocketClient webSocketClient;
+extern WebSocketClient* webSocketClient;
