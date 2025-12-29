@@ -55,7 +55,7 @@ private:
 #else
         QString libName = "libcrypto.3.dylib";
         QString frameworksDir = qApp->applicationDirPath() + "/../Frameworks/";
-        if (QDir::exists(frameworksDir))
+        if (QDir(frameworksDir).exists())
             lib.setFileName(frameworksDir + libName);
         else
             lib.setFileName(QString("/opt/homebrew/opt/openssl/lib/") + libName);
