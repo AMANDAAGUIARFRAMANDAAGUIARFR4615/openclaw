@@ -255,7 +255,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         if (title == "手机软件源") {
             auto repoDialog = new QDialog(this);
             repoDialog->setAttribute(Qt::WA_DeleteOnClose);
-            repoDialog->setWindowTitle(title);
+            repoDialog->setWindowTitle("使用相机APP扫码");
 
             auto mainLayout = new QVBoxLayout(repoDialog);
 
@@ -283,8 +283,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
                 auto imgLabel = new QLabel(page);
                 imgLabel->setPixmap(pixmap);
                 imgLabel->setAlignment(Qt::AlignCenter);
+
+                const auto& displayUrl = source.url.mid(source.url.lastIndexOf("https://"));
                 
-                auto textLabel = new QLabel(source.url, page);
+                auto textLabel = new QLabel("如不方便扫码，请手动输入软件源地址：" + displayUrl, page);
                 textLabel->setAlignment(Qt::AlignCenter);
                 textLabel->setWordWrap(true);
                 
