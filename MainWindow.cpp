@@ -263,8 +263,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
             struct SourceInfo { QString title; QString url; };
             QList<SourceInfo> sources = {
-                {"Sileo", "sileo://source/https://remotepro.cn/"},
-                {"Cydia", "cydia://url/https://cydia.saurik.com/api/share#?source=https://remotepro.cn/cydia/"}
+                {"Sileo", "sileo://source/https://sileo-1302990626.cos.ap-guangzhou.myqcloud.com"},
+                {"Cydia", "cydia://url/https://cydia.saurik.com/api/share#?source=https://cydia-1302990626.cos.ap-guangzhou.myqcloud.com"}
             };
 
             int qrSize = 400;
