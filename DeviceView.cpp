@@ -328,6 +328,11 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
     const int key = event->key();
     const auto modifiers = event->modifiers();
 
+    if (modifiers == Qt::KeypadModifier) {
+        connection->send("keyboard", QJsonObject{{"type", "keyPress"}, {"key", event->text()}, {"repeat", event->isAutoRepeat()}});
+        return;
+    }
+
     if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
 #ifdef _WIN32
         char c = KeyMapping::toChar(event->nativeScanCode());
