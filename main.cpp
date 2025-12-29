@@ -10,6 +10,7 @@
 #include <QApplication>
 #include <QNetworkProxy>
 #include <QLoggingCategory>
+#include <QMessageBox>
 
 void onDataReceived(DeviceConnection *connection, const QJsonObject &jsonObject) {
     auto event = jsonObject["event"].toString();
@@ -87,17 +88,22 @@ int main(int argc, char *argv[])
     auto loginWidget = new LoginWidget();
     loginWidget->show();
 
+    if (settings.contains("force_logout"))
+    {
+        QMessageBox::warning(loginWidget, "下线通知", settings.value("force_logout").toString());
+        settings.remove("force_logout");
+    }
+
     QObject::connect(webSocketClient, &QWebSocket::connected, []() {
         if (!Account::getInstance()->id.isEmpty())
             webSocketClient->emitEvent("reconnect", Account::getInstance()->id);
     });
 
     webSocketClient->on("force_logout", [](const QJsonValue &data) {
-        qDebugEx() << "被强制踢出";
+        settings.setValue("force_logout", data.toString());
 
-        Account::getInstance()->id = "";
-        Account::getInstance()->phone = "";
-        Account::getInstance()->balance = 0;
+        QProcess::startDetached(qApp->applicationFilePath());
+        qApp->quit();
     });
 
     QObject::connect(loginWidget, &LoginWidget::authorized, [=](const QJsonValue &account) {
