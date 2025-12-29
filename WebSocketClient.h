@@ -6,7 +6,7 @@
 #include <QJsonDocument>
 #include <QHash>
 #include <QPointer>
-#include <functional>
+#include <QTimer>
 
 using AckCallback = std::function<void(const QJsonValue &)>;
 using EventHandler = std::function<void(const QJsonValue &, AckCallback)>;
@@ -19,7 +19,10 @@ public:
         connect(this, &QWebSocket::binaryMessageReceived, this, &WebSocketClient::handleMessage);
         connect(this, &QWebSocket::disconnected, [this]() {
             qDebugEx() << "QWebSocket::disconnected";
-            open(requestUrl());
+
+            QTimer::singleShot(2000, [=]() {
+                open(requestUrl());
+            });
         });
     }
 
