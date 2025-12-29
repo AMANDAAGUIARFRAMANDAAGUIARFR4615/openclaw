@@ -94,6 +94,10 @@ int main(int argc, char *argv[])
 
     webSocketClient->on("force_logout", [](const QJsonValue &data) {
         qDebugEx() << "被强制踢出";
+
+        Account::getInstance()->id = "";
+        Account::getInstance()->phone = "";
+        Account::getInstance()->balance = 0;
     });
 
     QObject::connect(loginWidget, &LoginWidget::authorized, [=](const QJsonValue &account) {
