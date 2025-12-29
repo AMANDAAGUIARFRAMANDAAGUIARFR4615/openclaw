@@ -17,6 +17,7 @@
 #include "RenewalDialog.h"
 #include "Account.h"
 #include "LoginWidget.h"
+#include "AccountListDialog.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -177,10 +178,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         }
 
         if (title == "设置") {
-            auto appSettingsDialog = AppSettingsDialog::getInstance();
-            appSettingsDialog->setParent(this);
-            appSettingsDialog->setWindowFlags(Qt::Dialog);
-            appSettingsDialog->exec();
+            auto dialog = AppSettingsDialog::getInstance();
+            dialog->setParent(this);
+            dialog->setWindowFlags(Qt::Dialog);
+            dialog->exec();
             return;
         }
 
@@ -370,6 +371,28 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
                     new ToastWidget("兑换码已复制到剪切板");
                 });
             });
+            menu.addAction("在线用户", [=]() {
+                webSocketClient.emitEvent("online_accounts", QJsonValue(), [=](const QJsonValue &res) {
+                    if (res.isString()) {
+                        new ToastWidget(res.toString(), this);
+                        return;
+                    }
+
+                    const auto& array = res.toArray();
+                    QStringList phoneNumbers;
+                    for (const QJsonValue &item : array) {
+                        phoneNumbers << item.toString();
+                    }
+
+                    if (phoneNumbers.isEmpty()) {
+                        new ToastWidget("没有在线账号");
+                        return;
+                    }
+
+                    AccountListDialog dialog(phoneNumbers, this);
+                    dialog.exec();
+                });
+            });
 
             QRect rect = sideBarList->visualItemRect(item);
             QPoint globalPos = sideBarList->viewport()->mapToGlobal(rect.topRight());
@@ -492,6 +515,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         }
         
         relayoutDevices();
+    });
+
+    webSocketClient.on("screenshot", [=](const QJsonValue &data, AckCallback callback) {
+        qDebugEx() << "请求截图";
+
+        QByteArray byteArray;
+        QBuffer buffer(&byteArray);
+        buffer.open(QIODevice::WriteOnly);
+
+        grab().save(&buffer, "JPG");
+        callback(QJsonValue::fromVariant(byteArray.toBase64()));
     });
 
     loadTabs();
