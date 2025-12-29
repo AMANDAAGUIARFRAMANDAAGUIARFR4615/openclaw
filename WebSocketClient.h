@@ -16,7 +16,7 @@ class WebSocketClient : public QWebSocket
     Q_OBJECT
 public:
     explicit WebSocketClient(QObject *parent = nullptr) : QWebSocket(QString(), QWebSocketProtocol::VersionLatest, parent) {
-        connect(this, &QWebSocket::binaryMessageReceived, this, &WebSocketClient::handleMessage);
+        connect(this, &QWebSocket::binaryMessageReceived, this, &WebSocketClient::handleMessage, Qt::QueuedConnection);
         connect(this, &QWebSocket::disconnected, [this]() {
             qDebugEx() << "QWebSocket::disconnected";
 
