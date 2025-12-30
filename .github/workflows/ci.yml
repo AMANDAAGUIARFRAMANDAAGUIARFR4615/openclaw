@@ -232,7 +232,7 @@ jobs:
             xcodebuild -version
           fi
 
-          cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR
+          cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-w" -DCMAKE_CXX_FLAGS="-w" -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR
           cmake --build build --config Release --parallel
 
           cd build
