@@ -8,7 +8,6 @@
 #include "UsbDeviceManager.h"
 #include "TcpServer.h"
 #include "DeviceWidget.h"
-#include "ToastWidget.h"
 #include "SettingsViewer.h"
 #include "FileTransfer.h"
 #include "UdpTransport.h"
@@ -173,7 +172,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             isMultiControlEnabled = !isMultiControlEnabled;
             const auto& icon = EmojiIconProvider::createIcon("🕹️", 64, !isMultiControlEnabled);
             item->setIcon(icon);
-            new ToastWidget(isMultiControlEnabled ? "同屏操作已开启" : "同屏操作已关闭", this);
+            QToolTip::showText(QCursor::pos(), isMultiControlEnabled ? "同屏操作已开启" : "同屏操作已关闭");
             return;
         }
 
@@ -365,7 +364,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
                 webSocketClient->emitEvent("generate_codes", count, [=](const QJsonValue &res) {
                     if (res.isString()) {
-                        new ToastWidget(res.toString(), this);
+                        QToolTip::showText(QCursor::pos(), res.toString());
                         return;
                     }
 
@@ -378,13 +377,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
                     qApp->clipboard()->setText(codes.join("\n"));
 
-                    new ToastWidget("兑换码已复制到剪切板");
+                    QToolTip::showText(QCursor::pos(), "兑换码已复制到剪切板");
                 });
             });
             menu.addAction("在线用户", [this]() {
                 webSocketClient->emitEvent("online_accounts", QJsonValue(), [=](const QJsonValue &res) {
                     if (res.isString()) {
-                        new ToastWidget(res.toString(), this);
+                        QToolTip::showText(QCursor::pos(), res.toString());
                         return;
                     }
 
@@ -395,7 +394,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
                     }
 
                     if (phoneNumbers.isEmpty()) {
-                        new ToastWidget("没有在线账号");
+                        QToolTip::showText(QCursor::pos(), "没有在线账号");
                         return;
                     }
 
@@ -939,7 +938,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
             menu.addAction(text, [&]() {
                 int newId = findAvailableTabId();
                 if (newId == -1) {
-                    new ToastWidget("已达到最大分组数", this);
+                    QToolTip::showText(QCursor::pos(), "已达到最大分组数");
                     return;
                 }
 
