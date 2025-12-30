@@ -11,6 +11,7 @@
 #include "EmojiIconProvider.h"
 #include "KeyMapping.h"
 #include "AppSettingsDialog.h"
+#include "Account.h"
 #include <QLayout>
 #include <QLabel>
 #include <QMimeData>
@@ -96,6 +97,11 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     auto windowMenu = AppSettingsDialog::getInstance()->getEnabledList("windowMenu");
     if (windowMenu.count() == 0)
         return;
+
+    if (deviceInfo->expireAt.get() < Account::getInstance()->loginTime.get() + elapsedTimer->elapsed()) {
+        new ToastWidget("设备已过期", this);
+        return;
+    }
 
     auto isMultiControl = MainWindow::getInstance()->isMultiControl();
 
@@ -276,6 +282,11 @@ bool DeviceView::event(QEvent *event)
     auto mouseEvent = dynamic_cast<QMouseEvent *>(event);
     if (!mouseEvent)
         return QWidget::event(event);
+
+    if (deviceInfo->expireAt.get() < Account::getInstance()->loginTime.get() + elapsedTimer->elapsed()) {
+        new ToastWidget("设备已过期", this);
+        return true;
+    }
 
     int type = 0;
 
