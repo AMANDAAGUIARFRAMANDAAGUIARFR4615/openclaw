@@ -12,6 +12,7 @@ public:
     ~DeviceWidget();
 
 protected:
+    bool event(QEvent *event) override;
     void launchDeviceWindow();
 
     Q_INVOKABLE void play() {

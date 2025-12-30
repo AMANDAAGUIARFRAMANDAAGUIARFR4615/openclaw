@@ -126,6 +126,14 @@ DeviceWidget::~DeviceWidget()
     delete deviceInfo;
 }
 
+bool DeviceWidget::event(QEvent *event)
+{
+    if (deviceWindow)
+        return qApp->sendEvent(deviceWindow, event);
+
+    return DeviceView::event(event);
+}
+
 void DeviceWidget::launchDeviceWindow() {
     if (deviceWindow) {
         deviceWindow->activateWindow();
