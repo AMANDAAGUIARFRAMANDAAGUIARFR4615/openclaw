@@ -261,7 +261,7 @@ protected:
                 return;
             }
 
-            webSocketClient->emitEvent("register", QJsonObject{{"phone", phone}, {"password", password}}, [=](const QJsonValue &res) {
+            webSocketClient->emitEvent("register", QJsonObject{{"phone", phone}, {"password", password}, {"version", Config::VERSION}}, [=](const QJsonValue &res) {
                 actionButton->setEnabled(true);
 
                 if (res["msg"].isUndefined()) {
@@ -274,7 +274,7 @@ protected:
                 setStatus(res["msg"].toString(), true);
             });
         } else {
-            webSocketClient->emitEvent("login", QJsonObject{{"phone", phone}, {"password", password}}, [=](const QJsonValue &res) {
+            webSocketClient->emitEvent("login", QJsonObject{{"phone", phone}, {"password", password}, {"version", Config::VERSION}}, [=](const QJsonValue &res) {
                 actionButton->setEnabled(true);
 
                 if (res["msg"].isUndefined()) {
