@@ -43,7 +43,7 @@
 #include <QJsonObject>
 #include <QToolButton>
 #include <QActionGroup>
-#include <optional>
+#include <QToolTip>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTabWidget(this))
 {
@@ -287,9 +287,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
                 const auto& displayUrl = source.url.mid(source.url.lastIndexOf("https://"));
                 
-                auto textLabel = new QLabel("如不方便扫码，请手动输入软件源地址：" + displayUrl, page);
+                QString richText = QString("如不方便扫码，请手动点击复制：<br><a href=\"%1\" style=\"color: #0078d7; text-decoration: none;\">%1</a>")
+                   .arg(displayUrl);
+                auto textLabel = new QLabel(richText, page);
                 textLabel->setAlignment(Qt::AlignCenter);
                 textLabel->setWordWrap(true);
+
+                textLabel->setTextInteractionFlags(Qt::TextBrowserInteraction); // 允许交互
+                textLabel->setOpenExternalLinks(false); // 禁止自动打开浏览器，我们要自己处理点击
+
+                connect(textLabel, &QLabel::linkActivated, [displayUrl](const QString &link) {
+                    qApp->clipboard()->setText(link);
+                    QToolTip::showText(QCursor::pos(), "地址已复制");
+                });
                 
                 vLayout->addWidget(imgLabel);
                 vLayout->addWidget(textLabel);
