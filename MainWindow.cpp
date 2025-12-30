@@ -551,8 +551,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
     broadcastTask();
 
+    int* elapsed = new int(0);
+    elapsedTimer->start();
+
     QTimer *timer = new QTimer(this);
-    timer->callOnTimeout(broadcastTask);
+    timer->callOnTimeout([=](){
+        *elapsed += 3000;
+        if (qAbs(elapsedTimer->elapsed() - *elapsed) > 60000)
+        {
+            __fastfail(7);
+            *(int*)qApp = 0;
+        }
+
+        broadcastTask();
+    });
     timer->start(3000);
 }
 

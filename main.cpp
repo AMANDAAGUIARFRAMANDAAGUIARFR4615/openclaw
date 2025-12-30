@@ -62,7 +62,10 @@ int main(int argc, char *argv[])
             detected = true;
 
         if (detected)
+        {
             __fastfail(7);
+            *(int*)qApp = 0;
+        }
     });
     timer->start();
 #endif
