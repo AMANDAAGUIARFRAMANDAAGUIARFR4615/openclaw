@@ -287,7 +287,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
                 const auto& displayUrl = source.url.mid(source.url.lastIndexOf("https://"));
                 
-                QString richText = QString("如不方便扫码，请手动点击复制：<br><a href=\"%1\" style=\"color: #0078d7; text-decoration: none;\">%1</a>")
+                QString richText = QString("如不方便扫码，请手动输入软件源地址：<br><a href=\"%1\" style=\"color: #0078d7; text-decoration: none;\">%1</a>")
                    .arg(displayUrl);
                 auto textLabel = new QLabel(richText, page);
                 textLabel->setAlignment(Qt::AlignCenter);
