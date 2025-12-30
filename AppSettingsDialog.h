@@ -12,6 +12,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QGroupBox>
+#include <QToolTip>
 
 class AppSettingsDialog : public QDialog
 {
@@ -96,13 +97,13 @@ private:
         sideBarMenu.append("🛠️开发者");
 #endif
 
-        addSortableGroup(mainLayout, "sideBarMenu", "左侧栏 (拖拽调整)", sideBarMenu, false);
+        addSortableGroup(mainLayout, "sideBarMenu", "左侧栏 (拖拽调整)", sideBarMenu);
 
         addSortableGroup(mainLayout, "windowMenu", "投屏窗口右键菜单 (拖拽调整)", 
-            {"🏠主屏幕", "🎛️控制中心", "↕️应用切换", "🧹清理应用", "📁文件管理", "⏺️录制+回放", "🧩应用列表", "📸截图", "🔄重启", "🔒锁屏", "🗑️清空相册", "🔧修改分组"}, true);
+            {"🏠主屏幕", "🎛️控制中心", "↕️应用切换", "🧹清理应用", "📁文件管理", "⏺️录制+回放", "🧩应用列表", "📸截图", "🔄重启", "🔒锁屏", "🗑️清空相册", "🔧修改分组"});
 
         addSortableGroup(mainLayout, "tabBarMenu", "分组标签页右键菜单 (拖拽调整)", 
-            {"重命名分组", "添加分组", "删除分组", "投屏显示", "视频清晰度", "连接方式", "自动连接局域网设备", "自动连接USB设备"}, true);
+            {"重命名分组", "添加分组", "删除分组", "投屏显示", "视频清晰度", "连接方式", "自动连接局域网设备", "自动连接USB设备"});
     }
 
     ~AppSettingsDialog() = default;
@@ -111,7 +112,7 @@ signals:
     void configurationChanged(const QString &key);
 
 private:
-    void addSortableGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, const QStringList &defaults, bool checkable)
+    void addSortableGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, const QStringList &defaults, bool checkable = true)
     {
         m_listDefaults.insert(key, defaults);
 
@@ -181,8 +182,18 @@ private:
             emit configurationChanged(key);
         };
 
-        connect(listWidget->model(), &QAbstractItemModel::rowsMoved, this, saveFunc);
-        connect(listWidget, &QListWidget::itemChanged, this, saveFunc);
+        connect(listWidget->model(), &QAbstractItemModel::rowsMoved, saveFunc);
+        connect(listWidget, &QListWidget::itemChanged, [=](QListWidgetItem *item) {
+            if (item->text() == "⚙️设置" && item->checkState() == Qt::Unchecked) {
+                QToolTip::showText(QCursor::pos(), "[⚙️设置]不可隐藏");
+                // 🚫 立即强制改回选中
+                QSignalBlocker blocker(listWidget); // 暂时屏蔽信号，防止递归调用
+                item->setCheckState(Qt::Checked);
+            } else {
+                // 其他情况正常保存
+                saveFunc();
+            }
+        });
     }
 
     void addSettingGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, const QStringList &options, int defaultIndex)
