@@ -31,69 +31,69 @@ public:
 
         void load(int index)
         {
-            settings.setArrayIndex(index);
+            settings->setArrayIndex(index);
 
-            bit = settings.value("bit").toInt();
-            name = settings.value("name").toString();
-            scale = settings.value("scale").toInt();
+            bit = settings->value("bit").toInt();
+            name = settings->value("name").toString();
+            scale = settings->value("scale").toInt();
 
-            if (settings.contains("isLandscape"))
-                isLandscape = settings.value("isLandscape").toInt();
+            if (settings->contains("isLandscape"))
+                isLandscape = settings->value("isLandscape").toInt();
             else
                 isLandscape = std::nullopt;
 
-            if (settings.contains("videoQuality"))
-                videoQuality = settings.value("videoQuality").toInt(); 
+            if (settings->contains("videoQuality"))
+                videoQuality = settings->value("videoQuality").toInt(); 
             else
                 videoQuality = std::nullopt;
 
-            if (settings.contains("connectionMethod"))
-                connectionMethod = settings.value("connectionMethod").toInt();
+            if (settings->contains("connectionMethod"))
+                connectionMethod = settings->value("connectionMethod").toInt();
             else
                 connectionMethod = std::nullopt;
 
-            if (settings.contains("autoScanLANDevices"))
-                autoScanLANDevices = settings.value("autoScanLANDevices").toInt();
+            if (settings->contains("autoScanLANDevices"))
+                autoScanLANDevices = settings->value("autoScanLANDevices").toInt();
             else
                 autoScanLANDevices = std::nullopt;
 
-            if (settings.contains("autoConnectUSBDevices"))
-                autoConnectUSBDevices = settings.value("autoConnectUSBDevices").toInt();
+            if (settings->contains("autoConnectUSBDevices"))
+                autoConnectUSBDevices = settings->value("autoConnectUSBDevices").toInt();
             else
                 autoConnectUSBDevices = std::nullopt;
         }
 
         void save(int index)
         {
-            settings.setArrayIndex(index);
-            settings.setValue("bit", bit);
-            settings.setValue("name", name);
-            settings.setValue("scale", scale);
+            settings->setArrayIndex(index);
+            settings->setValue("bit", bit);
+            settings->setValue("name", name);
+            settings->setValue("scale", scale);
 
             if (isLandscape.has_value())
-                settings.setValue("isLandscape", isLandscape.value());
+                settings->setValue("isLandscape", isLandscape.value());
             else
-                settings.remove("isLandscape");
+                settings->remove("isLandscape");
 
             if (videoQuality.has_value())
-                settings.setValue("videoQuality", videoQuality.value());
+                settings->setValue("videoQuality", videoQuality.value());
             else
-                settings.remove("videoQuality");
+                settings->remove("videoQuality");
 
             if (connectionMethod.has_value())
-                settings.setValue("connectionMethod", connectionMethod.value());
+                settings->setValue("connectionMethod", connectionMethod.value());
             else
-                settings.remove("connectionMethod");
+                settings->remove("connectionMethod");
 
             if (autoScanLANDevices.has_value())
-                settings.setValue("autoScanLANDevices", autoScanLANDevices.value());
+                settings->setValue("autoScanLANDevices", autoScanLANDevices.value());
             else
-                settings.remove("autoScanLANDevices");
+                settings->remove("autoScanLANDevices");
 
             if (autoConnectUSBDevices.has_value())
-                settings.setValue("autoConnectUSBDevices", autoConnectUSBDevices.value());
+                settings->setValue("autoConnectUSBDevices", autoConnectUSBDevices.value());
             else
-                settings.remove("autoConnectUSBDevices");
+                settings->remove("autoConnectUSBDevices");
         }
     };
 

@@ -23,8 +23,12 @@ void UsbDeviceManager::start() {
     auto connectTimer = new QTimer(this);
     connectTimer->callOnTimeout([this]() {
         for (auto it = devices.keyValueBegin(); it != devices.keyValueEnd(); ++it) {
-            if (!it->second)
-                connectDevice(it->first, 32839, false);
+            if (!it->second) {
+                auto deviceInfo = DeviceInfo::getDevice(it->first);
+                bool isUsbSetting = MainWindow::getInstance()->getTab().getConnectionMethod() == 0;
+                if (!deviceInfo || isUsbSetting)
+                    connectDevice(it->first, 32839, false);
+            }
         }
     });
     connectTimer->start(2000);
@@ -171,7 +175,10 @@ void UsbDeviceManager::handlePollFinished() {
         if (!previousDevices.contains(udid)) {
             qInfoEx() << "📱检测到新设备:" << udid;
             devices[udid] = false;
-            connectDevice(udid, 32839, false);
+
+            bool isUsbSetting = MainWindow::getInstance()->getTab().getConnectionMethod() == 0;
+            if (isUsbSetting)
+                connectDevice(udid, 32839, false);
         }
     }
 

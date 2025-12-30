@@ -55,7 +55,7 @@ public:
     }
 
     QJsonObject getHostInfo(const QString& ip) {
-        return QJsonObject{{"version", "1.0"}, {"ip", ip}, {"port", serverPort()}, {"remoteDeviceName", QHostInfo::localHostName()}};
+        return QJsonObject{{"version", Config::VERSION}, {"ip", ip}, {"port", serverPort()}, {"remoteDeviceName", QHostInfo::localHostName()}};
     }
 
 signals:
@@ -66,62 +66,66 @@ signals:
 
 private slots:
     void onNewConnection() {
-        auto socket = this->nextPendingConnection();
+        while (this->hasPendingConnections()) {
+            auto socket = this->nextPendingConnection();
+            if (!socket) continue;
 
-        qintptr fd = socket->socketDescriptor();
+            qintptr fd = socket->socketDescriptor();
 
-        int opt = 1;
-        setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (const char*)&opt, sizeof(opt));
+            int opt = 1;
+            setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (const char*)&opt, sizeof(opt));
 
 #ifdef _WIN32
-        struct tcp_keepalive alive;
-        DWORD bytesReturned;
-        alive.onoff = 1;
-        alive.keepalivetime = 3000;    // 空闲多久后首次发送 KeepAlive 探针
-        alive.keepaliveinterval = 200; // 每次探针间隔（Windows 固定重试 10 次）
-
-        WSAIoctl(fd, SIO_KEEPALIVE_VALS, &alive, sizeof(alive),
-                 nullptr, 0, &bytesReturned, nullptr, nullptr);
+            struct tcp_keepalive alive;
+            DWORD bytesReturned;
+            alive.onoff = 1;
+            alive.keepalivetime = 3000;
+            alive.keepaliveinterval = 200;
+            WSAIoctl(fd, SIO_KEEPALIVE_VALS, &alive, sizeof(alive),
+                     nullptr, 0, &bytesReturned, nullptr, nullptr);
 #elif defined(__APPLE__)
-        int idle = 3;
-        int interval = 1;
-        int count = 3;
-        setsockopt(fd, IPPROTO_TCP, TCP_KEEPALIVE,  &idle,     sizeof(idle));
-        setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL,  &interval, sizeof(interval));
-        setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT,    &count,    sizeof(count));
+            int idle = 3;
+            int interval = 1;
+            int count = 3;
+            setsockopt(fd, IPPROTO_TCP, TCP_KEEPALIVE,  &idle,     sizeof(idle));
+            setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL,  &interval, sizeof(interval));
+            setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT,    &count,    sizeof(count));
 #endif
 
-        auto ip = socket->peerAddress().toString();
-        auto port = socket->peerPort();
+            auto ip = socket->peerAddress().toString();
+            auto port = socket->peerPort();
 
-        qDebugEx() << "连接成功" << ip + ":" + QString::number(port);
+            qDebugEx() << "连接成功" << ip + ":" + QString::number(port);
 
-        connect(socket, &QTcpSocket::readyRead, this, &TcpServer::onReadyRead);
-        connect(socket, &QTcpSocket::disconnected, this, &TcpServer::onDisconnected);
-        connect(socket, &QTcpSocket::errorOccurred, this, &TcpServer::onErrorOccurred);
+            connect(socket, &QTcpSocket::readyRead, this, &TcpServer::onReadyRead);
+            connect(socket, &QTcpSocket::disconnected, this, &TcpServer::onDisconnected);
+            connect(socket, &QTcpSocket::errorOccurred, this, &TcpServer::onErrorOccurred);
 
-        clientBuffers[socket] = QByteArray();
-        
-        auto connection = new DeviceConnection(socket);
-        connections.insert(socket, connection);
-        
-        emit clientConnected(connection);
+            clientBuffers[socket] = QByteArray();
+            
+            auto connection = new DeviceConnection(socket);
+            connections.insert(socket, connection);
+            
+            emit clientConnected(connection);
+        }
     }
 
     void onReadyRead() {
         auto socket = qobject_cast<QTcpSocket*>(sender());
-        if (!socket)
-            return;
+        if (!socket) return;
+
+        if (!clientBuffers.contains(socket)) return;
 
         auto data = socket->readAll();
+        if (data.isEmpty()) return;
+
         clientBuffers[socket].append(data);
         processBufferedData(socket);
     }
 
     void onDisconnected() {
         auto socket = qobject_cast<QTcpSocket*>(sender());
-        if (!socket)
-            return;
+        if (!socket) return;
     
         auto ip = socket->peerAddress().toString();
         auto port = socket->peerPort();
@@ -141,9 +145,8 @@ private slots:
 
     void onErrorOccurred(QAbstractSocket::SocketError error) {
         auto socket = qobject_cast<QTcpSocket*>(sender());
-        if (!socket)
-            return;
-            
+        if (!socket) return;
+
         qCriticalEx() << "onErrorOccurred" << error << socket->errorString();
         
         auto connection = connections.value(socket, nullptr);
@@ -156,17 +159,21 @@ private:
     QMap<QTcpSocket*, DeviceConnection*> connections;
  
     void processBufferedData(QTcpSocket* socket) {
-        auto &buffer = clientBuffers[socket];
+        while (clientBuffers.contains(socket)) {
+            auto &buffer = clientBuffers[socket];
 
-        while (buffer.size() >= sizeof(quint64) + sizeof(quint32)) {
-            auto identifier = *reinterpret_cast<quint64*>(buffer.data());
+            if (buffer.size() < sizeof(quint64) + sizeof(quint32))
+                return;
+
+            auto identifier = *reinterpret_cast<const quint64*>(buffer.constData());
+            
             if (identifier != 0xb7c2e0f542a39a3e) {
                 qCriticalEx() << "识别码不匹配，丢弃数据" << QString("0x%1").arg(identifier, 0, 16);
                 buffer.clear(); // 清空缓冲区
                 return;
             }
 
-            auto size = *reinterpret_cast<quint32*>(buffer.data() + sizeof(quint64));
+            auto size = *reinterpret_cast<const quint32*>(buffer.constData() + sizeof(quint64));
 
             if (buffer.size() < static_cast<int>(sizeof(quint64) + sizeof(quint32) + size)) {
                 // qDebugEx() << "数据不完整，等待更多数据";
@@ -180,7 +187,7 @@ private:
             const auto& jsonData = AesCrypto::decrypt(data);
             if (jsonData.size() == 0) {
                 // qCriticalEx() << "解密失败";
-                return;
+                continue;
             }
 
             const auto& doc = QJsonDocument::fromJson(jsonData);

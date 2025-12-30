@@ -21,12 +21,12 @@ public:
     static AppSettingsDialog* getInstance() { static AppSettingsDialog instance; return &instance; }
 
     int getValue(const QString &key) {
-        return settings.value(key, m_intDefaults.value(key)).toInt();
+        return settings->value(key, m_intDefaults.value(key)).toInt();
     }
 
     QStringList getEnabledList(const QString &key) {
         QStringList defaults = m_listDefaults.value(key);
-        QJsonArray array = settings.value(key).toJsonArray();
+        QJsonArray array = settings->value(key).toJsonArray();
 
         if (array.isEmpty()) return defaults;
 
@@ -136,7 +136,7 @@ private:
             listWidget->addItem(item);
         };
 
-        QJsonArray array = settings.value(key).toJsonArray();
+        QJsonArray array = settings->value(key).toJsonArray();
         QSet<QString> loadedKeys;
 
         if (array.isEmpty()) {
@@ -177,7 +177,7 @@ private:
                 jsonArray.append(obj);
             }
             // 使用 Compact 模式保存为紧凑的 JSON 字符串/字节数组
-            settings.setValue(key, jsonArray);
+            settings->setValue(key, jsonArray);
             emit configurationChanged(key);
         };
 
@@ -202,7 +202,7 @@ private:
         optionsLayout->setSpacing(20);
 
         QButtonGroup *group = new QButtonGroup(this);
-        int currentVal = settings.value(key, defaultIndex).toInt();
+        int currentVal = settings->value(key, defaultIndex).toInt();
 
         for (int i = 0; i < options.size(); ++i) {
             if (options[i].isEmpty())
@@ -215,7 +215,7 @@ private:
         }
 
         connect(group, QOverload<int>::of(&QButtonGroup::idClicked), [=](int id){
-            settings.setValue(key, id);
+            settings->setValue(key, id);
             emit configurationChanged(key);
         });
 

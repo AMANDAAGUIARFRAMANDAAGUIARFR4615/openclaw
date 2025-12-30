@@ -2,6 +2,7 @@
 
 #include "DeviceInfo.h"
 #include "AesCrypto.h"
+#include "UsbDeviceManager.h"
 #include <magic_enum/magic_enum.hpp>
 #include <QByteArray>
 #include <QJsonObject>
@@ -69,6 +70,15 @@ public:
                 usbConnection = nullptr;
             }
         }
+    }
+
+    void close() {
+        qDebugEx() << "close" << type;
+
+        if (type == Tcp)
+            tcpSocket->disconnectFromHost();
+        else
+            UsbDeviceManager::getInstance()->disconnectDevice(this);
     }
 
     const Type type;

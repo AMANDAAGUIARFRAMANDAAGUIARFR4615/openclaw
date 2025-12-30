@@ -50,7 +50,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     setMinimumSize(800, 600);
 
     QSize screenSize = qApp->primaryScreen()->size();
-    resize(settings.value("mainWindowSize", screenSize * 0.8).toSize());
+    resize(settings->value("mainWindowSize", screenSize * 0.8).toSize());
 
     int x = (screenSize.width() - width()) / 2;
     int y = (screenSize.height() - height()) / 2;
@@ -343,7 +343,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         if (title == "开发者") {
             QMenu menu(this);
             menu.addAction("数据查看", [=]() {
-                SettingsViewer dialog(&settings, this);
+                SettingsViewer dialog(settings, this);
                 dialog.exec();
             });
             menu.addAction("兑换码生成", [this]() {
@@ -497,12 +497,35 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     });
 
     EventHub::on(this, "deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
+        auto deviceInfo = DeviceInfo::getDevice(data["deviceId"].toString());
+
+        if (deviceInfo) {
+            if (deviceInfo->connection->type == connection->type) {
+                connection->close();
+                return;
+            }
+
+            bool isUsbDevice = deviceInfo->connection->type == DeviceConnection::Usb;
+            bool isUsbSetting = MainWindow::getInstance()->getTab().getConnectionMethod() == 0;
+
+            if (isUsbDevice == isUsbSetting)
+            {
+                connection->close();
+                return;
+            }
+            else
+            {
+                deviceInfo->connection->close();
+            }
+        }
+
         connection->deviceInfo = new DeviceInfo(connection, data.toObject());
         addItem(connection);
     });
 
     EventHub::on(this, "disconnected", [this](const QJsonValue &data, DeviceConnection* connection) {
         qDebugEx() << "断开连接处理" << connection;
+
         if (!connection)
             return;
 
@@ -543,13 +566,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         for (const auto &localIP : localIPs) {
             QList<QHostAddress> subnetIPs = NetworkUtils::getSubnetIPs(localIP);
             for (const QHostAddress &ip : subnetIPs) {
-                if (!ips.contains(ip.toString()))
-                    udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
+                if (!ips.contains(ip.toString())) {
+                    auto deviceInfo = DeviceInfo::getDevice(ip.toString());
+                    bool isUsbSetting = getTab().getConnectionMethod() == 0;
+                    if (!deviceInfo || !isUsbSetting)
+                        udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
+                }
             }
         }
     };
 
-    broadcastTask();
+    bool isUsbSetting = getTab().getConnectionMethod() == 0;
+    if (!isUsbSetting)
+        broadcastTask();
 
     int* elapsed = new int(0);
     elapsedTimer->start();
@@ -557,6 +586,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     QTimer *timer = new QTimer(this);
     timer->callOnTimeout([=](){
         *elapsed += 3000;
+#ifndef QT_DEBUG
         if (qAbs(elapsedTimer->elapsed() - *elapsed) > 60000)
         {
 #ifdef Q_OS_WIN
@@ -564,6 +594,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 #endif
             *(int*)qApp = 0;
         }
+#endif
 
         broadcastTask();
     });
@@ -578,7 +609,7 @@ MainWindow::~MainWindow()
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     if (!this->isMinimized())
-        settings.setValue("mainWindowSize", normalGeometry().size());
+        settings->setValue("mainWindowSize", normalGeometry().size());
 
     saveTabs();
     qApp->quit();
@@ -774,11 +805,7 @@ void MainWindow::relayoutDevices()
 
 void MainWindow::addItem(DeviceConnection* connection)
 {
-#ifdef QT_DEBUG
-    connection->send("server", QJsonObject{{"accountId", Account::getInstance()->id}, {"ip", "192.168.0.111"}, {"port", 3000}});
-#else
-    connection->send("server", QJsonObject{{"accountId", Account::getInstance()->id}, {"ip", "43.167.226.242"}, {"port", 9000}});
-#endif
+    connection->send("server", QJsonObject{{"accountId", Account::getInstance()->id}, {"ip", Config::SERVER_IP}, {"port", Config::SERVER_PORT}});
 
     auto deviceInfo = connection->deviceInfo;
 
@@ -814,7 +841,7 @@ void MainWindow::addItem(DeviceConnection* connection)
         auto server = new QTcpServer(player);
         connect(server, &QTcpServer::newConnection, [=]() {
             QTcpSocket *socket = server->nextPendingConnection();
-            qDebugEx() << "Client connected:" << socket->peerAddress().toString();
+            qDebugEx() << "投屏连接" << socket->peerAddress().toString();
             connect(socket, &QTcpSocket::readyRead, [=]() {
                 const auto& data = socket->readAll();
 
@@ -893,7 +920,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
                 auto devices = DeviceInfo::getDevices(mask);
                 for (auto& deviceInfo : devices) {
                     deviceInfo->groupMask &= ~mask;
-                    settings.setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
+                    settings->setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
                 }
                 saveTabs();
             })->setEnabled(bit != 0);
@@ -965,14 +992,14 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
 
 void MainWindow::loadTabs()
 {
-    int size = settings.beginReadArray("tabs");
+    int size = settings->beginReadArray("tabs");
     for (int i = 0; i < size; ++i) {
         BitMaskEditorDialog::Item item;
         item.load(i);
         tabs.append(item);
         tabWidget->addTab(new QWidget(), item.name);
     }
-    settings.endArray();
+    settings->endArray();
 
     if (tabWidget->count() == 0) {
         auto name = "默认分组";
@@ -983,7 +1010,7 @@ void MainWindow::loadTabs()
 
 void MainWindow::saveTabs(int index)
 {
-    settings.beginWriteArray("tabs");
+    settings->beginWriteArray("tabs");
 
     int start = 0;
     int end = tabs.size();
@@ -997,7 +1024,7 @@ void MainWindow::saveTabs(int index)
         tabs[i].save(i);
     }
 
-    settings.endArray();
+    settings->endArray();
 }
 
 int MainWindow::findAvailableTabId()

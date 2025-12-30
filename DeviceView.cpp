@@ -174,7 +174,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
                 dialog.setWindowTitle("修改分组");
                 if (dialog.exec() != QDialog::Accepted) return;
 
-                settings.setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
+                settings->setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
             });
         }
     }

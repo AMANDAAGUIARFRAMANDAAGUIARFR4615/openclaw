@@ -251,7 +251,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
 
     setStatusMessage("就绪");
 
-    QVariantList history = settings.value(connection->deviceInfo->deviceId + "/transferHistory").toList();
+    QVariantList history = settings->value(connection->deviceInfo->deviceId + "/transferHistory").toList();
     for (const QVariant &v : history) {
         QJsonObject obj = v.toJsonObject();
         int row = 0;
@@ -504,9 +504,9 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
             obj["usedTime"] = transferTable->item(row, 8)->text();
 
             QString key = connection->deviceInfo->deviceId + "/transferHistory";
-            QVariantList history = settings.value(key).toList();
+            QVariantList history = settings->value(key).toList();
             history.append(obj);
-            settings.setValue(key, history);
+            settings->setValue(key, history);
         }
     });
 
@@ -803,11 +803,11 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
 }
 
 void RemoteFileExplorer::loadFavorites() {
-    favorites = settings.value("favorites").toStringList();
+    favorites = settings->value("favorites").toStringList();
 }
 
 void RemoteFileExplorer::saveFavorites() {
-    settings.setValue("favorites", favorites);
+    settings->setValue("favorites", favorites);
 }
 
 void RemoteFileExplorer::refreshQuickAccessList() {

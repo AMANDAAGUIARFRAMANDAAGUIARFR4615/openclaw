@@ -27,20 +27,26 @@ public:
         lockedStatus(json["lockedStatus"].toBool()),
         version(json["version"].toString()) {
 
-        groupMask = settings.value(deviceId + "/groupMask", 0u).toUInt();
+        groupMask = settings->value(deviceId + "/groupMask", 0u).toUInt();
 
         allDevices.append(this);
         devices.insert(deviceId, this);
+        devices.insert(localIp, this);
     }
     
     ~DeviceInfo() {
         allDevices.removeOne(this);
-        devices.remove(deviceId);
+
+        if (devices.value(deviceId) == this)
+            devices.remove(deviceId);
+
+        if (devices.value(localIp) == this)
+            devices.remove(localIp);
     }
 
-    static DeviceInfo* getDevice(const QString& udid)
+    static DeviceInfo* getDevice(const QString& id)
     {
-        return devices[udid];
+        return devices[id];
     }
 
     static QList<DeviceInfo*> getDevices(quint32 mask)

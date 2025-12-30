@@ -107,11 +107,7 @@ public:
             webSocketClient->ignoreSslErrors();
         });
 
-#ifdef QT_DEBUG
-        webSocketClient->open(QUrl("ws://192.168.0.111:3000"));
-#else
-        webSocketClient->open(QUrl("ws://43.167.226.242:9000"));
-#endif
+        webSocketClient->open(QUrl("ws://" + Config::SERVER_IP + ":" + QString::number(Config::SERVER_PORT)));
     }
 
     inline static QHash<QString, SafeObject<qint64>> expirations;
@@ -177,10 +173,10 @@ protected:
     }
 
     void loadCredentials() {
-        bool remember = settings.value("remember", true).toBool();
+        bool remember = settings->value("remember", true).toBool();
         if (remember) {
-            phoneLineEdit->setText(settings.value("phone").toString());
-            QString encryptedPass = settings.value("password").toString();
+            phoneLineEdit->setText(settings->value("phone").toString());
+            QString encryptedPass = settings->value("password").toString();
             passwordLineEdit->setText(decrypt(encryptedPass));
             rememberCheckBox->setChecked(true);
         }
@@ -188,13 +184,13 @@ protected:
 
     void saveCredentials(const QString &phone, const QString &password) {
         if (rememberCheckBox->isChecked()) {
-            settings.setValue("remember", true);
-            settings.setValue("phone", phone);
-            settings.setValue("password", encrypt(password));
+            settings->setValue("remember", true);
+            settings->setValue("phone", phone);
+            settings->setValue("password", encrypt(password));
         } else {
-            settings.setValue("remember", false);
-            settings.remove("phone");
-            settings.remove("password");
+            settings->setValue("remember", false);
+            settings->remove("phone");
+            settings->remove("password");
         }
     }
 

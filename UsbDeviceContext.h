@@ -1,6 +1,9 @@
-#include "DeviceConnection.h"
+#pragma once
+
 #include <QSocketNotifier>
 #include <libimobiledevice/libimobiledevice.h>
+
+class DeviceConnection;
 
 struct UsbDeviceContext {
     idevice_t device = nullptr;

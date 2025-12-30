@@ -91,10 +91,10 @@ int main(int argc, char *argv[])
     auto loginWidget = new LoginWidget();
     loginWidget->show();
 
-    if (settings.contains("force_logout"))
+    if (settings->contains("force_logout"))
     {
-        QMessageBox::warning(loginWidget, "下线通知", settings.value("force_logout").toString());
-        settings.remove("force_logout");
+        QMessageBox::warning(loginWidget, "下线通知", settings->value("force_logout").toString());
+        settings->remove("force_logout");
     }
 
     QObject::connect(webSocketClient, &QWebSocket::connected, []() {
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
     });
 
     webSocketClient->on("force_logout", [](const QJsonValue &data) {
-        settings.setValue("force_logout", data.toString());
+        settings->setValue("force_logout", data.toString());
 
         QProcess::startDetached(qApp->applicationFilePath());
         qApp->quit();
