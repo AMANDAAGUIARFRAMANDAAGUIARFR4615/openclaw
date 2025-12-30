@@ -559,7 +559,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         *elapsed += 3000;
         if (qAbs(elapsedTimer->elapsed() - *elapsed) > 60000)
         {
+#ifdef Q_OS_WIN
             __fastfail(7);
+#endif
             *(int*)qApp = 0;
         }
 
