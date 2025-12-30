@@ -55,6 +55,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Replace App Name
+        if: startsWith(github.ref, 'refs/tags/') == false
         shell: bash
         run: |
           RAW_MSG="${{ github.event.head_commit.message }}"
