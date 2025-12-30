@@ -828,6 +828,7 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     auto player = new DeviceWidget(connection, deviceInfo);
     player->installEventFilter(this);
+    auto ipLabel = player->findChild<QLabel*>("ipLabel");
 
     auto device = new LiveStreamDevice(player);
 
@@ -840,7 +841,14 @@ void MainWindow::addItem(DeviceConnection* connection)
                 return;
 
             if (deviceInfo->expireAt.get() > Account::getInstance()->loginTime.get() + elapsedTimer->elapsed())
+            {
                 device->appendData(data);
+                ipLabel->setText(deviceInfo->localIp);
+            }
+            else
+            {
+                ipLabel->setText(deviceInfo->localIp + "<font color='red'>[已过期]</font>");
+            }
         });
 
         player->setSourceDevice(device);
@@ -855,7 +863,14 @@ void MainWindow::addItem(DeviceConnection* connection)
                 const auto& data = socket->readAll();
 
                 if (deviceInfo->expireAt.get() > Account::getInstance()->loginTime.get() + elapsedTimer->elapsed())
+                {
                     device->appendData(data);
+                    ipLabel->setText(deviceInfo->localIp);
+                }
+                else
+                {
+                    ipLabel->setText(deviceInfo->localIp + "<font color='red'>[已过期]</font>");
+                }
             });
         });
         server->listen(QHostAddress::Any, 0);

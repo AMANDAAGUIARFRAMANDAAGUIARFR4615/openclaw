@@ -38,6 +38,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     topLayout->addWidget(launchButton);
 
     auto ipLabel = new QLabel(connection->type == DeviceConnection::Usb ? "" : deviceInfo->localIp, this);
+    ipLabel->setObjectName("ipLabel");
     ipLabel->setAlignment(Qt::AlignCenter);
     ipLabel->setFixedHeight(24);
     auto versionLabel = new QLabel("版本：" + deviceInfo->version, this);
