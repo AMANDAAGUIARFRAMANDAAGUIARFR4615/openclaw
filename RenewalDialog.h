@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ToastWidget.h"
 #include "MainWindow.h"
 #include "Account.h"
 #include <QDialog>
@@ -140,18 +139,18 @@ public:
         auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
         connect(buttonBox, &QDialogButtonBox::accepted, [this]() {
             if (wechatRadioButton->isChecked()) {
-                new ToastWidget("暂不支持微信支付", this);
+                QToolTip::showText(QCursor::pos(), "暂不支持微信支付");
                 return;
             }
 
             if (voucherBalance < currentTotalPrice) {
-                new ToastWidget("余额不足", this);
+                QToolTip::showText(QCursor::pos(), "余额不足");
                 return;
             }
 
             QList<QString> selectedIds = getSelectedDeviceIds();
             if (selectedIds.isEmpty()) {
-                new ToastWidget("请至少选择一台设备", this);
+                QToolTip::showText(QCursor::pos(), "请至少选择一台设备");
                 return;
             }
 
@@ -167,7 +166,7 @@ public:
                 unsetCursor();
 
                 if (res.isString()) {
-                    new ToastWidget(res.toString(), this);
+                    QToolTip::showText(QCursor::pos(), res.toString());
                     return;
                 }
 
@@ -228,7 +227,7 @@ public:
                     redeemButton->setEnabled(true);
 
                     setVoucherBalance(res["balance"].toInt());
-                    new ToastWidget(res["msg"].toString(), this);
+                    QToolTip::showText(QCursor::pos(), res["msg"].toString());
                     voucherPlainTextEdit->clear();
                 });
             }
