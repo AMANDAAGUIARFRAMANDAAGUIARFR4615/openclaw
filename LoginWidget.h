@@ -25,7 +25,10 @@ public:
         titleLabel->setStyleSheet("font: bold 26px; color: #2c3e50; margin: 20px;");
 
         auto phoneValidator = new QRegularExpressionValidator(QRegularExpression("^1[3-9]\\d{9}$"), this);
-        auto passwordValidator = new QRegularExpressionValidator(QRegularExpression("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{6,16}$"), this);
+        // ^(?=.*[A-Za-z])   : 必须包含至少一个字母
+        // (?=.*\\d)         : 必须包含至少一个数字
+        // [\\S]{6,32}$      : 允许任何非空白字符(含特殊符号)，长度6-32位
+        auto passwordValidator = new QRegularExpressionValidator(QRegularExpression("^(?=.*[A-Za-z])(?=.*\\d)[\\S]{6,32}$"), this);
 
         phoneLineEdit = new QLineEdit;
         phoneLineEdit->setPlaceholderText("手机号");
@@ -33,7 +36,7 @@ public:
         phoneLineEdit->setMaxLength(11);
 
         passwordLineEdit = new QLineEdit;
-        passwordLineEdit->setPlaceholderText("密码 (6-16位字母+数字)");
+        passwordLineEdit->setPlaceholderText("密码 (6-32位，字母+数字+符号)");
         passwordLineEdit->setValidator(passwordValidator);
         passwordLineEdit->setEchoMode(QLineEdit::Password);
 
