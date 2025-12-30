@@ -58,6 +58,7 @@ public:
         
         statusLabel = new QLabel("正在连接服务器...");
         statusLabel->setAlignment(Qt::AlignCenter);
+        statusLabel->setOpenExternalLinks(true);
 
         auto buttonLayout = new QHBoxLayout;
         buttonLayout->addWidget(actionButton);
