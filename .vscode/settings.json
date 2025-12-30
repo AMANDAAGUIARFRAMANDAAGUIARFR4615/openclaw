@@ -3,6 +3,7 @@
         "macOS": true,
         "mingw64": true,
         ".qtcreator": true,
-        "build": true
+        "build": true,
+        "CMakeLists.txt.user": true
     }
 }
