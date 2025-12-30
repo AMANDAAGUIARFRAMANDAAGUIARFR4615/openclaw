@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     if (qtTranslator.load("qt_zh_CN", QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
         app.installTranslator(&qtTranslator);
 
-    app.setApplicationDisplayName("RemotePro");
+    app.setApplicationDisplayName("远控Pro");
 
     QString dataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
 

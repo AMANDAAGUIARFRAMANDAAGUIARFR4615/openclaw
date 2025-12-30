@@ -68,7 +68,7 @@ jobs:
 
           BUILD_TIME="${{ needs.create_release.outputs.build_time }}"
           
-          perl -pi -e "s|setApplicationDisplayName\(\"RemotePro\"\)|setApplicationDisplayName\(\"$SAFE_MSG $BUILD_TIME\"\)|g" main.cpp
+          perl -pi -e "s|setApplicationDisplayName\(\"远控Pro\"\)|setApplicationDisplayName\(\"$SAFE_MSG $BUILD_TIME\"\)|g" main.cpp
 
       - name: Set Env
         shell: bash
