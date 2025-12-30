@@ -177,7 +177,7 @@ public:
 
                 for (const QJsonValue &item : devices) {
                     auto deviceInfo = DeviceInfo::getDevice(item["udid"].toString());
-                    deviceInfo->expireAt = QDateTime::fromMSecsSinceEpoch(item["expireAt"].toInteger());
+                    deviceInfo->expireAt = item["expireAt"].toInteger();
                 }
 
                 accept();
@@ -262,7 +262,7 @@ protected:
             
             tableWidget->setItem(i, 1, new QTableWidgetItem(info->deviceName));
             tableWidget->setItem(i, 2, new QTableWidgetItem(info->model));
-            tableWidget->setItem(i, 3, new QTableWidgetItem(info->expireAt.get().toString("yyyy-MM-dd HH:mm:ss")));
+            tableWidget->setItem(i, 3, new QTableWidgetItem(QDateTime::fromMSecsSinceEpoch(info->expireAt.get()).toString("yyyy-MM-dd HH:mm:ss")));
         }
 
         tableWidget->blockSignals(false);

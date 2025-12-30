@@ -13,7 +13,7 @@ public:
     QString id;
     QString phone;
     int balance = 0;
-    SafeObject<QDateTime> loginTime;
+    SafeObject<qint64> loginTime;
 
 private:
     explicit Account(QObject *parent = nullptr) : QObject(parent) {}

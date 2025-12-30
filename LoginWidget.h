@@ -114,7 +114,7 @@ public:
 #endif
     }
 
-    inline static QHash<QString, SafeObject<QDateTime>> expirations;
+    inline static QHash<QString, SafeObject<qint64>> expirations;
     
 signals:
     void authorized(const QJsonValue &account);
@@ -283,8 +283,7 @@ protected:
                     const auto& devices = res["devices"].toArray();
                     for (const QJsonValue& device: devices) {
                         const auto& udid = device["udid"].toString();
-                        const auto& expireAt = QDateTime::fromString(device["expireAt"].toString(), Qt::ISODateWithMs);
-                        expirations[udid] = expireAt.toLocalTime();
+                        expirations[udid] = device["expireAt"].toInteger();
                     }
                     emit authorized(res["account"]);
                     close();

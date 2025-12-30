@@ -73,7 +73,7 @@ public:
     int orientation;
     bool lockedStatus;
     quint32 groupMask = 0;
-    SafeObject<QDateTime> expireAt;
+    SafeObject<qint64> expireAt;
 
 private:
     inline static QList<DeviceInfo*> allDevices;

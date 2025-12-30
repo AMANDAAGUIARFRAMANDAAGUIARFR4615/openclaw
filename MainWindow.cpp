@@ -781,10 +781,10 @@ void MainWindow::addItem(DeviceConnection* connection)
     auto deviceInfo = connection->deviceInfo;
 
     deviceInfo->expireAt = LoginWidget::expirations.value(deviceInfo->deviceId);
-    if (!deviceInfo->expireAt.get().isValid())
+    if (deviceInfo->expireAt.get() == 0)
     {
         webSocketClient->emitEvent("deviceExpireAt", deviceInfo->deviceId, [=](const QJsonValue &res) {
-            deviceInfo->expireAt = QDateTime::fromMSecsSinceEpoch(res.toInteger());
+            deviceInfo->expireAt = res.toInteger();
         });
     }
 
@@ -801,7 +801,7 @@ void MainWindow::addItem(DeviceConnection* connection)
             if (sender != videoConnection)
                 return;
 
-            if (deviceInfo->expireAt.get().isValid())
+            if (deviceInfo->expireAt.get() > Account::getInstance()->loginTime.get() + elapsedTimer->elapsed())
                 device->appendData(data);
         });
 
@@ -816,7 +816,7 @@ void MainWindow::addItem(DeviceConnection* connection)
             connect(socket, &QTcpSocket::readyRead, [=]() {
                 const auto& data = socket->readAll();
 
-                if (deviceInfo->expireAt.get().isValid())
+                if (deviceInfo->expireAt.get() > Account::getInstance()->loginTime.get() + elapsedTimer->elapsed())
                     device->appendData(data);
             });
         });

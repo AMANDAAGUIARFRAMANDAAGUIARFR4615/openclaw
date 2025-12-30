@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
         Account::getInstance()->id = account["_id"].toString();
         Account::getInstance()->phone = account["phone"].toString();
         Account::getInstance()->balance = account["balance"].toInt();
-        // Account::getInstance()->loginTime = account["loginTime"].toInteger();
+        Account::getInstance()->loginTime = account["loginTime"].toInteger();
 
         QObject::connect(TcpServer::getInstance(), &TcpServer::clientDisconnected, [](DeviceConnection* conn){
             EventHub::trigger("disconnected", QJsonValue(), conn);
