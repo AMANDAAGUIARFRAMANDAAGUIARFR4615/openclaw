@@ -23,8 +23,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
 
     auto deviceInfoLabel = new QLabel(connection->displayName(true), this);
     deviceInfoLabel->setAlignment(Qt::AlignCenter);
-    deviceInfoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    deviceInfoLabel->setFixedHeight(24);
+    deviceInfoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     auto launchButton = new QPushButton(this);
     launchButton->setIcon(style()->standardIcon(QStyle::SP_TitleBarMaxButton));
@@ -40,10 +39,12 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     auto ipLabel = new QLabel(connection->type == DeviceConnection::Usb ? "" : deviceInfo->localIp, this);
     ipLabel->setObjectName("ipLabel");
     ipLabel->setAlignment(Qt::AlignCenter);
-    ipLabel->setFixedHeight(24);
+    ipLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    ipLabel->setFixedHeight(22);
     auto versionLabel = new QLabel("版本：" + deviceInfo->version, this);
     versionLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    versionLabel->setFixedHeight(24);
+    versionLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    versionLabel->setFixedHeight(22);
 
     auto bottomLayout = new QHBoxLayout;
     bottomLayout->setContentsMargins(5, 0, 5, 0);
