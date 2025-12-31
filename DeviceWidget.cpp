@@ -21,7 +21,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     topLayout->setContentsMargins(5, 0, 5, 0);
     topLayout->setSpacing(0);
 
-    auto deviceInfoLabel = new QLabel(connection->displayName(), this);
+    auto deviceInfoLabel = new QLabel(connection->displayName(true), this);
     deviceInfoLabel->setAlignment(Qt::AlignCenter);
     deviceInfoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     deviceInfoLabel->setFixedHeight(24);

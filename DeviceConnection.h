@@ -85,10 +85,10 @@ public:
 
     DeviceInfo* deviceInfo = nullptr;
 
-    QString displayName() {
+    QString displayName(bool richText = false) {
         QString connType = type == DeviceConnection::Usb ? "USB" : "WiFi";
         
-        return QString("<b>%1</b> <font color='#888888'>[%2]</font> — %3")
+        return QString(richText ? "<b>%1</b> <font color='#888888'>[%2]</font> — %3" : "%1 [%2] — %3")
                 .arg(deviceInfo->deviceName)
                 .arg(deviceInfo->model)
                 .arg(connType);
