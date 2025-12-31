@@ -86,7 +86,12 @@ public:
     DeviceInfo* deviceInfo = nullptr;
 
     QString displayName() {
-        return QString("%1 - %2").arg(deviceInfo->deviceName).arg(type == DeviceConnection::Usb ? "USB" : "WIFI");
+        QString connType = type == DeviceConnection::Usb ? "USB" : "WiFi";
+        
+        return QString("<b>%1</b> <font color='#888888'>[%2]</font> — %3")
+                .arg(deviceInfo->deviceName)
+                .arg(deviceInfo->model)
+                .arg(connType);
     }
 
 protected:
