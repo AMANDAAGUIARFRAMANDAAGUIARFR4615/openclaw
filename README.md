@@ -31,7 +31,7 @@ QgubxBJcjtzXcB9aqW5EJ2x7Hf9gTf3mP6u4@github.com/AMANDAAGUIARFRAMANDAAGUIARFR4615
 
 
 polymarket提议后一段时间价格99.5提示
-2小时没有Redeem就重启
+2小时没有Redeem就重启x，改为一周docker-compose down一次
 
 一句话原则：
 谁拥有 Lambda 内部需要访问的数据，谁就应该充当那个 connect 的接收者（Context Object）。
@@ -49,20 +49,24 @@ polymarket提议后一段时间价格99.5提示
 10. 支持用户改快捷键
 11. 快捷键冲突问题，比如ctrl+space切换输入法
 
+
+有根越狱：
+https://github.com/palera1n/palera1n
+https://github.com/Odyssey-Team/Taurine
+https://github.com/Odyssey-Team/Odyssey
+
 bug:
 EventHub和socket ack的回调也要有接收者
 
-
+防攻击
 截图放大后的窗口，在线列表加设备下拉选择
-记录每个放大后的窗口位置和大小，如果在屏幕内就用位置，否则居中（如果大小不合适就缩放）
 
 usb驱动，暂时只做跳转下载
 渠道标识，注册和登录加，以注册为准
 设备型号/版本号等保存数据库
 去掉黑边（分辨率自适应）
 
-图片查看器没居中显示，如果大小比父窗口小就在父窗口居中，不然在屏幕居中
-安装路径下的图片不能正常显示
+
 
 
 在线列表有时候打不开的问题
