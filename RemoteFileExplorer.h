@@ -52,7 +52,7 @@ public:
 
         auto explorer = new RemoteFileExplorer(connection, rootPath);
         explorer->setWindowTitle(connection->displayName());
-        QSize screenSize = qApp->primaryScreen()->size();
+        QSize screenSize = qApp->primaryScreen()->availableSize();
         explorer->resize(screenSize.width() * 0.7, screenSize.height() * 0.7);
         explorer->show();
         return explorer;

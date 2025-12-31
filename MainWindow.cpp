@@ -48,8 +48,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 {
     setMinimumSize(800, 600);
 
-    QSize screenSize = qApp->primaryScreen()->size();
-    resize(settings->value("mainWindowSize", screenSize * 0.8).toSize());
+    QSize screenSize = qApp->primaryScreen()->availableSize();
+    resize(settings->value("mainWindowSize", screenSize * 0.9).toSize());
 
     int x = (screenSize.width() - width()) / 2;
     int y = (screenSize.height() - height()) / 2;

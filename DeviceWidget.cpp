@@ -171,11 +171,29 @@ void DeviceWidget::launchDeviceWindow() {
     });
 
     if (deviceInfo->geometry.isValid()) {
-        deviceWindow->setGeometry(deviceInfo->geometry);
+        QRect targetRect = deviceInfo->geometry;
+        
+        // 获取包含该矩形中心点的屏幕（或者最近的屏幕）
+        QScreen *screen = QGuiApplication::screenAt(targetRect.center());
+        
+        // 如果找不到屏幕（说明完全跑偏了），或者矩形不在该屏幕的可用区域内
+        if (!screen) {
+            // 情况A: 中心点完全在屏幕外 -> 强制移动到主屏幕中心
+            targetRect.moveCenter(qApp->primaryScreen()->availableGeometry().center());
+        } else {
+            // 情况B: 在某个屏幕边缘，可能只露出一点点 -> 尝试做相交检测
+            QRect screenRect = screen->availableGeometry();
+            
+            // 如果窗口完全不在屏幕可用区域内
+            if (!targetRect.intersects(screenRect))
+                targetRect.moveCenter(screenRect.center());
+        }
+
+        deviceWindow->setGeometry(targetRect);
     }
     else {
-        float limitW = qApp->primaryScreen()->size().width() * 0.8f;
-        float limitH = qApp->primaryScreen()->size().height() * 0.8f;
+        float limitW = qApp->primaryScreen()->availableSize().width();
+        float limitH = qApp->primaryScreen()->availableSize().height();
         float scale = std::min({1.0f, limitW / deviceInfo->screenWidth, limitH / deviceInfo->screenHeight});
         deviceWindow->setFixedSize(deviceInfo->screenWidth * scale, deviceInfo->screenHeight * scale);
     }
