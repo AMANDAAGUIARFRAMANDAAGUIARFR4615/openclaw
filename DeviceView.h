@@ -19,7 +19,6 @@ public:
     void setSourceDevice(QIODevice *device, const QUrl &sourceUrl = QUrl());
 
     void addVideoFrameWidget(VideoFrameWidget* videoFrameWidget);
-    VideoFrameWidget* getVideoFrameWidget() { return videoFrameWidget; }
 
     DeviceConnection* const connection;
     DeviceInfo* const deviceInfo;
