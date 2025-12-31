@@ -14,6 +14,8 @@
 #include <QDesktopServices>
 #include <QPainter>
 #include <QTextBlock>
+#include <QToolTip>
+#include <QTimer>
 
 class CodeEditor : public QPlainTextEdit
 {
@@ -138,12 +140,11 @@ class FileViewer : public QWidget
     Q_OBJECT
 
 public:
-    explicit FileViewer(const QString &filePath, QWidget *parent) : filePath(filePath)
+    explicit FileViewer(const QString &filePath, QWidget *parent) : filePath(filePath), QWidget()
     {
         setAttribute(Qt::WA_DeleteOnClose);
         
         setWindowTitle(QFileInfo(filePath).fileName());
-        show();
 
         QVBoxLayout *layout = new QVBoxLayout(this);
         layout->setContentsMargins(0, 0, 0, 0);
@@ -152,44 +153,64 @@ public:
         if (isTextFile()) {
             QFile file(filePath);
             if (!file.open(QIODevice::ReadOnly)) {
-                QMessageBox::warning(this, "错误", "无法打开文本文件。");
-                return;
+                QToolTip::showText(QCursor::pos(), "无法打开文本文件");
+                QTimer::singleShot(0, this, &FileViewer::close);
+                return; 
             }
 
             editor = new CodeEditor(this);
             editor->setPlainText(QString::fromUtf8(file.readAll()));
             editor->document()->setModified(false);
             layout->addWidget(editor);
+            
+            resize(800, 600); 
         }
         else if (isImageFile()) {
             QPixmap pixmap(filePath);
             if (pixmap.isNull()) {
-                QMessageBox::warning(this, "错误", "无法加载图片。");
+                QToolTip::showText(QCursor::pos(), "无法加载图片");
+                QTimer::singleShot(0, this, &FileViewer::close);
                 return;
             }
 
             QLabel *imageLabel = new QLabel(this);
             imageLabel->setAlignment(Qt::AlignCenter);
            
-            QSize maxSize = qApp->primaryScreen()->availableSize();
+            QSize availableSize = qApp->primaryScreen()->availableSize();
+            QSize maxSize = availableSize * 0.9; 
+
             if (pixmap.width() > maxSize.width() || pixmap.height() > maxSize.height())
                 imageLabel->setPixmap(pixmap.scaled(maxSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
             else
                 imageLabel->setPixmap(pixmap);
     
             layout->addWidget(imageLabel);
-            resize(pixmap.size());
+            
+            layout->setSizeConstraint(QLayout::SetFixedSize);
+
+            adjustSize(); 
         }
         else {
             QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
-            deleteLater();
+            QTimer::singleShot(0, this, &FileViewer::close);
             return;
         }
 
-        QRect geometry = parent ? parent->window()->geometry() : qApp->primaryScreen()->availableGeometry();
-        int x = (geometry.width() - width()) / 2;
-        int y = (geometry.height() - height()) / 2;
+        QRect refGeometry;
+        if (parent) {
+            // 如果有父窗口，获取父窗口所在的几何位置
+            refGeometry = parent->window()->geometry();
+        } else {
+            // 如果没有父窗口，获取主屏幕的可用区域
+            refGeometry = qApp->primaryScreen()->availableGeometry();
+        }
+
+        // 计算中心点坐标 = 参考矩形左上角 + (参考宽 - 自身宽)/2
+        int x = refGeometry.x() + (refGeometry.width() - width()) / 2;
+        int y = refGeometry.y() + (refGeometry.height() - height()) / 2;
+
         move(x, y);
+        show();
     }
 
 protected:
