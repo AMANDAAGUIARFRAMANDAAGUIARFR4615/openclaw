@@ -38,10 +38,44 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
     layout->addWidget(label);
     layout->addStretch();
     overlay->setLayout(layout);
+
+    EventHub::on(this, "clipboard", [this](const QJsonValue &data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
+
+        auto type = data["type"].toInt();
+        auto content = data["content"].toString();
+
+        if (type == 1)
+        {
+            qApp->clipboard()->setText(content);
+            new ToastWidget("文本已复制到剪切板", this);
+            return;
+        }
+        
+        if (type == 2)
+        {
+            QByteArray byteArray = QByteArray::fromBase64(content.toUtf8());
+            QImage image;
+            
+            if (!image.loadFromData(byteArray))
+            {
+                new ToastWidget("图片数据解码失败", this);
+                return;
+            }
+
+            qApp->clipboard()->setPixmap(QPixmap::fromImage(image));
+            new ToastWidget("图片已复制到剪切板", this);
+            return;
+        }
+
+        new ToastWidget("此类型暂不支持", this);
+    });
 }
 
 DeviceView::~DeviceView()
 {
+    EventHub::off(this, "clipboard");
     EventHub::off(this, "orientation");
 }
 
