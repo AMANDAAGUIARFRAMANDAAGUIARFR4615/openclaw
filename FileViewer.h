@@ -214,13 +214,14 @@ public:
             return;
         }
 
-        QRect refGeometry;
+        // 默认相对于屏幕居中
+        QRect refGeometry = qApp->primaryScreen()->availableGeometry();
+
         if (parent) {
-            // 如果有父窗口，获取父窗口所在的几何位置
-            refGeometry = parent->window()->geometry();
-        } else {
-            // 如果没有父窗口，获取主屏幕的可用区域
-            refGeometry = qApp->primaryScreen()->availableGeometry();
+            QRect parentGeo = parent->window()->geometry();
+            // 只有当父窗口比当前窗口大时，才相对于父窗口居中
+            if (parentGeo.width() > width() && parentGeo.height() > height())
+                refGeometry = parentGeo;
         }
 
         // 计算中心点坐标 = 参考矩形左上角 + (参考宽 - 自身宽)/2
