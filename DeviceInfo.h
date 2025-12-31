@@ -28,6 +28,7 @@ public:
         version(json["version"].toString()) {
 
         groupMask = settings->value(deviceId + "/groupMask", 0u).toUInt();
+        geometry = settings->value(deviceId + "/geometry").toRect();
 
         allDevices.append(this);
         devices.insert(deviceId, this);
@@ -79,6 +80,7 @@ public:
     int orientation;
     bool lockedStatus;
     quint32 groupMask = 0;
+    QRect geometry;
     SafeObject<qint64> expireAt;
 
 private:

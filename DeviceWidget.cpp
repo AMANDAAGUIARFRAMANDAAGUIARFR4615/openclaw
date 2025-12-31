@@ -164,14 +164,22 @@ void DeviceWidget::launchDeviceWindow() {
 
         addVideoFrameWidget(videoFrameWidgetLocal);
 
+        deviceInfo->geometry = deviceWindow->geometry();
+        settings->setValue(deviceInfo->deviceId + "/geometry", deviceInfo->geometry);
         deviceWindow = nullptr;
         placeholder->deleteLater();
     });
 
-    float limitW = qApp->primaryScreen()->size().width() * 0.8f;
-    float limitH = qApp->primaryScreen()->size().height() * 0.8f;
-    float scale = std::min({1.0f, limitW / deviceInfo->screenWidth, limitH / deviceInfo->screenHeight});
-    deviceWindow->setFixedSize(deviceInfo->screenWidth * scale, deviceInfo->screenHeight * scale);
+    if (deviceInfo->geometry.isValid()) {
+        deviceWindow->setGeometry(deviceInfo->geometry);
+    }
+    else {
+        float limitW = qApp->primaryScreen()->size().width() * 0.8f;
+        float limitH = qApp->primaryScreen()->size().height() * 0.8f;
+        float scale = std::min({1.0f, limitW / deviceInfo->screenWidth, limitH / deviceInfo->screenHeight});
+        deviceWindow->setFixedSize(deviceInfo->screenWidth * scale, deviceInfo->screenHeight * scale);
+    }
+
     deviceWindow->addVideoFrameWidget(videoFrameWidget);
     deviceWindow->show();
     qobject_cast<QBoxLayout*>(layout())->addWidget(placeholder);
