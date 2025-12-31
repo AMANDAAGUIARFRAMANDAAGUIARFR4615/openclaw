@@ -540,7 +540,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
         for (int i = 0; i < deviceListWidget->count(); i++) {
             QListWidgetItem* item = deviceListWidget->item(i);
-            auto deviceWidget = (DeviceWidget*)item->data(Qt::UserRole).value<quintptr>();
+            auto deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
             if (deviceWidget->connection == connection) {
                 delete deviceListWidget->takeItem(i);
                 break;
@@ -800,11 +800,11 @@ void MainWindow::relayoutDevices()
     for (int i = 0; i < deviceListWidget->count(); ++i) {
         auto item = deviceListWidget->item(i);
         
-        auto deviceWidget = (DeviceWidget*)item->data(Qt::UserRole).value<quintptr>();
+        auto deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
 
         item->setHidden(!deviceWidget || !devicesInGroup.contains(deviceWidget->deviceInfo));
 
-        if (!item->isHidden() && deviceWidget) {
+        if (!item->isHidden()) {
             item->setSizeHint(targetSize);
             deviceWidget->setFixedSize(targetSize);
         }
@@ -887,7 +887,7 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     auto item = new QListWidgetItem(deviceListWidget);
     item->setText(deviceInfo->deviceName);
-    item->setData(Qt::UserRole, QVariant::fromValue((quintptr)player));
+    item->setData(Qt::UserRole, QVariant::fromValue(player));
     
     deviceListWidget->addItem(item);
     deviceListWidget->setItemWidget(item, frame);
