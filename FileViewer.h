@@ -175,20 +175,38 @@ public:
 
             QLabel *imageLabel = new QLabel(this);
             imageLabel->setAlignment(Qt::AlignCenter);
-           
+
+            // 生成一个小的 20x20 的棋盘格纹理
+            int gridSize = 10;
+            QPixmap bgPixmap(gridSize * 2, gridSize * 2);
+            bgPixmap.fill(Qt::white); // 基础色为白色
+            QPainter painter(&bgPixmap);
+            QColor grayColor(220, 220, 220); // 浅灰色
+            // 绘制两个对角的灰色方块
+            painter.fillRect(0, 0, gridSize, gridSize, grayColor);
+            painter.fillRect(gridSize, gridSize, gridSize, gridSize, grayColor);
+            painter.end();
+
+            // 将这个纹理设置为 Label 的背景
+            QPalette palette = imageLabel->palette();
+            palette.setBrush(QPalette::Window, QBrush(bgPixmap));
+            imageLabel->setAutoFillBackground(true);
+            imageLabel->setPalette(palette);
+
             QSize availableSize = qApp->primaryScreen()->availableSize();
-            QSize maxSize = availableSize * 0.9; 
+            QSize maxSize = availableSize * 0.9;
 
             if (pixmap.width() > maxSize.width() || pixmap.height() > maxSize.height())
                 imageLabel->setPixmap(pixmap.scaled(maxSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
             else
                 imageLabel->setPixmap(pixmap);
-    
+
             layout->addWidget(imageLabel);
             
+            // 设置布局约束为固定大小，让窗口适应图片大小
             layout->setSizeConstraint(QLayout::SetFixedSize);
 
-            adjustSize(); 
+            adjustSize();
         }
         else {
             QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
