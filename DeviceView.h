@@ -20,6 +20,9 @@ public:
 
     void addVideoFrameWidget(VideoFrameWidget* videoFrameWidget);
 
+    DeviceConnection* const connection;
+    DeviceInfo* const deviceInfo;
+
 protected:
     void showOverlay(const QString &text);
     void hideOverlay();
@@ -34,8 +37,6 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
 
-    DeviceConnection* const connection;
-    DeviceInfo* const deviceInfo;
     VideoFrameWidget *videoFrameWidget = nullptr;
     QWidget *overlay = nullptr;
 

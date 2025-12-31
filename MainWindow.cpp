@@ -540,7 +540,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
         for (int i = 0; i < deviceListWidget->count(); i++) {
             QListWidgetItem* item = deviceListWidget->item(i);
-            if (item->data(Qt::UserRole).value<quintptr>() == (quintptr)connection->deviceInfo) {
+            auto deviceWidget = (DeviceWidget*)item->data(Qt::UserRole).value<quintptr>();
+            if (deviceWidget->connection == connection) {
                 delete deviceListWidget->takeItem(i);
                 break;
             }
@@ -791,21 +792,21 @@ void MainWindow::relayoutDevices()
     
     const auto& devicesInGroup = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
     
+    auto frameItemHeight = frameItemWidth * DeviceInfo::getOptimalAspectRatio(devicesInGroup);
     int targetW = (isLandscape ? frameItemHeight : frameItemWidth) * scale;
     int targetH = (isLandscape ? frameItemWidth : frameItemHeight) * scale;
     QSize targetSize(targetW, targetH);
 
     for (int i = 0; i < deviceListWidget->count(); ++i) {
-        QListWidgetItem* item = deviceListWidget->item(i);
-        QWidget* widget = deviceListWidget->itemWidget(item);
+        auto item = deviceListWidget->item(i);
         
-        auto infoPtr = (DeviceInfo*)item->data(Qt::UserRole).value<quintptr>();
+        auto deviceWidget = (DeviceWidget*)item->data(Qt::UserRole).value<quintptr>();
 
-        item->setHidden(!infoPtr || !devicesInGroup.contains(infoPtr));
+        item->setHidden(!deviceWidget || !devicesInGroup.contains(deviceWidget->deviceInfo));
 
-        if (!item->isHidden() && widget) {
+        if (!item->isHidden() && deviceWidget) {
             item->setSizeHint(targetSize);
-            widget->setFixedSize(targetSize);
+            deviceWidget->setFixedSize(targetSize);
         }
     }
 
@@ -886,8 +887,7 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     auto item = new QListWidgetItem(deviceListWidget);
     item->setText(deviceInfo->deviceName);
-    item->setData(Qt::UserRole, QVariant::fromValue((quintptr)deviceInfo));
-    item->setSizeHint(QSize(frameItemWidth, frameItemHeight)); 
+    item->setData(Qt::UserRole, QVariant::fromValue((quintptr)player));
     
     deviceListWidget->addItem(item);
     deviceListWidget->setItemWidget(item, frame);

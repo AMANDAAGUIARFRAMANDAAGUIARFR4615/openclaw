@@ -64,6 +64,61 @@ public:
         return result;
     }
 
+    /**
+     * @brief 获取最佳显示宽高比 (Height / Width)
+     */
+    static double getOptimalAspectRatio(QList<DeviceInfo*> devices)
+    {
+        if (devices.isEmpty())
+            return 1;
+
+        QList<double> deviceRatios;
+        QSet<double> candidateRatios;
+
+        for (auto device : devices) {
+            // 无论设备当前也是横是竖，长边都算作 Height，短边算作 Width
+            double h = std::max(device->screenWidth, device->screenHeight);
+            double w = std::min(device->screenWidth, device->screenHeight);
+            
+            double r = h / w; // 这里得到的结果通常 > 1.0
+            
+            deviceRatios.append(r);
+            candidateRatios.insert(r);
+        }
+
+        double bestRatio = 0.0;
+        double maxTotalFillRate = -1.0;
+
+        // 遍历所有存在的比例作为“标准框” (CandidateR)
+        for (double candidateR : candidateRatios) {
+            double currentTotalFillRate = 0.0;
+
+            for (double devR : deviceRatios) {
+                // 计算填充率 (Fill Rate)
+                // candidateR 是框的高宽比，devR 是设备的高宽比
+                
+                double fillRate;
+                
+                if (devR > candidateR) {
+                    // 设备比框更“细长” (更直)
+                    fillRate = candidateR / devR; 
+                } else {
+                    // 设备比框更“矮胖” (devR < candidateR)
+                    fillRate = devR / candidateR;
+                }
+
+                currentTotalFillRate += fillRate;
+            }
+
+            if (currentTotalFillRate > maxTotalFillRate) {
+                maxTotalFillRate = currentTotalFillRate;
+                bestRatio = candidateR;
+            }
+        }
+
+        return bestRatio;
+    }
+
     DeviceConnection* const connection;
     
     const QString deviceId;

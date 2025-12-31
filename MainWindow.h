@@ -47,7 +47,6 @@ protected:
     QList<BitMaskEditorDialog::Item> tabs;
 
     const int frameItemWidth = 300;
-    const int frameItemHeight = frameItemWidth * 1.7786;
     const int spacing = 10;
 
     QListWidget* sideBarList;
