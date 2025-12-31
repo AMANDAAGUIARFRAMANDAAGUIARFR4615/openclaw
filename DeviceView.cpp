@@ -43,6 +43,9 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
         if (this->connection != connection)
             return;
 
+        if (!videoFrameWidget)
+            return;
+
         auto type = data["type"].toInt();
         auto content = data["content"].toString();
 
