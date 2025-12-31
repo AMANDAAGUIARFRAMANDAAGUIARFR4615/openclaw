@@ -805,8 +805,8 @@ void MainWindow::relayoutDevices()
         item->setHidden(!deviceWidget || !devicesInGroup.contains(deviceWidget->deviceInfo));
 
         if (!item->isHidden()) {
-            item->setSizeHint(targetSize);
-            deviceWidget->setFixedSize(targetSize);
+            item->setSizeHint(targetSize + QSize(0, 48));
+            deviceWidget->getVideoFrameWidget()->setFixedSize(targetSize);
         }
     }
 
