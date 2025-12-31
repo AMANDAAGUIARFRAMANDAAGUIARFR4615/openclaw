@@ -172,7 +172,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         else if (text == "🔧修改分组") {
             menu->addAction(text, [this]() {
                 if (MainWindow::getInstance()->getTabs().count() <= 1) {
-                    new ToastWidget("请先右键点击标签页添加自定义分组", this);
+                    QToolTip::showText(QCursor::pos(), "请先右键点击标签页添加自定义分组");
                     return;
                 }
 
