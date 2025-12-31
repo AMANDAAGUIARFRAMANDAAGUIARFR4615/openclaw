@@ -172,21 +172,24 @@ void DeviceWidget::launchDeviceWindow() {
 
     if (deviceInfo->geometry.isValid()) {
         QRect targetRect = deviceInfo->geometry;
+        bool isVisible = false;
+
+        const auto screens = qApp->screens();
         
-        // 获取包含该矩形中心点的屏幕（或者最近的屏幕）
-        QScreen *screen = QGuiApplication::screenAt(targetRect.center());
-        
-        // 如果找不到屏幕（说明完全跑偏了），或者矩形不在该屏幕的可用区域内
-        if (!screen) {
-            // 情况A: 中心点完全在屏幕外 -> 强制移动到主屏幕中心
+        // 遍历所有屏幕，检查目标矩形是否与任意屏幕的可用区域相交
+        for (QScreen *screen : screens) {
+            if (targetRect.intersects(screen->availableGeometry())) {
+                isVisible = true;
+                break; // 只要与任意一个屏幕有交集，就认为位置有效，停止检查
+            }
+        }
+
+        // 如果遍历完所有屏幕，发现都不相交（说明窗口完全跑到了屏幕外）
+        if (!isVisible) {
+            // 强制移动到主屏幕中心
+            // 注意：这里重置的是中心点，保持窗口大小不变
+            // 如果窗口本身比屏幕还大，可能需要额外处理 resize，但通常 moveCenter 足够
             targetRect.moveCenter(qApp->primaryScreen()->availableGeometry().center());
-        } else {
-            // 情况B: 在某个屏幕边缘，可能只露出一点点 -> 尝试做相交检测
-            QRect screenRect = screen->availableGeometry();
-            
-            // 如果窗口完全不在屏幕可用区域内
-            if (!targetRect.intersects(screenRect))
-                targetRect.moveCenter(screenRect.center());
         }
 
         deviceWindow->setGeometry(targetRect);
