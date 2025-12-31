@@ -93,9 +93,8 @@ private:
 
         QStringList sideBarMenu{"🔗设备连接", "🕹️同屏操作", "⚙️设置", "💡帮助", "📲越狱助手", "📱手机软件源", "⏳续费", "💬客服", "📜日志"};
 
-#ifdef QT_DEBUG
-        sideBarMenu.append("🛠️开发者");
-#endif
+        if (qEnvironmentVariableIsSet("FROM_QT_CREATOR"))
+            sideBarMenu.append("🛠️开发者");
 
         addSortableGroup(mainLayout, "sideBarMenu", "左侧栏 (拖拽调整)", sideBarMenu);
 
