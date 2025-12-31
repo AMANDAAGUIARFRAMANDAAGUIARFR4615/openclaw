@@ -46,7 +46,8 @@ public:
     static Recorder* open(DeviceConnection* connection) {
         auto existing = instanceMap.value(connection);
         if (existing) {
-            existing->activateWindow();
+            existing->setWindowState(existing->windowState() & ~Qt::WindowMinimized);
+            existing->raise();
             return existing;
         }
 

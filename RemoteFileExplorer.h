@@ -44,7 +44,8 @@ public:
         QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(rootPath);
         auto existing = instanceMap.value(key);
         if (existing) {
-            existing->activateWindow();
+            existing->setWindowState(existing->windowState() & ~Qt::WindowMinimized);
+            existing->raise();
             return existing;
         }
 

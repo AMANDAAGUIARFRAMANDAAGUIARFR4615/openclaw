@@ -137,7 +137,8 @@ bool DeviceWidget::event(QEvent *event)
 
 void DeviceWidget::launchDeviceWindow() {
     if (deviceWindow) {
-        deviceWindow->activateWindow();
+        deviceWindow->setWindowState(deviceWindow->windowState() & ~Qt::WindowMinimized);
+        deviceWindow->raise();
         return;
     }
 
