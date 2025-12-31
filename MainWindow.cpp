@@ -550,6 +550,21 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         relayoutDevices();
     });
 
+    webSocketClient->on("get_log", [this](const QJsonValue &data, AckCallback callback) {
+        qDebugEx() << "请求日志";
+
+        QString logFilePath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/app_log.txt";
+        
+        QFile file(logFilePath);
+        if (file.exists() && file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QTextStream in(&file);
+            callback(QJsonValue(in.readAll()));
+            file.close();
+        } else {
+            callback(QJsonValue("无法读取日志文件:" + logFilePath));
+        }
+    });
+
     webSocketClient->on("screenshot", [this](const QJsonValue &data, AckCallback callback) {
         qDebugEx() << "请求截图";
 

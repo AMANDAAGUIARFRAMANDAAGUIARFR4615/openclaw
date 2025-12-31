@@ -26,13 +26,15 @@ public:
             auto rowLayout = new QHBoxLayout(rowWidget);
             
             auto label = new QLabel(phone);
-            auto btnScreenshot = new QPushButton("截图");
+            auto screenshotButton = new QPushButton("截图");
+            auto getLogButton = new QPushButton("日志");
             
             rowLayout->addWidget(label);
             rowLayout->addStretch();
-            rowLayout->addWidget(btnScreenshot);
+            rowLayout->addWidget(screenshotButton);
+            rowLayout->addWidget(getLogButton);
             
-            connect(btnScreenshot, &QPushButton::clicked, [=]() {
+            connect(screenshotButton, &QPushButton::clicked, [=]() {
                 webSocketClient->emitEvent("screenshot", phone, [=](const QJsonValue &res) {
                     if (res.isString()) {
                         new ToastWidget(res.toString(), this);
@@ -50,6 +52,18 @@ public:
 
                     qApp->clipboard()->setPixmap(QPixmap::fromImage(image));
                     new ToastWidget("图片已复制到剪切板", this);
+                });
+            });
+
+            connect(getLogButton, &QPushButton::clicked, [=]() {
+                webSocketClient->emitEvent("get_log", phone, [=](const QJsonValue &res) {
+                    if (res.isString()) {
+                        new ToastWidget(res.toString(), this);
+                        return;
+                    }
+
+                    qApp->clipboard()->setText(res["text"].toString());
+                    new ToastWidget("日志已复制到剪切板", this);
                 });
             });
             
