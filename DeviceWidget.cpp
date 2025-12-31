@@ -139,6 +139,7 @@ void DeviceWidget::launchDeviceWindow() {
     if (deviceWindow) {
         deviceWindow->setWindowState(deviceWindow->windowState() & ~Qt::WindowMinimized);
         deviceWindow->raise();
+        deviceWindow->activateWindow();
         return;
     }
 

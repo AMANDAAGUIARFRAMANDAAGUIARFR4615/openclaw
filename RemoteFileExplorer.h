@@ -46,6 +46,7 @@ public:
         if (existing) {
             existing->setWindowState(existing->windowState() & ~Qt::WindowMinimized);
             existing->raise();
+            existing->activateWindow();
             return existing;
         }
 
