@@ -108,6 +108,20 @@ bool DeviceWidget::event(QEvent *event)
 }
 
 void DeviceWidget::launchDeviceWindow() {
+    static bool isDispatching = false;
+
+    auto isMultiControl = MainWindow::getInstance()->isMultiControl();
+
+    if (isMultiControl && !isDispatching) {
+        isDispatching = true;
+        auto list = MainWindow::getInstance()->findChildren<DeviceWidget*>();
+        for (auto& item : list) {
+            if (item != this)
+                item->launchDeviceWindow();
+        }
+        isDispatching = false;
+    }
+
     if (deviceWindow) {
         deviceWindow->setWindowState(deviceWindow->windowState() & ~Qt::WindowMinimized);
         deviceWindow->raise();
@@ -175,6 +189,11 @@ void DeviceWidget::launchDeviceWindow() {
 
     deviceWindow->addVideoFrameWidget(videoFrameWidget);
     deviceWindow->show();
+    QTimer::singleShot(0, [=]() {
+        // 多个窗口同时打开需要额外设置才不会被挡住
+        deviceWindow->raise();
+        deviceWindow->activateWindow();
+    });
     qobject_cast<QBoxLayout*>(layout())->addWidget(placeholder);
 
     videoFrameWidget = nullptr;
