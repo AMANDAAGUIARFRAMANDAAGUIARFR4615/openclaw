@@ -585,7 +585,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
     webSocketClient->on("screenshot", [this](const QJsonValue &data, AckCallback callback) {
         const auto& udid = data.isString() ? data.toString() : nullptr;
-        if (udid != nullptr)
+        if (udid != nullptr && !udid.isEmpty())
         {
             for (int i = 0; i < deviceListWidget->count(); i++) {
                 QListWidgetItem* item = deviceListWidget->item(i);
