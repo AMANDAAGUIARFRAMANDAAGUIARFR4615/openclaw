@@ -57,10 +57,11 @@ public:
                     }
                     
                     for (const QJsonValue &item : devices) {
-                        const auto& lockedStatus = item["lockedStatus"].toBool();
+                        const auto& deviceId = item["deviceId"].toBool();
                         const auto& deviceName = item["deviceName"].toString();
                         const auto& model = item["model"].toString();
-                        deviceComboBox->addItem(QString("%1-%2%3").arg(deviceName).arg(model).arg(lockedStatus ? "[锁屏]" : ""));
+                        const auto& lockedStatus = item["lockedStatus"].toBool();
+                        deviceComboBox->addItem(QString("%1-%2%3").arg(deviceName).arg(model).arg(lockedStatus ? "[锁屏]" : ""), deviceId);
                     }
 
                     deviceComboBox->setCurrentIndex(0);
