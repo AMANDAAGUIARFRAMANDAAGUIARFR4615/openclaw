@@ -169,7 +169,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         return;
     }
 
-    auto isMultiControl = MainWindow::getInstance()->isMultiControl();
+    auto isMultiControl = MainWindow::getInstance()->isMultiControlEnabled();
 
     auto menu = new QMenu(this);
     menu->setStyleSheet(R"(

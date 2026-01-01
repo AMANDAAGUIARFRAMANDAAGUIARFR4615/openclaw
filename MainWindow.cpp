@@ -84,7 +84,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             auto iconPart = text.left(splitPos);
             auto labelPart = text.mid(splitPos);
 
-            auto item = new QListWidgetItem(EmojiIconProvider::createIcon(iconPart, 64, labelPart == "同屏操作" ? !isMultiControlEnabled : false), labelPart);
+            auto item = new QListWidgetItem(EmojiIconProvider::createIcon(iconPart, 64, labelPart == "同屏操作" ? !multiControlEnabled : false), labelPart);
             sideBarList->addItem(item);
             item->setSizeHint(QSize(sideBarList->width() - 4, 70));
         }
@@ -169,10 +169,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         }
 
         if (title == "同屏操作") {
-            isMultiControlEnabled = !isMultiControlEnabled;
-            const auto& icon = EmojiIconProvider::createIcon("🕹️", 64, !isMultiControlEnabled);
+            setMultiControlEnabled(!multiControlEnabled);
+            const auto& icon = EmojiIconProvider::createIcon("🕹️", 64, !multiControlEnabled);
             item->setIcon(icon);
-            QToolTip::showText(QCursor::pos(), isMultiControlEnabled ? "同屏操作已开启" : "同屏操作已关闭");
+            QToolTip::showText(QCursor::pos(), multiControlEnabled ? "同屏操作已开启" : "同屏操作已关闭");
             return;
         }
 
@@ -692,7 +692,7 @@ void MainWindow::changeEvent(QEvent *event)
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-    if (!isMultiControlEnabled || isDispatching)
+    if (!multiControlEnabled || isDispatching)
         return false;
 
     auto sourceWidget = qobject_cast<DeviceWidget*>(watched);

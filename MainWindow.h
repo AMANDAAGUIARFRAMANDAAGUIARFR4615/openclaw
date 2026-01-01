@@ -21,9 +21,19 @@ public:
     const QList<BitMaskEditorDialog::Item>& getTabs() const { return tabs; }
     BitMaskEditorDialog::Item& getTab() { return tabs[tabWidget->currentIndex()]; }
 
-    bool isMultiControl() const { return isMultiControlEnabled; }
-
     QTabWidget* const tabWidget;
+
+    bool isMultiControlEnabled() const { return multiControlEnabled; }
+
+public slots:
+    void setMultiControlEnabled(bool enabled) {
+        if (multiControlEnabled == enabled) return;
+        multiControlEnabled = enabled;
+        emit multiControlEnabledChanged(enabled);
+    }
+
+signals:
+    void multiControlEnabledChanged(bool enabled);
 
 private:
     MainWindow(QWidget *parent = nullptr);
@@ -53,7 +63,7 @@ protected:
     QListWidget* deviceListWidget;
     QSlider* zoomSlider;
 
-    bool isMultiControlEnabled = false;
+    bool multiControlEnabled = false;
     bool isDispatching = false;
 
     VideoVisibilityManager* videoVisibilityManager;
