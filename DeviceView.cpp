@@ -216,7 +216,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         else if (text == "⏺️录制+回放") {
             menu->addAction(text, [this](){Recorder::open(connection);});
         }
-        else if (text == "🧩应用列表") {
+        else if (text == "🧩应用管理") {
             menu->addAction(text, [this](){AppListWidget::open(connection);});
         }
         else if (text == "📸截图") {
