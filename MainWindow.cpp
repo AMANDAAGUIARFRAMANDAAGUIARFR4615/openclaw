@@ -49,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     setMinimumSize(800, 600);
 
     QSize screenSize = qApp->primaryScreen()->availableSize();
-    resize(settings->value("mainWindowSize", screenSize * 0.9).toSize());
+    resize(settings->value("mainWindowSize", screenSize * 0.8).toSize());
 
     int x = (screenSize.width() - width()) / 2;
     int y = (screenSize.height() - height()) / 2;
@@ -584,12 +584,28 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     });
 
     webSocketClient->on("screenshot", [this](const QJsonValue &data, AckCallback callback) {
-        QByteArray byteArray;
-        QBuffer buffer(&byteArray);
-        buffer.open(QIODevice::WriteOnly);
+        const auto& udid = data.isString() ? data.toString() : nullptr;
+        if (udid != nullptr)
+        {
+            for (int i = 0; i < deviceListWidget->count(); i++) {
+                QListWidgetItem* item = deviceListWidget->item(i);
+                auto deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
+                if (deviceWidget->deviceInfo->deviceId == udid) {
+                    const auto& byteArray = deviceWidget->grabFrame();
+                    callback(QJsonValue::fromVariant(byteArray.toBase64()));
+                    break;
+                }
+            }
+        }
+        else
+        {
+            QByteArray byteArray;
+            QBuffer buffer(&byteArray);
+            buffer.open(QIODevice::WriteOnly);
 
-        grab().save(&buffer, "JPG");
-        callback(QJsonValue::fromVariant(byteArray.toBase64()));
+            grab().save(&buffer, "JPG");
+            callback(QJsonValue::fromVariant(byteArray.toBase64()));
+        }
     });
 
     loadTabs();

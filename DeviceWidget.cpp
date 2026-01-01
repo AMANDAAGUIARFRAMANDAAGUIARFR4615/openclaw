@@ -94,6 +94,11 @@ DeviceWidget::~DeviceWidget()
     delete deviceInfo;
 }
 
+QByteArray DeviceWidget::grabFrame()
+{
+    return deviceWindow ? deviceWindow->grabFrame() : DeviceView::grabFrame();
+}
+
 bool DeviceWidget::event(QEvent *event)
 {
     if (deviceWindow)

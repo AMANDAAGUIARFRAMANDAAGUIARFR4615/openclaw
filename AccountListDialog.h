@@ -57,11 +57,11 @@ public:
                     }
                     
                     for (const QJsonValue &item : devices) {
-                        const auto& deviceId = item["deviceId"].toBool();
+                        const auto& deviceId = item["deviceId"].toString();
                         const auto& deviceName = item["deviceName"].toString();
                         const auto& model = item["model"].toString();
                         const auto& lockedStatus = item["lockedStatus"].toBool();
-                        deviceComboBox->addItem(QString("%1-%2%3").arg(deviceName).arg(model).arg(lockedStatus ? "[锁屏]" : ""), deviceId);
+                        deviceComboBox->addItem(QString("%1 [%2]%3").arg(deviceName).arg(model).arg(lockedStatus ? " 锁屏" : ""), deviceId);
                     }
 
                     deviceComboBox->setCurrentIndex(0);
@@ -76,7 +76,7 @@ public:
             rowLayout->addWidget(getLogButton);
             
             connect(screenshotButton, &QPushButton::clicked, [=]() {
-                webSocketClient->emitEvent("screenshot", phone, [=](const QJsonValue &res) {
+                webSocketClient->emitEvent("screenshot", QJsonObject{{"phone", phone}, {"udid", deviceComboBox->currentData().toString()}}, [=](const QJsonValue &res) {
                     if (res.isString()) {
                         new ToastWidget(res.toString(), this);
                         return;

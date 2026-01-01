@@ -11,6 +11,8 @@ public:
     explicit DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo);
     ~DeviceWidget();
 
+    QByteArray grabFrame() override;
+
 protected:
     bool event(QEvent *event) override;
     void launchDeviceWindow();

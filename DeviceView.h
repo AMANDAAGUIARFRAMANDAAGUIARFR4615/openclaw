@@ -20,6 +20,8 @@ public:
 
     void addVideoFrameWidget(VideoFrameWidget* videoFrameWidget);
 
+    virtual QByteArray grabFrame();
+
     DeviceConnection* const connection;
     DeviceInfo* const deviceInfo;
 

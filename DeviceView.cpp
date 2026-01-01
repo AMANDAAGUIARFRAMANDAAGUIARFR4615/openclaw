@@ -20,6 +20,8 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QClipboard>
+#include <QVideoSink>
+#include <QVideoFrame>
 
 DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWidget *parent)
     : connection(connection), deviceInfo(deviceInfo), QWidget(parent)
@@ -127,6 +129,33 @@ void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
         showOverlay("设备已锁定");
     else
         hideOverlay();
+}
+
+QByteArray DeviceView::grabFrame()
+{
+    if (!videoFrameWidget)
+        return nullptr;
+
+    QByteArray byteArray;
+    QBuffer buffer(&byteArray);
+    buffer.open(QIODevice::WriteOnly);
+
+    auto sink = videoFrameWidget->videoSink();
+
+    if (!sink) {
+        qDebugEx() << "Error: No video sink found.";
+        return nullptr;
+    }
+
+    auto frame = sink->videoFrame();
+
+    if (!frame.isValid()) {
+        qDebugEx() << "Error: Current frame is invalid (maybe video is stopped?).";
+        return nullptr;
+    }
+
+    frame.toImage().save(&buffer, "JPG");
+    return byteArray;
 }
 
 void DeviceView::contextMenuEvent(QContextMenuEvent *event)
