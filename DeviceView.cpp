@@ -235,6 +235,16 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         else if (text == "🗑️清空相册") {
             menu->addAction(text, [&](){send("deleteAllPhotos");});
         }
+        else if (text == "🕹️同屏操作") {
+            if (metaObject()->className() == QString("DeviceWindow")) {
+                auto enabled = MainWindow::getInstance()->isMultiControlEnabled();
+                auto action =menu->addAction(text, [=]() {
+                    MainWindow::getInstance()->setMultiControlEnabled(!enabled);
+                });
+                action->setCheckable(true);
+                action->setChecked(enabled);
+            }
+        }
         else if (text == "🔧修改分组") {
             menu->addAction(text, [this]() {
                 if (MainWindow::getInstance()->getTabs().count() <= 1) {

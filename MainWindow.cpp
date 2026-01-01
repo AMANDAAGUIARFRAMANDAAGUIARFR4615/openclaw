@@ -87,6 +87,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             auto item = new QListWidgetItem(EmojiIconProvider::createIcon(iconPart, 64, labelPart == "同屏操作" ? !multiControlEnabled : false), labelPart);
             sideBarList->addItem(item);
             item->setSizeHint(QSize(sideBarList->width() - 4, 70));
+
+            if (labelPart == "同屏操作") {
+                connect(this, &MainWindow::multiControlEnabledChanged, [=](bool enabled) {
+                    const auto& icon = EmojiIconProvider::createIcon("🕹️", 64, !multiControlEnabled);
+                    item->setIcon(icon);
+                });
+            }
         }
     };
 
