@@ -56,6 +56,15 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo)
         this->deviceInfo->orientation = orientation;
         changeOrientation(orientation);
     });
+
+    auto title = windowTitle();
+
+    if (MainWindow::getInstance()->isMultiControlEnabled())
+        setWindowTitle(title + "【同屏操作中】");
+
+    connect(MainWindow::getInstance(), &MainWindow::multiControlEnabledChanged, [=](bool enabled) {
+        setWindowTitle(enabled ? title + "【同屏操作中】" : title);
+    });
 }
 
 DeviceWindow::~DeviceWindow()
