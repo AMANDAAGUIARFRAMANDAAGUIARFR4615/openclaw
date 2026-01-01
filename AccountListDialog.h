@@ -8,13 +8,16 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QClipboard>
+#include <QComboBox>
+#include <QJsonArray>
+#include <QJsonObject>
 
 class AccountListDialog : public QDialog {
 public:
     AccountListDialog(const QStringList &numbers, QWidget *parent) : QDialog(parent) {
         setModal(true);
         setWindowTitle("在线账号列表");
-        setMinimumWidth(300);
+        setMinimumWidth(600);
         
         auto mainLayout = new QVBoxLayout(this);
         auto scrollArea = new QScrollArea(this);
@@ -26,10 +29,47 @@ public:
             auto rowLayout = new QHBoxLayout(rowWidget);
             
             auto label = new QLabel(phone);
+            label->setMinimumWidth(100);
+
+            auto deviceComboBox = new QComboBox();
+            deviceComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+            deviceComboBox->setPlaceholderText("请刷新获取设备");
+            
+            auto refreshDeviceButton = new QPushButton("刷新设备");
+
             auto screenshotButton = new QPushButton("截图");
             auto getLogButton = new QPushButton("日志");
             
+            connect(refreshDeviceButton, &QPushButton::clicked, [=]() {
+                deviceComboBox->clear();
+                deviceComboBox->setPlaceholderText("正在加载...");
+                
+                webSocketClient->emitEvent("online_devices", phone, [=](const QJsonValue &res) {
+                    if (res.isString()) {
+                        deviceComboBox->setPlaceholderText(res.toString());
+                        return;
+                    }
+
+                    const auto& devices = res.toArray();
+                    if (devices.isEmpty()) {
+                        deviceComboBox->setPlaceholderText("当前无在线设备");
+                        return;
+                    }
+                    
+                    for (const QJsonValue &item : devices) {
+                        const auto& lockedStatus = item["lockedStatus"].toBool();
+                        const auto& deviceName = item["deviceName"].toString();
+                        const auto& model = item["model"].toString();
+                        deviceComboBox->addItem(QString("%1-%2%3").arg(deviceName).arg(model).arg(lockedStatus ? "[锁屏]" : ""));
+                    }
+
+                    deviceComboBox->setCurrentIndex(0);
+                });
+            });
+
             rowLayout->addWidget(label);
+            rowLayout->addWidget(deviceComboBox);
+            rowLayout->addWidget(refreshDeviceButton);
             rowLayout->addStretch();
             rowLayout->addWidget(screenshotButton);
             rowLayout->addWidget(getLogButton);
@@ -63,7 +103,7 @@ public:
                     }
 
                     qApp->clipboard()->setText(res["text"].toString());
-                    new ToastWidget("日志已复制到剪切板", this);
+                    new ToastWidget("文本已复制到剪切板", this);
                 });
             });
             

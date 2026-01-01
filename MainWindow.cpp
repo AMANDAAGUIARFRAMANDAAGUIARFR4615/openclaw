@@ -550,24 +550,40 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         relayoutDevices();
     });
 
-    webSocketClient->on("get_log", [this](const QJsonValue &data, AckCallback callback) {
-        qDebugEx() << "请求日志";
+    webSocketClient->on("online_devices", [this](const QJsonValue &data, AckCallback callback) {
+        auto tab = getTab();
+        const auto& devices = DeviceInfo::getDevices(tab.bit == 0 ? 0 : (1U << tab.bit));
 
+        QJsonArray jsonArray;
+
+        for (const auto& device : devices) {
+            QJsonObject jsonObject;
+            
+            jsonObject.insert("deviceId", device->deviceId);
+            jsonObject.insert("deviceName", device->deviceName);
+            jsonObject.insert("model", device->model);
+            jsonObject.insert("lockedStatus", device->lockedStatus);
+            
+            jsonArray.append(jsonObject);
+        }
+
+        callback(jsonArray);
+    });
+
+    webSocketClient->on("get_log", [this](const QJsonValue &data, AckCallback callback) {
         QString logFilePath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/app_log.txt";
         
         QFile file(logFilePath);
         if (file.exists() && file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             QTextStream in(&file);
-            callback(QJsonValue(in.readAll()));
+            callback(in.readAll());
             file.close();
         } else {
-            callback(QJsonValue("无法读取日志文件:" + logFilePath));
+            callback("无法读取日志文件:" + logFilePath);
         }
     });
 
     webSocketClient->on("screenshot", [this](const QJsonValue &data, AckCallback callback) {
-        qDebugEx() << "请求截图";
-
         QByteArray byteArray;
         QBuffer buffer(&byteArray);
         buffer.open(QIODevice::WriteOnly);
