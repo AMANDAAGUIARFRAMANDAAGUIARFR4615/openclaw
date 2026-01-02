@@ -358,13 +358,32 @@ bool DeviceView::event(QEvent *event)
     static bool isDispatching = false;
 
     if (!isDispatching && MainWindow::getInstance()->isMultiControlEnabled()) {
-        isDispatching = true;
-        auto list = MainWindow::getInstance()->findChildren<DeviceView*>();
-        for (auto& item : list) {
-            if (item != this && item->isVisible())
-                item->event(event);
+        switch (event->type()) {
+        // --- 键盘 ---
+        case QEvent::KeyPress:
+        case QEvent::KeyRelease:
+        // --- 鼠标 ---
+        case QEvent::MouseButtonPress:
+        case QEvent::MouseButtonRelease:
+        case QEvent::MouseButtonDblClick:
+        case QEvent::MouseMove:
+        case QEvent::Wheel:
+        // --- 触摸 (Touch) ---
+        case QEvent::TouchBegin:
+        case QEvent::TouchUpdate:
+        case QEvent::TouchEnd:
+        // --- 平板/手写笔 (Tablet) ---
+        case QEvent::TabletPress:
+        case QEvent::TabletRelease:
+        case QEvent::TabletMove:
+            isDispatching = true;
+            auto list = MainWindow::getInstance()->findChildren<DeviceView*>();
+            for (auto& item : list) {
+                if (item != this && item->isVisible())
+                    item->event(event);
+            }
+            isDispatching = false;
         }
-        isDispatching = false;
     }
 
     auto mouseEvent = dynamic_cast<QMouseEvent *>(event);
