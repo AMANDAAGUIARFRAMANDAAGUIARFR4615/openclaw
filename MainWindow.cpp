@@ -322,7 +322,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             return;
         }
 
-        if (title == "客服" && QFile::exists(qApp->applicationDirPath() + "/support.jpg")) {
+        if (title == "客服") {
+            if (!QFile::exists(qApp->applicationDirPath() + "/support.jpg")) {
+                QToolTip::showText(QCursor::pos(), "客服图片未正确配置");
+                return;
+            }
+
             auto supportDialog = new QDialog(this);
             supportDialog->setAttribute(Qt::WA_DeleteOnClose);
             supportDialog->setWindowTitle(title);
