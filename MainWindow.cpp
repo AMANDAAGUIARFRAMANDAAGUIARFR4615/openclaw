@@ -634,7 +634,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         const auto& ips = TcpServer::getInstance()->getConnectedIps();
         for (const auto &localIP : localIPs) {
             QList<QHostAddress> subnetIPs = NetworkUtils::getSubnetIPs(localIP);
-            for (const QHostAddress &ip : subnetIPs) {
+            for (const QHostAddress &ip : std::as_const(subnetIPs)) {
                 if (!ips.contains(ip.toString())) {
                     auto deviceInfo = DeviceInfo::getDevice(ip.toString());
                     bool isUsbSetting = getTab().getConnectionMethod() == 0;
@@ -1046,7 +1046,7 @@ void MainWindow::saveTabs(int index)
 int MainWindow::findAvailableTabId()
 {
     QSet<int> usedIds;
-    for (const auto &tab : tabs) {
+    for (const auto &tab : std::as_const(tabs)) {
         usedIds.insert(tab.bit);
     }
 
