@@ -355,6 +355,18 @@ bool DeviceView::event(QEvent *event)
     if (!videoFrameWidget)
         return QWidget::event(event);
 
+    static bool isDispatching = false;
+
+    if (!isDispatching && MainWindow::getInstance()->isMultiControlEnabled()) {
+        isDispatching = true;
+        auto list = MainWindow::getInstance()->findChildren<DeviceView*>();
+        for (auto& item : list) {
+            if (item != this && item->isVisible())
+                item->event(event);
+        }
+        isDispatching = false;
+    }
+
     auto mouseEvent = dynamic_cast<QMouseEvent *>(event);
     if (!mouseEvent)
         return QWidget::event(event);

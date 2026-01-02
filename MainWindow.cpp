@@ -704,72 +704,6 @@ void MainWindow::changeEvent(QEvent *event)
     }
 }
 
-bool MainWindow::eventFilter(QObject *watched, QEvent *event)
-{
-    if (!multiControlEnabled || isDispatching)
-        return false;
-
-    auto sourceWidget = qobject_cast<DeviceWidget*>(watched);
-    if (!sourceWidget)
-        return false;
-
-    QEvent::Type type = event->type();
-    bool isMouseEvent = type == QEvent::MouseButtonPress ||
-                        type == QEvent::MouseButtonRelease ||
-                        type == QEvent::MouseButtonDblClick ||
-                        type == QEvent::MouseMove;
-    bool isWheelEvent = type == QEvent::Wheel;
-    bool isKeyEvent = type == QEvent::KeyPress || type == QEvent::KeyRelease;
-    bool isDragEvent = type == QEvent::Drop;
-
-    if (isMouseEvent || isWheelEvent || isKeyEvent || isDragEvent) {
-        isDispatching = true;
-
-        for (int i = 0; i < deviceListWidget->count(); i++) {
-            QListWidgetItem* item = deviceListWidget->item(i);
-            
-            if (item->isHidden()) continue;
-
-            QWidget* widget = deviceListWidget->itemWidget(item);
-            DeviceWidget* targetWidget = widget->findChild<DeviceWidget*>();
-
-            if (targetWidget && targetWidget != sourceWidget) {
-                if (isMouseEvent) {
-                    QMouseEvent* me = static_cast<QMouseEvent*>(event);
-                    QPointF localPos = me->localPos();
-                    QPointF globalPos = targetWidget->mapToGlobal(localPos.toPoint());
-
-                    QMouseEvent newEvent(type, localPos, me->windowPos(), globalPos,
-                                         me->button(), me->buttons(), me->modifiers(), me->source());
-                    qApp->sendEvent(targetWidget, &newEvent);
-                } 
-                else if (isWheelEvent) {
-                    QWheelEvent* we = static_cast<QWheelEvent*>(event);
-                    QPointF globalPos = targetWidget->mapToGlobal(we->position().toPoint());
-                    
-                    QWheelEvent newEvent(we->position(), globalPos, we->pixelDelta(), we->angleDelta(),
-                                         we->buttons(), we->modifiers(), we->phase(), we->inverted(), we->source());
-                    qApp->sendEvent(targetWidget, &newEvent);
-                }
-                else if (isKeyEvent) {
-                    QKeyEvent* ke = static_cast<QKeyEvent*>(event);
-                    QKeyEvent newEvent(type, ke->key(), ke->modifiers(), 
-                                       ke->nativeScanCode(), ke->nativeVirtualKey(), ke->nativeModifiers(), 
-                                       ke->text(), ke->isAutoRepeat(), ke->count());
-                    qApp->sendEvent(targetWidget, &newEvent);
-                }
-                else if (isDragEvent) {
-                    QMetaObject::invokeMethod(targetWidget, "dropEvent", Qt::DirectConnection, Q_ARG(QDropEvent*, static_cast<QDropEvent*>(event)));
-                }
-            }
-        }
-
-        isDispatching = false;
-    }
-
-    return false;
-}
-
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     QMainWindow::keyPressEvent(event);
@@ -889,7 +823,6 @@ void MainWindow::addItem(DeviceConnection* connection)
     }
 
     auto player = new DeviceWidget(connection, deviceInfo);
-    player->installEventFilter(this);
     auto ipLabel = player->findChild<QLabel*>("ipLabel");
 
     auto device = new LiveStreamDevice(player);
