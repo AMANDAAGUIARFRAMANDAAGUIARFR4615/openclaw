@@ -370,7 +370,6 @@ bool DeviceView::event(QEvent *event)
     {
     case QEvent::MouseButtonPress:
         type = 1;
-        setFocus();
         break;
     case QEvent::MouseButtonRelease:
         type = 2;

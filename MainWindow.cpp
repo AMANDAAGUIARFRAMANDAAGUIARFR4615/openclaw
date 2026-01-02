@@ -491,6 +491,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     QLocale chineseLocale(QLocale::Chinese, QLocale::AnyCountry);
     deviceListWidget->setLocale(chineseLocale);
     deviceListWidget->sortItems(Qt::AscendingOrder);
+    connect(deviceListWidget, &QListWidget::itemClicked, [this](QListWidgetItem *item) {
+        auto widget = deviceListWidget->itemWidget(item);
+        widget->findChild<DeviceWidget*>()->setFocus();
+    });
 
     videoVisibilityManager = new VideoVisibilityManager(deviceListWidget, this);
 
