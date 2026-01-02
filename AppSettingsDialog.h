@@ -91,7 +91,10 @@ private:
 
         mainLayout->addWidget(defaultBox);
 
-        QStringList sideBarMenu{"🔗设备连接", "🕹️同屏操作", "⚙️设置", "💡帮助", "📲越狱助手", "📱手机软件源", "⏳续费", "💬客服"};
+        QStringList sideBarMenu{"🔗设备连接", "🕹️同屏操作", "⚙️设置", "💡帮助", "📲越狱助手", "📱手机软件源", "⏳续费"};
+
+        if (QFile::exists(qApp->applicationDirPath() + "/support.jpg"))
+            sideBarMenu.append("💬客服");
 
         if (qEnvironmentVariableIsSet("FROM_QT_CREATOR")) {
             sideBarMenu.append("📜日志");

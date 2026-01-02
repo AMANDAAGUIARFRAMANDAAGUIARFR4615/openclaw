@@ -323,31 +323,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         }
 
         if (title == "客服") {
-            if (!QFile::exists(qApp->applicationDirPath() + "/support.jpg")) {
-                QToolTip::showText(QCursor::pos(), "客服图片未正确配置");
-                return;
-            }
-
-            auto supportDialog = new QDialog(this);
-            supportDialog->setAttribute(Qt::WA_DeleteOnClose);
-            supportDialog->setWindowTitle(title);
-
-            auto mainLayout = new QHBoxLayout(supportDialog);
-            mainLayout->setSizeConstraint(QLayout::SetFixedSize);
-
-            auto pixmap = QPixmap(qApp->applicationDirPath() + "/support.jpg").scaled(
-                640, 640,
-                Qt::KeepAspectRatio,
-                Qt::SmoothTransformation
-            );
-
-            auto imgLabel = new QLabel(supportDialog);
-            imgLabel->setPixmap(pixmap);
-            imgLabel->setAlignment(Qt::AlignCenter);
-
-            mainLayout->addWidget(imgLabel);
-
-            supportDialog->exec();
+            showSupportDialog();
             return;
         }
 
@@ -678,6 +654,35 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 MainWindow::~MainWindow()
 {
     EventHub::off(this, "deviceInfo");
+}
+
+void MainWindow::showSupportDialog()
+{
+    if (!QFile::exists(qApp->applicationDirPath() + "/support.jpg")) {
+        QToolTip::showText(QCursor::pos(), "客服图片未正确配置");
+        return;
+    }
+
+    auto supportDialog = new QDialog(this);
+    supportDialog->setAttribute(Qt::WA_DeleteOnClose);
+    supportDialog->setWindowTitle("客服");
+
+    auto mainLayout = new QHBoxLayout(supportDialog);
+    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
+
+    auto pixmap = QPixmap(qApp->applicationDirPath() + "/support.jpg").scaled(
+        640, 640,
+        Qt::KeepAspectRatio,
+        Qt::SmoothTransformation
+    );
+
+    auto imgLabel = new QLabel(supportDialog);
+    imgLabel->setPixmap(pixmap);
+    imgLabel->setAlignment(Qt::AlignCenter);
+
+    mainLayout->addWidget(imgLabel);
+
+    supportDialog->exec();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

@@ -20,6 +20,7 @@ public:
     void addItem(DeviceConnection* connection);
     const QList<BitMaskEditorDialog::Item>& getTabs() const { return tabs; }
     BitMaskEditorDialog::Item& getTab() { return tabs[tabWidget->currentIndex()]; }
+    void showSupportDialog();
 
     QTabWidget* const tabWidget;
 

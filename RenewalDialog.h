@@ -139,7 +139,7 @@ public:
         auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
         connect(buttonBox, &QDialogButtonBox::accepted, [this]() {
             if (wechatRadioButton->isChecked()) {
-                QToolTip::showText(QCursor::pos(), "暂不支持微信支付");
+                MainWindow::getInstance()->showSupportDialog();
                 return;
             }
 
