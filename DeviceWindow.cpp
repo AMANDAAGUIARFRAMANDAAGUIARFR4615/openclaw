@@ -62,7 +62,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo)
     if (MainWindow::getInstance()->isMultiControlEnabled())
         setWindowTitle(title + "【同屏操作中】");
 
-    connect(MainWindow::getInstance(), &MainWindow::multiControlEnabledChanged, [=](bool enabled) {
+    connect(MainWindow::getInstance(), &MainWindow::multiControlEnabledChanged, this, [=](bool enabled) {
         setWindowTitle(enabled ? title + "【同屏操作中】" : title);
     });
 }
