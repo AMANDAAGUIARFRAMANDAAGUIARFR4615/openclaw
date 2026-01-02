@@ -376,6 +376,11 @@ bool DeviceView::event(QEvent *event)
         case QEvent::TabletPress:
         case QEvent::TabletRelease:
         case QEvent::TabletMove:
+        // --- 拖放 (Drag & Drop) ---
+        case QEvent::DragEnter:
+        case QEvent::DragMove:
+        case QEvent::DragLeave:
+        case QEvent::Drop:
             isDispatching = true;
             auto list = MainWindow::getInstance()->findChildren<DeviceView*>();
             for (auto& item : list) {
@@ -383,6 +388,7 @@ bool DeviceView::event(QEvent *event)
                     item->event(event);
             }
             isDispatching = false;
+            break;
         }
     }
 
