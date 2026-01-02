@@ -550,8 +550,8 @@ void DeviceView::mouseDoubleClickEvent(QMouseEvent *event)
     qDebugEx() << "双击" << event->button();
 
     if (event->button() == Qt::LeftButton) {
-        qApp->postEvent(this, new QMouseEvent(QEvent::MouseButtonPress, event->pos(), event->button(), event->button(), event->modifiers()));
-        qApp->postEvent(this, new QMouseEvent(QEvent::MouseButtonRelease, event->pos(), event->button(), event->button(), event->modifiers()));
+        qApp->postEvent(this, new QMouseEvent(QEvent::MouseButtonPress, event->position(), event->scenePosition(), event->globalPosition(), event->button(), event->buttons(), event->modifiers()));
+        qApp->postEvent(this, new QMouseEvent(QEvent::MouseButtonRelease, event->position(), event->scenePosition(), event->globalPosition(), event->button(), event->buttons(), event->modifiers()));
     }
 }
 
