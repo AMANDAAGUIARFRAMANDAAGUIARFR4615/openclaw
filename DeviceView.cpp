@@ -365,7 +365,7 @@ bool DeviceView::event(QEvent *event)
         // --- 鼠标 ---
         case QEvent::MouseButtonPress:
         case QEvent::MouseButtonRelease:
-        case QEvent::MouseButtonDblClick:
+        // case QEvent::MouseButtonDblClick:
         case QEvent::MouseMove:
         case QEvent::Wheel:
         // --- 触摸 (Touch) ---
