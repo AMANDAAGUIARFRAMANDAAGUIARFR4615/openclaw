@@ -322,7 +322,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             return;
         }
 
-        if (title == "客服") {
+        if (title == "客服" && QFile::exists(qApp->applicationDirPath() + "/support.jpg")) {
             auto supportDialog = new QDialog(this);
             supportDialog->setAttribute(Qt::WA_DeleteOnClose);
             supportDialog->setWindowTitle(title);
@@ -330,7 +330,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             auto mainLayout = new QHBoxLayout(supportDialog);
             mainLayout->setSizeConstraint(QLayout::SetFixedSize);
 
-            auto pixmap = QPixmap(":/icons/support.jpg").scaled(
+            auto pixmap = QPixmap(qApp->applicationDirPath() + "/support.jpg").scaled(
                 640, 640,
                 Qt::KeepAspectRatio,
                 Qt::SmoothTransformation
