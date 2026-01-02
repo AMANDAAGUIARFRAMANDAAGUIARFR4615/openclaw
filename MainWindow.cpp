@@ -428,6 +428,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     tabBar->setMovable(true);
     tabBar->setToolTip("右键点击可修改分组");
     tabBar->setContextMenuPolicy(Qt::CustomContextMenu);
+    QFont font = tabWidget->font();
+    font.setPixelSize(16);
+    tabWidget->setFont(font);
 
     connect(tabBar, &QTabBar::tabMoved, this, &MainWindow::onTabMoved);
     connect(tabBar, &QWidget::customContextMenuRequested, this, &MainWindow::showTabBarContextMenu);
