@@ -113,11 +113,13 @@ public:
         auto paymentMainLayout = new QVBoxLayout(paymentGroupBox);
 
         auto paymentRadiosLayout = new QHBoxLayout();
-        wechatRadioButton = new QRadioButton("微信支付");
         voucherRadioButton = new QRadioButton("余额支付");
-        wechatRadioButton->setChecked(true);
-        paymentRadiosLayout->addWidget(wechatRadioButton);
+        auto wechatRadioButton = new QRadioButton("微信支付（联系左侧客服）");
+        auto alipayRadioButton = new QRadioButton("支付宝支付（联系左侧客服）");
+        voucherRadioButton->setChecked(true);
         paymentRadiosLayout->addWidget(voucherRadioButton);
+        paymentRadiosLayout->addWidget(wechatRadioButton);
+        paymentRadiosLayout->addWidget(alipayRadioButton);
         paymentRadiosLayout->addStretch();
 
         auto totalLayout = new QHBoxLayout();
@@ -138,7 +140,7 @@ public:
 
         auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
         connect(buttonBox, &QDialogButtonBox::accepted, [this]() {
-            if (wechatRadioButton->isChecked()) {
+            if (!voucherRadioButton->isChecked()) {
                 MainWindow::getInstance()->showSupportDialog();
                 return;
             }
@@ -295,7 +297,6 @@ protected:
         voucherBalance = balance;
         Account::getInstance()->balance = balance;
         updateBalanceLabel();
-        autoCheckPaymentMethod();
     }
 
     void updateBalanceLabel() {
@@ -317,20 +318,6 @@ protected:
 
         currentTotalPrice = unitPrice * selectedCount;
         totalAmountLabel->setText(QString("¥%1").arg(QString::number(currentTotalPrice)));
-        
-        autoCheckPaymentMethod();
-    }
-
-    void autoCheckPaymentMethod() {
-        if (currentTotalPrice > 0 && voucherBalance >= currentTotalPrice) {
-            if (!voucherRadioButton->isChecked()) {
-                voucherRadioButton->setChecked(true);
-            }
-        } else {
-            if (!wechatRadioButton->isChecked()) {
-                wechatRadioButton->setChecked(true);
-            }
-        }
     }
 
     QTableWidget *tableWidget;
@@ -342,7 +329,6 @@ protected:
     QPlainTextEdit *voucherPlainTextEdit;
     QPushButton *redeemButton;
 
-    QRadioButton *wechatRadioButton;
     QRadioButton *voucherRadioButton;
     QLabel *totalAmountLabel;
 
