@@ -114,7 +114,7 @@ void DeviceWidget::launchDeviceWindow() {
         isDispatching = true;
         auto list = MainWindow::getInstance()->findChildren<DeviceWidget*>();
         for (auto& item : list) {
-            if (item != this)
+            if (item != this && item->isVisible())
                 item->launchDeviceWindow();
         }
         isDispatching = false;
