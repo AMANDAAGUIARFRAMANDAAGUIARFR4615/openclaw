@@ -235,6 +235,12 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         else if (text == "🗑️清空相册") {
             menu->addAction(text, [&](){send("deleteAllPhotos");});
         }
+        else if (text == "🔊音量+") {
+            menu->addAction(text, [&](){send("volumeControl", "+");});
+        }
+        else if (text == "🔈音量-") {
+            menu->addAction(text, [&](){send("volumeControl", "-");});
+        }
         else if (text == "🕹️同屏操作") {
             if (metaObject()->className() == QString("DeviceWindow")) {
                 auto enabled = MainWindow::getInstance()->isMultiControlEnabled();
