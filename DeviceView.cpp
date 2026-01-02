@@ -13,6 +13,7 @@
 #include "AppSettingsDialog.h"
 #include "Account.h"
 #include "DeviceWidget.h"
+#include "DeviceWindow.h"
 #include <QLayout>
 #include <QLabel>
 #include <QMimeData>
@@ -388,15 +389,19 @@ bool DeviceView::event(QEvent *event)
         case QEvent::DragMove:
         case QEvent::DragLeave:
         case QEvent::Drop:
+        case QEvent::Close:
             isDispatching = true;
             auto items = MainWindow::getInstance()->findChildren<DeviceView*>();
             for (auto& item : items) {
                 if (item != this && item->isVisible()) {
-                    auto deviceWidget = static_cast<DeviceWidget*>(item);
-                    if (deviceWidget->getDeviceWindow() == (DeviceWindow*)this)
+                    auto targetWindow = static_cast<DeviceWidget*>(item)->getDeviceWindow();
+                    if (targetWindow == (DeviceWindow*)this)
                         continue;
 
-                    item->event(event);
+                    if (event->type() == QEvent::Close)
+                        targetWindow ? targetWindow->close() : 0;
+                    else
+                        item->event(event);
                 }
             }
             isDispatching = false;
