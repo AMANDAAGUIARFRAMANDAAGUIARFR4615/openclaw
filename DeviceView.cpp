@@ -12,6 +12,7 @@
 #include "KeyMapping.h"
 #include "AppSettingsDialog.h"
 #include "Account.h"
+#include "DeviceWidget.h"
 #include <QLayout>
 #include <QLabel>
 #include <QMimeData>
@@ -388,10 +389,15 @@ bool DeviceView::event(QEvent *event)
         case QEvent::DragLeave:
         case QEvent::Drop:
             isDispatching = true;
-            auto list = MainWindow::getInstance()->findChildren<DeviceView*>();
-            for (auto& item : list) {
-                if (item != this && item->isVisible())
+            auto items = MainWindow::getInstance()->findChildren<DeviceView*>();
+            for (auto& item : items) {
+                if (item != this && item->isVisible()) {
+                    auto deviceWidget = static_cast<DeviceWidget*>(item);
+                    if (deviceWidget->getDeviceWindow() == (DeviceWindow*)this)
+                        continue;
+
                     item->event(event);
+                }
             }
             isDispatching = false;
             break;

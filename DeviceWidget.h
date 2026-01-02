@@ -13,6 +13,8 @@ public:
 
     QByteArray grabFrame() override;
 
+    DeviceWindow* getDeviceWindow() { return deviceWindow; }
+
 protected:
     bool event(QEvent *event) override;
     void launchDeviceWindow();
