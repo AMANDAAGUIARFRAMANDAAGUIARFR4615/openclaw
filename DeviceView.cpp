@@ -574,6 +574,7 @@ void DeviceView::wheelEvent(QWheelEvent *event)
         auto moveEvent = new QMouseEvent(
             QEvent::MouseMove,
             currentPos,
+            mapToGlobal(currentPos),
             Qt::LeftButton,
             Qt::LeftButton,
             Qt::NoModifier
@@ -593,6 +594,7 @@ void DeviceView::wheelEvent(QWheelEvent *event)
     auto pressEvent = new QMouseEvent(
         QEvent::MouseButtonPress,
         currentPos,
+        mapToGlobal(currentPos),
         Qt::LeftButton,
         Qt::LeftButton,
         Qt::NoModifier
@@ -614,6 +616,7 @@ void DeviceView::wheelEvent(QWheelEvent *event)
         auto moveEvent = new QMouseEvent(
             QEvent::MouseMove,
             currentPos,
+            mapToGlobal(currentPos),
             Qt::LeftButton,
             Qt::LeftButton,
             Qt::NoModifier
@@ -624,6 +627,7 @@ void DeviceView::wheelEvent(QWheelEvent *event)
             auto releaseEvent = new QMouseEvent(
                 QEvent::MouseButtonRelease,
                 currentPos,
+                mapToGlobal(currentPos),
                 Qt::LeftButton,
                 Qt::LeftButton,
                 Qt::NoModifier

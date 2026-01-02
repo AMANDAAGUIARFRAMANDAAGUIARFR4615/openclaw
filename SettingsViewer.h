@@ -116,7 +116,7 @@ private:
             return;
         }
 
-        if (var.canConvert(QMetaType::QVariantList))
+        if (var.canConvert<QVariantList>())
         {
             const QVariantList list = var.toList();
             for (int i = 0; i < list.size(); ++i) {
@@ -125,7 +125,7 @@ private:
             return;
         }
 
-        if (var.canConvert(QMetaType::QVariantMap))
+        if (var.canConvert<QVariantMap>())
         {
             const QVariantMap map = var.toMap();
             for (auto it = map.constBegin(); it != map.constEnd(); ++it) {

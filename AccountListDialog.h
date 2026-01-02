@@ -61,7 +61,7 @@ public:
                         const auto& deviceName = item["deviceName"].toString();
                         const auto& model = item["model"].toString();
                         const auto& lockedStatus = item["lockedStatus"].toBool();
-                        deviceComboBox->addItem(QString("%1 [%2]%3").arg(deviceName).arg(model).arg(lockedStatus ? " 锁屏" : ""), deviceId);
+                        deviceComboBox->addItem(QString("%1 [%2]%3").arg(deviceName, model, lockedStatus ? " 锁屏" : ""), deviceId);
                     }
 
                     deviceComboBox->setCurrentIndex(0);

@@ -2,7 +2,6 @@
 #include "MainWindow.h"
 #include "TcpServer.h"
 #include "EventHub.h"
-#include "DeviceWindow.h"
 #include "UsbDeviceManager.h"
 #include "LoginWidget.h"
 #include "LogWindow.h"

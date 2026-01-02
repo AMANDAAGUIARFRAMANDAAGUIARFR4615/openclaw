@@ -2,14 +2,12 @@
 #include "LogWindow.h"
 #include "Tools.h"
 #include "EmojiIconProvider.h"
-#include "RemoteFileExplorer.h"
 #include "EventHub.h"
 #include "LiveStreamDevice.h"
 #include "UsbDeviceManager.h"
 #include "TcpServer.h"
 #include "DeviceWidget.h"
 #include "SettingsViewer.h"
-#include "FileTransfer.h"
 #include "UdpTransport.h"
 #include "AppSettingsDialog.h"
 #include "JailbreakAssistantDialog.h"
@@ -133,7 +131,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             auto localIPs = NetworkUtils::getPhysicalIPs();
             qInfoEx() << "本机内网IP:" << localIPs;
 
-            for (const QString &localIP : localIPs) {
+            for (const QString &localIP : std::as_const(localIPs)) {
                 const auto& hostInfo = TcpServer::getInstance()->getHostInfo(localIP);
                 const auto& data = QJsonDocument(hostInfo).toJson(QJsonDocument::Compact).toBase64();
                 
@@ -570,7 +568,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
         QJsonArray jsonArray;
 
-        for (const auto& device : devices) {
+        for (const auto& device : std::as_const(devices)) {
             QJsonObject jsonObject;
             
             jsonObject.insert("deviceId", device->deviceId);

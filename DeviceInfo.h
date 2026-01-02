@@ -56,7 +56,7 @@ public:
             return allDevices;
 
         QList<DeviceInfo*> result;
-        for (auto deviceInfo : allDevices) {
+        for (const auto& deviceInfo : std::as_const(allDevices)) {
             if (deviceInfo->groupMask & mask)
                 result.append(deviceInfo);
         }

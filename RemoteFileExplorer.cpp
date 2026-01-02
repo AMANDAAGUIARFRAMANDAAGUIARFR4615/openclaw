@@ -761,7 +761,7 @@ void RemoteFileExplorer::dragEnterEvent(QDragEnterEvent *event)
 
 void RemoteFileExplorer::dragMoveEvent(QDragMoveEvent *event)
 {
-    QPoint globalPos = mapToGlobal(event->pos());
+    QPoint globalPos = mapToGlobal(event->position().toPoint());
     QPoint localPos = treeView->viewport()->mapFromGlobal(globalPos);
     
     treeView->selectionModel()->clearSelection();
@@ -777,7 +777,7 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
 {
     auto urls = event->mimeData()->urls();
 
-    QPoint globalPos = mapToGlobal(event->pos());
+    QPoint globalPos = mapToGlobal(event->position().toPoint());
     QPoint localPos = treeView->viewport()->mapFromGlobal(globalPos);
     
     QModelIndex index = treeView->indexAt(localPos);

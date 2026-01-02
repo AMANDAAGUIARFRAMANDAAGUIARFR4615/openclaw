@@ -176,7 +176,7 @@ private:
 
             QString timestamp = QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
 
-            QFile file(QString("%1/%2_%3.recordx").arg(recorderPath).arg(connection->deviceInfo->deviceName).arg(timestamp));
+            QFile file(QString("%1/%2_%3.recordx").arg(recorderPath, connection->deviceInfo->deviceName, timestamp));
             if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
                 new ToastWidget(file.errorString(), this);
                 return;
@@ -225,7 +225,7 @@ protected:
     }
 
     void dropEvent(QDropEvent *event) override {
-        QModelIndex index = treeView->indexAt(event->pos());
+        QModelIndex index = treeView->indexAt(event->position().toPoint());
         if (!index.isValid()) return;
 
         QSortFilterProxyModel *proxy = qobject_cast<QSortFilterProxyModel *>(treeView->model());
