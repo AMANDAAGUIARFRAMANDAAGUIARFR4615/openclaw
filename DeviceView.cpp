@@ -545,7 +545,8 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
             }
 
             for (auto i = 0; i < array.size(); i++) {
-                devices[i]->connection->send("clipboard", QJsonObject{{"type", 1}, {"content", array[i]}});
+                if (!array[i].isEmpty())
+                    devices[i]->connection->send("clipboard", QJsonObject{{"type", 1}, {"content", array[i]}});
             }
             return;
         }
