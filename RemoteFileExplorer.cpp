@@ -624,7 +624,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
     qDebugEx() << paths;
 
     auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
-        if (isMultiControl) {
+        if (MainWindow::getInstance()->multiControlSwitchButton->isChecked()) {
             auto devices = MainWindow::getInstance()->getDevices();
 
             for (const auto& device : devices) {
