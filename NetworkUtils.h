@@ -31,6 +31,9 @@ public:
             "pseudo",
             "gif",
             "stf",
+            "radmin",
+            "hamachi",
+            "tailscale",
 
             // --- 虚拟机 与 容器 ---
             "vmware",
@@ -101,6 +104,24 @@ public:
                 ips.append(ipStr);
             }
         }
+
+        std::sort(ips.begin(), ips.end(), [](const QString &a, const QString &b) {
+            auto getScore = [](const QString &ip) -> int {
+                if (ip.startsWith("192.168.")) return 3; // 最高优先级：家用/办公路由
+                if (ip.startsWith("10."))      return 2; // 次高优先级：企业内网
+                if (ip.startsWith("172."))     return 1; // 低优先级：容易混淆容器网络
+                return 0;                                // 其他 (如公网IP)
+            };
+
+            int scoreA = getScore(a);
+            int scoreB = getScore(b);
+
+            // 如果分数不同，分数高的排前面
+            if (scoreA != scoreB)
+                return scoreA > scoreB;
+
+            return a < b;
+        });
 
         return ips;
     }
