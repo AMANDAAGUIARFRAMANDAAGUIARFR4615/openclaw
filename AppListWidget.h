@@ -37,7 +37,7 @@ public:
 
         AppListWidget *appList = new AppListWidget(connection);
         appList->setWindowTitle(connection->displayName());
-        appList->resize(920, 400);
+        appList->resize(1000, 600);
         appList->show();
         return appList;
     }
@@ -187,15 +187,19 @@ private:
             "安装路径",
             "共享路径",
             "清除缓存",
-            "清除钥匙串"
+            "清除钥匙串",
+            "打开",
+            "关闭"
         };
+
+        static const QSet<QString> forbiddenNames = {"卸载", "清除缓存", "清除钥匙串"};
 
         for (int i = 0; i < btnNames.size(); ++i) {
             const auto &name = btnNames[i];
             auto button = new QPushButton(name);
             layout->addWidget(button);
 
-            if (type != 1 && name == "卸载")
+            if (type != 1 && forbiddenNames.contains(name))
                 button->setEnabled(false);
 
             connect(button, &QPushButton::clicked, [=](bool) {
@@ -204,9 +208,8 @@ private:
                     QString msg = QString("确定要执行“%1”操作吗？").arg(name);
                     QMessageBox::StandardButton reply = QMessageBox::question(this, "确认操作", msg,
                                                                             QMessageBox::Yes | QMessageBox::No);
-                    if (reply != QMessageBox::Yes) {
+                    if (reply != QMessageBox::Yes)
                         return; // 用户取消操作
-                    }
                 }
 
                 QJsonObject dataObject;
