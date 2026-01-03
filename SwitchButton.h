@@ -9,19 +9,17 @@
 class SwitchButton : public QWidget
 {
     Q_OBJECT
-    // 动画属性：0.0 (OFF) ~ 1.0 (ON)
     Q_PROPERTY(double offset READ offset WRITE setOffset)
 
 public:
-    explicit SwitchButton(QWidget *parent = nullptr) : QWidget(parent)
+    explicit SwitchButton(const QString &onText, const QString &offText = QString(), QWidget *parent = nullptr) : m_onText(onText), m_offText(offText), QWidget(parent)
     {
         setCursor(Qt::PointingHandCursor);
 
-        // 默认配置
+        m_offText = offText.isEmpty() ? onText : offText;
+
         m_checked = false;
         m_offset = 0.0;
-        m_onText = "ON";
-        m_offText = "OFF";
         m_onColor = QColor("#2ecc71");
         m_offColor = QColor("#bdc3c7");
         m_sliderColor = Qt::white;
@@ -30,13 +28,6 @@ public:
         m_anim = new QPropertyAnimation(this, "offset", this);
         m_anim->setDuration(200);
         m_anim->setEasingCurve(QEasingCurve::InOutQuad);
-    }
-
-    void setTexts(const QString &onText, const QString &offText) {
-        m_onText = onText;
-        m_offText = offText;
-        updateGeometry();
-        update();
     }
 
     void setColors(const QColor &on, const QColor &off) {
@@ -61,7 +52,7 @@ public:
         int h = 30;
         // 宽度 = 滑块直径(约等于h) + 文字宽 + 左右额外间距(20)
         // 这里的间距决定了“距离”的大小
-        int w = h + textW + 20; 
+        int w = h + textW + 20;
         return QSize(w, h);
     }
 
@@ -95,7 +86,7 @@ protected:
 
         int w = width();
         int h = height();
-        int margin = 3; 
+        int margin = 3;
         int sliderSize = h - 2 * margin;
 
         // --- 1. 绘制背景 ---
@@ -110,7 +101,7 @@ protected:
 
         // 核心修改逻辑：精确计算“空白区域”的矩形
         // 目标：将文字绘制在 [滑块边缘] 和 [背景边缘] 之间的正中心
-        
+
         if (m_offset > 0.5) {
             // ON 状态：滑块在右，文字在左
             // 空白区域：0 (背景左缘) -> (w - h + margin) (滑块左缘)

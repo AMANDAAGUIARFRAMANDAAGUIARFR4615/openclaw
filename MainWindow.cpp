@@ -15,6 +15,7 @@
 #include "Account.h"
 #include "LoginWidget.h"
 #include "AccountListDialog.h"
+#include "SwitchButton.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -82,17 +83,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             auto iconPart = text.left(splitPos);
             auto labelPart = text.mid(splitPos);
 
-            auto item = new QListWidgetItem(EmojiIconProvider::createIcon(labelPart == "同屏操作" ? (multiControlEnabled ? "⏹️" : iconPart) : iconPart), labelPart);
+            auto item = new QListWidgetItem(EmojiIconProvider::createIcon(iconPart), labelPart);
             sideBarList->addItem(item);
             item->setSizeHint(QSize(sideBarList->width() - 4, 70));
-
-            if (labelPart == "同屏操作") {
-                connect(this, &MainWindow::multiControlEnabledChanged, [=](bool enabled) {
-                    const auto& icon = EmojiIconProvider::createIcon(enabled ? "⏹️" : iconPart);
-                    item->setIcon(icon);
-                    item->setText(multiControlEnabled ? "同屏操作中" : "同屏操作");
-                });
-            }
         }
     };
 
@@ -401,7 +394,21 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     auto rightContainer = new QWidget(this);
     auto rightLayout = new QVBoxLayout(rightContainer);
     rightLayout->setContentsMargins(0, 0, 0, 0);
-    rightLayout->setSpacing(0);
+    rightLayout->setSpacing(5);
+
+    auto hLayout = new QHBoxLayout(this);
+    hLayout->setContentsMargins(5, 5, 5, 5);
+    hLayout->setSpacing(5);
+    auto multiControlSwitchButton = new SwitchButton("同屏操作");
+    hLayout->addWidget(multiControlSwitchButton);
+    auto lineDispatcherSwitchButton = new SwitchButton("文本逐行分发");
+    hLayout->addWidget(lineDispatcherSwitchButton);
+    hLayout->addStretch();
+    rightLayout->addLayout(hLayout);
+
+    connect(this, &MainWindow::multiControlEnabledChanged, [=](bool enabled) {
+        multiControlSwitchButton->setChecked(enabled);
+    });
 
     auto tabBar = tabWidget->tabBar();
     tabBar->setMovable(true);
