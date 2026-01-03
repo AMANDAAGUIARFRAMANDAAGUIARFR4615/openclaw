@@ -4,6 +4,7 @@
 #include "EventHub.h"
 #include "RemoteFileExplorer.h"
 #include "ToastWidget.h"
+#include "MainWindow.h"
 #include <QWidget>
 #include <QTableWidget>
 #include <QPushButton>
@@ -203,7 +204,7 @@ private:
                 button->setEnabled(false);
 
             connect(button, &QPushButton::clicked, [=](bool) {
-                bool needConfirm = (name == "卸载" || name == "清除缓存" || name == "清除钥匙串");
+                bool needConfirm = forbiddenNames.contains(name);
                 if (needConfirm) {
                     QString msg = QString("确定要执行“%1”操作吗？").arg(name);
                     QMessageBox::StandardButton reply = QMessageBox::question(this, "确认操作", msg,
@@ -217,7 +218,17 @@ private:
                 dataObject["name"] = name;
                 dataObject["type"] = i + 1;
 
-                connection->send("appOperation", dataObject);
+                if (!name.endsWith("路径") && MainWindow::getInstance()->multiControlSwitchButton->isChecked())
+                {
+                    const auto& devices = MainWindow::getInstance()->getDevices();
+                    for(const auto& device : std::as_const(devices)) {
+                        device->connection->send("appOperation", dataObject);
+                    }
+                }
+                else
+                {
+                    connection->send("appOperation", dataObject);
+                }
 
                 if (name == "卸载")
                 {
