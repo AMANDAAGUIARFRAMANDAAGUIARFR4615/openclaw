@@ -35,7 +35,7 @@ public:
     void setTexts(const QString &onText, const QString &offText) {
         m_onText = onText;
         m_offText = offText;
-        updateGeometry(); // 文字改变需重新计算尺寸
+        updateGeometry();
         update();
     }
 
@@ -50,17 +50,18 @@ public:
     void setChecked(bool checked) {
         if (m_checked == checked) return;
         m_checked = checked;
-        m_offset = checked ? 1.0 : 0.0; // 直接切换，无动画
+        m_offset = checked ? 1.0 : 0.0;
         emit toggled(checked);
         update();
     }
 
     QSize sizeHint() const override {
         QFontMetrics fm(font());
-        // 宽度基于较长的文字计算：高度(滑块直径) + 文字宽 + 边距
         int textW = qMax(fm.horizontalAdvance(m_onText), fm.horizontalAdvance(m_offText));
         int h = 30;
-        int w = h + textW + 20;
+        // 宽度 = 滑块直径(约等于h) + 文字宽 + 左右额外间距(20)
+        // 这里的间距决定了“距离”的大小
+        int w = h + textW + 20; 
         return QSize(w, h);
     }
 
@@ -68,7 +69,7 @@ public:
 
     void setOffset(double o) {
         m_offset = o;
-        update(); // 动画更新数值时触发重绘
+        update();
     }
 
 signals:
@@ -80,7 +81,6 @@ protected:
             m_checked = !m_checked;
             emit toggled(m_checked);
 
-            // 启动动画至目标状态
             m_anim->stop();
             m_anim->setStartValue(m_offset);
             m_anim->setEndValue(m_checked ? 1.0 : 0.0);
@@ -95,11 +95,10 @@ protected:
 
         int w = width();
         int h = height();
-        int margin = 3;
+        int margin = 3; 
         int sliderSize = h - 2 * margin;
 
         // --- 1. 绘制背景 ---
-        // 根据当前进度选择颜色
         QColor bgColor = (m_offset > 0.5) ? m_onColor : m_offColor;
         p.setBrush(bgColor);
         p.setPen(Qt::NoPen);
@@ -109,17 +108,26 @@ protected:
         p.setPen(m_textColor);
         p.setFont(font());
 
-        // offset > 0.5 时滑块在右，文字显示在左；反之亦然
+        // 核心修改逻辑：精确计算“空白区域”的矩形
+        // 目标：将文字绘制在 [滑块边缘] 和 [背景边缘] 之间的正中心
+        
         if (m_offset > 0.5) {
-            QRect textRect(0, 0, w - h, h);
+            // ON 状态：滑块在右，文字在左
+            // 空白区域：0 (背景左缘) -> (w - h + margin) (滑块左缘)
+            // 注：w - (h - margin) 是滑块左边缘的精确 X 坐标
+            int sliderLeftEdge = w - h + margin;
+            QRect textRect(0, 0, sliderLeftEdge, h);
             p.drawText(textRect, Qt::AlignCenter, m_onText);
         } else {
-            QRect textRect(h, 0, w - h, h);
+            // OFF 状态：滑块在左，文字在右
+            // 空白区域：(h - margin) (滑块右缘) -> w (背景右缘)
+            // 注：margin + sliderSize = h - margin 是滑块右边缘的精确 X 坐标
+            int sliderRightEdge = h - margin;
+            QRect textRect(sliderRightEdge, 0, w - sliderRightEdge, h);
             p.drawText(textRect, Qt::AlignCenter, m_offText);
         }
 
         // --- 3. 绘制滑块 ---
-        // 线性插值计算滑块 X 坐标
         double startX = margin;
         double endX = w - sliderSize - margin;
         double currentX = startX + (endX - startX) * m_offset;
