@@ -368,9 +368,9 @@ bool DeviceView::event(QEvent *event)
         switch (event->type()) {
         // --- 键盘 ---
         case QEvent::KeyPress:
+        case QEvent::KeyRelease:
             if (static_cast<QKeyEvent*>(event)->matches(QKeySequence::Paste) && MainWindow::getInstance()->lineDispatcherSwitchButton->isChecked())
                 return QWidget::event(event);
-        case QEvent::KeyRelease:
         // --- 鼠标 ---
         case QEvent::MouseButtonPress:
         case QEvent::MouseButtonRelease:
