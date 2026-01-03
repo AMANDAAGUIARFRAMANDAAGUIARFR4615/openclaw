@@ -39,8 +39,29 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     setAttribute(Qt::WA_DeleteOnClose);
     setAcceptDrops(true);
 
+    QHBoxLayout* headerLayout = new QHBoxLayout();
+    headerLayout->setContentsMargins(0, 0, 0, 0); // 可选：根据需要调整边距
+
     QLabel* quickAccessLabel = new QLabel("⭐ 快速访问", this);
     quickAccessLabel->setStyleSheet("font-weight: bold; padding: 4px;");
+    headerLayout->addWidget(quickAccessLabel);
+
+    QPushButton* addQuickAccessButton = new QPushButton("添加路径", this);
+    connect(addQuickAccessButton, &QPushButton::clicked, [this]() {
+        bool ok;
+        QString path = QInputDialog::getText(this, "添加快速访问路径", "请输入路径:", QLineEdit::Normal, "", &ok);
+        if (!ok)
+            return;
+
+        while (path.endsWith('/'))
+            path.chop(1);
+        
+        if (!path.isEmpty())
+            addToFavorites(path);
+    });
+    headerLayout->addWidget(addQuickAccessButton);
+
+    headerLayout->addStretch();
 
     quickAccessList = new QListWidget(this);
     quickAccessList->setFixedHeight(120);
@@ -67,24 +88,10 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     auto layout = new QVBoxLayout(this);
-    layout->addWidget(quickAccessLabel);
+    
+    layout->addLayout(headerLayout);
     layout->addWidget(quickAccessList);
     layout->addWidget(treeView);
-
-    QPushButton* addQuickAccessButton = new QPushButton("添加路径", this);
-    layout->insertWidget(1, addQuickAccessButton);
-    connect(addQuickAccessButton, &QPushButton::clicked, [this]() {
-        bool ok;
-        QString path = QInputDialog::getText(this, "添加快速访问路径", "请输入路径:", QLineEdit::Normal, "", &ok);
-        if (!ok)
-            return;
-
-        while (path.endsWith('/'))
-            path.chop(1);
-        
-        if (!path.isEmpty())
-            addToFavorites(path);
-    });
 
     setLayout(layout);
 
