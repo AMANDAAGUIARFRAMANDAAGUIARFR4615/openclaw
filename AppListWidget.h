@@ -17,6 +17,7 @@
 #include <QPainterPath>
 #include <QMessageBox>
 #include <QKeyEvent>
+#include <QLineEdit>
 
 class AppListWidget : public QWidget
 {
@@ -47,13 +48,37 @@ private:
 
         setAttribute(Qt::WA_DeleteOnClose);
 
+        QLineEdit *searchEdit = new QLineEdit(this);
+        searchEdit->setPlaceholderText("搜索应用名或包名...");
+        searchEdit->setClearButtonEnabled(true);
+        searchEdit->setStyleSheet("QLineEdit { padding: 5px; border: 1px solid #DADCE0; border-radius: 4px; }");
+
         table = new QTableWidget(this);
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
+        mainLayout->addWidget(searchEdit);
         mainLayout->addWidget(table);
         setLayout(mainLayout);
 
         setupTable();
         applyStyle();
+
+        connect(searchEdit, &QLineEdit::textChanged, [this](const QString &text) {
+            QString query = text.trimmed().toLower();
+            for (int i = 0; i < table->rowCount(); ++i) {
+                bool hidden = true;
+                // 获取应用名 (列1) 和 包名 (列2)
+                QTableWidgetItem *nameItem = table->item(i, 1);
+                QTableWidgetItem *pkgItem = table->item(i, 2);
+
+                if (query.isEmpty()) {
+                    hidden = false;
+                } else {
+                    if (nameItem && nameItem->text().toLower().contains(query)) hidden = false;
+                    else if (pkgItem && pkgItem->text().toLower().contains(query)) hidden = false;
+                }
+                table->setRowHidden(i, hidden);
+            }
+        });
 
         EventHub::on(this, "appList", [this](const QJsonValue &data, DeviceConnection* connection) {
             if (this->connection != connection)
