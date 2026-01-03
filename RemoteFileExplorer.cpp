@@ -623,6 +623,19 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
 
     qDebugEx() << paths;
 
+    auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
+        if (isMultiControl) {
+            auto devices = MainWindow::getInstance()->getDevices();
+
+            for (const auto& device : devices) {
+                device->connection->send(event, jsonValue);
+            }
+        }
+        else {
+            connection->send(event, jsonValue);
+        }
+    };
+
     int selectedCount = paths.count();
 
     if (selectedCount > 0) {
@@ -642,7 +655,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
 
             menu.addAction("压缩", [=]() {
                 for (const QString& remotePath : paths) {
-                    connection->send("compressArchive", remotePath);
+                    send("compressArchive", remotePath);
                 }
             });
         }
@@ -686,7 +699,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             dataObject["atPath"] = remotePath;
             dataObject["toPath"] = name;
 
-            connection->send("renameItem", dataObject);
+            send("renameItem", dataObject);
         })->setEnabled(selectedCount == 1);
 
         menu.addAction("删除", [=]() {
@@ -699,7 +712,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             qDebugEx() << "删除: " + paths.join(", ");
             
             for (const QString& remotePath : paths) {
-                connection->send("removeItem", remotePath);
+                send("removeItem", remotePath);
             }
         });
 
@@ -760,7 +773,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         setStatusMessage("新建文件夹: " + name);
 
         auto dir = isDir ? remotePath : remotePath.left(remotePath.lastIndexOf('/'));
-        connection->send("createDirectory", dir + "/" + name);
+        send("createDirectory", dir + "/" + name);
     })->setEnabled(selectedCount == 1 || (selectedCount == 0 && rootPath != "/"));
 
     menu.exec(treeView->viewport()->mapToGlobal(pos));
