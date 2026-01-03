@@ -85,16 +85,11 @@ private:
                 return;
 
             QJsonArray appArray = data.toArray();
-            for (const QJsonValue &itemValue : appArray) {
-                if (!itemValue.isObject())
+            for (const QJsonValue &item : appArray) {
+                if (!item.isObject())
                     continue;
 
-                QJsonObject item = itemValue.toObject();
-                QString id = item.value("identifier").toString();
-                QString name = item.value("name").toString();
-                QString icon = item.value("icon").toString();
-
-                addApp(icon, name, id);
+                addApp(item.toObject());
             }
         });
 
@@ -121,7 +116,12 @@ private:
         instanceMap.remove(connection);
     }
 
-    void addApp(const QString &iconBase64, const QString &appName, const QString &packageName) {
+    void addApp(const QJsonObject &jsonObject) {
+        const auto& iconBase64 = jsonObject["icon"].toString();
+        const auto& appName = jsonObject["name"].toString();
+        const auto& packageName = jsonObject["identifier"].toString();
+        const auto& type = jsonObject["type"].toInt();
+
         int row = table->rowCount();
         table->insertRow(row);
         table->setRowHeight(row, 48);
@@ -191,11 +191,14 @@ private:
         };
 
         for (int i = 0; i < btnNames.size(); ++i) {
-            const QString &name = btnNames[i];
-            QPushButton *btn = new QPushButton(name);
-            layout->addWidget(btn);
+            const auto &name = btnNames[i];
+            auto button = new QPushButton(name);
+            layout->addWidget(button);
 
-            connect(btn, &QPushButton::clicked, [=](bool) {
+            if (type != 1 && name == "卸载")
+                button->setEnabled(false);
+
+            connect(button, &QPushButton::clicked, [=](bool) {
                 bool needConfirm = (name == "卸载" || name == "清除缓存" || name == "清除钥匙串");
                 if (needConfirm) {
                     QString msg = QString("确定要执行“%1”操作吗？").arg(name);
@@ -215,7 +218,7 @@ private:
 
                 if (name == "卸载")
                 {
-                    int row = table->indexAt(btn->parentWidget()->pos()).row();
+                    int row = table->indexAt(button->parentWidget()->pos()).row();
                     if (row >= 0)
                         table->removeRow(row);
                 }
