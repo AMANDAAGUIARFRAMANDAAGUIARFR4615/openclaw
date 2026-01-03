@@ -15,7 +15,6 @@
 #include "Account.h"
 #include "LoginWidget.h"
 #include "AccountListDialog.h"
-#include "SwitchButton.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -43,7 +42,7 @@
 #include <QActionGroup>
 #include <QToolTip>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTabWidget(this))
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTabWidget(this)), multiControlSwitchButton(new SwitchButton("同屏操作")), lineDispatcherSwitchButton(new SwitchButton("文本逐行分发"))
 {
     setMinimumSize(800, 600);
 
@@ -165,12 +164,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             }
 
             qrDialog->exec();
-            return;
-        }
-
-        if (title == "同屏操作" || title == "同屏操作中") {
-            setMultiControlEnabled(!multiControlEnabled);
-            QToolTip::showText(QCursor::pos(), multiControlEnabled ? "同屏操作已开启" : "同屏操作已关闭");
             return;
         }
 
@@ -399,16 +392,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     auto hLayout = new QHBoxLayout(this);
     hLayout->setContentsMargins(5, 5, 5, 5);
     hLayout->setSpacing(5);
-    auto multiControlSwitchButton = new SwitchButton("同屏操作");
     hLayout->addWidget(multiControlSwitchButton);
-    auto lineDispatcherSwitchButton = new SwitchButton("文本逐行分发");
     hLayout->addWidget(lineDispatcherSwitchButton);
     hLayout->addStretch();
     rightLayout->addLayout(hLayout);
-
-    connect(this, &MainWindow::multiControlEnabledChanged, [=](bool enabled) {
-        multiControlSwitchButton->setChecked(enabled);
-    });
 
     auto tabBar = tabWidget->tabBar();
     tabBar->setMovable(true);

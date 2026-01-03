@@ -6,8 +6,8 @@
 #include "Tools.h"
 #include "LiveStreamDevice.h"
 #include "UsbDeviceManager.h"
-#include "EmojiIconProvider.h"
 #include "MainWindow.h"
+#include "SwitchButton.h"
 #include <QElapsedTimer>
 #include <QVBoxLayout>
 #include <QMouseEvent>
@@ -59,11 +59,11 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo)
 
     auto title = windowTitle();
 
-    if (MainWindow::getInstance()->isMultiControlEnabled())
+    if (MainWindow::getInstance()->multiControlSwitchButton->isChecked())
         setWindowTitle(title + "【同屏操作中】");
 
-    connect(MainWindow::getInstance(), &MainWindow::multiControlEnabledChanged, this, [=](bool enabled) {
-        setWindowTitle(enabled ? title + "【同屏操作中】" : title);
+    connect(MainWindow::getInstance()->multiControlSwitchButton, &SwitchButton::toggled, this, [=](bool checked) {
+        setWindowTitle(checked ? title + "【同屏操作中】" : title);
     });
 }
 

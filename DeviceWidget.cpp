@@ -110,7 +110,7 @@ bool DeviceWidget::event(QEvent *event)
 void DeviceWidget::launchDeviceWindow() {
     static bool isDispatching = false;
 
-    if (!isDispatching && MainWindow::getInstance()->isMultiControlEnabled()) {
+    if (!isDispatching && MainWindow::getInstance()->multiControlSwitchButton->isChecked()) {
         isDispatching = true;
         auto list = MainWindow::getInstance()->findChildren<DeviceWidget*>();
         for (auto& item : list) {

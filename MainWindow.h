@@ -4,6 +4,7 @@
 #include "DeviceConnection.h"
 #include "BitMaskEditorDialog.h"
 #include "VideoVisibilityManager.h"
+#include "SwitchButton.h"
 #include <QMainWindow>
 #include <QKeyEvent>
 #include <QDialog>
@@ -24,17 +25,8 @@ public:
 
     QTabWidget* const tabWidget;
 
-    bool isMultiControlEnabled() const { return multiControlEnabled; }
-
-public slots:
-    void setMultiControlEnabled(bool enabled) {
-        if (multiControlEnabled == enabled) return;
-        multiControlEnabled = enabled;
-        emit multiControlEnabledChanged(enabled);
-    }
-
-signals:
-    void multiControlEnabledChanged(bool enabled);
+    SwitchButton* const multiControlSwitchButton;
+    SwitchButton* const lineDispatcherSwitchButton;
 
 private:
     MainWindow(QWidget *parent = nullptr);
@@ -62,9 +54,6 @@ protected:
     QListWidget* sideBarList;
     QListWidget* deviceListWidget;
     QSlider* zoomSlider;
-
-    bool multiControlEnabled = false;
-    bool isDispatching = false;
 
     VideoVisibilityManager* videoVisibilityManager;
 };

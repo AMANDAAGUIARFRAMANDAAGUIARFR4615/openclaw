@@ -171,7 +171,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         return;
     }
 
-    auto isMultiControl = MainWindow::getInstance()->isMultiControlEnabled();
+    auto isMultiControl = MainWindow::getInstance()->multiControlSwitchButton->isChecked();
 
     auto menu = new QMenu(this);
     menu->setStyleSheet(R"(
@@ -245,9 +245,9 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         }
         else if (text == "🕹️同屏操作") {
             if (metaObject()->className() == QString("DeviceWindow")) {
-                auto enabled = MainWindow::getInstance()->isMultiControlEnabled();
+                auto enabled = MainWindow::getInstance()->multiControlSwitchButton->isChecked();
                 auto action =menu->addAction(text, [=]() {
-                    MainWindow::getInstance()->setMultiControlEnabled(!enabled);
+                    MainWindow::getInstance()->multiControlSwitchButton->setChecked(!enabled);
                 });
                 action->setCheckable(true);
                 action->setChecked(enabled);
@@ -365,7 +365,7 @@ bool DeviceView::event(QEvent *event)
 
     static bool isDispatching = false;
 
-    if (!isDispatching && MainWindow::getInstance()->isMultiControlEnabled()) {
+    if (!isDispatching && MainWindow::getInstance()->multiControlSwitchButton->isChecked()) {
         switch (event->type()) {
         // --- 键盘 ---
         case QEvent::KeyPress:
