@@ -895,7 +895,10 @@ QList<DeviceInfo*> MainWindow::getDevices()
     QList<DeviceInfo*> devices;
 
     for (int i = 0; i < deviceListWidget->count(); i++) {
-        QListWidgetItem* item = deviceListWidget->item(i);
+        auto item = deviceListWidget->item(i);
+        if (item->isHidden())
+            continue;
+
         auto deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
         devices.append(deviceWidget->deviceInfo);
     }
