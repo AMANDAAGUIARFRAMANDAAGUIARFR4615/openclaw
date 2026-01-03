@@ -185,8 +185,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 
     auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
         if (isMultiControl) {
-            auto bit = MainWindow::getInstance()->getTab().bit;
-            auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+            auto devices = MainWindow::getInstance()->getDevices();
 
             for (const auto& device : devices) {
                 device->connection->send(event, jsonValue);
@@ -539,8 +538,7 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
             }
 
             const auto& array = content.split("\n");
-            const auto& tab = MainWindow::getInstance()->getTab();
-            const auto& devices = DeviceInfo::getDevices(tab.bit == 0 ? 0 : (1U << tab.bit));
+            const auto& devices = MainWindow::getInstance()->getDevices();
             if (array.size() != devices.size()) {
                 new ToastWidget("您复制的文本行数和设备数不匹配", this);
                 return;

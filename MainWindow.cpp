@@ -538,8 +538,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     });
 
     webSocketClient->on("online_devices", [this](const QJsonValue &data, AckCallback callback) {
-        auto tab = getTab();
-        const auto& devices = DeviceInfo::getDevices(tab.bit == 0 ? 0 : (1U << tab.bit));
+        const auto& devices = getDevices();
 
         QJsonArray jsonArray;
 
@@ -774,7 +773,7 @@ void MainWindow::syncVideoQualityToDevices()
 {
     auto tab = getTab();
     auto videoQuality = tab.getVideoQuality();
-    const auto& devices = DeviceInfo::getDevices(tab.bit == 0 ? 0 : (1U << tab.bit));
+    const auto& devices = getDevices();
     for (const auto& device : devices) {
         device->connection->send("setVideoQuality", videoQuality);
     }
@@ -889,6 +888,19 @@ void MainWindow::addItem(DeviceConnection* connection)
     deviceListWidget->setItemWidget(item, frame);
 
     relayoutDevices();
+}
+
+QList<DeviceInfo*> MainWindow::getDevices()
+{
+    QList<DeviceInfo*> devices;
+
+    for (int i = 0; i < deviceListWidget->count(); i++) {
+        QListWidgetItem* item = deviceListWidget->item(i);
+        auto deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
+        devices.append(deviceWidget->deviceInfo);
+    }
+
+    return devices;
 }
 
 void MainWindow::showTabBarContextMenu(const QPoint &pos)

@@ -19,6 +19,8 @@ public:
     static MainWindow* getInstance() { static MainWindow instance; return &instance; }
 
     void addItem(DeviceConnection* connection);
+    QList<DeviceInfo*> getDevices();
+    
     const QList<BitMaskEditorDialog::Item>& getTabs() const { return tabs; }
     BitMaskEditorDialog::Item& getTab() { return tabs[tabWidget->currentIndex()]; }
     void showSupportDialog();
