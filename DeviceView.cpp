@@ -369,6 +369,8 @@ bool DeviceView::event(QEvent *event)
         switch (event->type()) {
         // --- 键盘 ---
         case QEvent::KeyPress:
+            if (static_cast<QKeyEvent*>(event)->matches(QKeySequence::Paste) && MainWindow::getInstance()->lineDispatcherSwitchButton->isChecked())
+                return QWidget::event(event);
         case QEvent::KeyRelease:
         // --- 鼠标 ---
         case QEvent::MouseButtonPress:
@@ -530,9 +532,27 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
         {
             qDebugEx() << "剪切板内容是文本:" << content;
 
-            connection->send("clipboard", QJsonObject{{"type", 1}, {"content", content}});
+            if (!MainWindow::getInstance()->lineDispatcherSwitchButton->isChecked())
+            {
+                connection->send("clipboard", QJsonObject{{"type", 1}, {"content", content}});
+                return;
+            }
+
+            const auto& array = content.split("\n");
+            const auto& tab = MainWindow::getInstance()->getTab();
+            const auto& devices = DeviceInfo::getDevices(tab.bit == 0 ? 0 : (1U << tab.bit));
+            if (array.size() != devices.size()) {
+                new ToastWidget("您复制的文本行数和设备数不匹配", this);
+                return;
+            }
+
+            for (auto i = 0; i < array.size(); i++) {
+                devices[i]->connection->send("clipboard", QJsonObject{{"type", 1}, {"content", array[i]}});
+            }
+            return;
         }
-        else if (mimeData->hasImage())
+
+        if (mimeData->hasImage())
         {
             QImage image = mimeData->imageData().value<QImage>();
             auto base64Data = Tools::imageToBase64(image);
