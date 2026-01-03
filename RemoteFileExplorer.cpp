@@ -5,6 +5,7 @@
 #include "FileTransfer.h"
 #include "ToastWidget.h"
 #include "FileViewer.h"
+#include "MainWindow.h"
 #include <QVBoxLayout>
 #include <QNetworkReply>
 #include <QJsonArray>
@@ -460,14 +461,61 @@ QString RemoteFileExplorer::getLocalPath(const QString& remotePath) {
 
 void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, const QString &remotePath, int size)
 {
+    const auto startTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+    const auto name = QFileInfo(localPath).fileName();
+
+    if (type == 2 && MainWindow::getInstance()->multiControlSwitchButton->isChecked())
+    {
+        const auto& devices = MainWindow::getInstance()->getDevices();
+        for(const auto& deviceInfo : std::as_const(devices)) {
+            if (deviceInfo->connection == connection)
+                continue;
+
+            auto transfer = new FileTransfer(deviceInfo->connection, type, localPath, size);
+
+            connect(transfer, &FileTransfer::progressUpdated, this, [=](quint64 transferred, quint64 total) {
+                if (transferred != total)
+                    return;
+
+                double elapsed = transfer->elapsedTime();
+
+                QJsonObject obj;
+                obj["startTime"] = startTime;
+                obj["name"] = name;
+                obj["type"] = type;
+                obj["size"] = QString("%1/%2").arg(Tools::formatByteSize(transferred), Tools::formatByteSize(total));
+                obj["localPath"] = localPath;
+                obj["remotePath"] = remotePath;
+                obj["speed"] = Tools::formatByteSize(transferred / elapsed) + "/s";
+                obj["usedTime"] = QString::number(elapsed, 'f', 2) + " s";
+
+                QString key = deviceInfo->deviceId + "/transferHistory";
+                QVariantList history = settings->value(key).toList();
+                history.append(obj);
+                settings->setValue(key, history);
+            });
+
+            QJsonObject dataObject;
+            dataObject["id"] = transfer->id;
+            dataObject["type"] = type;
+            dataObject["port"] = transfer->serverPort();
+            dataObject["path"] = remotePath;
+
+            if (type == 2)
+                dataObject["size"] = size;
+
+            deviceInfo->connection->send("transferFile", dataObject);
+        }
+    }
+
     auto transfer = new FileTransfer(connection, type, localPath, size);
 
     int row = 0;
     transferTable->insertRow(row);
 
     QStringList texts = {
-        QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"),
-        QFileInfo(localPath).fileName(),
+        startTime,
+        name,
         type == 1 ? "接收中" : "发送中",
         "0%",
         "",
@@ -496,25 +544,26 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
         transferTable->item(row, 7)->setText(Tools::formatByteSize(transferred / elapsed) + "/s");
         transferTable->item(row, 8)->setText(QString::number(elapsed, 'f', 2) + " s");
 
-        if (transferred == total) {
-            QString finalStatus = type == 1 ? "接收完成" : "发送完成";
-            transferTable->item(row, 2)->setText(finalStatus);
+        if (transferred != total)
+            return;
 
-            QJsonObject obj;
-            obj["startTime"] = transferTable->item(row, 0)->text();
-            obj["name"] = transferTable->item(row, 1)->text();
-            obj["type"] = type;
-            obj["size"] = transferTable->item(row, 4)->text();
-            obj["localPath"] = localPath;
-            obj["remotePath"] = remotePath;
-            obj["speed"] = transferTable->item(row, 7)->text();
-            obj["usedTime"] = transferTable->item(row, 8)->text();
+        QString finalStatus = type == 1 ? "接收完成" : "发送完成";
+        transferTable->item(row, 2)->setText(finalStatus);
 
-            QString key = connection->deviceInfo->deviceId + "/transferHistory";
-            QVariantList history = settings->value(key).toList();
-            history.append(obj);
-            settings->setValue(key, history);
-        }
+        QJsonObject obj;
+        obj["startTime"] = startTime;
+        obj["name"] = name;
+        obj["type"] = type;
+        obj["size"] = transferTable->item(row, 4)->text();
+        obj["localPath"] = localPath;
+        obj["remotePath"] = remotePath;
+        obj["speed"] = transferTable->item(row, 7)->text();
+        obj["usedTime"] = transferTable->item(row, 8)->text();
+
+        QString key = connection->deviceInfo->deviceId + "/transferHistory";
+        QVariantList history = settings->value(key).toList();
+        history.append(obj);
+        settings->setValue(key, history);
     });
 
     QJsonObject dataObject;
