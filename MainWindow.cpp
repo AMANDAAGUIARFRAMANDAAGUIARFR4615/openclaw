@@ -420,7 +420,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     zoomOutBtn->setIcon(EmojiIconProvider::createIcon("➖")); 
     zoomOutBtn->setToolTip("缩小");
     zoomOutBtn->setAutoRaise(true);
-    zoomOutBtn->setCursor(Qt::PointingHandCursor);
     
     connect(zoomOutBtn, &QToolButton::clicked, [=]() {
         zoomSlider->setValue(zoomSlider->value() - 10);
@@ -430,7 +429,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     zoomInBtn->setIcon(EmojiIconProvider::createIcon("➕"));
     zoomInBtn->setToolTip("放大");
     zoomInBtn->setAutoRaise(true);
-    zoomInBtn->setCursor(Qt::PointingHandCursor);
 
     connect(zoomInBtn, &QToolButton::clicked, [=]() {
         zoomSlider->setValue(zoomSlider->value() + 10);

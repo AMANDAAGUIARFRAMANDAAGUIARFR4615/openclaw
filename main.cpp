@@ -20,9 +20,29 @@ void onDataReceived(DeviceConnection *connection, const QJsonObject &jsonObject)
     EventHub::trigger(event, data, connection);
 }
 
+class CursorFilter : public QObject
+{
+public:
+    CursorFilter(QObject *parent = nullptr) : QObject(parent) {}
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        // 拦截 "Polish" 事件 (这个事件在控件初始化或样式表改变时触发)
+        if (event->type() == QEvent::Polish) {
+            if (auto button = qobject_cast<QAbstractButton *>(obj))
+                button->setCursor(Qt::PointingHandCursor);
+        }
+
+        return QObject::eventFilter(obj, event);
+    }
+};
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+
+    app.installEventFilter(new CursorFilter(&app));
 
     QTranslator qtTranslator;
     if (qtTranslator.load("qt_zh_CN", QLibraryInfo::location(QLibraryInfo::TranslationsPath)))

@@ -47,14 +47,11 @@ public:
         confirmLineEdit->setVisible(false);
 
         rememberCheckBox = new QCheckBox("记住账号和密码");
-        rememberCheckBox->setCursor(Qt::PointingHandCursor);
 
         actionButton = new QPushButton("登录");
         actionButton->setObjectName("mainBtn");
-        actionButton->setCursor(Qt::PointingHandCursor);
         switchButton = new QPushButton("注册新账号");
         switchButton->setObjectName("subBtn");
-        switchButton->setCursor(Qt::PointingHandCursor);
         
         statusLabel = new QLabel("正在连接服务器...");
         statusLabel->setAlignment(Qt::AlignCenter);

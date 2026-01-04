@@ -123,7 +123,6 @@ public:
         savePath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + fileName;
 
         btnAction = new QPushButton("");
-        btnAction->setCursor(Qt::PointingHandCursor);
         btnAction->setFixedHeight(35);
 
         statusLabel = new QLabel("");
@@ -253,7 +252,6 @@ public:
 
         btnConfirm = new QPushButton("确认选择");
         btnConfirm->setFixedHeight(35);
-        btnConfirm->setCursor(Qt::PointingHandCursor);
         btnConfirm->setStyleSheet("QPushButton { background-color: #007bff; color: white; border-radius: 4px; }"
                                   "QPushButton:hover { background-color: #0069d9; }"
                                   "QPushButton:disabled { background-color: #ccc; }");
@@ -306,14 +304,12 @@ public:
 
         btnStart = new QPushButton("开始注入 (运行 TrollRestore)");
         btnStart->setFixedHeight(35);
-        btnStart->setCursor(Qt::PointingHandCursor);
         btnStart->setStyleSheet("QPushButton { background-color: #d63384; color: white; border-radius: 4px; font-weight: bold; }"
                                 "QPushButton:hover { background-color: #c21b6c; }"
                                 "QPushButton:disabled { background-color: #ccc; }");
         
         btnSkip = new QPushButton("已注入，直接跳过");
         btnSkip->setFixedHeight(35);
-        btnSkip->setCursor(Qt::PointingHandCursor);
         btnSkip->setStyleSheet("QPushButton { background-color: #6c757d; color: white; border-radius: 4px; }"
                                "QPushButton:hover { background-color: #5a6268; }"
                                "QPushButton:disabled { background-color: #ccc; }");
@@ -435,7 +431,6 @@ public:
         btnLayout->addStretch();
 
         QPushButton *btnFinish = new QPushButton("我已完成下载");
-        btnFinish->setCursor(Qt::PointingHandCursor);
         btnFinish->setMinimumWidth(150);
         btnFinish->setStyleSheet("QPushButton { background-color: #28a745; color: white; border-radius: 4px; padding: 8px; font-weight: bold; }"
                                  "QPushButton:hover { background-color: #218838; }");

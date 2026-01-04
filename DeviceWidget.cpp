@@ -28,7 +28,6 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     auto launchButton = new QPushButton(this);
     launchButton->setIcon(style()->standardIcon(QStyle::SP_TitleBarMaxButton));
     launchButton->setFlat(true);
-    launchButton->setCursor(Qt::PointingHandCursor);
     launchButton->setToolTip("在独立窗口中打开");
     
     connect(launchButton, &QPushButton::clicked, this, &DeviceWidget::launchDeviceWindow);

@@ -223,7 +223,6 @@ private:
         for (int i = 0; i < btnNames.size(); ++i) {
             const auto &name = btnNames[i];
             auto button = new QPushButton(name);
-            button->setCursor(Qt::PointingHandCursor);
             
             // 基础样式
             QString baseStyle = R"(
