@@ -145,6 +145,7 @@ private:
         const auto& appName = jsonObject["name"].toString();
         const auto& packageName = jsonObject["identifier"].toString();
         const auto& type = jsonObject["type"].toInt();
+        const auto& isDeletable = jsonObject["isDeletable"].toBool();
 
         int row = table->rowCount();
         table->insertRow(row);
@@ -285,8 +286,10 @@ private:
             layout->addWidget(button);
 
             if (type != 1 && forbiddenNames.contains(name)) {
-                button->setEnabled(false);
-                button->setCursor(Qt::ForbiddenCursor); // 禁用时鼠标变禁止符号
+                auto enabled = name == "卸载" ? isDeletable : false;
+                button->setEnabled(enabled);
+                if (!enabled)
+                    button->setCursor(Qt::ForbiddenCursor); // 禁用时鼠标变禁止符号
             }
 
             connect(button, &QPushButton::clicked, [=](bool) {
