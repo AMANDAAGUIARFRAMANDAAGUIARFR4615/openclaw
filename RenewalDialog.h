@@ -15,6 +15,7 @@
 #include <QPlainTextEdit>
 #include <QGroupBox>
 #include <QComboBox>
+#include <QCheckBox>
 #include <QSet>
 
 class RenewalDialog : public QDialog {
@@ -44,6 +45,12 @@ public:
         filterLayout->addWidget(filterLabel);
         filterLayout->addWidget(filterComboBox);
         filterLayout->addStretch();
+
+        auto selectionLayout = new QHBoxLayout();
+        selectAllCheckBox = new QCheckBox("全选");
+        selectAllCheckBox->setTristate(true); // 开启三态，支持半选显示
+        selectionLayout->addWidget(selectAllCheckBox);
+        selectionLayout->addStretch();
 
         tableWidget = new QTableWidget(this);
         tableWidget->setColumnCount(4);
@@ -190,10 +197,30 @@ public:
         mainLayout->setContentsMargins(20, 20, 20, 20);
         mainLayout->setSpacing(15);
 
-        mainLayout->addLayout(filterLayout); // 顶部筛选
+        mainLayout->addLayout(filterLayout);
+        mainLayout->addLayout(selectionLayout);
         mainLayout->addWidget(tableWidget, 1);
         mainLayout->addLayout(optionsLayout);
         mainLayout->addWidget(buttonBox);
+
+        connect(selectAllCheckBox, &QCheckBox::clicked, [this](bool) {
+            Qt::CheckState state = selectAllCheckBox->checkState();
+            
+            // 用户点击时，如果是半选状态，通常预期是变为全选
+            if (state == Qt::PartiallyChecked) {
+                state = Qt::Checked;
+                selectAllCheckBox->setCheckState(state);
+            }
+
+            tableWidget->blockSignals(true); // 暂时屏蔽表格信号，防止递归
+            for (int i = 0; i < tableWidget->rowCount(); ++i) {
+                auto item = tableWidget->item(i, 0);
+                if (item) item->setCheckState(state);
+            }
+            tableWidget->blockSignals(false);
+            
+            updateTotalPrice();
+        });
 
         connect(filterComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int index) {
             qDebugEx() << "QComboBox::currentIndexChanged" << index;
@@ -205,7 +232,10 @@ public:
         });
 
         connect(tableWidget, &QTableWidget::itemChanged, [this](QTableWidgetItem *item){
-            if (item->column() == 0) updateTotalPrice();
+            if (item->column() == 0) {
+                updateTotalPrice();
+                updateSelectAllState();
+            }
         });
         
         connect(monthRadioButton, &QRadioButton::toggled, this, &RenewalDialog::updateTotalPrice);
@@ -267,7 +297,30 @@ protected:
         }
 
         tableWidget->blockSignals(false);
+        updateSelectAllState();
         updateTotalPrice();
+    }
+
+    void updateSelectAllState() {
+        int checkedCount = 0;
+        int rowCount = tableWidget->rowCount();
+
+        for (int i = 0; i < rowCount; ++i) {
+            if (tableWidget->item(i, 0)->checkState() == Qt::Checked) {
+                checkedCount++;
+            }
+        }
+
+        selectAllCheckBox->blockSignals(true);
+        
+        if (rowCount > 0 && checkedCount == rowCount)
+            selectAllCheckBox->setCheckState(Qt::Checked);
+        else if (checkedCount == 0)
+            selectAllCheckBox->setCheckState(Qt::Unchecked);
+        else
+            selectAllCheckBox->setCheckState(Qt::PartiallyChecked);
+        
+        selectAllCheckBox->blockSignals(false);
     }
 
     QList<QString> getSelectedDeviceIds() const {
@@ -322,6 +375,7 @@ protected:
 
     QTableWidget *tableWidget;
     QComboBox *filterComboBox; 
+    QCheckBox *selectAllCheckBox;
     QRadioButton *monthRadioButton;
     QRadioButton *yearRadioButton;
     
