@@ -497,6 +497,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
         if (deviceInfo) {
             if (deviceInfo->connection->type == connection->type) {
+                connection->send("reject", "已存在相同连接");
                 connection->close();
                 return;
             }
@@ -506,6 +507,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
             if (isUsbDevice == isUsbSetting)
             {
+                connection->send("reject", "已存在相同连接");
                 connection->close();
                 return;
             }
