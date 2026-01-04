@@ -243,13 +243,45 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
             menu->addAction(text, [&](){send("volumeControl", "-");});
         }
         else if (text == "🕹️同屏操作") {
-            if (metaObject()->className() == QString("DeviceWindow")) {
+            if (qobject_cast<DeviceWindow*>(this)) {
                 auto enabled = MainWindow::getInstance()->multiControlSwitchButton->isChecked();
                 auto action =menu->addAction(text, [=]() {
                     MainWindow::getInstance()->multiControlSwitchButton->setChecked(!enabled);
                 });
                 action->setCheckable(true);
                 action->setChecked(enabled);
+            }
+        }
+        else if (text == "📌置顶") {
+            if (qobject_cast<DeviceWindow*>(this)) {
+                Qt::WindowFlags flags = windowFlags();
+
+                auto action = menu->addAction(text, [=]() {
+                    const auto& devices = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceWindows() : (QList<DeviceWindow*>() << (DeviceWindow*)this);
+
+                    for (const auto& deviceWidget : std::as_const(devices)) {
+                        auto f = deviceWidget->windowFlags();
+                        auto title = deviceWidget->windowTitle();
+
+                        if (flags & Qt::WindowStaysOnTopHint)
+                        {
+                            f &= ~Qt::WindowStaysOnTopHint;
+                            title.replace("📌", "");
+                        }
+                        else
+                        {
+                            f |= Qt::WindowStaysOnTopHint;
+                            if (!title.contains("📌")) title += "📌";
+                        }
+
+                        deviceWidget->setWindowFlags(f);
+                        deviceWidget->setWindowTitle(title);
+                        deviceWidget->show();
+                    }
+                });
+
+                action->setCheckable(true);
+                action->setChecked(flags & Qt::WindowStaysOnTopHint);
             }
         }
         else if (text == "🔧修改分组") {

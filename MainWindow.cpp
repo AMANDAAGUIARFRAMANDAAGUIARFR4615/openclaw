@@ -893,6 +893,17 @@ void MainWindow::addItem(DeviceConnection* connection)
 QList<DeviceInfo*> MainWindow::getDevices()
 {
     QList<DeviceInfo*> devices;
+ 
+    for (const auto& widget : getDeviceWidgets()) {
+        devices.append(widget->deviceInfo);
+    }
+
+    return devices;
+}
+
+QList<DeviceWidget*> MainWindow::getDeviceWidgets()
+{
+    QList<DeviceWidget*> list;
 
     for (int i = 0; i < deviceListWidget->count(); i++) {
         auto item = deviceListWidget->item(i);
@@ -900,7 +911,19 @@ QList<DeviceInfo*> MainWindow::getDevices()
             continue;
 
         auto deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
-        devices.append(deviceWidget->deviceInfo);
+        list.append(deviceWidget);
+    }
+
+    return list;
+}
+
+QList<DeviceWindow*> MainWindow::getDeviceWindows()
+{
+    QList<DeviceWindow*> devices;
+ 
+    for (const auto& widget : getDeviceWidgets()) {
+        if (widget->getDeviceWindow())
+            devices.append(widget->getDeviceWindow());
     }
 
     return devices;

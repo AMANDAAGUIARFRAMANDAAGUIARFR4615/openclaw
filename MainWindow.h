@@ -11,6 +11,9 @@
 #include <QListWidget>
 #include <QSlider>
 
+class DeviceWidget;
+class DeviceWindow;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -20,6 +23,8 @@ public:
 
     void addItem(DeviceConnection* connection);
     QList<DeviceInfo*> getDevices();
+    QList<DeviceWidget*> getDeviceWidgets();
+    QList<DeviceWindow*> getDeviceWindows();
     
     const QList<BitMaskEditorDialog::Item>& getTabs() const { return tabs; }
     BitMaskEditorDialog::Item& getTab() { return tabs[tabWidget->currentIndex()]; }
