@@ -284,16 +284,21 @@ protected:
         tableWidget->setRowCount(devices.size());
 
         for (int i = 0; i < devices.size(); ++i) {
-            const auto &info = devices[i];
+            const auto &deviceInfo = devices[i];
             auto checkItem = new QTableWidgetItem();
             checkItem->setCheckState(Qt::Checked);
-            checkItem->setData(Qt::UserRole, info->deviceId);
+            checkItem->setData(Qt::UserRole, deviceInfo->deviceId);
 
             tableWidget->setItem(i, 0, checkItem);
             
-            tableWidget->setItem(i, 1, new QTableWidgetItem(info->deviceName));
-            tableWidget->setItem(i, 2, new QTableWidgetItem(info->model));
-            tableWidget->setItem(i, 3, new QTableWidgetItem(QDateTime::fromMSecsSinceEpoch(info->expireAt.get()).toString("yyyy-MM-dd HH:mm:ss")));
+            tableWidget->setItem(i, 1, new QTableWidgetItem(deviceInfo->deviceName));
+            tableWidget->setItem(i, 2, new QTableWidgetItem(deviceInfo->model));
+
+            auto expireAt = QDateTime::fromMSecsSinceEpoch(deviceInfo->expireAt.get()).toString("yyyy-MM-dd HH:mm:ss");
+            if (deviceInfo->expireAt.get() > Account::getInstance()->loginTime.get() + elapsedTimer->elapsed())
+                tableWidget->setItem(i, 3, new QTableWidgetItem(expireAt));
+            else
+                tableWidget->setItem(i, 3, new QTableWidgetItem(QString("<font color='red'>%1</font>").arg(expireAt)));
         }
 
         tableWidget->blockSignals(false);
