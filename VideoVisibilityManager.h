@@ -13,11 +13,11 @@ class VideoVisibilityManager : public QObject {
 public:
     explicit VideoVisibilityManager(QListWidget* listWidget, QObject* parent = nullptr) : m_list(listWidget), QObject(parent)
     {
-        connect(m_list->verticalScrollBar(), &QScrollBar::valueChanged, this, &VideoVisibilityManager::checkVisibility);
-        connect(m_list->model(), &QAbstractItemModel::rowsAboutToBeRemoved, this, &VideoVisibilityManager::onRowsAboutToBeRemoved);
+        // connect(m_list->verticalScrollBar(), &QScrollBar::valueChanged, this, &VideoVisibilityManager::checkVisibility);
+        // connect(m_list->model(), &QAbstractItemModel::rowsAboutToBeRemoved, this, &VideoVisibilityManager::onRowsAboutToBeRemoved);
 
-        m_list->installEventFilter(this);
-        m_list->viewport()->installEventFilter(this);
+        // m_list->installEventFilter(this);
+        // m_list->viewport()->installEventFilter(this);
     }
 
     // 当列表数据发生增删时，手动调用此函数刷新状态
