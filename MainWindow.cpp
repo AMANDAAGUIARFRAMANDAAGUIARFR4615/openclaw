@@ -15,6 +15,7 @@
 #include "Account.h"
 #include "LoginWidget.h"
 #include "AccountListDialog.h"
+#include "DeviceWindow.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -117,7 +118,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             return;
         }
 
-        if (key == "videoQuality") {
+        if (key == "videoFps" || key == "videoQuality") {
             syncVideoQualityToDevices();
             return;
         }
@@ -782,14 +783,15 @@ void MainWindow::addOptionMenu(QMenu* parent, const QString& title, const QStrin
 
 void MainWindow::syncVideoQualityToDevices()
 {
-    auto tab = getTab();
-    auto videoQuality = tab.getVideoQuality();
     const auto& devices = getDeviceWidgets();
     for (const auto& device : devices) {
+        const auto& size = device->size();
+        auto event = new QResizeEvent(size, size);
+
         if (device->getDeviceWindow())
-            device->connection->send("setVideoQuality", qMax(videoQuality, 3));
+            qApp->postEvent(device->getDeviceWindow()->getVideoFrameWidget(), event);
         else
-            device->connection->send("setVideoQuality", qMin(videoQuality, 2));
+            qApp->postEvent(device->getVideoFrameWidget(), event);
     }
 }
 
@@ -838,8 +840,6 @@ void MainWindow::addItem(DeviceConnection* connection)
     }
 
     auto player = new DeviceWidget(connection, deviceInfo);
-    auto videoQuality = getTab().getVideoQuality();
-    connection->send("setVideoQuality", qMin(videoQuality, 2));
     auto ipLabel = player->findChild<QLabel*>("ipLabel");
 
     auto device = new LiveStreamDevice(player);
@@ -955,7 +955,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
     if (tabBarMenu.count() == 0)
         return;
 
-    auto& [bit, _, __, isLandscape, videoQuality, connectionMethod, autoScanLANDevices, autoConnectUSBDevices] = tabs[index];
+    auto& [bit, _, __, isLandscape, videoFps, videoQuality, connectionMethod, autoScanLANDevices, autoConnectUSBDevices] = tabs[index];
 
     QMenu menu(this);
 
@@ -1030,6 +1030,15 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
 
                 if (tabWidget->currentIndex() == index)
                     relayoutDevices();
+            });
+        }
+        else if (text == "视频帧率") {
+            QStringList list = {"默认", "", "5秒1帧", "1秒1帧", "1秒15帧", "1秒30帧"};
+            addOptionMenu(&menu, text, list, &videoFps, [=]() {
+                saveTabs(index);
+
+                if (tabWidget->currentIndex() == index)
+                    syncVideoQualityToDevices();
             });
         }
         else if (text == "视频清晰度") {

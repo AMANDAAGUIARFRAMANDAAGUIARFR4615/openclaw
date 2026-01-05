@@ -134,17 +134,11 @@ void DeviceWidget::launchDeviceWindow() {
 
     showOverlay("设备控制中");
 
-    auto tab = MainWindow::getInstance()->getTab();
-    auto videoQuality = tab.getVideoQuality();
-    connection->send("setVideoQuality", qMax(videoQuality, 3));
-
     auto videoFrameWidgetLocal = videoFrameWidget;
     auto placeholder = new QWidget();
 
     deviceWindow = new DeviceWindow(connection, deviceInfo);
     connect(deviceWindow, &QObject::destroyed, this, [=]() {
-        connection->send("setVideoQuality", qMin(videoQuality, 2));
-
         addVideoFrameWidget(videoFrameWidgetLocal);
 
         deviceInfo->geometry = deviceWindow->geometry();

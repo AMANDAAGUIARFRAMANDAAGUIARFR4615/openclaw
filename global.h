@@ -20,5 +20,5 @@ namespace Config {
 
     const int SERVER_PORT = 9000;
 
-    const QString VERSION = "1.3.2";
+    const QString VERSION = "1.3.3";
 }

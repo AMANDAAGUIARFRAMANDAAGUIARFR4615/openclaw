@@ -66,6 +66,9 @@ protected:
     {
         QVideoWidget::resizeEvent(event);
 
+        if (event->size().width() == 0 || event->size().height() == 0)
+            return;
+
         // 宽度保持 16 字节对齐（很多编码器的硬性要求）
         int alignedWidth = (event->size().width() + 15) & ~15;
         // 使用 long long 防止乘法溢出，最后转回 int
@@ -79,6 +82,7 @@ protected:
         alignedHeight *= devicePixelRatioF();
 
         auto tab = MainWindow::getInstance()->getTab();
+        auto videoFps = tab.getVideoFps();
         auto videoQuality = tab.getVideoQuality();
 
         // 取宽高中较小的一边作为分辨率基准 (例如 1280x720 -> 720)
@@ -114,7 +118,7 @@ protected:
         connection->send("videoSettings", QJsonObject({
             {"width", qMin(alignedWidth, alignedHeight)},
             {"height", qMax(alignedWidth, alignedHeight)},
-            {"fps", videoQuality == 1 ? 1 : 30},
+            {"fps", QList<float>{ 1, 0.2f, 1, 15, 30 }[videoFps]},
             {"quality", videoQuality}
         }));
     }

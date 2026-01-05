@@ -19,6 +19,7 @@ public:
     void setSourceDevice(QIODevice *device, const QUrl &sourceUrl = QUrl());
 
     void addVideoFrameWidget(VideoFrameWidget* videoFrameWidget);
+    VideoFrameWidget* getVideoFrameWidget() { return videoFrameWidget; }
 
     virtual QByteArray grabFrame();
 

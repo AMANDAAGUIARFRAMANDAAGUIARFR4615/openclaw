@@ -18,12 +18,14 @@ public:
         QString name;
         int scale = 100;
         std::optional<int> isLandscape;
+        std::optional<int> videoFps;
         std::optional<int> videoQuality;
         std::optional<int> connectionMethod;
         std::optional<int> autoScanLANDevices;
         std::optional<int> autoConnectUSBDevices;
 
         int getIsLandscape() { return isLandscape.value_or(AppSettingsDialog::getInstance()->getValue("isLandscape")); }
+        int getVideoFps() { return videoFps.value_or(AppSettingsDialog::getInstance()->getValue("videoFps")); }
         int getVideoQuality() { return videoQuality.value_or(AppSettingsDialog::getInstance()->getValue("videoQuality")); }
         int getConnectionMethod() { return connectionMethod.value_or(AppSettingsDialog::getInstance()->getValue("connectionMethod")); }
         int getAutoScanLANDevices() { return autoScanLANDevices.value_or(AppSettingsDialog::getInstance()->getValue("autoScanLANDevices")); }
@@ -41,6 +43,11 @@ public:
                 isLandscape = settings->value("isLandscape").toInt();
             else
                 isLandscape = std::nullopt;
+
+            if (settings->contains("videoFps"))
+                videoFps = settings->value("videoFps").toInt(); 
+            else
+                videoFps = std::nullopt;
 
             if (settings->contains("videoQuality"))
                 videoQuality = settings->value("videoQuality").toInt(); 
@@ -74,6 +81,11 @@ public:
                 settings->setValue("isLandscape", isLandscape.value());
             else
                 settings->remove("isLandscape");
+
+            if (videoFps.has_value())
+                settings->setValue("videoFps", videoFps.value());
+            else
+                settings->remove("videoFps");
 
             if (videoQuality.has_value())
                 settings->setValue("videoQuality", videoQuality.value());
