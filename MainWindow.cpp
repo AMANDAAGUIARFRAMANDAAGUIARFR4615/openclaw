@@ -119,7 +119,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         }
 
         if (key == "videoFps" || key == "videoQuality") {
-            syncVideoQualityToDevices();
+            syncVideoSettingsToDevices();
             return;
         }
     });
@@ -781,17 +781,13 @@ void MainWindow::addOptionMenu(QMenu* parent, const QString& title, const QStrin
     }
 }
 
-void MainWindow::syncVideoQualityToDevices()
+void MainWindow::syncVideoSettingsToDevices()
 {
     const auto& devices = getDeviceWidgets();
     for (const auto& device : devices) {
-        const auto& size = device->size();
-        auto event = new QResizeEvent(size, size);
-
-        if (device->getDeviceWindow())
-            qApp->postEvent(device->getDeviceWindow()->getVideoFrameWidget(), event);
-        else
-            qApp->postEvent(device->getVideoFrameWidget(), event);
+        auto videoFrameWidget = device->getDeviceWindow() ? device->getDeviceWindow()->getVideoFrameWidget() : device->getVideoFrameWidget();
+        const auto& size = videoFrameWidget->size();
+        qApp->postEvent(videoFrameWidget, new QResizeEvent(size, size));
     }
 }
 
@@ -1038,7 +1034,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
                 saveTabs(index);
 
                 if (tabWidget->currentIndex() == index)
-                    syncVideoQualityToDevices();
+                    syncVideoSettingsToDevices();
             });
         }
         else if (text == "视频清晰度") {
@@ -1047,7 +1043,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
                 saveTabs(index);
 
                 if (tabWidget->currentIndex() == index)
-                    syncVideoQualityToDevices();
+                    syncVideoSettingsToDevices();
             });
         }
         else if (text == "连接方式") {

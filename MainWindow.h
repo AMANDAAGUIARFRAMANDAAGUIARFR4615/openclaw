@@ -45,7 +45,7 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     void addOptionMenu(QMenu* parent, const QString& title, const QStringList& items, std::optional<int>* targetVar, std::function<void()> onChanged);
-    void syncVideoQualityToDevices();
+    void syncVideoSettingsToDevices();
     void relayoutDevices();
     void onTabMoved(int fromIndex, int toIndex);
     void showTabBarContextMenu(const QPoint &pos);
