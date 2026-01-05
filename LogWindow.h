@@ -13,6 +13,7 @@
 #include <QClipboard>
 #include <QPainter>
 #include <QPixmap>
+#include <QLineEdit>
 #include <magic_enum/magic_enum.hpp>
 
 class LogWindow : public QTextBrowser
@@ -22,6 +23,35 @@ public:
     explicit LogWindow(QWidget *parent = nullptr) : QTextBrowser(parent)
     {
         instance = this;
+
+        searchEdit = new QLineEdit(this);
+        searchEdit->setPlaceholderText("🔍 搜索日志...");
+        searchEdit->setClearButtonEnabled(true);
+        searchEdit->setContentsMargins(5, 5, 5, 0);
+        searchEdit->setStyleSheet(R"(
+            QLineEdit {
+                padding: 8px 15px;
+                border: 1px solid #E0E0E0;
+                border-radius: 18px;
+                background-color: #F5F7FA;
+                font-size: 14px;
+                color: #333;
+                selection-background-color: #007AFF;
+            }
+            QLineEdit:focus {
+                border: 1px solid #007AFF;
+                background-color: #FFFFFF;
+            }
+        )");
+        // 设置视口顶部边距，防止文字被搜索框遮挡
+        setViewportMargins(0, 38, 0, 0);
+
+        connect(searchEdit, &QLineEdit::textChanged, this, [this](const QString &text) {
+            clear();
+            for (const QString &msg : allLogs) {
+                appendLog(msg);
+            }
+        });
 
         const auto& filePath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/app_log.txt";
 
@@ -59,6 +89,11 @@ public:
     }
 
 protected:
+    void resizeEvent(QResizeEvent *event) override {
+        QTextBrowser::resizeEvent(event);
+        searchEdit->setGeometry(0, 0, width(), 40);
+    }
+
     void keyPressEvent(QKeyEvent *event) override {
         if (event->key() == Qt::Key_Escape)
             close();
@@ -106,10 +141,14 @@ protected:
     QFile logFile;
     bool showOnlyErrors = false;
     QStringList allLogs;
+    QLineEdit *searchEdit;
 
     void appendLog(const QString& message)
     {
-        if (!showOnlyErrors || message.contains("color:red"))
+        bool matchError = !showOnlyErrors || message.contains("color:red");
+        bool matchSearch = searchEdit->text().isEmpty() || message.contains(searchEdit->text(), Qt::CaseInsensitive);
+
+        if (matchError && matchSearch)
             append(message);
     }
 };
