@@ -143,7 +143,7 @@ void DeviceWidget::launchDeviceWindow() {
 
     deviceWindow = new DeviceWindow(connection, deviceInfo);
     connect(deviceWindow, &QObject::destroyed, this, [=]() {
-        connection->send("setVideoQuality", videoQuality);
+        connection->send("setVideoQuality", qMin(videoQuality, 2));
 
         addVideoFrameWidget(videoFrameWidgetLocal);
 

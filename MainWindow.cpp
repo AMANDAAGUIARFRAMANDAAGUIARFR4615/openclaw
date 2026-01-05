@@ -472,8 +472,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     connect(tabBar, &QTabBar::currentChanged, [=](int index) {
         qDebugEx() << "onTabChanged" << index;
 
-        syncVideoQualityToDevices();
-
         auto widget = tabWidget->currentWidget();
         auto layout = widget->layout();
         if (!layout) {
@@ -773,9 +771,12 @@ void MainWindow::syncVideoQualityToDevices()
 {
     auto tab = getTab();
     auto videoQuality = tab.getVideoQuality();
-    const auto& devices = getDevices();
+    const auto& devices = getDeviceWidgets();
     for (const auto& device : devices) {
-        device->connection->send("setVideoQuality", videoQuality);
+        if (device->getDeviceWindow())
+            device->connection->send("setVideoQuality", qMax(videoQuality, 3));
+        else
+            device->connection->send("setVideoQuality", qMin(videoQuality, 2));
     }
 }
 
@@ -824,6 +825,8 @@ void MainWindow::addItem(DeviceConnection* connection)
     }
 
     auto player = new DeviceWidget(connection, deviceInfo);
+    auto videoQuality = getTab().getVideoQuality();
+    connection->send("setVideoQuality", qMin(videoQuality, 2));
     auto ipLabel = player->findChild<QLabel*>("ipLabel");
 
     auto device = new LiveStreamDevice(player);
