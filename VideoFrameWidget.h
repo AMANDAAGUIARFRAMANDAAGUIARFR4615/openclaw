@@ -2,6 +2,7 @@
 
 #include "Logger.h"
 #include "DeviceConnection.h"
+#include "MainWindow.h"
 #include <QMediaPlayer>
 #include <QVideoWidget>
 #include <QEvent>
@@ -81,11 +82,14 @@ protected:
         // 视频编码通常要求宽高至少是 2 的倍数，奇数高度会导致崩溃或花屏
         alignedHeight = alignedHeight & ~1;
 
+        auto tab = MainWindow::getInstance()->getTab();
+        auto videoQuality = tab.getVideoQuality();
+
         connection->send("videoSettings", QJsonObject({
-            {"width", alignedWidth},
-            {"height", alignedHeight},
-            {"fps", 0.2},
-            {"quality", 2}
+            {"width", qMin(alignedWidth, alignedHeight)},
+            {"height", qMax(alignedWidth, alignedHeight)},
+            {"fps", videoQuality == 0 ? 1 : 30},
+            {"quality", videoQuality}
         }));
     }
 
