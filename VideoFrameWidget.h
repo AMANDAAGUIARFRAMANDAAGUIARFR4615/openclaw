@@ -75,6 +75,9 @@ protected:
         // 视频编码通常要求宽高至少是 2 的倍数，奇数高度会导致崩溃或花屏
         alignedHeight = alignedHeight & ~1;
 
+        alignedWidth *= devicePixelRatioF();
+        alignedHeight *= devicePixelRatioF();
+
         auto tab = MainWindow::getInstance()->getTab();
         auto videoQuality = tab.getVideoQuality();
 
@@ -111,7 +114,7 @@ protected:
         connection->send("videoSettings", QJsonObject({
             {"width", qMin(alignedWidth, alignedHeight)},
             {"height", qMax(alignedWidth, alignedHeight)},
-            {"fps", videoQuality == 0 ? 1 : 30},
+            {"fps", videoQuality == 1 ? 1 : 30},
             {"quality", videoQuality}
         }));
     }

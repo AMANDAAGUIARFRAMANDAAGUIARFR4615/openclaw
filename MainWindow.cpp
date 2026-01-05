@@ -46,6 +46,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 {
     setMinimumSize(800, 600);
 
+    qreal dpr = devicePixelRatioF();
+
+    qDebugEx() << "Device Pixel Ratio:" << dpr;
+
+    if (dpr > 1.0)
+        qDebugEx() << "这是高清屏 (Retina/High-DPI)";
+    else
+        qDebugEx() << "这是普通屏幕";
+
+    // 通常 Apple Retina 屏是 2.0，Windows 高分屏可能是 1.25, 1.5, 1.75 等
+    if (dpr >= 2.0)
+        qDebugEx() << "这是类似 Retina 级别的超高清屏";
+
     QSize screenSize = qApp->primaryScreen()->availableSize();
     resize(settings->value("mainWindowSize", screenSize * 0.8).toSize());
 
