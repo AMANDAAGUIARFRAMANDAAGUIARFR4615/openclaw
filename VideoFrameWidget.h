@@ -1,18 +1,18 @@
 #pragma once
 
 #include "Logger.h"
+#include "DeviceConnection.h"
 #include <QMediaPlayer>
 #include <QVideoWidget>
 #include <QEvent>
+#include <QResizeEvent>
 
 class VideoFrameWidget : public QVideoWidget
 {
     Q_OBJECT
 
 public:
-    explicit VideoFrameWidget(QWidget *parent = nullptr) 
-        : QVideoWidget(parent),
-          mediaPlayer(new QMediaPlayer(this))
+    explicit VideoFrameWidget(DeviceConnection* connection, QWidget *parent = nullptr) : connection(connection), QVideoWidget(parent), mediaPlayer(new QMediaPlayer(this))
     {
         mediaPlayer->setVideoOutput(this);
         mediaPlayer->setAudioOutput(nullptr);
@@ -60,4 +60,34 @@ protected:
 
         return nullptr;
     }
+
+    void resizeEvent(QResizeEvent *event) override
+    {
+        QVideoWidget::resizeEvent(event);
+
+        // 宽度保持 16 字节对齐（很多编码器的硬性要求）
+        int alignedWidth = (event->size().width() + 15) & ~15;
+
+        QSize sourceSize = frameSize(); 
+        
+        int alignedHeight = event->size().height();
+
+        if (!sourceSize.isEmpty()) {
+            // 使用 long long 防止乘法溢出，最后转回 int
+            alignedHeight = (int)((long long)alignedWidth * sourceSize.height() / sourceSize.width());
+        }
+
+        // 高度强制设为偶数 (对齐到 2)
+        // 视频编码通常要求宽高至少是 2 的倍数，奇数高度会导致崩溃或花屏
+        alignedHeight = alignedHeight & ~1;
+
+        connection->send("videoSettings", QJsonObject({
+            {"width", alignedWidth},
+            {"height", alignedHeight},
+            {"fps", 0.2},
+            {"quality", 2}
+        }));
+    }
+
+    DeviceConnection* connection;
 };

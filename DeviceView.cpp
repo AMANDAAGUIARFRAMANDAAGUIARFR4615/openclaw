@@ -88,7 +88,7 @@ DeviceView::~DeviceView()
 
 void DeviceView::setSourceDevice(QIODevice *device, const QUrl &sourceUrl)
 {
-    addVideoFrameWidget(new VideoFrameWidget(this));
+    addVideoFrameWidget(new VideoFrameWidget(connection, this));
 
     auto mediaPlayer = videoFrameWidget->mediaPlayer;
     mediaPlayer->setSourceDevice(device);
