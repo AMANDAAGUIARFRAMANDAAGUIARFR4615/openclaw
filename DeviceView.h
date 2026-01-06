@@ -21,8 +21,6 @@ public:
     void addVideoFrameWidget(VideoFrameWidget* videoFrameWidget);
     VideoFrameWidget* getVideoFrameWidget() { return videoFrameWidget; }
 
-    virtual QByteArray grabFrame();
-
     DeviceConnection* const connection;
     DeviceInfo* const deviceInfo;
 

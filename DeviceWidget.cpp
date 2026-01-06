@@ -95,7 +95,7 @@ DeviceWidget::~DeviceWidget()
 
 QByteArray DeviceWidget::grabFrame()
 {
-    return deviceWindow ? deviceWindow->grabFrame() : DeviceView::grabFrame();
+    return deviceWindow ? deviceWindow->getVideoFrameWidget()->grabFrame() : videoFrameWidget->grabFrame();
 }
 
 bool DeviceWidget::event(QEvent *event)

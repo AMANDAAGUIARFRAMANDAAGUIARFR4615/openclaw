@@ -11,7 +11,7 @@ public:
     explicit DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo);
     ~DeviceWidget();
 
-    QByteArray grabFrame() override;
+    QByteArray grabFrame();
 
     DeviceWindow* getDeviceWindow() { return deviceWindow; }
 

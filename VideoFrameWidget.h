@@ -7,6 +7,8 @@
 #include <QGraphicsVideoItem>
 #include <QMediaPlayer>
 #include <QResizeEvent>
+#include <QBuffer>
+#include <QPainter>
 
 class VideoFrameWidget : public QGraphicsView
 {
@@ -18,7 +20,7 @@ public:
         auto scene = new QGraphicsScene(this);
         setScene(scene);
 
-        auto videoItem = new QGraphicsVideoItem();
+        videoItem = new QGraphicsVideoItem();
         scene->addItem(videoItem);
 
         setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -50,6 +52,27 @@ public:
         connect(mediaPlayer, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error error, const QString &errorString) {
             qCriticalEx() << "errorOccurred" << error << errorString;
         });
+    }
+
+    QByteArray grabFrame()
+    {
+        QRectF rect = videoItem->boundingRect();
+        if (rect.isEmpty())
+            return QByteArray();
+
+        QImage image(rect.size().toSize(), QImage::Format_RGB32);
+        image.fill(Qt::black);
+
+        QPainter painter(&image);
+        scene()->render(&painter, image.rect(), videoItem->sceneBoundingRect());
+        painter.end();
+
+        QByteArray byteArray;
+        QBuffer buffer(&byteArray);
+        buffer.open(QIODevice::WriteOnly);
+        image.save(&buffer, "JPG");
+
+        return byteArray;
     }
 
     void resizeEvent(QResizeEvent *event) override
@@ -115,4 +138,7 @@ public:
 
     QMediaPlayer* const mediaPlayer;
     DeviceConnection* connection;
+
+private:
+    QGraphicsVideoItem* videoItem;
 };

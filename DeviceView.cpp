@@ -133,33 +133,6 @@ void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
         hideOverlay();
 }
 
-QByteArray DeviceView::grabFrame()
-{
-    if (!videoFrameWidget)
-        return nullptr;
-
-    QByteArray byteArray;
-    QBuffer buffer(&byteArray);
-    buffer.open(QIODevice::WriteOnly);
-
-    auto sink = videoFrameWidget->videoSink();
-
-    if (!sink) {
-        qDebugEx() << "Error: No video sink found.";
-        return nullptr;
-    }
-
-    auto frame = sink->videoFrame();
-
-    if (!frame.isValid()) {
-        qDebugEx() << "Error: Current frame is invalid (maybe video is stopped?).";
-        return nullptr;
-    }
-
-    frame.toImage().save(&buffer, "JPG");
-    return byteArray;
-}
-
 void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 {
     auto windowMenu = AppSettingsDialog::getInstance()->getEnabledList("windowMenu");
