@@ -1,76 +1,88 @@
-#pragma once
+#ifndef LIVESTREAMDEVICE_H
+#define LIVESTREAMDEVICE_H
 
-#include "Logger.h"
 #include <QIODevice>
-#include <QMutex>
-#include <QWaitCondition>
 #include <QByteArray>
-#include <QTcpSocket>
-#include <QDateTime>
+#include <QMutex>
+#include <QMutexLocker>
 
-class LiveStreamDevice : public QIODevice {
+// 类名改为 LiveStreamDevice，更加贴切
+class LiveStreamDevice : public QIODevice
+{
     Q_OBJECT
 public:
-    explicit LiveStreamDevice(QObject *parent = nullptr) : QIODevice(parent) {}
-
-    ~LiveStreamDevice() {
-        QMutexLocker locker(&m_mutex);
-        m_stopped = true;
-        m_dataAvailable.wakeAll();
+    explicit LiveStreamDevice(QObject *parent = nullptr) : QIODevice(parent)
+    {
+        // 初始化时必须打开设备，设为读写模式
+        open(QIODevice::ReadWrite);
     }
 
-    bool isSequential() const override { return true; }
+    // ---------------------------------------------------------
+    // 供 Socket 调用的核心函数：写入数据
+    // ---------------------------------------------------------
+    void appendData(const QByteArray &data)
+    {
+        if (data.isEmpty()) return;
 
-    void appendData(const QByteArray &data) {
+        {
+            QMutexLocker locker(&m_mutex);
+            m_buffer.append(data);
+        } // 锁在这里释放，避免 emit 信号时死锁
+
+        // 极其重要：告诉 QMediaPlayer 有新数据到了，赶紧来读
+        emit readyRead();
+    }
+
+    // ---------------------------------------------------------
+    // QIODevice 必须重写的虚函数
+    // ---------------------------------------------------------
+
+    // QMediaPlayer 通过此函数读取数据
+    qint64 readData(char *data, qint64 maxlen) override
+    {
         QMutexLocker locker(&m_mutex);
-        m_buffer.append(data);
-
-        quint64 sec = QDateTime::currentSecsSinceEpoch();
-        if (sec != m_lastSec) {
-            m_prevSecBytes = m_curSecBytes;
-            m_curSecBytes = 0;
-            m_lastSec = sec;
+        
+        qint64 len = qMin((qint64)m_buffer.size(), maxlen);
+        
+        if (len > 0) {
+            // 将内部 buffer 的数据拷贝到播放器提供的指针中
+            memcpy(data, m_buffer.constData(), len);
+            // 移除已读取的数据，像队列一样先进先出
+            m_buffer.remove(0, len);
         }
-        m_curSecBytes += data.size();
-
-        m_dataAvailable.wakeAll();
+        
+        return len;
     }
 
-    qint64 speedBps() const {
+    // 这里通常用不到 writeData，因为数据来源是 appendData
+    // 但作为 QIODevice，还是实现一下标准接口
+    qint64 writeData(const char *data, qint64 len) override
+    {
+        QByteArray tmp(data, len);
+        appendData(tmp);
+        return len;
+    }
+
+    // 告诉播放器当前有多少数据可读
+    qint64 bytesAvailable() const override
+    {
         QMutexLocker locker(&m_mutex);
-        return m_prevSecBytes;
+        return m_buffer.size() + QIODevice::bytesAvailable();
     }
 
-protected:
-    qint64 readData(char *data, qint64 maxSize) override {
-        QMutexLocker locker(&m_mutex);
-
-        while (m_buffer.isEmpty() && !m_stopped) {
-            m_dataAvailable.wait(&m_mutex);
-        }
-
-        if (m_stopped)
-            return -1;
-
-        qint64 bytesToRead = qMin(maxSize, qint64(m_buffer.size()));
-        memcpy(data, m_buffer.constData(), bytesToRead);
-        m_buffer.remove(0, bytesToRead);
-        return bytesToRead;
-    }
-
-    qint64 writeData(const char *, qint64) override {
-        return -1;
+    // 声明这是顺序流（不可 seek，不可倒带）
+    bool isSequential() const override
+    {
+        return true;
     }
 
     bool atEnd() const override {
         return false;
     }
 
+private:
     QByteArray m_buffer;
-    mutable QMutex m_mutex;
-    QWaitCondition m_dataAvailable;
-    qint64 m_curSecBytes = 0;
-    qint64 m_prevSecBytes = 0;
-    quint64 m_lastSec = 0;
-    bool m_stopped = false;
+    mutable QMutex m_mutex; // 加上锁，因为播放器的读取可能在独立线程
 };
+
+#endif // LIVESTREAMDEVICE_H
