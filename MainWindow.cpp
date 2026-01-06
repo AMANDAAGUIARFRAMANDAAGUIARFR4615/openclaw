@@ -428,7 +428,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     auto controlLayout = new QHBoxLayout(controlBar);
 
     zoomSlider = new QSlider(Qt::Horizontal, controlBar);
-    zoomSlider->setRange(50, 500);
+    zoomSlider->setRange(20, 500);
 
     auto zoomOutBtn = new QToolButton(controlBar);
     zoomOutBtn->setIcon(EmojiIconProvider::createIcon("➖")); 
