@@ -295,10 +295,11 @@ protected:
             tableWidget->setItem(i, 2, new QTableWidgetItem(deviceInfo->model));
 
             auto expireAt = QDateTime::fromMSecsSinceEpoch(deviceInfo->expireAt.get()).toString("yyyy-MM-dd HH:mm:ss");
-            if (deviceInfo->expireAt.get() > Account::getInstance()->loginTime.get() + elapsedTimer->elapsed())
-                tableWidget->setItem(i, 3, new QTableWidgetItem(expireAt));
-            else
-                tableWidget->setItem(i, 3, new QTableWidgetItem(QString("<font color='red'>%1</font>").arg(expireAt)));
+            auto expireItem = new QTableWidgetItem(expireAt);
+            tableWidget->setItem(i, 3, expireItem);
+
+            if (deviceInfo->expireAt.get() < Account::getInstance()->loginTime.get() + elapsedTimer->elapsed())
+                expireItem->setForeground(QBrush(QColor("#d32f2f")));
         }
 
         tableWidget->blockSignals(false);
