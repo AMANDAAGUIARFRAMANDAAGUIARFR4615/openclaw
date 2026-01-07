@@ -9,6 +9,7 @@
 #include <QResizeEvent>
 #include <QBuffer>
 #include <QPainter>
+#include <QMouseEvent>
 
 class VideoFrameWidget : public QGraphicsView
 {
@@ -17,28 +18,29 @@ class VideoFrameWidget : public QGraphicsView
 public:
     explicit VideoFrameWidget(DeviceConnection* connection, QWidget *parent = nullptr) : connection(connection), QGraphicsView(parent), mediaPlayer(new QMediaPlayer(this))
     {
+        setAcceptDrops(true);
+        
         auto scene = new QGraphicsScene(this);
+        scene->setBackgroundBrush(Qt::black);
         setScene(scene);
 
         videoItem = new QGraphicsVideoItem();
         scene->addItem(videoItem);
 
+        setFrameShape(QFrame::NoFrame);
         setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        
-        setFrameShape(QFrame::NoFrame);
-
-        setBackgroundBrush(Qt::black);
-
         setAlignment(Qt::AlignCenter);
-
-        connect(videoItem, &QGraphicsVideoItem::nativeSizeChanged, this, [=](const QSizeF &size){
-            videoItem->setSize(size);
-            fitInView(videoItem, Qt::KeepAspectRatio);
-        });
+        
+        setMouseTracking(true); 
 
         mediaPlayer->setVideoOutput(videoItem);
         mediaPlayer->setAudioOutput(nullptr);
+
+        connect(videoItem, &QGraphicsVideoItem::nativeSizeChanged, this, [=](const QSizeF &size){
+            videoItem->setSize(size);
+            fitInView(videoItem, Qt::KeepAspectRatio); 
+        });
 
         connect(mediaPlayer, &QMediaPlayer::mediaStatusChanged, this, [=](QMediaPlayer::MediaStatus status) {
             qDebugEx() << "Media Status Changed: " << status;
@@ -75,12 +77,38 @@ public:
         return byteArray;
     }
 
+    QMediaPlayer* const mediaPlayer;
+
+protected:
+    void dragEnterEvent(QDragEnterEvent *event) override {
+        event->ignore();
+    }
+
+    void dragMoveEvent(QDragMoveEvent *event) override {
+        event->ignore();
+    }
+
+    void dropEvent(QDropEvent *event) override {
+        event->ignore();
+    }
+
+    void mousePressEvent(QMouseEvent *event) override {
+        event->ignore(); 
+    }
+
+    void mouseMoveEvent(QMouseEvent *event) override {
+        event->ignore();
+    }
+
+    void mouseReleaseEvent(QMouseEvent *event) override {
+        event->ignore();
+    }
+    
     void resizeEvent(QResizeEvent *event) override
     {
         QGraphicsView::resizeEvent(event);
 
-        if (event->size().width() == 0 || event->size().height() == 0)
-            return;
+        fitInView(videoItem, Qt::KeepAspectRatio);
 
         // 宽度保持 16 字节对齐（很多编码器的硬性要求）
         int alignedWidth = (event->size().width() + 15) & ~15;
@@ -136,7 +164,6 @@ public:
         }));
     }
 
-    QMediaPlayer* const mediaPlayer;
     DeviceConnection* connection;
 
 private:
