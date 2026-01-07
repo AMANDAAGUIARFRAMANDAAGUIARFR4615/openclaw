@@ -2,6 +2,7 @@
 
 #include "Logger.h"
 #include "MainWindow.h"
+#include "EventHub.h"
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QGraphicsVideoItem>
@@ -48,6 +49,17 @@ public:
         connect(mediaPlayer, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error error, const QString &errorString) {
             qCriticalEx() << "errorOccurred" << error << errorString;
         });
+
+        EventHub::on(this, "orientation", [this](const QJsonValue &data, DeviceConnection* connection) {
+            if (this->connection != connection)
+                return;
+
+            resizeEvent(new QResizeEvent(size(), size()));
+        });
+    }
+
+    ~VideoFrameWidget() {
+        EventHub::off(this, "orientation");
     }
 
     QByteArray grabFrame()
@@ -102,9 +114,12 @@ protected:
     {
         QGraphicsView::resizeEvent(event);
 
+        bool isPortrait = connection->deviceInfo->orientation == 1 || connection->deviceInfo->orientation == 2;
+        auto aspectRatio = isPortrait ? (double)connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth : (double)connection->deviceInfo->screenWidth / connection->deviceInfo->screenHeight;
+
         // 宽度保持 16 字节对齐（很多编码器的硬性要求）
         int alignedWidth = (event->size().width() + 15) & ~15;
-        int alignedHeight = qRound((double)alignedWidth * connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth);
+        int alignedHeight = qRound((double)alignedWidth * aspectRatio);
 
         // 高度强制设为偶数 (对齐到 2)
         // 视频编码通常要求宽高至少是 2 的倍数，奇数高度会导致崩溃或花屏
@@ -142,7 +157,7 @@ protected:
         QSize containerSize = event->size();
         QSize sourceSize(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight);
 
-        QSizeF targetSize = sourceSize.scaled(containerSize, Qt::KeepAspectRatio);
+        QSizeF targetSize = (isPortrait ? sourceSize : sourceSize.transposed()).scaled(containerSize, Qt::KeepAspectRatio);
 
         videoItem->setSize(targetSize);
 
