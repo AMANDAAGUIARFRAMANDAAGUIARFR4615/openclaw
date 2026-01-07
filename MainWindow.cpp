@@ -527,8 +527,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
             }
         }
 
-        connection->deviceInfo = new DeviceInfo(connection, data.toObject());
-        addItem(connection);
+        // for (int i = 0; i < 100; i++) {
+            connection->deviceInfo = new DeviceInfo(connection, data.toObject());
+            addItem(connection);
+        // }
     });
 
     EventHub::on(this, "disconnected", [this](const QJsonValue &data, DeviceConnection* connection) {

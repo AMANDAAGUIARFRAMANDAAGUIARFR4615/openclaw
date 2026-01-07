@@ -25,13 +25,13 @@ public:
         setScene(scene);
 
         videoItem = new QGraphicsVideoItem();
-        videoItem->setAspectRatioMode(Qt::AspectRatioMode::IgnoreAspectRatio);
+        videoItem->setAspectRatioMode(Qt::AspectRatioMode::KeepAspectRatio);
         scene->addItem(videoItem);
 
         setFrameShape(QFrame::NoFrame);
         setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        setAlignment(Qt::AlignCenter);
+        setAlignment(Qt::AlignLeft | Qt::AlignTop);
         
         setMouseTracking(true); 
 
@@ -104,7 +104,6 @@ protected:
 
         // 宽度保持 16 字节对齐（很多编码器的硬性要求）
         int alignedWidth = (event->size().width() + 15) & ~15;
-        // 使用 long long 防止乘法溢出，最后转回 int
         int alignedHeight = qRound((double)alignedWidth * connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth);
 
         // 高度强制设为偶数 (对齐到 2)
@@ -121,27 +120,15 @@ protected:
         int minAllowed = 1;
         int maxAllowed = 4;
 
-        // --- 设定最大画质限制 (防止窗口太小浪费带宽) ---
-        if (minResolution < 180)
-            maxAllowed = 1; // 窗口极小，强制最低画质
-        else if (minResolution < 320)
-            maxAllowed = 2; // 窗口较小，限制中等画质
-        else if (minResolution < 480)
-            maxAllowed = 3; // 窗口一般，限制高清
-        else
-            maxAllowed = 4; // 窗口很大，允许超清
+        if (minResolution < 180) maxAllowed = 1;
+        else if (minResolution < 320) maxAllowed = 2;
+        else if (minResolution < 480) maxAllowed = 3;
+        else maxAllowed = 4;
 
-        // --- 设定最小画质限制 (防止窗口太大导致模糊) ---
-        // 注意：这里需要确保 min <= max，否则逻辑会冲突
-        // 只有当窗口真的很大时，才强制提升最低画质
-        if (minResolution >= 1080)
-            minAllowed = 3; // 大屏下，至少要 3 档，否则全是马赛克
-        else if (minResolution >= 720)
-            minAllowed = 2; // 中屏下，至少要 2 档
+        if (minResolution >= 1080) minAllowed = 3;
+        else if (minResolution >= 720) minAllowed = 2;
 
-        // 确保 min 不会超过 max (以 max 为主，即优先保证不卡顿/不浪费)
-        if (minAllowed > maxAllowed)
-            minAllowed = maxAllowed;
+        if (minAllowed > maxAllowed) minAllowed = maxAllowed;
 
         videoQuality = qBound(minAllowed, videoQuality, maxAllowed);
 
@@ -152,7 +139,19 @@ protected:
             {"quality", videoQuality}
         }));
 
-        videoItem->setSize(QSize(event->size().width(), qRound((double)event->size().width() * connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth)));
+        QSize containerSize = event->size();
+        QSize sourceSize(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight);
+
+        QSizeF targetSize = sourceSize.scaled(containerSize, Qt::KeepAspectRatio);
+
+        videoItem->setSize(targetSize);
+
+        scene()->setSceneRect(0, 0, containerSize.width(), containerSize.height());
+
+        qreal x = (containerSize.width() - targetSize.width()) / 2.0;
+        qreal y = (containerSize.height() - targetSize.height()) / 2.0;
+        
+        videoItem->setPos(x, y);
     }
 
     DeviceConnection* connection;
