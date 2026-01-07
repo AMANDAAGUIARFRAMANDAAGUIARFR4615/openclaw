@@ -545,7 +545,7 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
             const auto& array = content.split("\n");
             const auto& devices = MainWindow::getInstance()->getDevices();
             if (array.size() != devices.size()) {
-                new ToastWidget("您复制的文本行数和设备数不匹配", this);
+                new ToastWidget(QString("您复制的%1行文本和%2台设备不匹配").arg(array.size()).arg(devices.size()), this);
                 return;
             }
 

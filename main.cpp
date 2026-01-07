@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 #ifdef QT_DEBUG
     app.setApplicationDisplayName("远控Pro测试版");
 #else
-    app.setApplicationDisplayName(QString("远控Pro[%1]").arg("1.3.2"));
+    app.setApplicationDisplayName(QString("远控Pro[%1]").arg(Config::VERSION));
 #endif
 
     QString dataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
