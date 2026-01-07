@@ -25,6 +25,7 @@ public:
         setScene(scene);
 
         videoItem = new QGraphicsVideoItem();
+        videoItem->setAspectRatioMode(Qt::AspectRatioMode::IgnoreAspectRatio);
         scene->addItem(videoItem);
 
         setFrameShape(QFrame::NoFrame);
@@ -37,17 +38,10 @@ public:
         mediaPlayer->setVideoOutput(videoItem);
         mediaPlayer->setAudioOutput(nullptr);
 
-        connect(videoItem, &QGraphicsVideoItem::nativeSizeChanged, this, [=](const QSizeF &size){
-            videoItem->setSize(size);
-            fitInView(videoItem, Qt::KeepAspectRatio); 
-        });
-
         connect(mediaPlayer, &QMediaPlayer::mediaStatusChanged, this, [=](QMediaPlayer::MediaStatus status) {
             qDebugEx() << "Media Status Changed: " << status;
             if (status == QMediaPlayer::LoadedMedia) {
                 qDebugEx() << "播放...";
-                // 视频加载好后，强制刷新一次视图适应
-                fitInView(videoItem, Qt::KeepAspectRatio);
             }
         });
 
@@ -108,19 +102,14 @@ protected:
     {
         QGraphicsView::resizeEvent(event);
 
-        fitInView(videoItem, Qt::KeepAspectRatio);
-
         // 宽度保持 16 字节对齐（很多编码器的硬性要求）
         int alignedWidth = (event->size().width() + 15) & ~15;
         // 使用 long long 防止乘法溢出，最后转回 int
-        int alignedHeight = (int)((long long)alignedWidth * connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth);
+        int alignedHeight = qRound((double)alignedWidth * connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth);
 
         // 高度强制设为偶数 (对齐到 2)
         // 视频编码通常要求宽高至少是 2 的倍数，奇数高度会导致崩溃或花屏
         alignedHeight = alignedHeight & ~1;
-
-        alignedWidth *= devicePixelRatioF();
-        alignedHeight *= devicePixelRatioF();
 
         auto tab = MainWindow::getInstance()->getTab();
         auto videoFps = tab.getVideoFps();
@@ -157,11 +146,13 @@ protected:
         videoQuality = qBound(minAllowed, videoQuality, maxAllowed);
 
         connection->send("videoSettings", QJsonObject({
-            {"width", qMin(alignedWidth, alignedHeight)},
-            {"height", qMax(alignedWidth, alignedHeight)},
+            {"width", qMin(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
+            {"height", qMax(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
             {"fps", QList<float>{ 1, 0.2f, 1, 15, 30 }[videoFps]},
             {"quality", videoQuality}
         }));
+
+        videoItem->setSize(QSize(event->size().width(), qRound((double)event->size().width() * connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth)));
     }
 
     DeviceConnection* connection;
