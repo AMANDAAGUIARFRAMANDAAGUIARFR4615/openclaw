@@ -89,7 +89,7 @@ public:
         QString connType = type == DeviceConnection::Usb ? "USB" : "WiFi";
         
         return QString(richText ? "<b>%1</b> <font color='#888888'>[%2]</font> — %3" : "%1 [%2] — %3")
-                .arg(deviceInfo->deviceName)
+                .arg(deviceInfo->deviceName + "✏️")
                 .arg(deviceInfo->model)
                 .arg(connType);
     }

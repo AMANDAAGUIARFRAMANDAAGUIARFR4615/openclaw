@@ -122,7 +122,7 @@ public:
     DeviceConnection* const connection;
     
     const QString deviceId;
-    const QString deviceName;
+    QString deviceName;
     const int videoPort;
     const int jbType;
     const QString localIp;

@@ -3,6 +3,7 @@
 #include "EventHub.h"
 #include "ToastWidget.h"
 #include "MainWindow.h"
+#include "ClickableLabel.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -10,6 +11,7 @@
 #include <QStyle>
 #include <QClipboard>
 #include <QMouseEvent>
+#include <QInputDialog>
 
 DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo): DeviceView(connection, deviceInfo)
 {
@@ -21,9 +23,21 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     topLayout->setContentsMargins(5, 0, 5, 0);
     topLayout->setSpacing(0);
 
-    auto deviceInfoLabel = new QLabel(connection->displayName(true), this);
+    auto deviceInfoLabel = new ClickableLabel(connection->displayName(true), this);
     deviceInfoLabel->setAlignment(Qt::AlignCenter);
     deviceInfoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    connect(deviceInfoLabel, &ClickableLabel::clicked, [=](){
+        bool ok;
+
+        QString newName = QInputDialog::getText(this, "重命名", "新名称：", QLineEdit::Normal, deviceInfo->deviceName, &ok);
+
+        if (ok) {
+            connection->send("deviceName", newName);
+            deviceInfo->deviceName = newName;
+            deviceInfoLabel->setText(connection->displayName(true));
+        }
+    });
 
     auto launchButton = new QPushButton(this);
     launchButton->setIcon(style()->standardIcon(QStyle::SP_TitleBarMaxButton));
