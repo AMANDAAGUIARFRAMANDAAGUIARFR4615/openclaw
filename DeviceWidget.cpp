@@ -3,7 +3,6 @@
 #include "EventHub.h"
 #include "ToastWidget.h"
 #include "MainWindow.h"
-#include "ClickableLabel.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -23,11 +22,13 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     topLayout->setContentsMargins(5, 0, 5, 0);
     topLayout->setSpacing(0);
 
-    auto deviceInfoLabel = new ClickableLabel(connection->displayName(true), this);
+    auto deviceInfoLabel = new QLabel(connection->displayName(true), this);
     deviceInfoLabel->setAlignment(Qt::AlignCenter);
     deviceInfoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    deviceInfoLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    deviceInfoLabel->setOpenExternalLinks(false);
 
-    connect(deviceInfoLabel, &ClickableLabel::clicked, [=](){
+    connect(deviceInfoLabel, &QLabel::linkActivated, [=](const QString &link){
         bool ok;
 
         QString newName = QInputDialog::getText(this, "重命名", "新名称：", QLineEdit::Normal, deviceInfo->deviceName, &ok);
@@ -46,7 +47,9 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     
     connect(launchButton, &QPushButton::clicked, this, &DeviceWidget::launchDeviceWindow);
 
+    topLayout->addStretch();
     topLayout->addWidget(deviceInfoLabel);
+    topLayout->addStretch();
     topLayout->addWidget(launchButton);
 
     auto ipLabel = new QLabel(connection->type == DeviceConnection::Usb ? "" : deviceInfo->localIp, this);
