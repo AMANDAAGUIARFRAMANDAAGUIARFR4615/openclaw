@@ -18,19 +18,30 @@ protected:
         bool isLeftButton = event->button() == Qt::LeftButton;
 
         if (item && !isCtrlPressed && isLeftButton) {
-            // 设置“当前项”（虚线框），但在第二个参数传入 NoUpdate。
-            // 这样 Qt 就只会把焦点移过去，而绝对不会改变该项的选中/变色状态。
+            // 设置当前焦点项，但不更新选中状态
             setCurrentItem(item, QItemSelectionModel::NoUpdate);
-
             emit itemPressed(item);
-
-            // 直接返回，不调用父类的 mousePressEvent。
-            // 这样就彻底拦截了 Qt 内部原本的“点击即选中”逻辑。
+            
+            // 拦截事件，阻止默认的“点击即选中”
             return; 
         }
 
-        // 其他情况（按了Ctrl、点了空白处、点了右键），走 Qt 默认逻辑
-        // 这样依然保留了 Ctrl+Click 多选、点击空白处取消选择等功能。
         QListWidget::mousePressEvent(event);
+    }
+
+    void mouseMoveEvent(QMouseEvent *event) override
+    {
+        bool isLeftButtonDown = event->buttons() & Qt::LeftButton;
+        bool isCtrlPressed = event->modifiers() & Qt::ControlModifier;
+
+        // 如果是 左键按住 且 没有按Ctrl
+        if (isLeftButtonDown && !isCtrlPressed) {
+            // 直接忽略该事件，防止触发父类的“拖动选中”或“框选”逻辑
+            // 这样鼠标移动就不会改变选中状态了
+            return;
+        }
+
+        // 其他情况（如按住Ctrl拖动、或者是为了启动拖拽操作），走默认逻辑
+        QListWidget::mouseMoveEvent(event);
     }
 };

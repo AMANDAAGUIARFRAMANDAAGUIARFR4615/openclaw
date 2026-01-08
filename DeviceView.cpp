@@ -424,6 +424,11 @@ bool DeviceView::event(QEvent *event)
         return true;
     }
 
+    if (mouseEvent->button() == Qt::LeftButton && (mouseEvent->modifiers() & Qt::ControlModifier)) {
+        event->ignore();
+        return true;
+    }
+
     int type = 0;
 
     switch (event->type())

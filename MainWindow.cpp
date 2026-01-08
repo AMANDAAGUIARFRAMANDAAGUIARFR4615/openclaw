@@ -16,6 +16,7 @@
 #include "LoginWidget.h"
 #include "AccountListDialog.h"
 #include "DeviceWindow.h"
+#include "ExplicitSelectionListWidget.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -46,19 +47,6 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTabWidget(this)), multiControlSwitchButton(new SwitchButton("同屏操作")), lineDispatcherSwitchButton(new SwitchButton("文本逐行分发"))
 {
     setMinimumSize(800, 600);
-
-    qreal dpr = devicePixelRatioF();
-
-    qDebugEx() << "Device Pixel Ratio:" << dpr;
-
-    if (dpr > 1.0)
-        qDebugEx() << "这是高清屏 (Retina/High-DPI)";
-    else
-        qDebugEx() << "这是普通屏幕";
-
-    // 通常 Apple Retina 屏是 2.0，Windows 高分屏可能是 1.25, 1.5, 1.75 等
-    if (dpr >= 2.0)
-        qDebugEx() << "这是类似 Retina 级别的超高清屏";
 
     QSize screenSize = qApp->primaryScreen()->availableSize();
     resize(settings->value("mainWindowSize", screenSize * 0.8).toSize());
@@ -467,7 +455,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
     splitter->addWidget(rightContainer);
 
-    deviceListWidget = new QListWidget(this);
+    deviceListWidget = new ExplicitSelectionListWidget(this);
     deviceListWidget->setViewMode(QListWidget::IconMode); // 图标模式（网格）
     deviceListWidget->setResizeMode(QListWidget::Adjust); // 随窗口自动调整换行
     deviceListWidget->setDragDropMode(QListWidget::NoDragDrop);
@@ -476,7 +464,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     QLocale chineseLocale(QLocale::Chinese, QLocale::AnyCountry);
     deviceListWidget->setLocale(chineseLocale);
     deviceListWidget->sortItems(Qt::AscendingOrder);
-    connect(deviceListWidget, &QListWidget::itemClicked, [this](QListWidgetItem *item) {
+    deviceListWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    connect(deviceListWidget, &QListWidget::itemPressed, [this](QListWidgetItem *item) {
         auto widget = deviceListWidget->itemWidget(item);
         widget->findChild<DeviceWidget*>()->setFocus();
     });
