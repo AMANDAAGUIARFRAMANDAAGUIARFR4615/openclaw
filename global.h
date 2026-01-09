@@ -5,10 +5,12 @@
 #include "WebSocketClient.h"
 #include <QSettings>
 #include <QElapsedTimer>
+#include <QNetworkAccessManager>
 
 extern QSettings* settings;
 extern WebSocketClient* webSocketClient;
 extern QElapsedTimer* elapsedTimer;
+extern QNetworkAccessManager* networkAccessManager;
 
 namespace Config {
 #ifdef QT_DEBUG
