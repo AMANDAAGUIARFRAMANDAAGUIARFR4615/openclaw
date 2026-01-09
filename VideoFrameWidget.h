@@ -114,6 +114,9 @@ protected:
     {
         QGraphicsView::resizeEvent(event);
 
+        if (!isVisible())
+            return;
+
         bool isPortrait = connection->deviceInfo->orientation == 1 || connection->deviceInfo->orientation == 2;
         auto aspectRatio = isPortrait ? (double)connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth : (double)connection->deviceInfo->screenWidth / connection->deviceInfo->screenHeight;
 
