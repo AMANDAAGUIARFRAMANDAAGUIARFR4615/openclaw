@@ -269,6 +269,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
                 if (dialog.exec() != QDialog::Accepted) return;
 
                 settings->setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
+                MainWindow::getInstance()->relayoutDevices();
             });
         }
     }

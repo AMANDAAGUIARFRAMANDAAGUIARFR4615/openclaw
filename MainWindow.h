@@ -30,6 +30,8 @@ public:
     BitMaskEditorDialog::Item& getTab() { return tabs[tabWidget->currentIndex()]; }
     void showSupportDialog();
 
+    void relayoutDevices();
+
     QTabWidget* const tabWidget;
 
     SwitchButton* const multiControlSwitchButton;
@@ -46,7 +48,6 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
     void addOptionMenu(QMenu* parent, const QString& title, const QStringList& items, std::optional<int>* targetVar, std::function<void()> onChanged);
     void syncVideoSettingsToDevices();
-    void relayoutDevices();
     void onTabMoved(int fromIndex, int toIndex);
     void showTabBarContextMenu(const QPoint &pos);
     void loadTabs();
