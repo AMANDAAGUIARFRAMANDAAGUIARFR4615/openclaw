@@ -688,7 +688,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
 
         menu.addAction("重命名", [=]() {
             bool ok;
-            auto name = QInputDialog::getText(this, "重命名", "请输入名称:", QLineEdit::Normal, "", &ok);
+            auto name = QInputDialog::getText(this, "重命名", "请输入名称:", QLineEdit::Normal, remotePath.section('/', -1), &ok);
             
             if (!ok || name.isEmpty())
                 return;
