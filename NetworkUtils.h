@@ -101,6 +101,9 @@ public:
                 if (ipStr.startsWith("169.254"))
                     continue;
 
+                if (ipStr.endsWith(".1"))
+                    continue;
+
                 ips.append(ipStr);
             }
         }
