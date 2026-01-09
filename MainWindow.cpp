@@ -469,6 +469,25 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
         auto widget = deviceListWidget->itemWidget(item);
         widget->findChild<DeviceWidget*>()->setFocus();
     });
+    connect(deviceListWidget->selectionModel(), &QItemSelectionModel::selectionChanged, this, [=](const QItemSelection &selected, const QItemSelection &deselected) {
+        // 1. 处理新被选中的项 (Selected)
+        for (const QModelIndex &index : selected.indexes()) {
+            auto player = index.data(Qt::UserRole).value<DeviceWidget*>();
+            if (player && !player->checkBox->isChecked()) {
+                const QSignalBlocker blocker(player->checkBox);
+                player->checkBox->setChecked(true);
+            }
+        }
+
+        // 2. 处理被取消选中的项 (Deselected)
+        for (const QModelIndex &index : deselected.indexes()) {
+            auto player = index.data(Qt::UserRole).value<DeviceWidget*>();
+            if (player && player->checkBox->isChecked()) {
+                const QSignalBlocker blocker(player->checkBox);
+                player->checkBox->setChecked(false);
+            }
+        }
+    });
 
     videoVisibilityManager = new VideoVisibilityManager(deviceListWidget, this);
 
@@ -888,9 +907,11 @@ void MainWindow::addItem(DeviceConnection* connection)
     item->setData(Qt::UserRole, QVariant::fromValue(player));
 
     connect(player->checkBox, &QCheckBox::stateChanged, [=](int state) {
-        item->setCheckState(static_cast<Qt::CheckState>(state));
+        const QSignalBlocker blocker(deviceListWidget);
         item->setSelected(state == Qt::Checked);
     });
+
+    player->checkBox->setCheckState(Qt::CheckState::Checked);
     
     deviceListWidget->addItem(item);
     deviceListWidget->setItemWidget(item, frame);
