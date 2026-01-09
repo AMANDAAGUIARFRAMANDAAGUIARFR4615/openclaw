@@ -27,6 +27,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     deviceInfoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     deviceInfoLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
     deviceInfoLabel->setOpenExternalLinks(false);
+    deviceInfoLabel->setContextMenuPolicy(Qt::NoContextMenu);
 
     connect(deviceInfoLabel, &QLabel::linkActivated, [=](const QString &link){
         bool ok;
