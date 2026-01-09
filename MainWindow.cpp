@@ -886,6 +886,11 @@ void MainWindow::addItem(DeviceConnection* connection)
     auto item = new QListWidgetItem(deviceListWidget);
     item->setText(deviceInfo->deviceName);
     item->setData(Qt::UserRole, QVariant::fromValue(player));
+
+    connect(player->checkBox, &QCheckBox::stateChanged, [=](int state) {
+        item->setCheckState(static_cast<Qt::CheckState>(state));
+        item->setSelected(state == Qt::Checked);
+    });
     
     deviceListWidget->addItem(item);
     deviceListWidget->setItemWidget(item, frame);

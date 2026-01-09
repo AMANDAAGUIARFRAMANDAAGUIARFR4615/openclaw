@@ -12,7 +12,7 @@
 #include <QMouseEvent>
 #include <QInputDialog>
 
-DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo): DeviceView(connection, deviceInfo)
+DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo): DeviceView(connection, deviceInfo), checkBox(new QCheckBox())
 {
     auto layout = new QVBoxLayout;
     layout->setContentsMargins(0, 0, 0, 0);
@@ -47,6 +47,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     
     connect(launchButton, &QPushButton::clicked, this, &DeviceWidget::launchDeviceWindow);
 
+    topLayout->addWidget(checkBox);
     topLayout->addStretch();
     topLayout->addWidget(deviceInfoLabel);
     topLayout->addStretch();

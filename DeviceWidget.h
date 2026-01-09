@@ -15,6 +15,8 @@ public:
 
     DeviceWindow* getDeviceWindow() { return deviceWindow; }
 
+    QCheckBox* const checkBox;
+
 protected:
     bool event(QEvent *event) override;
     void launchDeviceWindow();
