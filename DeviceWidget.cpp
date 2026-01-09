@@ -40,6 +40,14 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
         }
     });
 
+    EventHub::on(this, "deviceNameChanged", [=](const QJsonValue &data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
+
+        deviceInfo->deviceName = data.toString();
+        deviceInfoLabel->setText(connection->displayName(true));
+    });
+
     auto launchButton = new QPushButton(this);
     launchButton->setIcon(style()->standardIcon(QStyle::SP_TitleBarMaxButton));
     launchButton->setFlat(true);
@@ -103,6 +111,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
 
 DeviceWidget::~DeviceWidget()
 {
+    EventHub::off(this, "deviceNameChanged");
     EventHub::off(this, "lockedStatus");
 
     if (deviceWindow)
