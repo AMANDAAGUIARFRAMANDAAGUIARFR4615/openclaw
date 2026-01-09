@@ -15,9 +15,8 @@ protected:
         QListWidgetItem *item = itemAt(event->pos());
 
         bool isCtrlPressed = event->modifiers() & Qt::ControlModifier;
-        bool isLeftButton = event->button() == Qt::LeftButton;
 
-        if (item && !isCtrlPressed && isLeftButton) {
+        if (item && !isCtrlPressed) {
             // 设置当前焦点项，但不更新选中状态
             setCurrentItem(item, QItemSelectionModel::NoUpdate);
             emit itemPressed(item);
@@ -31,11 +30,10 @@ protected:
 
     void mouseMoveEvent(QMouseEvent *event) override
     {
-        bool isLeftButtonDown = event->buttons() & Qt::LeftButton;
         bool isCtrlPressed = event->modifiers() & Qt::ControlModifier;
 
         // 如果是 左键按住 且 没有按Ctrl
-        if (isLeftButtonDown && !isCtrlPressed) {
+        if (!isCtrlPressed) {
             // 直接忽略该事件，防止触发父类的“拖动选中”或“框选”逻辑
             // 这样鼠标移动就不会改变选中状态了
             return;
