@@ -476,6 +476,9 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
         return;
     }
 
+    if (event->matches(QKeySequence::SelectAll))
+        event->accept();
+    
     const int key = event->key();
     const auto modifiers = event->modifiers() & ~Qt::KeypadModifier;
 
