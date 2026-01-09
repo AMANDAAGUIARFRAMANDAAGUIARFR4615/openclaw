@@ -18,7 +18,13 @@ public:
         deviceName(json["deviceName"].toString()),
         videoPort(json["videoPort"].toInt()),
         jbType(json["jbType"].toInt()),
-        localIp(json["localIp"].toString()),
+        localIp([](const QString &ip) -> QString {
+            QHostAddress address;
+            if (address.setAddress(ip))
+                return ip;
+            
+            return QString();
+        }(json["localIp"].toString())),
         orientation(json["orientation"].toInt()),
         model(json["model"].toString()),
         systemVersion(json["systemVersion"].toString()),
