@@ -17,7 +17,7 @@ public:
         deviceId(json["deviceId"].toString()),
         deviceName(json["deviceName"].toString()),
         videoPort(json["videoPort"].toInt()),
-        jbType(json["jbType"].toInt()),
+        jbType(json["jbType"].toInt()),//有根/无根/隐根
         localIp([](const QString &ip) -> QString {
             QHostAddress address;
             if (address.setAddress(ip))

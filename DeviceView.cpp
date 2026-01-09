@@ -24,6 +24,7 @@
 #include <QClipboard>
 #include <QVideoSink>
 #include <QVideoFrame>
+#include <QNetworkReply>
 
 DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWidget *parent)
     : connection(connection), deviceInfo(deviceInfo), QWidget(parent)
@@ -272,6 +273,115 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
                 MainWindow::getInstance()->relayoutDevices();
             });
         }
+        else if (text == "🔄更新手机端") {
+            auto dynamicSubMenu = new QMenu(text, menu);
+            menu->addMenu(dynamicSubMenu);
+
+            dynamicSubMenu->addAction("正在加载...")->setEnabled(false);
+
+            dynamicSubMenu->setProperty("isLoaded", false);
+
+            connect(dynamicSubMenu, &QMenu::aboutToShow, [=]() {
+                if (dynamicSubMenu->property("isLoaded").toBool())
+                    return;
+
+                QString url = deviceInfo->jbType == 1 ? "https://cydia-1302990626.cos.ap-guangzhou.myqcloud.com" : "https://sileo-1302990626.cos.ap-guangzhou.myqcloud.com";
+                QNetworkRequest request(url + "/Packages");
+                QNetworkReply *reply = networkAccessManager->get(request);
+
+                connect(reply, &QNetworkReply::finished, dynamicSubMenu, [=]() {
+                    reply->deleteLater();
+
+                    dynamicSubMenu->clear();
+
+                    if (reply->error() != QNetworkReply::NoError) {
+                        dynamicSubMenu->addAction(reply->errorString())->setEnabled(false);
+                        return;
+                    }
+
+                    QString content = QString::fromUtf8(reply->readAll());
+
+                    QString targetArch = QStringList({"iphoneos-arm", "iphoneos-arm64", "iphoneos-arm64e"}).value(deviceInfo->jbType - 1);
+
+                    // Packages 文件通常由空行分隔每个包的信息
+                    // 使用正则表达式分割块，兼容 \n\n 或 \r\n\r\n
+                    QStringList packageBlocks = content.split(QRegularExpression("\\n\\s*\\n"), Qt::SkipEmptyParts);
+
+                    // 遍历每一个包块
+                    for (const QString &block : packageBlocks) {
+                        QString pkgName;
+                        QString pkgVer;
+                        QString pkgArch;
+                        QString pkgFile;
+
+                        // 按行解析当前块
+                        QStringList lines = block.split('\n', Qt::SkipEmptyParts);
+                        for (const QString &line : lines) {
+                            // 简单的字符串查找，提取 Key: Value
+                            if (line.startsWith("Package: "))
+                                pkgName = line.mid(9).trimmed();
+                            else if (line.startsWith("Version: "))
+                                pkgVer = line.mid(9).trimmed();
+                            else if (line.startsWith("Architecture: "))
+                                pkgArch = line.mid(14).trimmed();
+                            else if (line.startsWith("Filename: "))
+                                pkgFile = line.mid(10).trimmed();
+                        }
+
+                        if (pkgName != "com.sky.ykpro" || pkgArch != targetArch)
+                            continue;
+
+                        auto action = dynamicSubMenu->addAction(pkgVer);
+
+                        connect(action, &QAction::triggered, [=](){
+                            QNetworkRequest request(url + "/" + pkgFile);
+                            QNetworkReply *reply = networkAccessManager->get(request);
+
+                            connect(reply, &QNetworkReply::finished, this, [=]() {
+                                reply->deleteLater();
+
+                                if (reply->error() != QNetworkReply::NoError) {
+                                    new ToastWidget(reply->errorString(), this);
+                                    return;
+                                }
+
+                                const auto& data = reply->readAll();
+
+                                // 获取系统临时文件夹路径 (例如 Windows 的 C:/Users/xxx/AppData/Local/Temp)
+                                QString tempDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+
+                                QString localPath = QDir(tempDir).filePath(pkgFile.section('/', -1));
+
+                                QFile file(localPath);
+                                if (!file.open(QIODevice::WriteOnly)) {
+                                    new ToastWidget("无法写入临时文件: " + file.errorString(), this);
+                                    return;
+                                }
+
+                                file.write(data);
+                                file.close();
+
+                                QList<QUrl> urls;
+                                urls << QUrl::fromLocalFile(localPath);
+
+                                QMimeData *mimeData = new QMimeData();
+                                mimeData->setUrls(urls);
+
+                                QDragEnterEvent dragEnterEvent(QPoint(0, 0), Qt::CopyAction, mimeData, Qt::LeftButton, Qt::NoModifier);
+                                qApp->sendEvent(this, &dragEnterEvent);
+
+                                QDropEvent dropEvent(QPoint(0, 0), Qt::CopyAction, mimeData, Qt::LeftButton, Qt::NoModifier);
+                                qApp->sendEvent(this, &dropEvent);
+
+                                delete mimeData;
+                            });
+                        });
+                    }
+
+                    dynamicSubMenu->setProperty("isLoaded", true);
+                });
+            });
+        }
     }
 
     menu->exec(event->globalPos());
@@ -398,18 +508,16 @@ bool DeviceView::event(QEvent *event)
         case QEvent::Drop:
         case QEvent::Close:
             isDispatching = true;
-            auto items = MainWindow::getInstance()->findChildren<DeviceView*>();
-            for (auto& item : items) {
-                if (item != this && item->isVisible()) {
-                    auto targetWindow = static_cast<DeviceWidget*>(item)->getDeviceWindow();
-                    if (targetWindow == (DeviceWindow*)this)
-                        continue;
+            const auto& deviceWidgets = MainWindow::getInstance()->getDeviceWidgets();
+            for (const auto& item : deviceWidgets) {
+                auto targetWindow = item->getDeviceWindow();
+                if (item == this || targetWindow == (DeviceWindow*)this)
+                    continue;
 
-                    if (event->type() == QEvent::Close)
-                        targetWindow ? targetWindow->close() : 0;
-                    else
-                        item->event(event);
-                }
+                if (event->type() == QEvent::Close)
+                    targetWindow ? targetWindow->close() : 0;
+                else
+                    ((DeviceView*)item)->event(event);
             }
             isDispatching = false;
             break;
