@@ -19,6 +19,8 @@
 #include <QMessageBox>
 #include <QKeyEvent>
 #include <QLineEdit>
+#include <QRadioButton>
+#include <QButtonGroup>
 
 class AppListWidget : public QWidget
 {
@@ -71,34 +73,74 @@ private:
             }
         )");
 
+        QWidget *filterContainer = new QWidget(this);
+        QHBoxLayout *filterLayout = new QHBoxLayout(filterContainer);
+        filterLayout->setContentsMargins(10, 0, 10, 0);
+        filterLayout->setSpacing(20);
+
+        QLabel *filterLabel = new QLabel("应用类型:", this);
+
+        QRadioButton *rbAll = new QRadioButton("全部", this);
+        QRadioButton *rbUser = new QRadioButton("用户", this);
+        QRadioButton *rbSystem = new QRadioButton("系统", this);
+
+        rbAll->setChecked(true); // 默认全选
+
+        QButtonGroup *filterGroup = new QButtonGroup(this);
+        filterGroup->addButton(rbAll, 0);    // ID 0: 全部
+        filterGroup->addButton(rbUser, 1);   // ID 1: 用户
+        filterGroup->addButton(rbSystem, 2); // ID 2: 系统
+
+        filterLayout->addWidget(filterLabel);
+        filterLayout->addWidget(rbAll);
+        filterLayout->addWidget(rbUser);
+        filterLayout->addWidget(rbSystem);
+        filterLayout->addStretch();
+
         table = new QTableWidget(this);
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
         mainLayout->setContentsMargins(20, 20, 20, 20);
-        mainLayout->setSpacing(15);
+        mainLayout->setSpacing(10);
         mainLayout->addWidget(searchEdit);
+        mainLayout->addWidget(filterContainer);
         mainLayout->addWidget(table);
         setLayout(mainLayout);
 
         setupTable();
         applyStyle();
 
-        connect(searchEdit, &QLineEdit::textChanged, [this](const QString &text) {
-            QString query = text.trimmed().toLower();
-            for (int i = 0; i < table->rowCount(); ++i) {
-                bool hidden = true;
-                // 获取应用名 (列1) 和 包名 (列2)
-                QTableWidgetItem *nameItem = table->item(i, 1);
-                QTableWidgetItem *pkgItem = table->item(i, 2);
+        // 统一的过滤逻辑函数
+        auto performFilter = [this, searchEdit, filterGroup]() {
+            QString query = searchEdit->text().trimmed().toLower();
+            int filterType = filterGroup->checkedId(); // 0=全部, 1=用户, 2=系统
 
-                if (query.isEmpty()) {
-                    hidden = false;
-                } else {
-                    if (nameItem && nameItem->text().toLower().contains(query)) hidden = false;
-                    else if (pkgItem && pkgItem->text().toLower().contains(query)) hidden = false;
+            for (int i = 0; i < table->rowCount(); ++i) {
+                bool matchText = true;
+                bool matchType = true;
+
+                // 1. 文本过滤
+                if (!query.isEmpty()) {
+                    QTableWidgetItem *nameItem = table->item(i, 1);
+                    QTableWidgetItem *pkgItem = table->item(i, 2);
+                    bool nameContains = nameItem && nameItem->text().toLower().contains(query);
+                    bool pkgContains = pkgItem && pkgItem->text().toLower().contains(query);
+                    if (!nameContains && !pkgContains)
+                        matchText = false;
                 }
-                table->setRowHidden(i, hidden);
+
+                // 2. 类型过滤
+                if (filterType != 0) { // 如果不是选“全部”
+                    int appType = table->item(i, 1)->data(Qt::UserRole).toInt();
+                    if (appType != filterType)
+                        matchType = false;
+                }
+
+                table->setRowHidden(i, !(matchText && matchType));
             }
-        });
+        };
+
+        connect(searchEdit, &QLineEdit::textChanged, performFilter);
+        connect(filterGroup, &QButtonGroup::idClicked, performFilter);
 
         EventHub::on(this, "appList", [this](const QJsonValue &data, DeviceConnection* connection) {
             if (this->connection != connection)
@@ -192,6 +234,7 @@ private:
         QTableWidgetItem *appItem = new QTableWidgetItem(appName);
         appItem->setTextAlignment(Qt::AlignVCenter | Qt::AlignLeft);
         appItem->setFont(QFont("Microsoft YaHei", 10, QFont::Bold)); // 加粗应用名
+        appItem->setData(Qt::UserRole, type); 
         table->setItem(row, 1, appItem);
 
         // 包名
