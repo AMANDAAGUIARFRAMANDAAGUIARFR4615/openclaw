@@ -909,6 +909,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     connect(player->checkBox, &QCheckBox::stateChanged, [=](int state) {
         const QSignalBlocker blocker(deviceListWidget);
         item->setSelected(state == Qt::Checked);
+        QToolTip::showText(QCursor::pos(), "按住Ctrl键，用鼠标点击小窗口可快捷切换选中状态");
     });
 
     player->checkBox->setCheckState(Qt::CheckState::Checked);
