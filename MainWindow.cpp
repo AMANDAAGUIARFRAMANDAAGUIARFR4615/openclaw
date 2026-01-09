@@ -940,7 +940,8 @@ QList<DeviceWidget*> MainWindow::getDeviceWidgets()
             continue;
 
         auto deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
-        list.append(deviceWidget);
+        if (deviceWidget->checkBox->isChecked())
+            list.append(deviceWidget);
     }
 
     return list;
