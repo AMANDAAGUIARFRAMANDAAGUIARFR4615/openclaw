@@ -837,15 +837,29 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     auto deviceInfo = connection->deviceInfo;
 
+    auto player = new DeviceWidget(connection, deviceInfo);
+
     deviceInfo->expireAt = LoginWidget::expirations.value(deviceInfo->deviceId);
     if (deviceInfo->expireAt.get() == 0)
     {
-        webSocketClient->emitEvent("deviceExpireAt", deviceInfo->deviceId, [=](const QJsonValue &res) {
-            deviceInfo->expireAt = res.toInteger();
+        auto retryTimer = new QTimer(player);
+        
+        connect(retryTimer, &QTimer::timeout, player, [=]() {
+            retryTimer->setInterval(3000);
+
+            if (deviceInfo->expireAt.get() != 0) {
+                retryTimer->deleteLater();
+                return;
+            }
+
+            webSocketClient->emitEvent("deviceExpireAt", deviceInfo->deviceId, [=](const QJsonValue &res) {
+                deviceInfo->expireAt = res.toInteger();
+            });
         });
+
+        retryTimer->start(0);
     }
 
-    auto player = new DeviceWidget(connection, deviceInfo);
     auto ipLabel = player->findChild<QLabel*>("ipLabel");
 
     auto device = new LiveStreamDevice(player);

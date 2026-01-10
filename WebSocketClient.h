@@ -53,6 +53,7 @@ private:
     int m_nextId = 0;
 
     void sendJson(const QJsonObject &obj) {
+        qDebugEx() << this << obj;
         const auto& jsonData = QJsonDocument(obj).toJson(QJsonDocument::Compact);
         sendBinaryMessage(AesCrypto::encrypt(jsonData));
     }

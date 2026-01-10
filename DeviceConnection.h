@@ -30,7 +30,7 @@ public:
         if (!jsonValue.isUndefined() && !jsonValue.isNull())
             jsonObject["data"] = jsonValue;
 
-        qDebugEx() << "sendData" << this << jsonObject;
+        qDebugEx() << this << jsonObject;
 
         if (type == Tcp && tcpSocket->state() != QAbstractSocket::ConnectedState) {
             qDebugEx() << "不是连接状态，无法发送数据";
