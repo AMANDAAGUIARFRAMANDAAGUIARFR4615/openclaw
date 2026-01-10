@@ -393,7 +393,7 @@ void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QStrin
     
     if (!parentItem) {
         qCriticalEx() << parentPath << "不存在";
-        new ToastWidget("路径不存在");
+        new ToastWidget("路径不存在", this);
         return;
     }
 
@@ -589,7 +589,7 @@ void RemoteFileExplorer::keyPressEvent(QKeyEvent *event)
         auto item = quickAccessList->currentItem();
         if (item) {
             if (item->text() == "/") {
-                new ToastWidget("根目录不能删除");
+                new ToastWidget("根目录不能删除", this);
                 return;
             }
 
