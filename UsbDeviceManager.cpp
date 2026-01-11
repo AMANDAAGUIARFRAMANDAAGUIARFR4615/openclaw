@@ -130,6 +130,11 @@ void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
 
     qDebugEx() << "❌断开设备:" << ctx->udid + ":" + QString::number(ctx->port);
 
+    if (ctx->notifier) {
+        delete ctx->notifier;
+        ctx->notifier = nullptr;
+    }
+
     ctx->handler->deleteLater();
 
     if (ctx->connection) idevice_disconnect(ctx->connection);
