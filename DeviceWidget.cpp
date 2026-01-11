@@ -22,6 +22,19 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     topLayout->setContentsMargins(5, 0, 5, 0);
     topLayout->setSpacing(0);
 
+    auto numLabel = new QLabel("1", this);
+    numLabel->setFixedSize(20, 20);
+    numLabel->setAlignment(Qt::AlignCenter);
+    numLabel->setStyleSheet(R"(
+        QLabel {
+            background-color: #F0F0F0;
+            color: #555555;
+            border-radius: 10px;
+            font-weight: bold;
+            font-family: Arial;
+        }
+    )");
+
     auto deviceInfoLabel = new QLabel(connection->displayName(true), this);
     deviceInfoLabel->setAlignment(Qt::AlignCenter);
     deviceInfoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -58,6 +71,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
 
     topLayout->addWidget(checkBox);
     topLayout->addStretch();
+    topLayout->addWidget(numLabel);
     topLayout->addWidget(deviceInfoLabel);
     topLayout->addStretch();
     topLayout->addWidget(launchButton);
