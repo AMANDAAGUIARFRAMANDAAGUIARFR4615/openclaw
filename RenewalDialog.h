@@ -121,8 +121,8 @@ public:
 
         auto paymentRadiosLayout = new QHBoxLayout();
         voucherRadioButton = new QRadioButton("余额支付");
-        auto wechatRadioButton = new QRadioButton("微信支付（联系左侧客服）");
-        auto alipayRadioButton = new QRadioButton("支付宝支付（联系左侧客服）");
+        auto wechatRadioButton = new QRadioButton("微信支付（联系客服）");
+        auto alipayRadioButton = new QRadioButton("支付宝支付（联系客服）");
         voucherRadioButton->setChecked(true);
         paymentRadiosLayout->addWidget(voucherRadioButton);
         paymentRadiosLayout->addWidget(wechatRadioButton);
