@@ -17,6 +17,7 @@
 #include "AccountListDialog.h"
 #include "DeviceWindow.h"
 #include "ExplicitSelectionListWidget.h"
+#include "NaturalSortListWidgetItem.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -461,8 +462,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     deviceListWidget->setDragDropMode(QListWidget::NoDragDrop);
     deviceListWidget->setSpacing(10);
     deviceListWidget->setSortingEnabled(true);
-    QLocale chineseLocale(QLocale::Chinese, QLocale::AnyCountry);
-    deviceListWidget->setLocale(chineseLocale);
     deviceListWidget->sortItems(Qt::AscendingOrder);
     deviceListWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
     connect(deviceListWidget, &QListWidget::itemPressed, [this](QListWidgetItem *item) {
@@ -908,7 +907,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     frameLayout->setContentsMargins(0, 0, 0, 0);
     frameLayout->addWidget(player);
 
-    auto item = new QListWidgetItem(deviceListWidget);
+    auto item = new NaturalSortListWidgetItem(deviceListWidget);
     item->setText(deviceInfo->deviceName);
     item->setData(Qt::UserRole, QVariant::fromValue(player));
 
