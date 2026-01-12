@@ -795,10 +795,11 @@ void MainWindow::syncVideoSettingsToDevices()
 void MainWindow::relayoutDevices()
 {
     auto& tab = getTab();
+    const auto bit = tab.bit;
     const auto scale = tab.scale == 0 ? 1 : tab.scale / 100.0f;
     const auto isLandscape = tab.getIsLandscape();
     
-    const auto& devicesInGroup = getDevices();
+    const auto& devicesInGroup = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
     
     auto frameItemHeight = frameItemWidth * DeviceInfo::getOptimalAspectRatio(devicesInGroup);
     int targetW = (isLandscape ? frameItemHeight : frameItemWidth) * scale;
