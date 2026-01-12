@@ -921,7 +921,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     deviceListWidget->addItem(item);
     deviceListWidget->setItemWidget(item, frame);
 
-    player->setProperty("listWidgetItem", QVariant::fromValue(item));
+    player->setProperty("listWidgetItem", QVariant::fromValue(static_cast<QListWidgetItem*>(item)));
 
     relayoutDevices();
 }
