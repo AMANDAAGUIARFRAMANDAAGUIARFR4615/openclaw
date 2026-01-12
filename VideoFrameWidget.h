@@ -54,7 +54,8 @@ public:
             if (this->connection != connection)
                 return;
 
-            resizeEvent(new QResizeEvent(size(), size()));
+            QResizeEvent re(size(), size());
+            resizeEvent(&re);
         });
     }
 
@@ -109,10 +110,24 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) override {
         event->ignore();
     }
+
+    void paintEvent(QPaintEvent *event) override {
+        QGraphicsView::paintEvent(event);
+
+        if (!hasPainted) {
+            hasPainted = true;
+            
+            QResizeEvent re(size(), size());
+            resizeEvent(&re);
+        }
+    }
     
     void resizeEvent(QResizeEvent *event) override
     {
         QGraphicsView::resizeEvent(event);
+
+         if (!hasPainted)
+            return;
 
         bool isPortrait = connection->deviceInfo->orientation == 1 || connection->deviceInfo->orientation == 2;
         auto aspectRatio = isPortrait ? (double)connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth : (double)connection->deviceInfo->screenWidth / connection->deviceInfo->screenHeight;
@@ -173,4 +188,5 @@ protected:
 
 private:
     QGraphicsVideoItem* videoItem;
+    bool hasPainted = false;
 };
