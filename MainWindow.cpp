@@ -391,7 +391,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     rightLayout->setContentsMargins(0, 0, 0, 0);
     rightLayout->setSpacing(5);
 
-    auto hLayout = new QHBoxLayout(this);
+    auto hLayout = new QHBoxLayout();
     hLayout->setContentsMargins(5, 5, 5, 5);
     hLayout->setSpacing(5);
     hLayout->addWidget(multiControlSwitchButton);
