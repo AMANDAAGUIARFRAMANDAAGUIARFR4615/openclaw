@@ -38,6 +38,8 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
             connection->send("deviceName", newName);
             deviceInfo->deviceName = newName;
             deviceInfoLabel->setText(connection->displayName(true));
+            const auto item = property("listWidgetItem").value<QListWidgetItem*>();
+            item->setText(deviceInfo->deviceName);
         }
     });
 
@@ -47,6 +49,8 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
 
         deviceInfo->deviceName = data.toString();
         deviceInfoLabel->setText(connection->displayName(true));
+        const auto item = property("listWidgetItem").value<QListWidgetItem*>();
+        item->setText(deviceInfo->deviceName);
     });
 
     auto launchButton = new QPushButton(this);
