@@ -806,9 +806,9 @@ void MainWindow::relayoutDevices()
     QSize targetSize(targetW, targetH);
 
     for (int i = 0; i < deviceListWidget->count(); ++i) {
-        auto item = deviceListWidget->item(i);
+        const auto& item = deviceListWidget->item(i);
         
-        auto deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
+        const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
 
         item->setHidden(!deviceWidget || !devicesInGroup.contains(deviceWidget->deviceInfo));
 
@@ -928,13 +928,13 @@ void MainWindow::addItem(DeviceConnection* connection)
 
 QList<DeviceInfo*> MainWindow::getDevices()
 {
-    QList<DeviceInfo*> devices;
+    QList<DeviceInfo*> list;
  
     for (const auto& widget : getDeviceWidgets()) {
-        devices.append(widget->deviceInfo);
+        list.append(widget->deviceInfo);
     }
 
-    return devices;
+    return list;
 }
 
 QList<DeviceWidget*> MainWindow::getDeviceWidgets()
@@ -942,11 +942,11 @@ QList<DeviceWidget*> MainWindow::getDeviceWidgets()
     QList<DeviceWidget*> list;
 
     for (int i = 0; i < deviceListWidget->count(); i++) {
-        auto item = deviceListWidget->item(i);
+        const auto& item = deviceListWidget->item(i);
         if (item->isHidden())
             continue;
 
-        auto deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
+        const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
         if (deviceWidget->checkBox->isChecked())
             list.append(deviceWidget);
     }
@@ -956,14 +956,14 @@ QList<DeviceWidget*> MainWindow::getDeviceWidgets()
 
 QList<DeviceWindow*> MainWindow::getDeviceWindows()
 {
-    QList<DeviceWindow*> devices;
+    QList<DeviceWindow*> list;
  
     for (const auto& widget : getDeviceWidgets()) {
         if (widget->getDeviceWindow())
-            devices.append(widget->getDeviceWindow());
+            list.append(widget->getDeviceWindow());
     }
 
-    return devices;
+    return list;
 }
 
 void MainWindow::showTabBarContextMenu(const QPoint &pos)
