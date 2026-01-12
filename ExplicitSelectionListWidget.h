@@ -42,4 +42,16 @@ protected:
         // 其他情况（如按住Ctrl拖动、或者是为了启动拖拽操作），走默认逻辑
         QListWidget::mouseMoveEvent(event);
     }
+
+    void keyPressEvent(QKeyEvent *event) override
+    {
+        if (event->key() == Qt::Key_Control || event->matches(QKeySequence::SelectAll))
+            QListWidget::keyPressEvent(event);
+    }
+    
+    void keyReleaseEvent(QKeyEvent *event) override
+    {
+        if (event->key() == Qt::Key_Control || event->key() == Qt::Key_A)
+            QListWidget::keyReleaseEvent(event);
+    }
 };
