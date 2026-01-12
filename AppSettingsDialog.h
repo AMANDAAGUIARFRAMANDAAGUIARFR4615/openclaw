@@ -97,10 +97,12 @@ private:
         if (QFile::exists(qApp->applicationDirPath() + "/support.jpg"))
             sideBarMenu.append("💬客服");
 
-        if (qEnvironmentVariableIsSet("FROM_QT_CREATOR")) {
-            sideBarMenu.append("📜日志");
+#ifndef QT_NO_DEBUG_OUTPUT
+        sideBarMenu.append("📜日志");
+#endif
+
+        if (qEnvironmentVariableIsSet("FROM_QT_CREATOR"))
             sideBarMenu.append("🛠️开发者");
-        }
 
         addSortableGroup(mainLayout, "sideBarMenu", "左侧栏 (拖拽调整)", sideBarMenu);
 
