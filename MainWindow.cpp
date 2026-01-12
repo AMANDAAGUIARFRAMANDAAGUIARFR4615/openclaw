@@ -756,12 +756,6 @@ void MainWindow::onTabMoved(int fromIndex, int toIndex)
     saveTabs();
 }
 
-void MainWindow::resizeEvent(QResizeEvent *event)
-{
-    QMainWindow::resizeEvent(event);
-    relayoutDevices();
-}
-
 void MainWindow::addOptionMenu(QMenu* parent, const QString& title, const QStringList& items, std::optional<int>* targetVar, std::function<void()> onChanged)
 {
     auto subMenu = parent->addMenu(title);
