@@ -194,7 +194,7 @@ private:
             if (item->text() == "⚙️设置" && item->checkState() == Qt::Unchecked) {
                 QToolTip::showText(QCursor::pos(), "[⚙️设置]不可隐藏");
                 // 🚫 立即强制改回选中
-                QSignalBlocker blocker(listWidget); // 暂时屏蔽信号，防止递归调用
+                const QSignalBlocker blocker(listWidget); // 暂时屏蔽信号，防止递归调用
                 item->setCheckState(Qt::Checked);
             } else {
                 // 其他情况正常保存
