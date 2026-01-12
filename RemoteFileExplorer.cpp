@@ -535,30 +535,37 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
         transferTable->setItem(row, col, item);
     }
 
-    connect(transfer, &FileTransfer::progressUpdated, this, [=](quint64 transferred, quint64 total) {
+    auto statusItem = transferTable->item(row, 2);
+    auto percentItem = transferTable->item(row, 3);
+    auto sizeItem = transferTable->item(row, 4);
+    auto speedItem = transferTable->item(row, 7);
+    auto timeItem = transferTable->item(row, 8);
+
+    connect(transfer, &FileTransfer::progressUpdated, transferTable, [=](quint64 transferred, quint64 total) {
         double percent = (double)transferred / total * 100;
-        transferTable->item(row, 3)->setText(QString::number(percent, 'f', 1) + "%");
-        transferTable->item(row, 4)->setText(QString("%1/%2").arg(Tools::formatByteSize(transferred), Tools::formatByteSize(total)));
+        
+        percentItem->setText(QString::number(percent, 'f', 1) + "%");
+        sizeItem->setText(QString("%1/%2").arg(Tools::formatByteSize(transferred), Tools::formatByteSize(total)));
 
         double elapsed = transfer->elapsedTime();
-        transferTable->item(row, 7)->setText(Tools::formatByteSize(transferred / elapsed) + "/s");
-        transferTable->item(row, 8)->setText(QString::number(elapsed, 'f', 2) + " s");
+        speedItem->setText(Tools::formatByteSize(transferred / elapsed) + "/s");
+        timeItem->setText(QString::number(elapsed, 'f', 2) + " s");
 
         if (transferred != total)
             return;
 
         QString finalStatus = type == 1 ? "接收完成" : "发送完成";
-        transferTable->item(row, 2)->setText(finalStatus);
+        statusItem->setText(finalStatus);
 
         QJsonObject obj;
         obj["startTime"] = startTime;
         obj["name"] = name;
         obj["type"] = type;
-        obj["size"] = transferTable->item(row, 4)->text();
+        obj["size"] = sizeItem->text();
         obj["localPath"] = localPath;
         obj["remotePath"] = remotePath;
-        obj["speed"] = transferTable->item(row, 7)->text();
-        obj["usedTime"] = transferTable->item(row, 8)->text();
+        obj["speed"] = speedItem->text();
+        obj["usedTime"] = timeItem->text();
 
         QString key = connection->deviceInfo->deviceId + "/transferHistory";
         QVariantList history = settings->value(key).toList();
