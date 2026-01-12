@@ -555,8 +555,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
                 break;
             }
         }
-        
-        relayoutDevices();
     });
 
     webSocketClient->on("online_devices", [this](const QJsonValue &data, AckCallback callback) {
