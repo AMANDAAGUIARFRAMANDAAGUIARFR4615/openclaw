@@ -56,8 +56,8 @@ public:
 
         auto sent = writeDatagram(dataToSend, host, port);
 
-        // if (sent != dataToSend.size())
-        //     qCriticalEx() << "发送失败" << dataToSend.size() << host.toString() + ":" + QString::number(port);
+        if (sent != dataToSend.size())
+            qCriticalEx() << "发送失败" << dataToSend.size() << host.toString() + ":" + QString::number(port);
     }
 
 signals:
