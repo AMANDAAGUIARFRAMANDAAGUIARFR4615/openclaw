@@ -73,50 +73,42 @@ public:
     /**
      * @brief 获取最佳显示宽高比 (Height / Width)
      */
-    static double getOptimalAspectRatio(QList<DeviceInfo*> devices)
+    static double getOptimalAspectRatio(const QList<DeviceInfo*>& devices)
     {
         if (devices.isEmpty())
-            return 1;
+            return 1.0;
 
-        QList<double> deviceRatios;
-        QSet<double> candidateRatios;
+        QList<double> allRatios;
+        allRatios.reserve(devices.size());
 
         for (auto device : devices) {
-            // 无论设备当前也是横是竖，长边都算作 Height，短边算作 Width
-            double h = std::max(device->screenWidth, device->screenHeight);
-            double w = std::min(device->screenWidth, device->screenHeight);
-            
-            double r = h / w; // 这里得到的结果通常 > 1.0
-            
-            deviceRatios.append(r);
-            candidateRatios.insert(r);
+            allRatios.append((double)device->screenHeight / device->screenWidth);
         }
 
-        double bestRatio = 0.0;
+        std::sort(allRatios.begin(), allRatios.end());
+
+        double bestRatio = allRatios.first();
         double maxTotalFillRate = -1.0;
 
-        // 遍历所有存在的比例作为“标准框” (CandidateR)
-        for (double candidateR : candidateRatios) {
+        for (int i = 0; i < allRatios.size(); ++i) {
+            double candidateR = allRatios[i];
+
+            // 如果当前 candidate 和上一个非常接近，直接跳过
+            // 避免因为精度问题重复计算 (例如 1.7777777 和 1.7777778)
+            if (i > 0 && qAbs(candidateR - allRatios[i-1]) < 0.0001)
+                continue;
+
             double currentTotalFillRate = 0.0;
 
-            for (double devR : deviceRatios) {
-                // 计算填充率 (Fill Rate)
-                // candidateR 是框的高宽比，devR 是设备的高宽比
-                
-                double fillRate;
-                
-                if (devR > candidateR) {
-                    // 设备比框更“细长” (更直)
-                    fillRate = candidateR / devR; 
-                } else {
-                    // 设备比框更“矮胖” (devR < candidateR)
-                    fillRate = devR / candidateR;
-                }
-
-                currentTotalFillRate += fillRate;
+            // 内层循环：计算该 candidateR 适应所有设备时的总填充率
+            for (double devR : allRatios) {
+                if (devR > candidateR)
+                    currentTotalFillRate += candidateR / devR; // 框比设备“胖”，设备高度受限
+                else
+                    currentTotalFillRate += devR / candidateR; // 框比设备“瘦”，设备宽度受限
             }
 
-            if (currentTotalFillRate > maxTotalFillRate) {
+            if (currentTotalFillRate >= maxTotalFillRate) {
                 maxTotalFillRate = currentTotalFillRate;
                 bestRatio = candidateR;
             }
