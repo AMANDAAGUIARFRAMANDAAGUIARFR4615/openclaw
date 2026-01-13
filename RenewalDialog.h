@@ -2,6 +2,7 @@
 
 #include "MainWindow.h"
 #include "Account.h"
+#include "Safe.h"
 #include <QDialog>
 #include <QTableWidget>
 #include <QHeaderView>
@@ -185,7 +186,7 @@ public:
 
                 for (const QJsonValue &item : devices) {
                     auto deviceInfo = DeviceInfo::getDevice(item["udid"].toString());
-                    deviceInfo->expireAt = item["expireAt"].toInteger();
+                    deviceInfo->expireAt = item[HIDE("expireAt")].toInteger();
                 }
 
                 accept();

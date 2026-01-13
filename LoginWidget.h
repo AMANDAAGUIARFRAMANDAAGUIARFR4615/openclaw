@@ -2,6 +2,7 @@
 
 #include "global.h"
 #include "SafeObject.h"
+#include "Safe.h"
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -280,7 +281,7 @@ protected:
                     const auto& devices = res["devices"].toArray();
                     for (const QJsonValue& device: devices) {
                         const auto& udid = device["udid"].toString();
-                        expirations[udid] = device["expireAt"].toInteger();
+                        expirations[udid] = device[HIDE("expireAt")].toInteger();
                     }
                     emit authorized(res["account"]);
                     close();

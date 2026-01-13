@@ -18,6 +18,7 @@
 #include "DeviceWindow.h"
 #include "ExplicitSelectionListWidget.h"
 #include "NaturalSortListWidgetItem.h"
+#include "Safe.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -843,7 +844,7 @@ void MainWindow::addItem(DeviceConnection* connection)
                 return;
             }
 
-            webSocketClient->emitEvent("deviceExpireAt", deviceInfo->deviceId, [=](const QJsonValue &res) {
+            webSocketClient->emitEvent(HIDE("deviceExpireAt"), deviceInfo->deviceId, [=](const QJsonValue &res) {
                 deviceInfo->expireAt = res.toInteger();
             });
         });
