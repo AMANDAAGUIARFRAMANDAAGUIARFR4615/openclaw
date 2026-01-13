@@ -129,6 +129,12 @@ public:
         return ips;
     }
 
+    static QString getSubnet(const QString& ip)
+    {
+        auto lastDotIndex = ip.lastIndexOf('.');
+        return lastDotIndex != -1 ? ip.left(lastDotIndex + 1) + "0" : "";
+    }
+    
     // 遍历同一子网的IP地址，IP范围从 .1 到 .254
     static QList<QHostAddress> getSubnetIPs(const QString& localIP)
     {
