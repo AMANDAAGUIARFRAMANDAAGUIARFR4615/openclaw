@@ -502,9 +502,9 @@ bool DeviceView::event(QEvent *event)
         // case QEvent::TabletRelease:
         // case QEvent::TabletMove:
         // --- 拖放 (Drag & Drop) ---
-        case QEvent::DragEnter:
-        case QEvent::DragMove:
-        case QEvent::DragLeave:
+        // case QEvent::DragEnter:
+        // case QEvent::DragMove:
+        // case QEvent::DragLeave:
         case QEvent::Drop:
         case QEvent::Close:
             isDispatching = true;
@@ -514,10 +514,17 @@ bool DeviceView::event(QEvent *event)
                 if (item == this || targetWindow == (DeviceWindow*)this)
                     continue;
 
-                if (event->type() == QEvent::Close)
+                if (event->type() == QEvent::Drop) {
+                    item->dropEvent((QDropEvent*)event);
+                    continue;
+                }
+                
+                if (event->type() == QEvent::Close) {
                     targetWindow ? targetWindow->close() : 0;
-                else
-                    ((DeviceView*)item)->event(event);
+                    continue;
+                }
+                
+                ((DeviceView*)item)->event(event);
             }
             isDispatching = false;
             break;
