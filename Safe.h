@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 
 namespace StringGuard {
@@ -14,13 +13,13 @@ namespace StringGuard {
         return compileTimeHash(__TIME__, line);
     }
 
-    template <size_t N, uint32_t Key>
+    template <uint32_t N, uint32_t Key>
     struct Obfuscator {
         char m_buffer[N];
 
         // 构造函数：编译期加密
         constexpr Obfuscator(const char(&str)[N]) : m_buffer{} {
-            for (size_t i = 0; i < N; ++i) {
+            for (uint32_t i = 0; i < N; ++i) {
                 // 简单的混合算法：(Key + Index) ^ Char
                 m_buffer[i] = str[i] ^ static_cast<char>((Key + i) * 71u);
             }
@@ -34,7 +33,7 @@ namespace StringGuard {
         __attribute__((always_inline)) inline
 #endif
         const char* decrypt() {
-            for (size_t i = 0; i < N; ++i) {
+            for (uint32_t i = 0; i < N; ++i) {
                 m_buffer[i] ^= static_cast<char>((Key + i) * 71u);
             }
             return m_buffer;
