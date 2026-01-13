@@ -494,13 +494,13 @@ bool DeviceView::event(QEvent *event)
         case QEvent::MouseMove:
         // case QEvent::Wheel:
         // --- 触摸 (Touch) ---
-        case QEvent::TouchBegin:
-        case QEvent::TouchUpdate:
-        case QEvent::TouchEnd:
+        // case QEvent::TouchBegin:
+        // case QEvent::TouchUpdate:
+        // case QEvent::TouchEnd:
         // --- 平板/手写笔 (Tablet) ---
-        case QEvent::TabletPress:
-        case QEvent::TabletRelease:
-        case QEvent::TabletMove:
+        // case QEvent::TabletPress:
+        // case QEvent::TabletRelease:
+        // case QEvent::TabletMove:
         // --- 拖放 (Drag & Drop) ---
         case QEvent::DragEnter:
         case QEvent::DragMove:
