@@ -14,6 +14,7 @@
 #include "Account.h"
 #include "DeviceWidget.h"
 #include "DeviceWindow.h"
+#include "Safe.h"
 #include <QLayout>
 #include <QLabel>
 #include <QMimeData>
@@ -141,7 +142,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         return;
 
     if (deviceInfo->expireAt.get() < Account::getInstance()->loginTime.get() + elapsedTimer->elapsed()) {
-        new ToastWidget("设备已过期", this);
+        new ToastWidget(HIDE("设备已过期"), this);
         return;
     }
 
@@ -560,7 +561,7 @@ bool DeviceView::event(QEvent *event)
         return QWidget::event(event);
 
     if (deviceInfo->expireAt.get() < Account::getInstance()->loginTime.get() + elapsedTimer->elapsed()) {
-        new ToastWidget("设备已过期", this);
+        new ToastWidget(HIDE("设备已过期"), this);
         return true;
     }
 

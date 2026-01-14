@@ -901,7 +901,7 @@ void MainWindow::addItem(DeviceConnection* connection)
             }
             else
             {
-                ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : "<font color='red'>[已过期]</font>"));
+                ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : HIDE("<font color='red'>[已过期]</font>")));
             }
         });
 
@@ -923,7 +923,7 @@ void MainWindow::addItem(DeviceConnection* connection)
                 }
                 else
                 {
-                    ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : "<font color='red'>[已过期]</font>"));
+                    ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : HIDE("<font color='red'>[已过期]</font>")));
                 }
             });
         });
