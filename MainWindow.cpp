@@ -558,7 +558,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     });
 
     webSocketClient->on("online_devices", [this](const QJsonValue &data, AckCallback callback) {
-        const auto& devices = getDevices();
+        auto& tab = getTab();
+        const auto& devices = DeviceInfo::getDevices(tab.bit == 0 ? 0 : (1U << tab.bit));
 
         QJsonArray jsonArray;
 
