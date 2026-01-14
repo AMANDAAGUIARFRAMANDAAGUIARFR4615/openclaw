@@ -946,7 +946,16 @@ void MainWindow::addItem(DeviceConnection* connection)
     connect(player->checkBox, &QCheckBox::stateChanged, [=](int state) {
         const QSignalBlocker blocker(deviceListWidget);
         item->setSelected(state == Qt::Checked);
-        QToolTip::showText(QCursor::pos(), "按住Ctrl键，用鼠标点击小窗口可快捷切换选中状态");
+        QToolTip::showText(QCursor::pos(), R"(
+            <div>
+                <b>快捷操作指南：</b>
+                <ul style='margin-left: -15px; margin-top: 5px;'>
+                    <li>按住 <b>Ctrl + 点击</b>：切换选中</li>
+                    <li>空白处 <b>Ctrl + A</b>：全选</li>
+                    <li>点击空白处：取消选中</li>
+                </ul>
+            </div>
+        )");
     });
 
     player->checkBox->setCheckState(Qt::CheckState::Checked);
