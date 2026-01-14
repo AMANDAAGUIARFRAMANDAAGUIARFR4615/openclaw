@@ -523,6 +523,30 @@ bool DeviceView::event(QEvent *event)
                     targetWindow ? targetWindow->close() : 0;
                     continue;
                 }
+
+                if (auto *mouseEvent = dynamic_cast<QMouseEvent*>(event)) {
+                    DeviceView* sourceView = this;
+
+                    if (auto widget = qobject_cast<DeviceWidget*>(this)) {
+                        if (auto window = widget->getDeviceWindow())
+                            sourceView = window;
+                    }
+
+                    auto targetView = item->getDeviceWindow() ? (DeviceView*)item->getDeviceWindow() : item;
+
+                    qreal ratioX = (qreal)targetView->width() / sourceView->width();
+                    qreal ratioY = (qreal)targetView->height() / sourceView->height();
+
+                    QMouseEvent mappedEvent(mouseEvent->type(),
+                                            QPointF(mouseEvent->position().x() * ratioX, mouseEvent->position().y() * ratioY),
+                                            mouseEvent->globalPosition(),
+                                            mouseEvent->button(),
+                                            mouseEvent->buttons(),
+                                            mouseEvent->modifiers(),
+                                            mouseEvent->pointingDevice());
+                    targetView->event(&mappedEvent);
+                    continue;
+                }
                 
                 ((DeviceView*)item)->event(event);
             }
@@ -716,8 +740,8 @@ void DeviceView::mouseDoubleClickEvent(QMouseEvent *event)
     qDebugEx() << "双击" << event->button();
 
     if (event->button() == Qt::LeftButton) {
-        qApp->postEvent(this, new QMouseEvent(QEvent::MouseButtonPress, event->position(), event->scenePosition(), event->globalPosition(), event->button(), event->buttons(), event->modifiers()));
-        qApp->postEvent(this, new QMouseEvent(QEvent::MouseButtonRelease, event->position(), event->scenePosition(), event->globalPosition(), event->button(), event->buttons(), event->modifiers()));
+        qApp->postEvent(this, new QMouseEvent(QEvent::MouseButtonPress, event->position(), event->globalPosition(), event->button(), event->buttons(), event->modifiers()));
+        qApp->postEvent(this, new QMouseEvent(QEvent::MouseButtonRelease, event->position(), event->globalPosition(), event->button(), event->buttons(), event->modifiers()));
     }
 }
 

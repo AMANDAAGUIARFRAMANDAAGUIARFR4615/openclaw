@@ -9,7 +9,6 @@
 #include <QPushButton>
 #include <QStyle>
 #include <QClipboard>
-#include <QMouseEvent>
 #include <QInputDialog>
 
 DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo): DeviceView(connection, deviceInfo), checkBox(new QCheckBox())

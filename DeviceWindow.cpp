@@ -10,7 +10,6 @@
 #include "SwitchButton.h"
 #include <QElapsedTimer>
 #include <QVBoxLayout>
-#include <QMouseEvent>
 #include <QMimeData>
 #include <QHBoxLayout>
 #include <QPushButton>
