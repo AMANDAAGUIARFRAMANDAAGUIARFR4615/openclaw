@@ -1,8 +1,8 @@
 #include "DeviceWidget.h"
 #include "DeviceWindow.h"
 #include "EventHub.h"
-#include "ToastWidget.h"
 #include "MainWindow.h"
+#include "Safe.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -110,6 +110,14 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
             return;
 
         this->deviceInfo->orientation = data.toInt();
+    });
+
+    EventHub::on(this, HIDE("deviceExpired"), [=](const QJsonValue &data, DeviceConnection* connection) {
+        if (this->connection != connection)
+            return;
+
+        if (data.toBool())
+            deviceInfo->expireAt = 1;
     });
 }
 
