@@ -487,7 +487,7 @@ class JailbreakAssistantDialog : public QDialog {
 public:
     JailbreakAssistantDialog(QWidget *parent = nullptr) : QDialog(parent) {
         setModal(true);
-        setWindowTitle("越狱助手【只支持15.0 - 16.5.1系统】");
+        setWindowTitle("越狱助手【完美支持15.2 - 16.6.1系统】");
         resize(600, 800);
 
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -506,10 +506,10 @@ public:
         url.append(".exe");
 #endif
 
-        auto step1 = new StepDownload("下载TrollRestore", "帮你给手机装上“巨魔商店”，解锁随意安装App且永不过期的强大功能。", url);
+        auto step1 = new StepDownload("下载TrollRestore", "给手机装上“巨魔商店”，随意安装App且永不掉签。\n系統要求：iOS 15.2 - 16.7 RC (20H18) and 17.0", url);
         auto step2 = new StepSelectApp("选择一个将被替换的系统应用", "请选择一个已安装在手机上的系统应用进行注入：");
         auto step3 = new StepExecute("开始注入", "运行程序并将 Helper 注入目标应用。（请确保仅有一台手机连接并已信任此电脑）");
-        auto step4 = new StepScan("使用相机app扫码下载Dopamine", "稳定且现代化的越狱工具", "https://gitee.com/coding202208/pandora/releases/download/v1/Dopamine.tipa", "https://gitee.com/coding202208/pandora/releases/download/v1/Dopamine2.tipa");
+        auto step4 = new StepScan("使用相机app扫码下载Dopamine", "稳定且现代化的越狱工具\n系統要求：iOS 15.0 - 16.5.1 (arm64e) and iOS 15.0 - 16.6.1 (arm64)", "https://gitee.com/coding202208/pandora/releases/download/v1/Dopamine.tipa", "https://gitee.com/coding202208/pandora/releases/download/v1/Dopamine2.tipa");
         auto step5 = new StepFinal("最后一步", "在手机上打开巨魔商店（TrollStore）\n点击右上角加号\n选择Install IPA File就可以安装Dopamine\n安装后打开Dopamine点击越狱等待完成即可。");
 
         QList<StepBase*> steps;
