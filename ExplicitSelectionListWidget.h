@@ -45,7 +45,7 @@ protected:
 
     void keyPressEvent(QKeyEvent *event) override
     {
-        if (event->key() == Qt::Key_Control || event->matches(QKeySequence::SelectAll))
+        if (event->key() == Qt::Key_Control || event->matches(QKeySequence::SelectAll) || event->key() == Qt::Key_Escape)
             QListWidget::keyPressEvent(event);
     }
     
