@@ -509,7 +509,7 @@ public:
         auto step1 = new StepDownload("下载TrollRestore", "给手机装上“巨魔商店”，随意安装App且永不掉签。\n系統要求：iOS 15.2 - 16.7 RC (20H18) and 17.0", url);
         auto step2 = new StepSelectApp("选择一个将被替换的系统应用", "请选择一个已安装在手机上的系统应用进行注入：");
         auto step3 = new StepExecute("开始注入", "运行程序并将 Helper 注入目标应用。（请确保仅有一台手机连接并已信任此电脑）");
-        auto step4 = new StepScan("使用相机app扫码下载Dopamine", "稳定且现代化的越狱工具\n隐根（RootHide）是无根（Rootless）的进化版，专门为了“防检测”而生。\n系統要求：iOS 15.0 - 16.5.1 (arm64e) and iOS 15.0 - 16.6.1 (arm64)", "https://gitee.com/coding202208/pandora/releases/download/v1/Dopamine.tipa", "https://gitee.com/coding202208/pandora/releases/download/v1/Dopamine2.tipa");
+        auto step4 = new StepScan("使用相机app扫码下载Dopamine", "无根是不修改系统分区以实现越狱，而隐根是在无根的基础上彻底隐藏越狱文件，让App检测不到越狱状态。\n系統要求：iOS 15.0 - 16.5.1 (arm64e) and iOS 15.0 - 16.6.1 (arm64)", "https://gitee.com/coding202208/pandora/releases/download/v1/Dopamine.tipa", "https://gitee.com/coding202208/pandora/releases/download/v1/Dopamine2.tipa");
         auto step5 = new StepFinal("最后一步", "在手机上打开巨魔商店（TrollStore）\n点击右上角加号\n选择Install IPA File就可以安装Dopamine\n安装后打开Dopamine点击越狱等待完成即可。");
 
         QList<StepBase*> steps;
