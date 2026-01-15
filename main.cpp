@@ -48,8 +48,7 @@ int main(int argc, char *argv[])
 
     // 强制使用 Fusion 风格自带的“标准调色板”
     // 这会忽略系统当前的颜色（比如忽略系统的深色模式），强制使用 Fusion 默认的浅灰色
-    QPalette standardPalette = fusionStyle->standardPalette();
-    app.setPalette(standardPalette);
+    app.setPalette(fusionStyle->standardPalette());
 
     app.installEventFilter(new CursorFilter(&app));
 
