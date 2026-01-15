@@ -40,8 +40,8 @@ class RemoteFileExplorer : public QWidget
     Q_OBJECT
 
 public:
-    static RemoteFileExplorer* open(DeviceConnection* connection, const QString& rootPath = "/") {
-        QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(rootPath);
+    static RemoteFileExplorer* open(DeviceConnection* connection, const QString& openPath = "/") {
+        QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(openPath);
         auto existing = instanceMap.value(key);
         if (existing) {
             existing->setWindowState(existing->windowState() & ~Qt::WindowMinimized);
@@ -50,7 +50,7 @@ public:
             return existing;
         }
 
-        auto explorer = new RemoteFileExplorer(connection, rootPath);
+        auto explorer = new RemoteFileExplorer(connection, openPath);
         explorer->setWindowTitle(connection->displayName() + " - 文件管理");
         QSize screenSize = qApp->primaryScreen()->availableSize();
         explorer->resize(screenSize.width() * 0.7, screenSize.height() * 0.7);
@@ -59,7 +59,7 @@ public:
     }
 
 private:
-    explicit RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath = "/");
+    explicit RemoteFileExplorer(DeviceConnection* connection, const QString& openPath = "/");
     ~RemoteFileExplorer();
 
 protected:
@@ -79,9 +79,11 @@ protected:
     void dropEvent(QDropEvent *event) override;
 
     DeviceConnection* connection;
+    const QString openPath;
+    QString rootPath;
+    
     QTreeView *treeView;
     QStandardItemModel *model;
-    QString rootPath;
     QHash<QString, QStandardItem*> pathToItem;
     QStatusBar *statusBar;
     QPoint m_dragStartPos;

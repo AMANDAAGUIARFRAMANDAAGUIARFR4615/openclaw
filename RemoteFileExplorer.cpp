@@ -59,11 +59,12 @@ protected:
     }
 };
 
-RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath) 
-    : connection(connection), rootPath(rootPath), QWidget()
+RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& openPath) : connection(connection), openPath(openPath), QWidget()
 {
-    QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(rootPath);
+    QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(openPath);
     instanceMap[key] = this;
+
+    rootPath = openPath;
     
     setAttribute(Qt::WA_DeleteOnClose);
     setAcceptDrops(true);
@@ -259,7 +260,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     connect(quickAccessList, &QListWidget::itemClicked, [this](QListWidgetItem* item) {
         QString path = item->text();
         setStatusMessage("打开收藏路径: " + path);
-        this->rootPath = path;
+        rootPath = path;
         model->removeRows(0, model->rowCount());
         fetchDirectoryContents(path);
     });
@@ -328,7 +329,7 @@ RemoteFileExplorer::~RemoteFileExplorer()
     EventHub::off(this, "renameItemStatus");
     EventHub::off(this, "removeItemStatus");
 
-    QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(rootPath);
+    QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(openPath);
     instanceMap.remove(key);
 }
 
