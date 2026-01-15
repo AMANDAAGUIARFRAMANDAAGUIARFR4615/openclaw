@@ -15,6 +15,7 @@
 #include "Account.h"
 #include "LoginWidget.h"
 #include "AccountListDialog.h"
+#include "SwapExpirationDialog.h"
 #include "DeviceWindow.h"
 #include "ExplicitSelectionListWidget.h"
 #include "NaturalSortListWidgetItem.h"
@@ -308,6 +309,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
         if (title == "续费") {
             RenewalDialog dialog(this);
+            dialog.exec();
+            return;
+        }
+
+        if (title == "换绑") {
+            SwapExpirationDialog dialog(this);
             dialog.exec();
             return;
         }
