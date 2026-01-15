@@ -274,7 +274,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
                 MainWindow::getInstance()->relayoutDevices();
             });
         }
-        else if (text == "🔄更新手机端") {
+        else if (text == "🚀更新手机端") {
             auto dynamicSubMenu = new QMenu(text, menu);
             menu->addMenu(dynamicSubMenu);
 
