@@ -22,11 +22,13 @@ void UsbDeviceManager::start() {
 
     auto connectTimer = new QTimer(this);
     connectTimer->callOnTimeout([this]() {
+        bool isUsbSetting = MainWindow::getInstance()->getTab().getConnectionMethod() == 0;
+
         for (auto it = devices.keyValueBegin(); it != devices.keyValueEnd(); ++it) {
             if (!it->second) {
                 auto deviceInfo = DeviceInfo::getDevice(it->first);
-                bool isUsbSetting = MainWindow::getInstance()->getTab().getConnectionMethod() == 0;
-                if (!deviceInfo || isUsbSetting)
+
+                if (!deviceInfo || deviceInfo->connection->type != DeviceConnection::Usb && isUsbSetting)
                     connectDevice(it->first, 32839, false);
             }
         }

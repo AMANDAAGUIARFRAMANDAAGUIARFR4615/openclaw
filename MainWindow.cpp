@@ -660,7 +660,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
                     continue;
 
                 auto deviceInfo = DeviceInfo::getDevice(ip.toString());
-                if (!deviceInfo || !isUsbSetting)
+                if (!deviceInfo || deviceInfo->connection->type == DeviceConnection::Usb && !isUsbSetting)
                     udpTransport->sendData(TcpServer::getInstance()->getHostInfo(currentLocalIP), ip, 32838);
             }
         }
