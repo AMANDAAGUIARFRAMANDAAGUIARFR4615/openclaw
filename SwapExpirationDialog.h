@@ -144,7 +144,8 @@ private:
         filterLayout->addWidget(new QLabel("分组:"));
         filterComboBox = new QComboBox();
         filterComboBox->setParent(containerWidget);
-        filterLayout->addWidget(filterComboBox, 1);
+        filterLayout->addWidget(filterComboBox);
+        filterLayout->addStretch();
         verticalLayout->addLayout(filterLayout);
 
         selectAllCheckBox = new QCheckBox("全选");
@@ -153,7 +154,7 @@ private:
 
         tableWidget = new QTableWidget();
         tableWidget->setColumnCount(4);
-        tableWidget->setHorizontalHeaderLabels({"", "名称", "机型", "到期"});
+        tableWidget->setHorizontalHeaderLabels({"", "设备名称", "机型", "到期时间"});
         tableWidget->setFrameShape(QFrame::NoFrame);
         tableWidget->setShowGrid(false);
         tableWidget->setAlternatingRowColors(true);
