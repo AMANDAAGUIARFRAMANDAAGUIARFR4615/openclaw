@@ -55,6 +55,8 @@ public:
                         deviceComboBox->setPlaceholderText("当前无在线设备");
                         return;
                     }
+
+                    deviceComboBox->addItem("主界面", "");
                     
                     for (const QJsonValue &item : devices) {
                         const auto& deviceId = item["deviceId"].toString();
