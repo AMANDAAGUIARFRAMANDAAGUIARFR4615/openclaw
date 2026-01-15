@@ -12,17 +12,13 @@ public:
 protected:
     void mousePressEvent(QMouseEvent *event) override
     {
-        QListWidgetItem *item = itemAt(event->pos());
-
-        bool isCtrlPressed = event->modifiers() & Qt::ControlModifier;
-
-        if (item && !isCtrlPressed) {
-            // 设置当前焦点项，但不更新选中状态
-            setCurrentItem(item, QItemSelectionModel::NoUpdate);
-            emit itemPressed(item);
-            
+        if (event->modifiers() != Qt::ControlModifier) {
             // 拦截事件，阻止默认的“点击即选中”
-            return; 
+            if (auto item = itemAt(event->pos())) {
+                setCurrentItem(item, QItemSelectionModel::NoUpdate);
+                emit itemPressed(item);
+                return;
+            }
         }
 
         QListWidget::mousePressEvent(event);
@@ -30,10 +26,7 @@ protected:
 
     void mouseMoveEvent(QMouseEvent *event) override
     {
-        bool isCtrlPressed = event->modifiers() & Qt::ControlModifier;
-
-        // 如果是 左键按住 且 没有按Ctrl
-        if (!isCtrlPressed) {
+        if (event->modifiers() != Qt::ControlModifier) {
             // 直接忽略该事件，防止触发父类的“拖动选中”或“框选”逻辑
             // 这样鼠标移动就不会改变选中状态了
             return;
