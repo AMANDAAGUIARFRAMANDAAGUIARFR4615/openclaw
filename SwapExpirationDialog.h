@@ -22,6 +22,25 @@
 class SwapExpirationDialog : public QDialog {
     Q_OBJECT
 
+    // 自定义Item用于排序：不可用的排在后面，否则按原始索引排序
+    class SortTableItem : public QTableWidgetItem {
+    public:
+        int originalIndex;
+        SortTableItem(int index) : QTableWidgetItem(), originalIndex(index) {}
+        
+        bool operator<(const QTableWidgetItem &other) const override {
+            // 状态比较：Enabled(false) < Disabled(true)，从而让Disabled排到底部
+            bool myDisabled = !(flags() & Qt::ItemIsEnabled);
+            bool otherDisabled = !(other.flags() & Qt::ItemIsEnabled);
+            
+            if (myDisabled != otherDisabled)
+                return myDisabled < otherDisabled;
+            
+            // 状态相同时，保持原始加载顺序
+            return originalIndex < static_cast<const SortTableItem&>(other).originalIndex;
+        }
+    };
+
 public:
     explicit SwapExpirationDialog(QWidget *parent) : QDialog(parent) {
         setWindowTitle("互换到期时间");
@@ -53,7 +72,7 @@ public:
             connect(currentTable, &QTableWidget::itemChanged, [=](QTableWidgetItem *item) {
                 // 只处理第一列（复选框列）的变化
                 if (item->column() == 0) {
-                    syncItemMutexState(item, oppositeTable); 
+                    syncItemMutexState(item, oppositeTable);
                     updateSelectAllState(oppositeTable, oppositeSelectAllBox); 
                     updateSelectAllState(currentTable, currentSelectAllBox); 
                 }
@@ -77,10 +96,13 @@ public:
                     // 只有启用的项目才会被全选选中
                     if(item->flags() & Qt::ItemIsEnabled) { 
                         item->setCheckState(isChecked ? Qt::Checked : Qt::Unchecked);
-                        syncItemMutexState(item, oppositeTable); // 手动触发互斥逻辑
+                        // 循环中不触发排序(false)，避免性能问题
+                        syncItemMutexState(item, oppositeTable, false); 
                     }
                 }
                 currentTable->blockSignals(false);
+                // 循环结束后一次性排序对面表格
+                oppositeTable->sortItems(0, Qt::AscendingOrder);
                 updateSelectAllState(oppositeTable, oppositeSelectAllBox); 
             });
         };
@@ -114,7 +136,7 @@ private:
         auto filterLayout = new QHBoxLayout();
         filterLayout->addWidget(new QLabel("分组:"));
         filterComboBox = new QComboBox();
-        filterComboBox->setParent(containerWidget); // 确保可以通过 findChild 找到
+        filterComboBox->setParent(containerWidget);
         filterLayout->addWidget(filterComboBox, 1);
         verticalLayout->addLayout(filterLayout);
 
@@ -140,7 +162,8 @@ private:
     }
 
     // 同步互斥状态：如果在A表选中了设备，则B表对应的设备变为不可选
-    void syncItemMutexState(QTableWidgetItem* sourceItem, QTableWidget* targetTableWidget) {
+    // sort: 是否触发排序
+    void syncItemMutexState(QTableWidgetItem* sourceItem, QTableWidget* targetTableWidget, bool sort = true) {
         QString udid = sourceItem->data(Qt::UserRole).toString();
         bool isChecked = (sourceItem->checkState() == Qt::Checked);
         
@@ -166,6 +189,9 @@ private:
                 break;
             }
         }
+        if (sort) {
+            targetTableWidget->sortItems(0, Qt::AscendingOrder);
+        }
         targetTableWidget->blockSignals(false);
     }
 
@@ -175,18 +201,13 @@ private:
         auto bitMask = filterComboBox->currentData().toUInt();
         auto devices = DeviceInfo::getDevices(bitMask == 0 ? 0 : (1U << bitMask));
         
-        // 获取对面表格已经选中的设备ID（这些设备在本表应该被锁定或置底）
+        // 获取对面表格已经选中的设备ID
         QSet<QString> lockedDeviceIds;
         for(int i = 0; i < oppositeTableWidget->rowCount(); ++i) {
             if(oppositeTableWidget->item(i, 0)->checkState() == Qt::Checked) {
                 lockedDeviceIds.insert(oppositeTableWidget->item(i, 0)->data(Qt::UserRole).toString());
             }
         }
-
-        // 排序：未被锁定的设备排在前面
-        std::partition(devices.begin(), devices.end(), [&](const auto& device){ 
-            return !lockedDeviceIds.contains(device->deviceId); 
-        });
 
         tableWidget->blockSignals(true);
         tableWidget->setRowCount(0);
@@ -196,8 +217,8 @@ private:
             const auto& device = devices[i];
             bool isLocked = lockedDeviceIds.contains(device->deviceId);
 
-            // Checkbox Column
-            auto itemCheckbox = new QTableWidgetItem();
+            // Checkbox Column (使用自定义的 SortTableItem，传入原始索引 i)
+            auto itemCheckbox = new SortTableItem(i);
             itemCheckbox->setData(Qt::UserRole, device->deviceId);
             itemCheckbox->setCheckState(Qt::Unchecked);
             if (isLocked) {
@@ -226,6 +247,10 @@ private:
             }
             tableWidget->setItem(i, 3, itemTime);
         }
+        
+        // 加载完成后进行一次排序，确保禁用的项目沉底，其余保持原始顺序
+        tableWidget->sortItems(0, Qt::AscendingOrder);
+        
         tableWidget->blockSignals(false);
         updateSelectAllState(tableWidget, selectAllCheckBox);
     }
