@@ -10,6 +10,7 @@
 #include <QNetworkProxy>
 #include <QLoggingCategory>
 #include <QMessageBox>
+#include <QStyleHints>
 #include <QStyleFactory>
 
 void onDataReceived(DeviceConnection *connection, const QJsonObject &jsonObject) {
@@ -43,12 +44,10 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    QStyle *fusionStyle = QStyleFactory::create("Fusion");
-    app.setStyle(fusionStyle);
+    if (auto styleHints = QGuiApplication::styleHints())
+        styleHints->setColorScheme(Qt::ColorScheme::Light);
 
-    // 强制使用 Fusion 风格自带的“标准调色板”
-    // 这会忽略系统当前的颜色（比如忽略系统的深色模式），强制使用 Fusion 默认的浅灰色
-    app.setPalette(fusionStyle->standardPalette());
+    app.setStyle(QStyleFactory::create("Fusion"));
 
     app.installEventFilter(new CursorFilter(&app));
 
@@ -69,6 +68,8 @@ int main(int argc, char *argv[])
         dir.mkpath(".");
 
     new LogWindow();
+
+    qDebug() << QStyleFactory::keys(); 
 
 #if defined(Q_OS_WIN) && !defined(QT_DEBUG)
     QTimer* timer = new QTimer();
