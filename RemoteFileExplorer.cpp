@@ -30,6 +30,34 @@
 #include <QClipboard>
 #include <QPushButton>
 #include <QDesktopServices>
+#include <QSortFilterProxyModel>
+
+class FileSystemSortProxyModel : public QSortFilterProxyModel
+{
+public:
+    explicit FileSystemSortProxyModel(QObject *parent = nullptr) : QSortFilterProxyModel(parent) {}
+
+protected:
+    bool lessThan(const QModelIndex &leftIndex, const QModelIndex &rightIndex) const override
+    {
+        if (leftIndex.column() == 0) {
+             static QCollator collator;
+        
+            if (!collator.numericMode())
+                collator.setNumericMode(true);
+
+            return collator.compare(leftIndex.data(Qt::DisplayRole).toString(), rightIndex.data(Qt::DisplayRole).toString()) < 0;
+        }
+
+        if (leftIndex.column() == 2) {
+            qint64 leftSize = leftIndex.data(Qt::UserRole + 1).toLongLong();
+            qint64 rightSize = rightIndex.data(Qt::UserRole + 1).toLongLong();
+            return leftSize < rightSize;
+        }
+        
+        return QSortFilterProxyModel::lessThan(leftIndex, rightIndex);
+    }
+};
 
 RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& rootPath) 
     : connection(connection), rootPath(rootPath), QWidget()
@@ -98,7 +126,12 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
 
     model = new QStandardItemModel();
     model->setHorizontalHeaderLabels({"名称", "修改时间", "大小"});
-    treeView->setModel(model);
+    
+    auto proxyModel = new FileSystemSortProxyModel(this);
+    proxyModel->setSourceModel(model);
+    treeView->setModel(proxyModel);
+    treeView->setSortingEnabled(true);
+    treeView->sortByColumn(0, Qt::AscendingOrder);
 
     treeView->setItemDelegate(new VirtualItemDelegate(treeView));
 
@@ -401,6 +434,8 @@ void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QStrin
     auto& item = pathToItem[fullPath];
 
     if (item) {
+        item->setData(size, Qt::UserRole + 1);
+        
         int row = item->row();
         auto parent = item->index().parent();
         model->setData(model->index(row, 1, parent), date);
@@ -414,6 +449,8 @@ void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QStrin
 
     item = new QStandardItem(name);
     item->setData(fullPath, Qt::UserRole);
+    item->setData(size, Qt::UserRole + 1);
+    item->setData(isDirectory, Qt::UserRole + 2);
     pathToItem[fullPath] = item;
 
     if (isDirectory) {
@@ -436,8 +473,6 @@ void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QStrin
     }
 
     item->setEditable(false);
-
-    item->setData(isDirectory, Qt::UserRole + 2);
 
     if (isDirectory) item->setChild(0, nullptr);
 
