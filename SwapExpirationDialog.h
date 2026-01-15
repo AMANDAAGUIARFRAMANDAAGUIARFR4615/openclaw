@@ -15,7 +15,9 @@
 #include <QCheckBox>
 #include <QSplitter>
 #include <QToolTip>
-#include <algorithm> // 必须包含这个以使用 std::partition
+#include <QJsonArray>
+#include <QJsonObject>
+#include <algorithm>
 
 class SwapExpirationDialog : public QDialog {
     Q_OBJECT
@@ -24,206 +26,272 @@ public:
     explicit SwapExpirationDialog(QWidget *parent) : QDialog(parent) {
         setWindowTitle("互换到期时间");
         setMinimumSize(960, 600);
-        auto layout = new QVBoxLayout(this);
+        auto mainLayout = new QVBoxLayout(this);
 
         auto splitter = new QSplitter(Qt::Horizontal);
-        createPanel(leftWidget = new QWidget, leftFilter, leftAll, leftTable, "源设备 (A)");
-        createPanel(rightWidget = new QWidget, rightFilter, rightAll, rightTable, "目标设备 (B)");
-        splitter->addWidget(leftWidget);
-        splitter->addWidget(rightWidget);
-        layout->addWidget(splitter, 1);
+        
+        sourceGroupWidget = new QWidget();
+        targetGroupWidget = new QWidget();
+        
+        createPanel(sourceGroupWidget, sourceFilterComboBox, sourceSelectAllCheckBox, sourceDeviceTable, "源设备 (A)");
+        createPanel(targetGroupWidget, targetFilterComboBox, targetSelectAllCheckBox, targetDeviceTable, "目标设备 (B)");
+        
+        splitter->addWidget(sourceGroupWidget);
+        splitter->addWidget(targetGroupWidget);
+        mainLayout->addWidget(splitter, 1);
 
-        layout->addWidget(new QLabel("提示: 左右设备互斥，不可选设备已置底。"));
-        auto box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-        layout->addWidget(box);
+        mainLayout->addWidget(new QLabel("提示: 左右设备互斥，不可选设备已置底。"));
+        
+        auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+        mainLayout->addWidget(buttonBox);
 
-        // --- 核心联动逻辑 ---
-        auto bindLogic = [&](QTableWidget* src, QTableWidget* dst, QCheckBox* srcAll, QCheckBox* dstAll) {
+        // --- 核心联动逻辑绑定 ---
+        auto bindInteractionLogic = [&](QTableWidget* currentTable, QTableWidget* oppositeTable, 
+                                        QCheckBox* currentSelectAllBox, QCheckBox* oppositeSelectAllBox) {
+            
             // 列表项点击 -> 处理互斥 -> 更新两边全选状态
-            connect(src, &QTableWidget::itemChanged, [=](QTableWidgetItem *item) {
+            connect(currentTable, &QTableWidget::itemChanged, [=](QTableWidgetItem *item) {
+                // 只处理第一列（复选框列）的变化
                 if (item->column() == 0) {
-                    syncItemState(item, dst); 
-                    updateSelectAll(dst, dstAll); 
-                    updateSelectAll(src, srcAll); 
+                    syncItemMutexState(item, oppositeTable); 
+                    updateSelectAllState(oppositeTable, oppositeSelectAllBox); 
+                    updateSelectAllState(currentTable, currentSelectAllBox); 
                 }
             });
-            // 筛选改变 -> 重新加载
-            connect(src->findChild<QComboBox*>(), QOverload<int>::of(&QComboBox::currentIndexChanged), [=]() {
-                loadTable(src, src->findChild<QComboBox*>(), dst, srcAll);
-            });
-            // 全选点击
-            connect(srcAll, &QCheckBox::clicked, [=](bool) {
-                bool checked = srcAll->checkState() == Qt::Checked;
-                src->blockSignals(true);
-                for(int i=0; i<src->rowCount(); ++i) {
-                    if(src->item(i, 0)->flags() & Qt::ItemIsEnabled) { 
-                        src->item(i, 0)->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
-                        syncItemState(src->item(i, 0), dst); // 手动触发互斥
+
+            // 筛选下拉框改变 -> 重新加载表格
+            auto filterBox = currentTable->parentWidget()->findChild<QComboBox*>();
+            if (filterBox) {
+                connect(filterBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=]() {
+                    loadTableData(currentTable, filterBox, oppositeTable, currentSelectAllBox);
+                });
+            }
+
+            // 全选按钮点击
+            connect(currentSelectAllBox, &QCheckBox::clicked, [=](bool) {
+                bool isChecked = currentSelectAllBox->checkState() == Qt::Checked;
+                currentTable->blockSignals(true);
+                
+                for(int i = 0; i < currentTable->rowCount(); ++i) {
+                    QTableWidgetItem *item = currentTable->item(i, 0);
+                    // 只有启用的项目才会被全选选中
+                    if(item->flags() & Qt::ItemIsEnabled) { 
+                        item->setCheckState(isChecked ? Qt::Checked : Qt::Unchecked);
+                        syncItemMutexState(item, oppositeTable); // 手动触发互斥逻辑
                     }
                 }
-                src->blockSignals(false);
-                updateSelectAll(dst, dstAll); 
+                currentTable->blockSignals(false);
+                updateSelectAllState(oppositeTable, oppositeSelectAllBox); 
             });
         };
 
-        bindLogic(leftTable, rightTable, leftAll, rightAll);
-        bindLogic(rightTable, leftTable, rightAll, leftAll);
+        // 双向绑定逻辑
+        bindInteractionLogic(sourceDeviceTable, targetDeviceTable, sourceSelectAllCheckBox, targetSelectAllCheckBox);
+        bindInteractionLogic(targetDeviceTable, sourceDeviceTable, targetSelectAllCheckBox, sourceSelectAllCheckBox);
 
-        connect(box, &QDialogButtonBox::accepted, this, &SwapExpirationDialog::onConfirm);
-        connect(box, &QDialogButtonBox::rejected, this, &QDialog::reject);
+        connect(buttonBox, &QDialogButtonBox::accepted, this, &SwapExpirationDialog::onConfirm);
+        connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
-        initFilter(leftFilter);
-        initFilter(rightFilter);
-        // 初始加载
-        loadTable(leftTable, leftFilter, rightTable, leftAll);
-        loadTable(rightTable, rightFilter, leftTable, rightAll);
+        // 初始化数据
+        initFilterComboBox(sourceFilterComboBox);
+        initFilterComboBox(targetFilterComboBox);
+        
+        loadTableData(sourceDeviceTable, sourceFilterComboBox, targetDeviceTable, sourceSelectAllCheckBox);
+        loadTableData(targetDeviceTable, targetFilterComboBox, sourceDeviceTable, targetSelectAllCheckBox);
     }
 
 private:
-    QWidget *leftWidget, *rightWidget;
-    QComboBox *leftFilter, *rightFilter;
-    QCheckBox *leftAll, *rightAll;
-    QTableWidget *leftTable, *rightTable;
+    QWidget *sourceGroupWidget, *targetGroupWidget;
+    QComboBox *sourceFilterComboBox, *targetFilterComboBox;
+    QCheckBox *sourceSelectAllCheckBox, *targetSelectAllCheckBox;
+    QTableWidget *sourceDeviceTable, *targetDeviceTable;
 
-    void createPanel(QWidget* w, QComboBox*& cb, QCheckBox*& all, QTableWidget*& table, QString title) {
-        auto l = new QVBoxLayout(w);
-        l->addWidget(new QLabel(title));
+    // 创建左右两侧的面板
+    void createPanel(QWidget* containerWidget, QComboBox*& filterComboBox, QCheckBox*& selectAllCheckBox, QTableWidget*& deviceTable, const QString& title) {
+        auto verticalLayout = new QVBoxLayout(containerWidget);
+        verticalLayout->addWidget(new QLabel(title));
         
-        auto h = new QHBoxLayout();
-        h->addWidget(new QLabel("分组:"));
-        h->addWidget(cb = new QComboBox(), 1);
-        l->addLayout(h);
+        auto filterLayout = new QHBoxLayout();
+        filterLayout->addWidget(new QLabel("分组:"));
+        filterComboBox = new QComboBox();
+        filterComboBox->setParent(containerWidget); // 确保可以通过 findChild 找到
+        filterLayout->addWidget(filterComboBox, 1);
+        verticalLayout->addLayout(filterLayout);
 
-        l->addWidget(all = new QCheckBox("全选"));
-        all->setTristate(true);
+        selectAllCheckBox = new QCheckBox("全选");
+        selectAllCheckBox->setTristate(true);
+        verticalLayout->addWidget(selectAllCheckBox);
 
-        table = new QTableWidget();
-        table->setColumnCount(4);
-        table->setHorizontalHeaderLabels({"", "名称", "机型", "到期"});
-        // 修复1: header() -> horizontalHeader()
-        table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
-        table->setSelectionBehavior(QAbstractItemView::SelectRows);
-        table->setFocusPolicy(Qt::NoFocus);
-        l->addWidget(table);
+        deviceTable = new QTableWidget();
+        deviceTable->setColumnCount(4);
+        deviceTable->setHorizontalHeaderLabels({"", "名称", "机型", "到期"});
         
-        cb->setParent(w); 
+        deviceTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+        deviceTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+        deviceTable->setFocusPolicy(Qt::NoFocus);
+        verticalLayout->addWidget(deviceTable);
     }
 
-    void initFilter(QComboBox* cb) {
-        for (const auto& t : MainWindow::getInstance()->getTabs()) cb->addItem(t.name, t.bit);
-        cb->setCurrentIndex(MainWindow::getInstance()->tabWidget->currentIndex());
+    void initFilterComboBox(QComboBox* comboBox) {
+        for (const auto& tabInfo : MainWindow::getInstance()->getTabs()) {
+            comboBox->addItem(tabInfo.name, tabInfo.bit);
+        }
+        comboBox->setCurrentIndex(MainWindow::getInstance()->tabWidget->currentIndex());
     }
 
-    void syncItemState(QTableWidgetItem* srcItem, QTableWidget* dstTable) {
-        QString udid = srcItem->data(Qt::UserRole).toString();
-        bool checked = (srcItem->checkState() == Qt::Checked);
+    // 同步互斥状态：如果在A表选中了设备，则B表对应的设备变为不可选
+    void syncItemMutexState(QTableWidgetItem* sourceItem, QTableWidget* targetTableWidget) {
+        QString udid = sourceItem->data(Qt::UserRole).toString();
+        bool isChecked = (sourceItem->checkState() == Qt::Checked);
         
-        dstTable->blockSignals(true); 
-        for (int i = 0; i < dstTable->rowCount(); ++i) {
-            auto it = dstTable->item(i, 0);
-            if (it->data(Qt::UserRole).toString() == udid) {
-                if (checked) {
-                    it->setCheckState(Qt::Unchecked);
-                    it->setFlags(it->flags() & ~Qt::ItemIsEnabled);
-                    dstTable->item(i, 1)->setForeground(Qt::gray);
-                    dstTable->item(i, 3)->setForeground(Qt::gray);
+        targetTableWidget->blockSignals(true); 
+        for (int i = 0; i < targetTableWidget->rowCount(); ++i) {
+            auto targetItem = targetTableWidget->item(i, 0);
+            if (targetItem->data(Qt::UserRole).toString() == udid) {
+                if (isChecked) {
+                    // 源被选中 -> 目标禁用并变灰
+                    targetItem->setCheckState(Qt::Unchecked);
+                    targetItem->setFlags(targetItem->flags() & ~Qt::ItemIsEnabled);
+                    targetTableWidget->item(i, 1)->setForeground(Qt::gray);
+                    targetTableWidget->item(i, 3)->setForeground(Qt::gray);
                 } else {
-                    it->setFlags(it->flags() | Qt::ItemIsEnabled);
-                    dstTable->item(i, 1)->setForeground(Qt::black);
-                    bool expired = dstTable->item(i, 3)->data(Qt::UserRole).toBool();
-                    dstTable->item(i, 3)->setForeground(expired ? QColor("#d32f2f") : Qt::black);
+                    // 源取消选中 -> 目标恢复可用
+                    targetItem->setFlags(targetItem->flags() | Qt::ItemIsEnabled);
+                    targetTableWidget->item(i, 1)->setForeground(Qt::black);
+                    
+                    // 恢复到期时间的颜色逻辑
+                    bool isExpired = targetTableWidget->item(i, 3)->data(Qt::UserRole).toBool();
+                    targetTableWidget->item(i, 3)->setForeground(isExpired ? QColor("#d32f2f") : Qt::black);
                 }
                 break;
             }
         }
-        dstTable->blockSignals(false);
+        targetTableWidget->blockSignals(false);
     }
 
-    void loadTable(QTableWidget* table, QComboBox* cb, QTableWidget* other, QCheckBox* allBox) {
-        if (cb->currentIndex() < 0) return;
-        auto bit = cb->currentData().toUInt();
-        auto devs = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+    void loadTableData(QTableWidget* tableWidget, QComboBox* filterComboBox, QTableWidget* oppositeTableWidget, QCheckBox* selectAllCheckBox) {
+        if (filterComboBox->currentIndex() < 0) return;
         
-        QSet<QString> lockedIds;
-        for(int i=0; i<other->rowCount(); ++i) 
-            if(other->item(i,0)->checkState() == Qt::Checked) 
-                lockedIds.insert(other->item(i,0)->data(Qt::UserRole).toString());
-
-        std::partition(devs.begin(), devs.end(), [&](const auto& d){ return !lockedIds.contains(d->deviceId); });
-
-        table->blockSignals(true);
-        table->setRowCount(0);
-        table->setRowCount(devs.size());
-
-        for (int i = 0; i < devs.size(); ++i) {
-            bool isLocked = lockedIds.contains(devs[i]->deviceId);
-            auto item = new QTableWidgetItem();
-            item->setData(Qt::UserRole, devs[i]->deviceId);
-            item->setCheckState(Qt::Unchecked);
-            if (isLocked) item->setFlags(item->flags() & ~Qt::ItemIsEnabled);
-            table->setItem(i, 0, item);
-
-            auto name = new QTableWidgetItem(devs[i]->deviceName);
-            if (isLocked) name->setForeground(Qt::gray);
-            table->setItem(i, 1, name);
-            
-            table->setItem(i, 2, new QTableWidgetItem(devs[i]->model));
-
-            auto timeStr = QDateTime::fromMSecsSinceEpoch(devs[i]->expireAt.get()).toString("yyyy-MM-dd");
-            auto time = new QTableWidgetItem(timeStr);
-            bool expired = devs[i]->expireAt.get() < QDateTime::currentMSecsSinceEpoch();
-            time->setData(Qt::UserRole, expired); 
-            
-            if (isLocked) time->setForeground(Qt::gray);
-            else if (expired) time->setForeground(QColor("#d32f2f"));
-            table->setItem(i, 3, time);
-        }
-        table->blockSignals(false);
-        updateSelectAll(table, allBox);
-    }
-
-    void updateSelectAll(QTableWidget* table, QCheckBox* box) {
-        int checked = 0, enabled = 0;
-        for(int i=0; i<table->rowCount(); ++i) {
-            if(table->item(i,0)->flags() & Qt::ItemIsEnabled) {
-                enabled++;
-                if(table->item(i,0)->checkState() == Qt::Checked) checked++;
+        auto bitMask = filterComboBox->currentData().toUInt();
+        auto devices = DeviceInfo::getDevices(bitMask == 0 ? 0 : (1U << bitMask));
+        
+        // 获取对面表格已经选中的设备ID（这些设备在本表应该被锁定或置底）
+        QSet<QString> lockedDeviceIds;
+        for(int i = 0; i < oppositeTableWidget->rowCount(); ++i) {
+            if(oppositeTableWidget->item(i, 0)->checkState() == Qt::Checked) {
+                lockedDeviceIds.insert(oppositeTableWidget->item(i, 0)->data(Qt::UserRole).toString());
             }
         }
-        box->blockSignals(true);
-        box->setCheckState((enabled > 0 && checked == enabled) ? Qt::Checked : 
-                           (checked > 0 ? Qt::PartiallyChecked : Qt::Unchecked));
-        box->setEnabled(enabled > 0);
-        box->blockSignals(false);
+
+        // 排序：未被锁定的设备排在前面
+        std::partition(devices.begin(), devices.end(), [&](const auto& device){ 
+            return !lockedDeviceIds.contains(device->deviceId); 
+        });
+
+        tableWidget->blockSignals(true);
+        tableWidget->setRowCount(0);
+        tableWidget->setRowCount(devices.size());
+
+        for (int i = 0; i < devices.size(); ++i) {
+            const auto& device = devices[i];
+            bool isLocked = lockedDeviceIds.contains(device->deviceId);
+
+            // Checkbox Column
+            auto itemCheckbox = new QTableWidgetItem();
+            itemCheckbox->setData(Qt::UserRole, device->deviceId);
+            itemCheckbox->setCheckState(Qt::Unchecked);
+            if (isLocked) {
+                itemCheckbox->setFlags(itemCheckbox->flags() & ~Qt::ItemIsEnabled);
+            }
+            tableWidget->setItem(i, 0, itemCheckbox);
+
+            // Name Column
+            auto itemName = new QTableWidgetItem(device->deviceName);
+            if (isLocked) itemName->setForeground(Qt::gray);
+            tableWidget->setItem(i, 1, itemName);
+            
+            // Model Column
+            tableWidget->setItem(i, 2, new QTableWidgetItem(device->model));
+
+            // Expiration Column
+            auto timeString = QDateTime::fromMSecsSinceEpoch(device->expireAt.get()).toString("yyyy-MM-dd");
+            auto itemTime = new QTableWidgetItem(timeString);
+            bool isExpired = device->expireAt.get() < QDateTime::currentMSecsSinceEpoch();
+            itemTime->setData(Qt::UserRole, isExpired); 
+            
+            if (isLocked) {
+                itemTime->setForeground(Qt::gray);
+            } else if (isExpired) {
+                itemTime->setForeground(QColor("#d32f2f"));
+            }
+            tableWidget->setItem(i, 3, itemTime);
+        }
+        tableWidget->blockSignals(false);
+        updateSelectAllState(tableWidget, selectAllCheckBox);
+    }
+
+    void updateSelectAllState(QTableWidget* tableWidget, QCheckBox* checkBox) {
+        int checkedCount = 0;
+        int enabledCount = 0;
+        
+        for(int i = 0; i < tableWidget->rowCount(); ++i) {
+            if(tableWidget->item(i, 0)->flags() & Qt::ItemIsEnabled) {
+                enabledCount++;
+                if(tableWidget->item(i, 0)->checkState() == Qt::Checked) {
+                    checkedCount++;
+                }
+            }
+        }
+        
+        checkBox->blockSignals(true);
+        if (enabledCount > 0 && checkedCount == enabledCount) {
+            checkBox->setCheckState(Qt::Checked);
+        } else if (checkedCount > 0) {
+            checkBox->setCheckState(Qt::PartiallyChecked);
+        } else {
+            checkBox->setCheckState(Qt::Unchecked);
+        }
+        checkBox->setEnabled(enabledCount > 0);
+        checkBox->blockSignals(false);
     }
 
     void onConfirm() {
-        auto getIds = [](QTableWidget* t) {
-            QJsonArray arr;
-            for(int i=0; i<t->rowCount(); ++i)
-                if(t->item(i,0)->checkState() == Qt::Checked)
-                    arr.append(t->item(i,0)->data(Qt::UserRole).toString());
-            return arr;
+        auto getSelectedIds = [](QTableWidget* tableWidget) {
+            QJsonArray idArray;
+            for(int i = 0; i < tableWidget->rowCount(); ++i) {
+                if(tableWidget->item(i, 0)->checkState() == Qt::Checked) {
+                    idArray.append(tableWidget->item(i, 0)->data(Qt::UserRole).toString());
+                }
+            }
+            return idArray;
         };
 
-        QJsonArray l = getIds(leftTable), r = getIds(rightTable);
-        if (l.isEmpty() || r.isEmpty() || l.size() != r.size()) {
+        QJsonArray sourceIds = getSelectedIds(sourceDeviceTable);
+        QJsonArray targetIds = getSelectedIds(targetDeviceTable);
+
+        if (sourceIds.isEmpty() || targetIds.isEmpty() || sourceIds.size() != targetIds.size()) {
             QToolTip::showText(QCursor::pos(), "左右两边选择的设备数量必须一致且不为空");
             return;
         }
 
         setEnabled(false);
-        QJsonObject json; json["leftIds"] = l; json["rightIds"] = r;
-        webSocketClient->emitEvent("swapExpire", json, [=](const QJsonValue &res) {
+        QJsonObject jsonPayload; 
+        jsonPayload["leftIds"] = sourceIds; 
+        jsonPayload["rightIds"] = targetIds;
+
+        webSocketClient->emitEvent("swapExpire", jsonPayload, [=](const QJsonValue &response) {
             setEnabled(true);
-            if (res.isString()) { QToolTip::showText(QCursor::pos(), res.toString()); return; }
+            if (response.isString()) { 
+                QToolTip::showText(QCursor::pos(), response.toString()); 
+                return; 
+            }
             
-            // 修复2: QJsonValue 必须转成 Object 才能用字符串 Key 访问
-            const auto& devicesArr = res["devices"].toArray();
-            for (const auto &v : devicesArr) {
-                QJsonObject obj = v.toObject(); 
-                auto deviceInfo = DeviceInfo::getDevice(obj["udid"].toString());
-                if(deviceInfo) deviceInfo->expireAt = obj[HIDE("expireAt")].toInteger();
+            const auto& devicesArray = response["devices"].toArray();
+            
+            for (const QJsonValue &jsonValue : devicesArray) {
+                auto deviceInfo = DeviceInfo::getDevice(jsonValue["udid"].toString());
+                if(deviceInfo)
+                    deviceInfo->expireAt = jsonValue[HIDE("expireAt")].toInteger();
             }
             accept();
         });
