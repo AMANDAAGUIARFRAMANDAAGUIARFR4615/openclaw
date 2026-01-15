@@ -72,6 +72,31 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     sideBarList->setFixedWidth(80);
     sideBarList->setStyleSheet("QListWidget::item { margin-top: 10px; margin-bottom: 10px; }");
     sideBarList->setCursor(Qt::PointingHandCursor);
+    sideBarList->setStyleSheet(R"(
+        QListWidget {
+            border: none;
+            outline: 0px;
+            background-color: transparent;
+        }
+        QListWidget::item {
+            /* 这一步很关键：给 item 一个透明边框，防止选中时抖动 */
+            border: 1px solid transparent; 
+            border-radius: 6px;  /* 圆角 */
+            color: #303030;    /* 默认文字颜色：深灰 */
+            padding: 4px;        /* 内部留白 */
+        }
+        /* 悬停状态：稍微加深的灰色 */
+        QListWidget::item:hover {
+            background-color: #E0E0E0; 
+            border: 1px solid #D0D0D0;
+        }
+        /* 选中状态：深蓝色背景 + 白色文字 (对比度高) */
+        QListWidget::item:selected {
+            background-color: #0078D4; /* 经典的深蓝色 */
+            color: white;                /* 文字变白 */
+            border: 1px solid #005A9E; /* 边框稍微再深一点 */
+        }
+    )");
 
     auto updateSideBar = [=]() {
         sideBarList->clear();
