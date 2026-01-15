@@ -419,7 +419,7 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
     }
 }
 
-void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QString& type, const QString& date, int size, const QString& symbolicLink)
+void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QString& type, const QString& date, qint64 size, const QString& symbolicLink)
 {
     auto parentPath = fullPath.left(fullPath.lastIndexOf('/'));
     auto parentItem = pathToItem[parentPath.isEmpty() ? "/" : parentPath];
@@ -439,7 +439,9 @@ void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QStrin
         int row = item->row();
         auto parent = item->index().parent();
         model->setData(model->index(row, 1, parent), date);
-        model->setData(model->index(row, 2, parent), Tools::formatByteSize(size));
+        auto sizeIndex = model->index(row, 2, parent);
+        model->setData(sizeIndex, Tools::formatByteSize(size));
+        model->itemFromIndex(sizeIndex)->setData(size, Qt::UserRole + 1);
         return;
     }
     
@@ -449,7 +451,6 @@ void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QStrin
 
     item = new QStandardItem(name);
     item->setData(fullPath, Qt::UserRole);
-    item->setData(size, Qt::UserRole + 1);
     item->setData(isDirectory, Qt::UserRole + 2);
     pathToItem[fullPath] = item;
 
@@ -478,6 +479,7 @@ void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QStrin
 
     auto dateItem = new QStandardItem(date);
     auto sizeItem = new QStandardItem(Tools::formatByteSize(isDirectory ? -1 : size));
+    sizeItem->setData(size, Qt::UserRole + 1);
     sizeItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
     parentItem->appendRow({item, dateItem, sizeItem});

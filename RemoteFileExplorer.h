@@ -65,7 +65,7 @@ private:
 protected:
     void setStatusMessage(const QString &message);
     void fetchDirectoryContents(const QString &path);
-    void addItemToTreeView(const QString& fullPath, const QString& type, const QString& date, int size, const QString& symbolicLink = "");
+    void addItemToTreeView(const QString& fullPath, const QString& type, const QString& date, qint64 size, const QString& symbolicLink = "");
     void removeItemPaths(QStandardItem* item);
     void updateDirectoryView(const QString &path, const QJsonArray &list);
     void onDirectoryExpanded(const QModelIndex &index);
