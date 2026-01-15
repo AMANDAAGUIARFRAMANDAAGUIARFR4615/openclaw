@@ -326,7 +326,7 @@ private:
                 return; 
             }
             
-            const auto& devicesArray = response["devices"].toArray();
+            const auto& devicesArray = response.toArray();
             
             for (const QJsonValue &jsonValue : devicesArray) {
                 auto deviceInfo = DeviceInfo::getDevice(jsonValue["udid"].toString());
