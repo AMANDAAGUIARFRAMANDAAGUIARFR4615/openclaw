@@ -15,6 +15,6 @@ public:
 
         // collator.setIgnorePunctuation(true);
 
-        return collator.compare(this->text(), other.text()) < 0;
+        return collator.compare(text(), other.text()) < 0;
     }
 };
