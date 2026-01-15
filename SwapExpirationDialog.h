@@ -88,14 +88,21 @@ public:
 
             // 全选按钮点击
             connect(currentSelectAllBox, &QCheckBox::clicked, [=](bool) {
-                bool isChecked = currentSelectAllBox->checkState() == Qt::Checked;
+                Qt::CheckState state = currentSelectAllBox->checkState();
+            
+                // 用户点击时，如果是半选状态，通常预期是变为全选
+                if (state == Qt::PartiallyChecked) {
+                    state = Qt::Checked;
+                    currentSelectAllBox->setCheckState(state);
+                }
+
                 currentTable->blockSignals(true);
                 
                 for(int i = 0; i < currentTable->rowCount(); ++i) {
                     QTableWidgetItem *item = currentTable->item(i, 0);
                     // 只有启用的项目才会被全选选中
                     if(item->flags() & Qt::ItemIsEnabled) { 
-                        item->setCheckState(isChecked ? Qt::Checked : Qt::Unchecked);
+                        item->setCheckState(state);
                         // 循环中不触发排序(false)，避免性能问题
                         syncItemMutexState(item, oppositeTable, false); 
                     }
@@ -235,16 +242,16 @@ private:
             tableWidget->setItem(i, 2, new QTableWidgetItem(device->model));
 
             // Expiration Column
-            auto timeString = QDateTime::fromMSecsSinceEpoch(device->expireAt.get()).toString("yyyy-MM-dd");
+            auto timeString = QDateTime::fromMSecsSinceEpoch(device->expireAt.get()).toString("yyyy-MM-dd HH:mm:ss");
             auto itemTime = new QTableWidgetItem(timeString);
             bool isExpired = device->expireAt.get() < QDateTime::currentMSecsSinceEpoch();
             itemTime->setData(Qt::UserRole, isExpired); 
             
-            if (isLocked) {
+            if (isLocked)
                 itemTime->setForeground(Qt::gray);
-            } else if (isExpired) {
+            else if (isExpired)
                 itemTime->setForeground(QColor("#d32f2f"));
-            }
+            
             tableWidget->setItem(i, 3, itemTime);
         }
         
