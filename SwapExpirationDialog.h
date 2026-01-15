@@ -136,7 +136,7 @@ private:
     QTableWidget *sourceDeviceTable, *targetDeviceTable;
 
     // 创建左右两侧的面板
-    void createPanel(QWidget* containerWidget, QComboBox*& filterComboBox, QCheckBox*& selectAllCheckBox, QTableWidget*& deviceTable, const QString& title) {
+    void createPanel(QWidget* containerWidget, QComboBox*& filterComboBox, QCheckBox*& selectAllCheckBox, QTableWidget*& tableWidget, const QString& title) {
         auto verticalLayout = new QVBoxLayout(containerWidget);
         verticalLayout->addWidget(new QLabel(title));
         
@@ -151,14 +151,22 @@ private:
         selectAllCheckBox->setTristate(true);
         verticalLayout->addWidget(selectAllCheckBox);
 
-        deviceTable = new QTableWidget();
-        deviceTable->setColumnCount(4);
-        deviceTable->setHorizontalHeaderLabels({"", "名称", "机型", "到期"});
-        
-        deviceTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
-        deviceTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-        deviceTable->setFocusPolicy(Qt::NoFocus);
-        verticalLayout->addWidget(deviceTable);
+        tableWidget = new QTableWidget();
+        tableWidget->setColumnCount(4);
+        tableWidget->setHorizontalHeaderLabels({"", "名称", "机型", "到期"});
+        tableWidget->setFrameShape(QFrame::NoFrame);
+        tableWidget->setShowGrid(false);
+        tableWidget->setAlternatingRowColors(true);
+        tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+        tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        tableWidget->setFocusPolicy(Qt::NoFocus);
+
+        auto headerView = tableWidget->horizontalHeader();
+        headerView->setSectionResizeMode(QHeaderView::ResizeToContents);
+        headerView->setSectionResizeMode(1, QHeaderView::Stretch);
+        headerView->setSectionsClickable(false);
+
+        verticalLayout->addWidget(tableWidget);
     }
 
     void initFilterComboBox(QComboBox* comboBox) {
