@@ -45,7 +45,9 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     app.styleHints()->setColorScheme(Qt::ColorScheme::Light);
-    app.setStyle(QStyleFactory::create("Fusion"));
+    QStyle *fusionStyle = QStyleFactory::create("Fusion");
+    app.setStyle(fusionStyle);
+    app.setPalette(fusionStyle->standardPalette());
 
     app.installEventFilter(new CursorFilter(&app));
 
