@@ -68,7 +68,7 @@ private:
         QGroupBox *defaultBox = new QGroupBox("全局默认配置 (分组单独设置优先)", this);
         defaultBox->setStyleSheet(R"(
             QGroupBox {
-                border: 2px solid #AAAAAA;
+                border: 2px solid palette(mid);
                 border-radius: 5px;
                 margin-top: 10px;
             }
