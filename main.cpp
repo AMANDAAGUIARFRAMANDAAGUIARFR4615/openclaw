@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    app.styleHints()->setColorScheme(Qt::ColorScheme::Light);
+    // app.styleHints()->setColorScheme(Qt::ColorScheme::Light);
     QStyle *fusionStyle = QStyleFactory::create("Fusion");
     app.setStyle(fusionStyle);
     app.setPalette(fusionStyle->standardPalette());

@@ -535,7 +535,7 @@ bool DeviceView::event(QEvent *event)
                     continue;
                 }
 
-                if (auto *mouseEvent = dynamic_cast<QMouseEvent*>(event)) {
+                if (auto mouseEvent = dynamic_cast<QMouseEvent*>(event)) {
                     DeviceView* sourceView = this;
 
                     if (auto widget = qobject_cast<DeviceWidget*>(this)) {
