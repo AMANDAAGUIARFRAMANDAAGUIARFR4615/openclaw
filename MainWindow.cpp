@@ -65,12 +65,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
 
     auto splitter = new QSplitter(Qt::Horizontal, this);
     mainLayout->addWidget(splitter);
-    splitter->setStyleSheet("QSplitter::handle {background-color: #B0B0B0;width: 1px;}");
 
     sideBarList = new QListWidget();
     sideBarList->setViewMode(QListView::IconMode);
     sideBarList->setFixedWidth(80);
-    sideBarList->setStyleSheet("QListWidget::item { margin-top: 10px; margin-bottom: 10px; }");
     sideBarList->setCursor(Qt::PointingHandCursor);
     sideBarList->setStyleSheet(R"(
         QListWidget {
