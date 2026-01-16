@@ -142,7 +142,6 @@ private:
                 cb->setEnabled(false);
             }
 
-            cb->setStyleSheet("QCheckBox { spacing: 8px; }");
             m_checkBoxes.push_back(cb);
 
             int col = static_cast<int>(i % 4);
