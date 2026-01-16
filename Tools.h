@@ -10,6 +10,8 @@
 #include <QProcess>
 #include <QDir>
 #include <QPainter>
+#include <QLayout>
+#include <QWidget>
 
 using namespace qrcodegen;
 
@@ -147,5 +149,13 @@ public:
         }
         
         return image;
+    }
+
+    static void setLayoutVisible(QLayout *layout, bool visible) {
+        for (int i = 0; i < layout->count(); ++i) {
+            auto widget = layout->itemAt(i)->widget();
+            if (widget)
+                widget->setVisible(visible);
+        }
     }
 };

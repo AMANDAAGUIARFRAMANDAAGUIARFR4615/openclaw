@@ -10,6 +10,7 @@
 #include <QDialog>
 #include <QListWidget>
 #include <QSlider>
+#include <QSpinBox>
 
 class DeviceWidget;
 class DeviceWindow;
@@ -36,6 +37,10 @@ public:
 
     SwitchButton* const multiControlSwitchButton;
     SwitchButton* const lineDispatcherSwitchButton;
+
+    QCheckBox* const randomDelayCheckBox = new QCheckBox("随机延迟");
+    QSpinBox* const minDelaySpinBox = new QSpinBox;
+    QSpinBox* const maxDelaySpinBox = new QSpinBox;
 
 private:
     MainWindow(QWidget *parent = nullptr);

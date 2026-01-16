@@ -33,7 +33,6 @@
 #include <QStyle>
 #include <QIcon>
 #include <QTimer>
-#include <cmath>
 #include <QMenu>
 #include <QDialog>
 #include <QCheckBox>
@@ -424,6 +423,44 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTa
     hLayout->setContentsMargins(5, 5, 5, 5);
     hLayout->setSpacing(5);
     hLayout->addWidget(multiControlSwitchButton);
+
+    auto randomDelay = settings->value("randomDelay").toBool();
+    randomDelayCheckBox->setChecked(randomDelay);
+    randomDelayCheckBox->hide();
+
+    minDelaySpinBox->setRange(0, 99);
+    maxDelaySpinBox->setRange(0, 99);
+    minDelaySpinBox->setSuffix("秒");
+    maxDelaySpinBox->setSuffix("秒");
+    minDelaySpinBox->setValue(settings->value("minDelay", 3).toInt());
+    maxDelaySpinBox->setValue(settings->value("maxDelay", 10).toInt());
+
+    auto rangeLayout = new QHBoxLayout();
+    rangeLayout->addWidget(minDelaySpinBox);
+    rangeLayout->addWidget(new QLabel("—"));
+    rangeLayout->addWidget(maxDelaySpinBox);
+    Tools::setLayoutVisible(rangeLayout, multiControlSwitchButton->isChecked() && randomDelay);
+
+    connect(randomDelayCheckBox, &QCheckBox::clicked, [=](bool checked) {
+        settings->setValue("randomDelay", checked);
+        Tools::setLayoutVisible(rangeLayout, checked);
+    });
+
+    connect(multiControlSwitchButton, &SwitchButton::toggled, [=](bool checked) {
+        randomDelayCheckBox->setVisible(checked);
+        Tools::setLayoutVisible(rangeLayout, checked && randomDelayCheckBox->isChecked());
+    });
+
+    auto adjustRange = [&]() {
+        if (minDelaySpinBox->value() > maxDelaySpinBox->value())
+            maxDelaySpinBox->setValue(minDelaySpinBox->value());
+    };
+
+    connect(minDelaySpinBox, &QSpinBox::valueChanged, adjustRange);
+    connect(maxDelaySpinBox, &QSpinBox::valueChanged, adjustRange);
+
+    hLayout->addWidget(randomDelayCheckBox);
+    hLayout->addLayout(rangeLayout);
     hLayout->addWidget(lineDispatcherSwitchButton);
     hLayout->addStretch();
     rightLayout->addLayout(hLayout);
