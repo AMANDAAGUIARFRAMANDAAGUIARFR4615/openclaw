@@ -434,6 +434,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     maxDelaySpinBox->setSuffix("秒");
     minDelaySpinBox->setValue(settings->value("minDelay", 3).toInt());
     maxDelaySpinBox->setValue(settings->value("maxDelay", 10).toInt());
+    minDelaySpinBox->setMaximum(maxDelaySpinBox->value());
+    maxDelaySpinBox->setMinimum(minDelaySpinBox->value());
 
     auto rangeLayout = new QHBoxLayout();
     rangeLayout->addWidget(minDelaySpinBox);
@@ -451,13 +453,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         Tools::setLayoutVisible(rangeLayout, checked && randomDelayCheckBox->isChecked());
     });
 
-    auto adjustRange = [&]() {
-        if (minDelaySpinBox->value() > maxDelaySpinBox->value())
-            maxDelaySpinBox->setValue(minDelaySpinBox->value());
-    };
-
-    connect(minDelaySpinBox, &QSpinBox::valueChanged, adjustRange);
-    connect(maxDelaySpinBox, &QSpinBox::valueChanged, adjustRange);
+    connect(minDelaySpinBox, &QSpinBox::valueChanged, [this](int value) {
+        maxDelaySpinBox->setMinimum(value);
+        settings->setValue("minDelay", value);
+    });
+    connect(maxDelaySpinBox, &QSpinBox::valueChanged, [this](int value) {
+        minDelaySpinBox->setMaximum(value);
+        settings->setValue("maxDelay", value);
+    });
 
     hLayout->addWidget(randomDelayCheckBox);
     hLayout->addLayout(rangeLayout);
@@ -780,6 +783,19 @@ void MainWindow::showSupportDialog()
     mainLayout->addWidget(imgLabel);
 
     supportDialog->exec();
+}
+
+double MainWindow::getRandomDelay()
+{
+    if (!multiControlSwitchButton->isChecked())
+        return 0;
+
+    if (!randomDelayCheckBox->isChecked())
+        return 0;
+
+    double min = minDelaySpinBox->value();
+    double max = maxDelaySpinBox->value();
+    return min + QRandomGenerator::global()->generateDouble() * (max - min);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
