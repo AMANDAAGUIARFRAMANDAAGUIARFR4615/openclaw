@@ -17,7 +17,7 @@ class VideoFrameWidget : public QGraphicsView
     Q_OBJECT
 
 public:
-    explicit VideoFrameWidget(DeviceConnection* connection, QWidget *parent = nullptr) : connection(connection), QGraphicsView(parent), mediaPlayer(new QMediaPlayer(this))
+    explicit VideoFrameWidget(DeviceConnection* connection, QWidget *parent = nullptr) : connection(connection), QGraphicsView(parent)
     {
         setAcceptDrops(true);
 
@@ -84,7 +84,7 @@ public:
         return byteArray;
     }
 
-    QMediaPlayer* const mediaPlayer;
+    QMediaPlayer* const mediaPlayer = new QMediaPlayer(this);
 
 protected:
     void dragEnterEvent(QDragEnterEvent *event) override {
