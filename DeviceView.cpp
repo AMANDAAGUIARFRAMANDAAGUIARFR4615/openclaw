@@ -149,14 +149,6 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     auto isMultiControl = MainWindow::getInstance()->multiControlSwitchButton->isChecked();
 
     auto menu = new QMenu(this);
-    menu->setStyleSheet(R"(
-        QMenu::item {
-            padding: 5px;
-        }
-        QMenu::item:selected {
-            background-color: #E0E0E0;
-        }
-    )");
 
     auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
         if (isMultiControl) {
@@ -173,51 +165,57 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 
     for (int i = 0; i < windowMenu.count(); i++) {
         auto text = windowMenu[i];
+        QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
+        finder.toNextBoundary();
+        int splitPos = finder.position();
 
-        if (text == "🏠主屏幕") {
+        auto iconPart = text.left(splitPos);
+        auto labelPart = text.mid(splitPos);
+
+        if (labelPart == "主屏幕") {
             menu->addAction(text, [&](){send("homeScreen");});
         }
-        if (text == "🎛️控制中心") {
+        if (labelPart == "控制中心") {
             menu->addAction(text, [&](){send("showCenterController");});
         }
-        if (text == "↕️应用切换") {
+        if (labelPart == "应用切换") {
             menu->addAction(text, [&](){send("appSwitcher");});
         }
-        else if (text == "🧹清理应用") {
+        else if (labelPart == "清理应用") {
             menu->addAction(text, [&](){send("killAllApp");});
         }
-        else if (text == "📁文件管理") {
+        else if (labelPart == "文件管理") {
             menu->addAction(text, [this](){RemoteFileExplorer::open(connection);});
         }
-        else if (text == "⏺️录制+回放") {
+        else if (labelPart == "录制+回放") {
             menu->addAction(text, [this](){Recorder::open(connection);});
         }
-        else if (text == "🧩应用管理") {
+        else if (labelPart == "应用管理") {
             menu->addAction(text, [this](){AppListWidget::open(connection);});
         }
-        else if (text == "📸截图") {
+        else if (labelPart == "截图") {
             menu->addAction(text, [this](){connection->send("screenshot");})->setEnabled(!isMultiControl);
         }
-        else if (text == "🔄重启") {
+        else if (labelPart == "重启") {
             menu->addAction(text, [&](){send("reboot");});
         }
-        else if (text == "🔒锁屏") {
+        else if (labelPart == "锁屏") {
             if (deviceInfo->lockedStatus) {
                 menu->addAction("🔓解锁", [&](){send("changeScreenLockedStatus", 0);});
             } else {
                 menu->addAction("🔒锁屏", [&](){send("changeScreenLockedStatus", 1);});
             }
         }
-        else if (text == "🗑️清空相册") {
+        else if (labelPart == "清空相册") {
             menu->addAction(text, [&](){send("deleteAllPhotos");});
         }
-        else if (text == "🔊音量+") {
+        else if (labelPart == "音量+") {
             menu->addAction(text, [&](){send("volumeControl", "+");});
         }
-        else if (text == "🔈音量-") {
+        else if (labelPart == "音量-") {
             menu->addAction(text, [&](){send("volumeControl", "-");});
         }
-        else if (text == "🕹️同屏操作") {
+        else if (labelPart == "同屏操作") {
             if (qobject_cast<DeviceWindow*>(this)) {
                 auto enabled = MainWindow::getInstance()->multiControlSwitchButton->isChecked();
                 auto action =menu->addAction(text, [=]() {
@@ -227,7 +225,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
                 action->setChecked(enabled);
             }
         }
-        else if (text == "📌置顶") {
+        else if (labelPart == "置顶") {
             if (qobject_cast<DeviceWindow*>(this)) {
                 Qt::WindowFlags flags = windowFlags();
 
@@ -259,7 +257,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
                 action->setChecked(flags & Qt::WindowStaysOnTopHint);
             }
         }
-        else if (text == "🔧修改分组") {
+        else if (labelPart == "修改分组") {
             menu->addAction(text, [this]() {
                 if (MainWindow::getInstance()->getTabs().count() <= 1) {
                     QToolTip::showText(QCursor::pos(), "请先右键点击标签页添加自定义分组");
@@ -274,7 +272,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
                 MainWindow::getInstance()->relayoutDevices();
             });
         }
-        else if (text == "🚀更新手机端") {
+        else if (labelPart == "更新手机端") {
             auto dynamicSubMenu = new QMenu(text, menu);
             menu->addMenu(dynamicSubMenu);
 
@@ -383,6 +381,12 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
                 });
             });
         }
+
+#ifdef Q_OS_WIN 
+        auto lastAction = menu->actions().last();
+        lastAction->setText(labelPart);
+        lastAction->setIcon(EmojiIconProvider::createIcon(iconPart));
+#endif
     }
 
     menu->exec(event->globalPos());
