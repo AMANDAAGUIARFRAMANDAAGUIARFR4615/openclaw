@@ -20,11 +20,7 @@ public:
 
         m_checked = false;
         m_offset = 0.0;
-        m_onColor = QColor("#2ecc71");
-        m_offColor = QColor("#bdc3c7");
-        m_sliderColor = Qt::white;
-        m_textColor = Qt::white;
-
+        
         m_anim = new QPropertyAnimation(this, "offset", this);
         m_anim->setDuration(200);
         m_anim->setEasingCurve(QEasingCurve::InOutQuad);
@@ -89,14 +85,18 @@ protected:
         int margin = 3;
         int sliderSize = h - 2 * margin;
 
-        // --- 1. 绘制背景 ---
-        QColor bgColor = (m_offset > 0.5) ? m_onColor : m_offColor;
+        QPalette palette = this->palette();
+
+        QColor currentOnColor = m_onColor.isValid() ? m_onColor : palette.color(QPalette::Highlight);
+        QColor currentOffColor = m_offColor.isValid() ? m_offColor : palette.color(QPalette::Mid);
+        
+        QColor bgColor = m_offset > 0.5 ? currentOnColor : currentOffColor;
         p.setBrush(bgColor);
         p.setPen(Qt::NoPen);
         p.drawRoundedRect(0, 0, w, h, h/2, h/2);
 
-        // --- 2. 绘制文字 ---
-        p.setPen(m_textColor);
+        QColor currentTextColor = m_offset > 0.5 ? palette.color(QPalette::HighlightedText) : palette.color(QPalette::Text);
+        p.setPen(currentTextColor);
         p.setFont(font());
 
         // 核心修改逻辑：精确计算“空白区域”的矩形
@@ -118,12 +118,11 @@ protected:
             p.drawText(textRect, Qt::AlignCenter, m_offText);
         }
 
-        // --- 3. 绘制滑块 ---
         double startX = margin;
         double endX = w - sliderSize - margin;
         double currentX = startX + (endX - startX) * m_offset;
 
-        p.setBrush(m_sliderColor);
+        p.setBrush(palette.color(QPalette::Base));
         p.drawEllipse(QRectF(currentX, margin, sliderSize, sliderSize));
     }
 
@@ -135,8 +134,6 @@ private:
     QString m_offText;
     QColor m_onColor;
     QColor m_offColor;
-    QColor m_sliderColor;
-    QColor m_textColor;
 
     QPropertyAnimation *m_anim;
 };
