@@ -18,6 +18,7 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QSet>
+#include <QStyleHints>
 
 class RenewalDialog : public QDialog {
     Q_OBJECT
@@ -33,6 +34,11 @@ public:
         setModal(true);
         setWindowTitle("续费");
         setMinimumSize(480, 720);
+
+        bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+        
+        // 红色 (强调/警告/价格) - 深色模式下用亮红，浅色模式下用深红
+        alertColor = isDarkMode ? QColor("#ff5252") : QColor("#d32f2f");
 
         auto filterLayout = new QHBoxLayout();
         auto filterLabel = new QLabel("分组筛选:");
@@ -87,7 +93,14 @@ public:
         monthRadioButton = new QRadioButton(QString("月付 (¥%1/台)").arg(BASE_PRICE_PER_MONTH));
         int yearPrice = BASE_PRICE_PER_MONTH * 12 / 2; // 年付5折
         yearRadioButton = new QRadioButton(QString("年付 (¥%1/台 - 5折特惠)").arg(yearPrice));
-        yearRadioButton->setStyleSheet("color: #d32f2f; font-weight: bold;");
+        
+        QPalette yearPalette = yearRadioButton->palette();
+        yearPalette.setColor(QPalette::WindowText, alertColor);
+        yearRadioButton->setPalette(yearPalette);
+        QFont yearFont = yearRadioButton->font();
+        yearFont.setBold(true);
+        yearRadioButton->setFont(yearFont);
+
         monthRadioButton->setChecked(true);
 
         durationLayout->addWidget(monthRadioButton);
@@ -101,7 +114,15 @@ public:
         balanceLayout->addWidget(new QLabel("可用余额:"));
         balanceLabel = new QLabel();
         updateBalanceLabel();
-        balanceLabel->setStyleSheet("font-weight: bold; color: #E65100; font-size: 14px;");
+        
+        QPalette balancePalette = balanceLabel->palette();
+        balancePalette.setColor(QPalette::WindowText, alertColor);
+        balanceLabel->setPalette(balancePalette);
+        QFont balanceFont = balanceLabel->font();
+        balanceFont.setBold(true);
+        balanceFont.setPixelSize(14);
+        balanceLabel->setFont(balanceFont);
+
         balanceLayout->addWidget(balanceLabel);
         balanceLayout->addStretch();
 
@@ -136,7 +157,15 @@ public:
         auto totalTitleLabel = new QLabel("应付总额:");
         totalTitleLabel->setStyleSheet("font-size: 14px; font-weight: bold;");
         totalAmountLabel = new QLabel("¥ 0.00");
-        totalAmountLabel->setStyleSheet("font-size: 20px; font-weight: bold; color: #d32f2f;");
+        
+        QPalette totalAmountPalette = totalAmountLabel->palette();
+        totalAmountPalette.setColor(QPalette::WindowText, alertColor);
+        totalAmountLabel->setPalette(totalAmountPalette);
+        QFont totalAmountFont = totalAmountLabel->font();
+        totalAmountFont.setBold(true);
+        totalAmountFont.setPixelSize(20);
+        totalAmountLabel->setFont(totalAmountFont);
+
         totalLayout->addStretch();
         totalLayout->addWidget(totalTitleLabel);
         totalLayout->addWidget(totalAmountLabel);
@@ -302,7 +331,7 @@ protected:
             tableWidget->setItem(i, 3, expireItem);
 
             if (deviceInfo->expireAt.get() < Account::getInstance()->loginTime.get() + elapsedTimer->elapsed())
-                expireItem->setForeground(QBrush(QColor("#d32f2f")));
+                expireItem->setForeground(QBrush(alertColor));
         }
 
         tableWidget->blockSignals(false);
@@ -397,4 +426,6 @@ protected:
 
     int voucherBalance = 0;
     int currentTotalPrice = 0;
+
+    QColor alertColor;
 };
