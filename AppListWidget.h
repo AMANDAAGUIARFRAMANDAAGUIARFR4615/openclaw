@@ -57,14 +57,15 @@ private:
         searchEdit->setStyleSheet(R"(
             QLineEdit {
                 padding: 6px 10px;
-                border: 1px solid #C0C0C0;
+                border: 1px solid palette(mid);
                 border-radius: 4px;
-                background-color: #FFFFFF;
-                color: #333;
-                selection-background-color: #3a8ee6;
+                background-color: palette(base);
+                color: palette(text);
+                selection-background-color: palette(highlight);
+                selection-color: palette(highlighted-text);
             }
             QLineEdit:focus {
-                border: 1px solid #3a8ee6;
+                border: 1px solid palette(highlight);
             }
         )");
 
@@ -271,25 +272,25 @@ private:
             // 基础样式
             QString baseStyle = R"(
                 QPushButton {
-                    border: 1px solid #C0C0C0;
+                    border: 1px solid palette(mid);
                     border-radius: 3px;
-                    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFFFFF, stop:1 #F0F0F0);
+                    background-color: palette(button);
                     padding: 4px 10px;
                     min-width: 40px;
-                    color: #333333;
+                    color: palette(button-text);
                 }
                 QPushButton:hover {
-                    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #F8F8F8, stop:1 #E0E0E0);
-                    border: 1px solid #A0A0A0;
+                    background-color: palette(light);
+                    border: 1px solid palette(dark);
                 }
                 QPushButton:pressed {
-                    background-color: #D0D0D0;
-                    border: 1px solid #808080;
+                    background-color: palette(midlight);
+                    border: 1px solid palette(shadow);
                 }
                 QPushButton:disabled {
-                    background-color: #F5F5F5;
-                    color: #A0A0A0;
-                    border: 1px solid #E0E0E0;
+                    background-color: palette(window);
+                    color: palette(disabled(text));
+                    border: 1px solid palette(midlight);
                 }
             )";
 
@@ -299,12 +300,12 @@ private:
                 // 红色文字，边框微红
                 specificStyle = R"(
                     QPushButton {
-                        color: #D32F2F; 
-                        border: 1px solid #E57373;
+                        color: #EF5350; 
+                        border: 1px solid #EF5350;
                     }
                     QPushButton:hover {
                         border: 1px solid #D32F2F;
-                        background-color: #FFEBEE; /* 悬停时淡红背景 */
+                        background-color: rgba(211, 47, 47, 40); 
                     }
                 )";
             } 
