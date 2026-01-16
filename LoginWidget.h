@@ -12,6 +12,8 @@
 #include <QByteArray>
 #include <QRandomGenerator>
 #include <QJsonArray>
+#include <QApplication>
+#include <QStyleHints>
 
 class LoginWidget : public QWidget
 {
@@ -23,7 +25,7 @@ public:
         
         titleLabel = new QLabel("用户登录");
         titleLabel->setAlignment(Qt::AlignCenter);
-        titleLabel->setStyleSheet("font: bold 26px; color: #2c3e50; margin: 20px;");
+        titleLabel->setStyleSheet("font: bold 26px; margin: 20px; color: palette(text);");
 
         auto phoneValidator = new QRegularExpressionValidator(QRegularExpression("^1[3-9]\\d{9}$"), this);
         // ^(?=.*[A-Za-z])   : 必须包含至少一个字母
@@ -295,25 +297,42 @@ protected:
 
     void setStatus(QString text, bool isError = false) 
     {
-        statusLabel->setStyleSheet(isError ? "color: #c0392b;" : "color: black;");
+        bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+        QString color;
+        if (isError)
+            color = isDarkMode ? "#ef5350" : "#c0392b";
+        else
+            color = "palette(text)";
+        
+        statusLabel->setStyleSheet(QString("color: %1;").arg(color));
         statusLabel->setText(text);
     }
 
     void updateStyle()
     {
-        QString color = isRegisterMode ? "#e74c3c" : "#3498db";
+        bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+        
+        QString accent, normal;
+        if (isRegisterMode) {
+            accent = isDarkMode ? "#e74c3c" : "#c0392b";
+            normal = "white";
+        } else {
+            accent = "palette(highlight)";
+            normal = "palette(highlighted-text)";
+        }
         
         QString qss = QString(R"(
             QLineEdit { 
                 padding: 12px; 
                 font-size: 15px; 
-                border: 2px solid #e0e0e0; 
+                border: 1px solid palette(mid); 
                 border-radius: 8px; 
-                background: #f9f9f9;
+                background: palette(base);
+                color: palette(text);
+                selection-background-color: palette(highlight);
             }
             QLineEdit:focus { 
-                border-color: %1; 
-                background: #ffffff;
+                border: 2px solid %1; 
             }
             
             QPushButton { 
@@ -326,12 +345,10 @@ protected:
             /* 主按钮：实心颜色 */
             QPushButton#mainBtn { 
                 background-color: %1; 
-                color: white; 
-                border: 2px solid %1;
+                color: %2; 
+                border: 1px solid %1;
             }
             QPushButton#mainBtn:hover {
-                background-color: palette(button-text);
-                border-color: %1;
                 opacity: 0.9;
             }
             QPushButton#mainBtn:pressed {
@@ -343,17 +360,17 @@ protected:
             QPushButton#subBtn  { 
                 background-color: transparent; 
                 color: %1; 
-                border: 2px solid %1; 
+                border: 1px solid %1; 
             }
             QPushButton#subBtn:hover { 
                 background-color: %1; 
-                color: white;
+                color: %2;
             }
             QPushButton#subBtn:pressed {
                 padding-top: 14px;
                 padding-bottom: 10px;
             }
-        )").arg(color);
+        )").arg(accent, normal);
 
         setStyleSheet(qss);
     }
