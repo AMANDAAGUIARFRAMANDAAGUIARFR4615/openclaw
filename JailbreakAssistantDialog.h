@@ -17,6 +17,8 @@
 #include <QNetworkReply>
 #include <QFile>
 #include <QProcess>
+#include <QStyleHints>
+#include <QStyle>
 
 class StepBase : public QFrame {
     Q_OBJECT
@@ -27,6 +29,11 @@ public:
         setFrameShape(QFrame::NoFrame);
         setStyleSheet(".StepBase { background-color: transparent; }");
 
+        bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+        QString iconBg = isDark ? "#454545" : "#e0e0e0";
+        QString iconFg = isDark ? "#cccccc" : "#555555";
+        QString lineBg = isDark ? "#555555" : "#cccccc";
+
         QWidget *leftSide = new QWidget;
         leftSide->setFixedWidth(40);
         QVBoxLayout *leftLayout = new QVBoxLayout(leftSide);
@@ -36,11 +43,12 @@ public:
         statusIcon = new QLabel("?"); 
         statusIcon->setFixedSize(30, 30);
         statusIcon->setAlignment(Qt::AlignCenter);
-        statusIcon->setStyleSheet("background-color: #e0e0e0; color: #555; border-radius: 15px; font-weight: bold;");
+        statusIcon->setStyleSheet(QString("background-color: %1; color: %2; border-radius: 15px; font-weight: bold;")
+                                  .arg(iconBg, iconFg));
 
         line = new QFrame;
         line->setFixedWidth(2);
-        line->setStyleSheet("border: none; background-color: #cccccc;"); 
+        line->setStyleSheet(QString("border: none; background-color: %1;").arg(lineBg)); 
         line->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
 
         leftLayout->addWidget(statusIcon, 0, Qt::AlignTop | Qt::AlignHCenter);
@@ -51,12 +59,17 @@ public:
         rightLayout->setContentsMargins(10, 5, 10, 20);
 
         QLabel *lblTitle = new QLabel(title);
-        lblTitle->setStyleSheet("font-size: 16px; font-weight: bold; color: #333;");
+        QFont titleFont = lblTitle->font();
+        titleFont.setPixelSize(16);
+        titleFont.setBold(true);
+        lblTitle->setFont(titleFont);
         rightLayout->addWidget(lblTitle);
         
         if (desc != nullptr) {
             QLabel *lblDesc = new QLabel(desc);
-            lblDesc->setStyleSheet("color: #666; margin-bottom: 5px;");
+            QColor descColor = palette().color(QPalette::Text);
+            descColor.setAlpha(180);
+            lblDesc->setStyleSheet(QString("color: %1; margin-bottom: 5px;").arg(descColor.name(QColor::HexArgb)));
             rightLayout->addWidget(lblDesc);
         }
         
@@ -83,15 +96,26 @@ public:
     void activate() {
         this->setEnabled(true);
         contentArea->setVisible(true); 
-        statusIcon->setStyleSheet("background-color: #007bff; color: white; border-radius: 15px; font-weight: bold;");
-        line->setStyleSheet("background-color: #e0e0e0;");
+
+        QColor highlight = palette().color(QPalette::Highlight);
+        QColor highlightText = palette().color(QPalette::HighlightedText);
+
+        statusIcon->setStyleSheet(QString("background-color: %1; color: %2; border-radius: 15px; font-weight: bold;")
+                                  .arg(highlight.name(), highlightText.name()));
+        
+        bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+        QString lineActive = isDark ? "#666666" : "#e0e0e0";
+        line->setStyleSheet(QString("background-color: %1;").arg(lineActive));
         onActivated(); 
     }
 
     void finish() {
+        bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+        QString green = isDark ? "#2ecc71" : "#28a745";
+
         statusIcon->setText("✔");
-        statusIcon->setStyleSheet("background-color: #28a745; color: white; border-radius: 15px; font-weight: bold;");
-        line->setStyleSheet("border: none; background-color: #28a745;");
+        statusIcon->setStyleSheet(QString("background-color: %1; color: white; border-radius: 15px; font-weight: bold;").arg(green));
+        line->setStyleSheet(QString("border: none; background-color: %1;").arg(green));
         contentArea->setDisabled(true);
         emit finished(); 
     }
@@ -126,7 +150,8 @@ public:
         btnAction->setFixedHeight(35);
 
         statusLabel = new QLabel("");
-        statusLabel->setStyleSheet("color: #666; font-size: 12px;");
+        QColor txtColor = palette().color(QPalette::PlaceholderText);
+        statusLabel->setStyleSheet(QString("color: %1; font-size: 12px;").arg(txtColor.name()));
 
         bar = new QProgressBar;
         bar->setTextVisible(true);
@@ -158,11 +183,15 @@ private slots:
         bar->setVisible(true);
         bar->setValue(0);
         statusLabel->setText("正在连接服务器...");
-        statusLabel->setStyleSheet("color: #007bff;");
+        
+        QColor highlight = palette().color(QPalette::Highlight);
+        statusLabel->setStyleSheet(QString("color: %1;").arg(highlight.name()));
 
         auto file = new QFile(savePath);
         if (!file->open(QIODevice::WriteOnly)) {
+            QColor errorColor = (qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark) ? QColor("#e74c3c") : Qt::red;
             statusLabel->setText("错误：无法写入文件，请检查权限 " + savePath);
+            statusLabel->setStyleSheet(QString("color: %1;").arg(errorColor.name()));
             return;
         }
 
@@ -186,17 +215,21 @@ private slots:
                 file->close();
                 file->deleteLater();
             }
+            
+            bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+            QString green = isDark ? "#2ecc71" : "#28a745";
+            QString red = isDark ? "#e74c3c" : "red";
 
             if (reply->error() == QNetworkReply::NoError) {
                 bar->setValue(100);
                 statusLabel->setText("下载成功！");
-                statusLabel->setStyleSheet("color: #28a745;");
+                statusLabel->setStyleSheet(QString("color: %1;").arg(green));
                 finish();
             } else {
                 btnAction->setEnabled(true);
                 btnAction->setText("重试下载");
                 statusLabel->setText("下载失败: " + reply->errorString());
-                statusLabel->setStyleSheet("color: red;");
+                statusLabel->setStyleSheet(QString("color: %1;").arg(red));
                 QFile::remove(savePath);
             }
             reply->deleteLater();
@@ -252,12 +285,19 @@ public:
 
         btnConfirm = new QPushButton("确认选择");
         btnConfirm->setFixedHeight(35);
-        btnConfirm->setStyleSheet("QPushButton { background-color: #007bff; color: white; border-radius: 4px; }"
-                                  "QPushButton:hover { background-color: #0069d9; }"
-                                  "QPushButton:disabled { background-color: #ccc; }");
+        
+        bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+        QString btnColor = isDark ? "#3daee9" : "#007bff";
+        QString btnHover = isDark ? "#5abdf0" : "#0069d9";
+
+        btnConfirm->setStyleSheet(QString("QPushButton { background-color: %1; color: white; border-radius: 4px; }"
+                                          "QPushButton:hover { background-color: %2; }"
+                                          "QPushButton:disabled { background-color: #ccc; }").arg(btnColor, btnHover));
 
         lblResult = new QLabel("");
-        lblResult->setStyleSheet("color: #28a745; font-weight: bold; margin-top: 5px;");
+        
+        QString green = isDark ? "#2ecc71" : "#28a745";
+        lblResult->setStyleSheet(QString("color: %1; font-weight: bold; margin-top: 5px;").arg(green));
 
         contentLayout->addWidget(appCombo);
         contentLayout->addWidget(btnConfirm);
@@ -302,17 +342,25 @@ public:
         btnLayout->setContentsMargins(0, 0, 0, 0);
         btnLayout->setSpacing(10);
 
+        bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+        
+        QString pink = isDark ? "#d04e96" : "#d63384";
+        QString pinkHover = isDark ? "#e060a6" : "#c21b6c";
+        
+        QString gray = isDark ? "#555555" : "#6c757d";
+        QString grayHover = isDark ? "#666666" : "#5a6268";
+
         btnStart = new QPushButton("开始注入 (运行 TrollRestore)");
         btnStart->setFixedHeight(35);
-        btnStart->setStyleSheet("QPushButton { background-color: #d63384; color: white; border-radius: 4px; font-weight: bold; }"
-                                "QPushButton:hover { background-color: #c21b6c; }"
-                                "QPushButton:disabled { background-color: #ccc; }");
+        btnStart->setStyleSheet(QString("QPushButton { background-color: %1; color: white; border-radius: 4px; font-weight: bold; }"
+                                        "QPushButton:hover { background-color: %2; }"
+                                        "QPushButton:disabled { background-color: #ccc; }").arg(pink, pinkHover));
         
         btnSkip = new QPushButton("已注入，直接跳过");
         btnSkip->setFixedHeight(35);
-        btnSkip->setStyleSheet("QPushButton { background-color: #6c757d; color: white; border-radius: 4px; }"
-                               "QPushButton:hover { background-color: #5a6268; }"
-                               "QPushButton:disabled { background-color: #ccc; }");
+        btnSkip->setStyleSheet(QString("QPushButton { background-color: %1; color: white; border-radius: 4px; }"
+                                       "QPushButton:hover { background-color: %2; }"
+                                       "QPushButton:disabled { background-color: #ccc; }").arg(gray, grayHover));
 
         btnLayout->addWidget(btnStart, 2);
         btnLayout->addWidget(btnSkip, 1);
@@ -320,8 +368,10 @@ public:
         consoleOutput = new QTextEdit;
         consoleOutput->setReadOnly(true);
         consoleOutput->setPlaceholderText("等待执行...日志将在此显示");
-        consoleOutput->setStyleSheet("QTextEdit { background-color: #1e1e1e; color: #00ff00; font-family: Consolas, Monospace; border: 1px solid #555; border-radius: 4px; }");
         consoleOutput->setMinimumHeight(150);
+        QFont monoFont("Consolas");
+        if(monoFont.exactMatch() == false) monoFont.setFamily("Monospace");
+        consoleOutput->setFont(monoFont);
 
         contentLayout->addLayout(btnLayout);
         contentLayout->addWidget(consoleOutput);
@@ -350,7 +400,8 @@ private slots:
     void skipProcess() {
         btnStart->setDisabled(true);
         btnSkip->setDisabled(true);
-        consoleOutput->append("<span style='color:orange;'>用户手动跳过了注入步骤。</span>");
+        QColor warnColor = (qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark) ? QColor("#f39c12") : QColor("orange");
+        consoleOutput->append(QString("<span style='color:%1;'>用户手动跳过了注入步骤。</span>").arg(warnColor.name()));
         finish();
     }
 
@@ -358,13 +409,15 @@ private slots:
         btnStart->setDisabled(true);
         btnSkip->setDisabled(true);
         consoleOutput->clear();
-        consoleOutput->append(QString("正在启动注入程序，目标应用: <span style='color:yellow;'>%1</span> ...<br>").arg(targetAppName));
+        
+        QColor targetColor = (qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark) ? QColor("#f1c40f") : QColor("#d35400");
+        
+        consoleOutput->append(QString("正在启动注入程序，目标应用: <span style='color:%1;'>%2</span> ...<br>").arg(targetColor.name(), targetAppName));
 
         QString program = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/TrollRestore";
 
         #ifdef Q_OS_MAC
         QFile localFile(program);
-        // 获取当前权限并加上 所有者的可执行权限 + 用户组可执行 + 其他人可执行
         if (!localFile.setPermissions(localFile.permissions() | 
                                       QFileDevice::ExeOwner | 
                                       QFileDevice::ExeGroup | 
@@ -401,7 +454,8 @@ private slots:
     }
 
     void onProcessError(QProcess::ProcessError error) {
-        consoleOutput->append(QString("<br><span style='color:red;'>启动进程失败: %1</span>").arg(process->errorString()));
+        QColor errColor = (qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark) ? QColor("#e74c3c") : Qt::red;
+        consoleOutput->append(QString("<br><span style='color:%1;'>启动进程失败: %2</span>").arg(errColor.name(), process->errorString()));
         btnStart->setEnabled(true);
         btnSkip->setEnabled(true);
     }
@@ -432,8 +486,13 @@ public:
 
         QPushButton *btnFinish = new QPushButton("我已完成下载");
         btnFinish->setMinimumWidth(150);
-        btnFinish->setStyleSheet("QPushButton { background-color: #28a745; color: white; border-radius: 4px; padding: 8px; font-weight: bold; }"
-                                 "QPushButton:hover { background-color: #218838; }");
+        
+        bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+        QString green = isDark ? "#2ecc71" : "#28a745";
+        QString greenHover = isDark ? "#48e08d" : "#218838";
+
+        btnFinish->setStyleSheet(QString("QPushButton { background-color: %1; color: white; border-radius: 4px; padding: 8px; font-weight: bold; }"
+                                 "QPushButton:hover { background-color: %2; }").arg(green, greenHover));
 
         btnLayout->addWidget(btnFinish);
         btnLayout->addStretch();
