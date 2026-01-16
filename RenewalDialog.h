@@ -56,7 +56,7 @@ public:
         tableWidget = new QTableWidget(this);
         tableWidget->setColumnCount(4);
         tableWidget->setHorizontalHeaderLabels({"", "设备名称", "机型", "到期时间"});
-        tableWidget->setFrameShape(QFrame::NoFrame);
+        tableWidget->setFrameShape(QFrame::StyledPanel);
         tableWidget->setShowGrid(false);
         tableWidget->setAlternatingRowColors(true);
         tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -69,10 +69,13 @@ public:
         headerView->setSectionsClickable(false);
 
         tableWidget->setStyleSheet(R"(
-            QTableWidget { font-size: 13px; border: 1px solid #e0e0e0; alternate-background-color: #f9f9f9; }
-            QTableWidget::item { border-bottom: 1px solid #f0f0f0; }
-            QTableWidget::item:selected { background-color: #e6f7ff; color: #000000; }
-            QHeaderView::section { background-color: #f5f5f5; border: none; border-bottom: 1px solid #d0d0d0; padding: 8px; font-weight: bold; color: #555555; }
+            QTableWidget { border: 1px solid palette(mid); }
+            QHeaderView::section { 
+                background-color: palette(button); 
+                border: none; 
+                border-bottom: 1px solid palette(mid); 
+                padding: 4px; 
+            }
         )");
 
         auto optionsLayout = new QVBoxLayout();
@@ -106,7 +109,6 @@ public:
         voucherPlainTextEdit = new QPlainTextEdit();
         voucherPlainTextEdit->setPlaceholderText("请输入兑换码，每行一个...");
         voucherPlainTextEdit->setFixedHeight(80);
-        voucherPlainTextEdit->setStyleSheet("QPlainTextEdit { border: 1px solid #ccc; border-radius: 4px; padding: 4px; }");
 
         redeemButton = new QPushButton("批量兑换");
         redeemButton->setFixedHeight(80);
