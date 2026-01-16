@@ -33,10 +33,10 @@ public:
 
     void relayoutDevices();
 
-    QTabWidget* const tabWidget;
+    QTabWidget* const tabWidget = new QTabWidget(this);
 
-    SwitchButton* const multiControlSwitchButton;
-    SwitchButton* const lineDispatcherSwitchButton;
+    SwitchButton* const multiControlSwitchButton = new SwitchButton("同屏操作");
+    SwitchButton* const lineDispatcherSwitchButton = new SwitchButton("文本逐行分发");
 
     QCheckBox* const randomDelayCheckBox = new QCheckBox("随机延迟");
     QSpinBox* const minDelaySpinBox = new QSpinBox;

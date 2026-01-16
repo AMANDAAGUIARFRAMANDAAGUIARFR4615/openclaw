@@ -46,7 +46,7 @@
 #include <QActionGroup>
 #include <QToolTip>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), tabWidget(new QTabWidget(this)), multiControlSwitchButton(new SwitchButton("同屏操作")), lineDispatcherSwitchButton(new SwitchButton("文本逐行分发"))
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
     setMinimumSize(800, 600);
 
