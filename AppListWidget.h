@@ -50,26 +50,21 @@ private:
         instanceMap[connection] = this;
 
         setAttribute(Qt::WA_DeleteOnClose);
-        // 设置整体背景色为白色，避免灰底
-        this->setStyleSheet("background-color: white;");
-
+        
         QLineEdit *searchEdit = new QLineEdit(this);
         searchEdit->setPlaceholderText("🔍 搜索应用名或包名...");
         searchEdit->setClearButtonEnabled(true);
-        // 搜索框美化：圆角、内边距、聚焦边框颜色
         searchEdit->setStyleSheet(R"(
             QLineEdit {
-                padding: 8px 15px;
-                border: 1px solid #E0E0E0;
-                border-radius: 18px;
-                background-color: #F5F7FA;
-                font-size: 14px;
+                padding: 6px 10px;
+                border: 1px solid #C0C0C0;
+                border-radius: 4px;
+                background-color: #FFFFFF;
                 color: #333;
-                selection-background-color: #007AFF;
+                selection-background-color: #3a8ee6;
             }
             QLineEdit:focus {
-                border: 1px solid #007AFF;
-                background-color: #FFFFFF;
+                border: 1px solid #3a8ee6;
             }
         )");
 
@@ -79,6 +74,10 @@ private:
         filterLayout->setSpacing(20);
 
         QLabel *filterLabel = new QLabel("应用类型:", this);
+        // 稍微加粗标签
+        QFont labelFont = filterLabel->font();
+        labelFont.setBold(true);
+        filterLabel->setFont(labelFont);
 
         QRadioButton *rbAll = new QRadioButton("全部", this);
         QRadioButton *rbUser = new QRadioButton("用户", this);
@@ -99,15 +98,14 @@ private:
 
         table = new QTableWidget(this);
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
-        mainLayout->setContentsMargins(20, 20, 20, 20);
-        mainLayout->setSpacing(10);
+        mainLayout->setContentsMargins(15, 15, 15, 15);
+        mainLayout->setSpacing(12);
         mainLayout->addWidget(searchEdit);
         mainLayout->addWidget(filterContainer);
         mainLayout->addWidget(table);
         setLayout(mainLayout);
 
         setupTable();
-        applyStyle();
 
         // 统一的过滤逻辑函数
         auto performFilter = [this, searchEdit, filterGroup]() {
@@ -191,7 +189,7 @@ private:
 
         int row = table->rowCount();
         table->insertRow(row);
-        table->setRowHeight(row, 60);
+        table->setRowHeight(row, 56);
 
         // 图标
         QLabel *iconLabel = new QLabel();
@@ -201,8 +199,7 @@ private:
             qCriticalEx() << "图标加载失败";
         }
 
-        int rowHeight = table->rowHeight(row);
-        int iconBoxSize = 48;
+        int iconBoxSize = 40;
 
         QPixmap scaled = pix.scaled(iconBoxSize, iconBoxSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
@@ -214,7 +211,7 @@ private:
         painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
 
         QPainterPath path;
-        path.addRoundedRect(0, 0, iconBoxSize, iconBoxSize, 10, 10); // iOS风格圆角
+        path.addRoundedRect(0, 0, iconBoxSize, iconBoxSize, 8, 8); // 圆角半径
         painter.setClipPath(path);
         painter.drawPixmap(0, 0, scaled);
 
@@ -233,23 +230,26 @@ private:
         // 应用名
         QTableWidgetItem *appItem = new QTableWidgetItem(appName);
         appItem->setTextAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-        appItem->setFont(QFont("Microsoft YaHei", 10, QFont::Bold)); // 加粗应用名
+        // 使用系统字体，但保留加粗
+        QFont nameFont = appItem->font();
+        nameFont.setBold(true);
+        nameFont.setPointSize(10);
+        appItem->setFont(nameFont);
         appItem->setData(Qt::UserRole, type); 
         table->setItem(row, 1, appItem);
 
         // 包名
         QTableWidgetItem *pkgItem = new QTableWidgetItem(packageName);
         pkgItem->setTextAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-        pkgItem->setForeground(QBrush(QColor("#666666"))); // 包名颜色淡一点
+        pkgItem->setForeground(QBrush(QColor("#606060"))); // 标准灰色
         table->setItem(row, 2, pkgItem);
 
         // 操作按钮区域
         QWidget *actionWidget = new QWidget();
         QHBoxLayout *layout = new QHBoxLayout(actionWidget);
-        layout->setContentsMargins(5, 5, 5, 5);
-        layout->setSpacing(8); // 按钮间距
-        layout->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-        layout->setSizeConstraint(QLayout::SetFixedSize);
+        layout->setContentsMargins(4, 4, 4, 4);
+        layout->setSpacing(6); 
+        layout->setAlignment(Qt::AlignCenter);
 
         QStringList btnNames = {
             "卸载",
@@ -271,60 +271,45 @@ private:
             // 基础样式
             QString baseStyle = R"(
                 QPushButton {
-                    border-radius: 4px;
-                    padding: 5px 8px;
-                    font-size: 12px;
-                    font-family: "Microsoft YaHei";
-                    border: 1px solid transparent;
-                    min-width: 50px; /* [修改点] 增加最小宽度 */
+                    border: 1px solid #C0C0C0;
+                    border-radius: 3px;
+                    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFFFFF, stop:1 #F0F0F0);
+                    padding: 4px 10px;
+                    min-width: 40px;
+                    color: #333333;
+                }
+                QPushButton:hover {
+                    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #F8F8F8, stop:1 #E0E0E0);
+                    border: 1px solid #A0A0A0;
                 }
                 QPushButton:pressed {
-                    padding-top: 6px; 
-                    padding-bottom: 4px;
+                    background-color: #D0D0D0;
+                    border: 1px solid #808080;
                 }
-            )";
-
-            // 针对不同按钮类型的特定样式
-            QString specificStyle;
-            if (name == "卸载") {
-                // 红色警告样式
-                specificStyle = R"(
-                    QPushButton {
-                        background-color: #FFF1F0;
-                        color: #FF4D4F;
-                        border: 1px solid #FFCCC7;
-                    }
-                    QPushButton:hover {
-                        background-color: #FF4D4F;
-                        color: white;
-                        border: 1px solid #FF4D4F;
-                    }
-                )";
-            } else {
-                // 默认蓝色/灰色样式
-                specificStyle = R"(
-                    QPushButton {
-                        background-color: #F0F5FF;
-                        color: #2F54EB;
-                        border: 1px solid #ADC6FF;
-                    }
-                    QPushButton:hover {
-                        background-color: #2F54EB;
-                        color: white;
-                        border: 1px solid #2F54EB;
-                    }
-                )";
-            }
-
-            QString disabledStyle = R"(
                 QPushButton:disabled {
                     background-color: #F5F5F5;
-                    color: #BDBDBD;
+                    color: #A0A0A0;
                     border: 1px solid #E0E0E0;
                 }
             )";
 
-            button->setStyleSheet(baseStyle + specificStyle + disabledStyle);
+            // 特殊按钮样式
+            QString specificStyle;
+            if (name == "卸载") {
+                // 红色文字，边框微红
+                specificStyle = R"(
+                    QPushButton {
+                        color: #D32F2F; 
+                        border: 1px solid #E57373;
+                    }
+                    QPushButton:hover {
+                        border: 1px solid #D32F2F;
+                        background-color: #FFEBEE; /* 悬停时淡红背景 */
+                    }
+                )";
+            } 
+
+            button->setStyleSheet(baseStyle + specificStyle);
 
             layout->addWidget(button);
 
@@ -332,7 +317,7 @@ private:
                 auto enabled = name == "卸载" ? isDeletable : false;
                 button->setEnabled(enabled);
                 if (!enabled)
-                    button->setCursor(Qt::ForbiddenCursor); // 禁用时鼠标变禁止符号
+                    button->setCursor(Qt::ForbiddenCursor); 
             }
 
             connect(button, &QPushButton::clicked, [=](bool) {
@@ -344,8 +329,6 @@ private:
                     msgBox.setIcon(QMessageBox::Warning);
                     msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
                     msgBox.setDefaultButton(QMessageBox::No);
-                    // 简单美化MessageBox
-                    msgBox.setStyleSheet("QLabel{min-width: 200px;}"); 
                     if (msgBox.exec() != QMessageBox::Yes)
                         return;
                 }
@@ -408,79 +391,14 @@ private:
         table->setAlternatingRowColors(true);
 
         // 设置列宽
-        table->setColumnWidth(0, 80);  // 图标列宽一点
-        table->setColumnWidth(1, 200); // 应用名
-        table->setColumnWidth(2, 250); // 包名
+        table->setColumnWidth(0, 70);  
+        table->setColumnWidth(1, 200); 
+        table->setColumnWidth(2, 250); 
 
         table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
         table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
         table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
         table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
-    }
-
-    void applyStyle() {
-        // 全局样式表：表格、表头、滚动条
-        QString qss = R"(
-            QWidget {
-                font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
-                font-size: 13px;
-                color: #333333;
-            }
-            
-            /* 表格整体样式 */
-            QTableWidget {
-                background-color: #FFFFFF;
-                border: 1px solid #E0E0E0;
-                border-radius: 8px;
-                gridline-color: #F0F0F0;
-                outline: none; /* 去除选中时的虚线框 */
-            }
-            
-            /* 表格项样式 */
-            QTableWidget::item {
-                padding: 5px;
-                border-bottom: 1px solid #F5F5F5; /* 自定义行底部分割线 */
-            }
-            
-            /* 选中行样式 */
-            QTableWidget::item:selected {
-                background-color: #E6F7FF; /* 选中变为非常淡的蓝色 */
-                color: #333333; /* 文字颜色不变 */
-            }
-            
-            /* 表头样式 */
-            QHeaderView::section {
-                background-color: #FAFAFA;
-                color: #666666;
-                padding: 10px 5px;
-                border: none;
-                border-bottom: 2px solid #EEEEEE;
-                font-weight: bold;
-                font-size: 13px;
-            }
-            
-            /* 垂直滚动条美化 */
-            QScrollBar:vertical {
-                border: none;
-                background: #F5F5F5;
-                width: 8px;
-                margin: 0px 0px 0px 0px;
-                border-radius: 4px;
-            }
-            QScrollBar::handle:vertical {
-                background: #CCCCCC;
-                min-height: 20px;
-                border-radius: 4px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #999999;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
-        )";
-        
-        this->setStyleSheet(qss);
     }
 
     DeviceConnection* const connection;
