@@ -86,11 +86,20 @@ public:
     DeviceInfo* deviceInfo = nullptr;
 
     QString displayName(bool richText = false) {
-        QString connType = type == DeviceConnection::Usb ? "USB" : "WiFi";
+        const auto& palette = qApp->palette();
+
+        const auto& accentColor = palette.color(QPalette::WindowText).name();
+
+        auto shadowQColor = palette.color(QPalette::WindowText);
+        shadowQColor.setAlpha(150);
+        const auto& shadowColor = shadowQColor.name(QColor::HexArgb);
+
+        const auto& connType = type == DeviceConnection::Usb ? "USB" : "WiFi";
         
-        return QString(richText ? "<a href='#' style='text-decoration: none;'><b>%1</b>✏️</a> <font color='#606060'>[%2]</font>" : "%1 [%2]")
-                .arg(deviceInfo->deviceName)
-                .arg(connType);
+        if (richText)
+            return QString("<a href='#' style='text-decoration:none; color:%1;'><b>%2</b>✏️</a> <font color='%3'>[%4]</font>").arg(accentColor, deviceInfo->deviceName, shadowColor, connType);
+    
+        return QString("%1 [%2]").arg(deviceInfo->deviceName, connType);
     }
 
 protected:
