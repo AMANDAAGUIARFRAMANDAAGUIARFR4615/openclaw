@@ -169,7 +169,6 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         finder.toNextBoundary();
         int splitPos = finder.position();
 
-        auto iconPart = text.left(splitPos);
         auto labelPart = text.mid(splitPos);
 
         if (labelPart == "主屏幕") {
@@ -200,11 +199,10 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
             menu->addAction(text, [&](){send("reboot");});
         }
         else if (labelPart == "锁屏") {
-            if (deviceInfo->lockedStatus) {
+            if (deviceInfo->lockedStatus)
                 menu->addAction("🔓解锁", [&](){send("changeScreenLockedStatus", 0);});
-            } else {
+            else
                 menu->addAction("🔒锁屏", [&](){send("changeScreenLockedStatus", 1);});
-            }
         }
         else if (labelPart == "清空相册") {
             menu->addAction(text, [&](){send("deleteAllPhotos");});
@@ -381,13 +379,21 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
                 });
             });
         }
-
-#ifdef Q_OS_WIN 
-        auto lastAction = menu->actions().last();
-        lastAction->setText(labelPart);
-        lastAction->setIcon(EmojiIconProvider::createIcon(iconPart));
-#endif
     }
+
+#ifdef Q_OS_WIN
+        for(const auto& action : menu->actions()) {
+            const auto& text = action->text();
+            QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
+            finder.toNextBoundary();
+            int splitPos = finder.position();
+
+            auto iconPart = text.left(splitPos);
+            auto labelPart = text.mid(splitPos);
+            action->setText(labelPart);
+            action->setIcon(EmojiIconProvider::createIcon(iconPart));
+        }
+#endif
 
     menu->exec(event->globalPos());
     menu->deleteLater();
