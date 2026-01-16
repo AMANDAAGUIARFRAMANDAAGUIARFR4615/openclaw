@@ -31,16 +31,17 @@ public:
         searchEdit->setStyleSheet(R"(
             QLineEdit {
                 padding: 8px 15px;
-                border: 1px solid #E0E0E0;
+                border: 1px solid palette(mid);
                 border-radius: 18px;
-                background-color: #F5F7FA;
+                background-color: palette(window);
                 font-size: 14px;
-                color: #333;
-                selection-background-color: #007AFF;
+                color: palette(text);
+                selection-background-color: palette(highlight);
+                selection-color: palette(highlighted-text);
             }
             QLineEdit:focus {
-                border: 1px solid #007AFF;
-                background-color: #FFFFFF;
+                border: 1px solid palette(highlight);
+                background-color: palette(base);
             }
         )");
         // 设置视口顶部边距，防止文字被搜索框遮挡
