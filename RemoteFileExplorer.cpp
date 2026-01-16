@@ -821,6 +821,11 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         send("createDirectory", dir + "/" + name);
     })->setEnabled(selectedCount == 1 || (selectedCount == 0 && rootPath != "/"));
 
+    menu.addAction("刷新文件夹", [=]() {
+        auto dir = isDir ? remotePath : remotePath.left(remotePath.lastIndexOf('/'));
+        fetchDirectoryContents(dir);
+    })->setEnabled(selectedCount == 1);
+
     menu.exec(treeView->viewport()->mapToGlobal(pos));
 }
 
