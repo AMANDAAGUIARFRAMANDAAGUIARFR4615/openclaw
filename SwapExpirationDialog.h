@@ -81,7 +81,7 @@ public:
             // 筛选下拉框改变 -> 重新加载表格
             auto filterBox = currentTable->parentWidget()->findChild<QComboBox*>();
             if (filterBox) {
-                connect(filterBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=]() {
+                connect(filterBox, &QComboBox::currentIndexChanged, [=]() {
                     loadTableData(currentTable, filterBox, oppositeTable, currentSelectAllBox);
                 });
             }

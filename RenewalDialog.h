@@ -254,7 +254,7 @@ public:
             updateTotalPrice();
         });
 
-        connect(filterComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int index) {
+        connect(filterComboBox, &QComboBox::currentIndexChanged, [this](int index) {
             qDebugEx() << "QComboBox::currentIndexChanged" << index;
             if (index < 0)
                 return;

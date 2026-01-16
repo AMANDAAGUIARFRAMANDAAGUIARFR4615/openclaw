@@ -232,7 +232,7 @@ private:
             optionsLayout->addWidget(radio);
         }
 
-        connect(group, QOverload<int>::of(&QButtonGroup::idClicked), [=](int id){
+        connect(group, &QButtonGroup::idClicked, [=](int id){
             settings->setValue(key, id);
             emit configurationChanged(key);
         });

@@ -382,7 +382,7 @@ public:
         connect(btnStart, &QPushButton::clicked, this, &StepExecute::startProcess);
         connect(btnSkip, &QPushButton::clicked, this, &StepExecute::skipProcess);
         connect(process, &QProcess::readyReadStandardOutput, this, &StepExecute::readOutput);
-        connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &StepExecute::onProcessFinished);
+        connect(process, &QProcess::finished, this, &StepExecute::onProcessFinished);
         connect(process, &QProcess::errorOccurred, this, &StepExecute::onProcessError);
     }
 
