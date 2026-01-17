@@ -5,7 +5,6 @@
 #include <QByteArray>
 #include <QJsonObject>
 #include <QJsonDocument>
-#include <QTimer>
 
 class UdpTransport : public QUdpSocket
 {
