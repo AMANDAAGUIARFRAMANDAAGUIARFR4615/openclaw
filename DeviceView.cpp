@@ -536,6 +536,9 @@ bool DeviceView::event(QEvent *event)
                 }
 
                 if (auto mouseEvent = dynamic_cast<QMouseEvent*>(event)) {
+                    if (mouseEvent->pointingDevice()->name() == "VirtualMouse")
+                        break;
+
                     DeviceView* sourceView = this;
 
                     if (auto widget = qobject_cast<DeviceWidget*>(this)) {
@@ -548,14 +551,54 @@ bool DeviceView::event(QEvent *event)
                     qreal ratioX = (qreal)targetView->width() / sourceView->width();
                     qreal ratioY = (qreal)targetView->height() / sourceView->height();
 
-                    QMouseEvent mappedEvent(mouseEvent->type(),
-                                            QPointF(mouseEvent->position().x() * ratioX, mouseEvent->position().y() * ratioY),
-                                            mouseEvent->globalPosition(),
-                                            mouseEvent->button(),
-                                            mouseEvent->buttons(),
-                                            mouseEvent->modifiers(),
-                                            mouseEvent->pointingDevice());
-                    targetView->event(&mappedEvent);
+                    static QPointingDevice pointingDevice("VirtualMouse", 1, QInputDevice::DeviceType::Mouse, QPointingDevice::PointerType::Generic, QInputDevice::Capability::Position, 1, 3);
+                    auto mappedEvent = new QMouseEvent(mouseEvent->type(),
+                                                       QPointF(mouseEvent->position().x() * ratioX, mouseEvent->position().y() * ratioY),
+                                                       mouseEvent->globalPosition(),
+                                                       mouseEvent->button(),
+                                                       mouseEvent->buttons(),
+                                                       mouseEvent->modifiers(),
+                                                       &pointingDevice);
+
+                    struct DelayedEvent {
+                        qint64 execTime;         // 计划执行的时间戳
+                        QMouseEvent* event;      // 事件指针
+                        QPointer<QObject> target;// 目标对象（防崩溃保护）
+                    };
+
+                    static QQueue<DelayedEvent> eventQueue;
+                    static QTimer* queueTimer = nullptr;
+
+                    if (!queueTimer) {
+                        queueTimer = new QTimer(qApp);
+                        queueTimer->setInterval(10);
+
+                        connect(queueTimer, &QTimer::timeout, []() {
+                            qint64 now = QDateTime::currentMSecsSinceEpoch();
+
+                            // 循环取出所有时间 <= 当前时间的事件
+                            while (!eventQueue.isEmpty() && eventQueue.head().execTime <= now) {
+                                const auto& item = eventQueue.dequeue();
+
+                                if (item.target)
+                                    qApp->sendEvent(item.target, item.event);
+
+                                delete item.event;
+                            }
+                        });
+
+                        queueTimer->start();
+                    }
+
+                    if (false) {
+                        targetView->event(mappedEvent);
+                        delete mappedEvent;
+                    }
+                    else {
+                        qint64 executeTime = QDateTime::currentMSecsSinceEpoch() + 2000;
+                        eventQueue.enqueue({executeTime, mappedEvent, targetView});
+                    }
+
                     continue;
                 }
                 
