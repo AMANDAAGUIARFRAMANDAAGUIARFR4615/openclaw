@@ -563,7 +563,7 @@ bool DeviceView::event(QEvent *event)
                     struct DelayedEvent {
                         qint64 execTime;         // 计划执行的时间戳
                         QMouseEvent* event;      // 事件指针
-                        QPointer<QObject> target;// 目标对象（防崩溃保护）
+                        QPointer<DeviceView> target;// 目标对象（防崩溃保护）
                     };
 
                     static QQueue<DelayedEvent> eventQueue;
@@ -571,7 +571,7 @@ bool DeviceView::event(QEvent *event)
 
                     if (!queueTimer) {
                         queueTimer = new QTimer(qApp);
-                        queueTimer->setInterval(10);
+                        queueTimer->setInterval(0);
 
                         connect(queueTimer, &QTimer::timeout, []() {
                             qint64 now = QDateTime::currentMSecsSinceEpoch();
@@ -581,7 +581,7 @@ bool DeviceView::event(QEvent *event)
                                 const auto& item = eventQueue.dequeue();
 
                                 if (item.target)
-                                    qApp->sendEvent(item.target, item.event);
+                                    item.target->event(item.event);
 
                                 delete item.event;
                             }
