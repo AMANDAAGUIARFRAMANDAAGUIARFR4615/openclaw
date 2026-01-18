@@ -24,7 +24,7 @@ public:
     DeviceConnection* const connection;
     DeviceInfo* const deviceInfo;
 
-    float randomDelay = 0;
+    int randomDelay = 0;
 
 protected:
     void showOverlay(const QString &text);

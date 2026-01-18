@@ -513,14 +513,27 @@ bool DeviceView::event(QEvent *event)
         // case QEvent::DragLeave:
         case QEvent::Drop:
         case QEvent::Close:
+            auto mouseEvent = dynamic_cast<QMouseEvent*>(event);
+
+            if (mouseEvent) {
+                if (mouseEvent->button() != Qt::MouseButton::LeftButton)
+                    break;
+
+                if (mouseEvent->type() == QEvent::MouseMove && mouseEvent->buttons() != Qt::LeftButton)
+                    break;
+
+                if (mouseEvent->pointingDevice()->name() == "VirtualMouse")
+                    break;
+            }
+
             isDispatching = true;
-            for (const auto& item : MainWindow::getInstance()->getDeviceWidgets()) {
-                auto targetWindow = item->getDeviceWindow();
-                if (item == this || targetWindow == (DeviceWindow*)this)
+            for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()) {
+                auto targetWindow = deviceWidget->getDeviceWindow();
+                if (deviceWidget == this || targetWindow == (DeviceWindow*)this)
                     continue;
 
                 if (event->type() == QEvent::Drop) {
-                    item->dropEvent((QDropEvent*)event);
+                    deviceWidget->dropEvent((QDropEvent*)event);
                     continue;
                 }
                 
@@ -529,10 +542,7 @@ bool DeviceView::event(QEvent *event)
                     continue;
                 }
 
-                if (auto mouseEvent = dynamic_cast<QMouseEvent*>(event)) {
-                    if (mouseEvent->pointingDevice()->name() == "VirtualMouse")
-                        break;
-
+                if (mouseEvent) {
                     DeviceView* sourceView = this;
 
                     if (auto widget = qobject_cast<DeviceWidget*>(this)) {
@@ -540,7 +550,7 @@ bool DeviceView::event(QEvent *event)
                             sourceView = window;
                     }
 
-                    auto targetView = item->getDeviceWindow() ? (DeviceView*)item->getDeviceWindow() : item;
+                    auto targetView = deviceWidget->getDeviceWindow() ? (DeviceView*)deviceWidget->getDeviceWindow() : deviceWidget;
 
                     qreal ratioX = (qreal)targetView->width() / sourceView->width();
                     qreal ratioY = (qreal)targetView->height() / sourceView->height();
@@ -588,8 +598,8 @@ bool DeviceView::event(QEvent *event)
                         if (event->type() == QEvent::MouseButtonPress)
                             targetView->randomDelay = MainWindow::getInstance()->getRandomDelay();
 
-                        qint64 executeTime = QDateTime::currentMSecsSinceEpoch() + targetView->randomDelay;
-                        eventQueue.enqueue({executeTime, mappedEvent, targetView});
+                        qint64 execTime = QDateTime::currentMSecsSinceEpoch() + targetView->randomDelay;
+                        eventQueue.enqueue({execTime, mappedEvent, targetView});
                     }
                     else {
                         targetView->event(mappedEvent);
@@ -599,7 +609,7 @@ bool DeviceView::event(QEvent *event)
                     continue;
                 }
                 
-                ((DeviceView*)item)->event(event);
+                ((DeviceView*)deviceWidget)->event(event);
             }
             isDispatching = false;
             break;
