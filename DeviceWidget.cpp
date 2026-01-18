@@ -70,7 +70,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     ipLabel->setAlignment(Qt::AlignCenter);
     ipLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     ipLabel->setFixedHeight(22);
-    auto versionLabel = new QLabel("版本：" + deviceInfo->version, this);
+    auto versionLabel = new QLabel(QStringList{"", "有根", "无根", "隐根"}[deviceInfo->jbType] + deviceInfo->version, this);
     versionLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     versionLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     versionLabel->setFixedHeight(22);
