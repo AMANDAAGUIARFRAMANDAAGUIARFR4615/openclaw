@@ -207,9 +207,12 @@ void UsbDeviceManager::handlePollFinished() {
 }
 
 void UsbDeviceManager::processBufferedData(UsbDeviceContext* ctx) {
-    auto &buffer = deviceBuffers[ctx];
+    while (deviceBuffers.contains(ctx)) {
+        auto &buffer = deviceBuffers[ctx];
 
-    while (buffer.size() >= static_cast<int>(sizeof(quint64) + sizeof(quint32))) {
+        if (buffer.size() < sizeof(quint64) + sizeof(quint32))
+            return;
+
         auto identifier = *reinterpret_cast<const quint64*>(buffer.constData());
         if (identifier != 0xb7c2e0f542a39a3e) {
             qCriticalEx() << HIDE("识别码不匹配，清空缓冲区");
@@ -218,6 +221,7 @@ void UsbDeviceManager::processBufferedData(UsbDeviceContext* ctx) {
         }
 
         auto size = *reinterpret_cast<const quint32*>(buffer.constData() + sizeof(quint64));
+        
         if (buffer.size() < static_cast<int>(sizeof(quint64) + sizeof(quint32) + size)) {
             // qDebugEx() << "数据不完整，等待更多数据";
             return;

@@ -166,10 +166,9 @@ private:
                 return;
 
             auto identifier = *reinterpret_cast<const quint64*>(buffer.constData());
-            
             if (identifier != 0xb7c2e0f542a39a3e) {
                 qCriticalEx() << HIDE("识别码不匹配，丢弃数据");
-                buffer.clear(); // 清空缓冲区
+                buffer.clear();
                 return;
             }
 
@@ -181,7 +180,6 @@ private:
             }
 
             const auto& data = buffer.mid(sizeof(quint64) + sizeof(quint32), size);
-            // 移除已处理的数据包
             buffer.remove(0, sizeof(quint64) + sizeof(quint32) + size);
 
             const auto& jsonData = AesCrypto::decrypt(data);
