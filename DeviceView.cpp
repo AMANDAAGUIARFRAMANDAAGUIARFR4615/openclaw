@@ -516,10 +516,10 @@ bool DeviceView::event(QEvent *event)
             auto mouseEvent = dynamic_cast<QMouseEvent*>(event);
 
             if (mouseEvent) {
-                if (mouseEvent->button() != Qt::MouseButton::LeftButton)
+                if (mouseEvent->type() != QEvent::MouseMove && mouseEvent->button() != Qt::MouseButton::LeftButton)
                     break;
 
-                if (mouseEvent->type() == QEvent::MouseMove && mouseEvent->buttons() != Qt::LeftButton)
+                if (mouseEvent->type() == QEvent::MouseMove && !(pressedButtons & Qt::LeftButton))
                     break;
 
                 if (mouseEvent->pointingDevice()->name() == "VirtualMouse")
