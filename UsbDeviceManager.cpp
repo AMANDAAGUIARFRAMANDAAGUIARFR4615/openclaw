@@ -1,5 +1,6 @@
 #include "UsbDeviceManager.h"
 #include "MainWindow.h"
+#include "Safe.h"
 #include <QJsonDocument>
 #include <magic_enum/magic_enum.hpp>
 

@@ -3,6 +3,7 @@
 #include "NetworkUtils.h"
 #include "AesCrypto.h"
 #include "DeviceConnection.h"
+#include "Safe.h"
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QByteArray>
