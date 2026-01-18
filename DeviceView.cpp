@@ -301,6 +301,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
                     // Packages 文件通常由空行分隔每个包的信息
                     // 使用正则表达式分割块，兼容 \n\n 或 \r\n\r\n
                     QStringList packageBlocks = content.split(QRegularExpression("\\n\\s*\\n"), Qt::SkipEmptyParts);
+                    std::reverse(packageBlocks.begin(), packageBlocks.end());
 
                     // 遍历每一个包块
                     for (const QString &block : packageBlocks) {
