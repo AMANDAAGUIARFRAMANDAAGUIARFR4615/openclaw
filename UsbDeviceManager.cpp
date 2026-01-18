@@ -212,30 +212,31 @@ void UsbDeviceManager::processBufferedData(UsbDeviceContext* ctx) {
     while (buffer.size() >= static_cast<int>(sizeof(quint64) + sizeof(quint32))) {
         auto identifier = *reinterpret_cast<const quint64*>(buffer.constData());
         if (identifier != 0xb7c2e0f542a39a3e) {
-            qCriticalEx() << "识别码不匹配，清空缓冲区";
+            qCriticalEx() << HIDE("识别码不匹配，清空缓冲区");
             buffer.clear();
             return;
         }
 
         auto size = *reinterpret_cast<const quint32*>(buffer.constData() + sizeof(quint64));
-        if (buffer.size() < static_cast<int>(sizeof(quint64) + sizeof(quint32) + size))
+        if (buffer.size() < static_cast<int>(sizeof(quint64) + sizeof(quint32) + size)) {
+            // qDebugEx() << "数据不完整，等待更多数据";
             return;
+        }
 
         const auto& data = buffer.mid(sizeof(quint64) + sizeof(quint32), size);
         buffer.remove(0, sizeof(quint64) + sizeof(quint32) + size);
 
         const auto& jsonData = AesCrypto::decrypt(data);
         if (jsonData.size() == 0) {
-            // qCriticalEx() << "解密失败";
+            qDebugEx() << HIDE("解密失败");
             return;
         }
 
         const auto& doc = QJsonDocument::fromJson(jsonData);
 
-        if (!doc.isNull()) {
+        if (!doc.isNull())
             emit dataReceived(ctx->handler, doc.object());
-        } else {
-            qCriticalEx() << "JSON 解析失败，丢弃数据";
-        }
+        else
+            qCriticalEx() << HIDE("JSON 解析失败，丢弃数据");
     }
 }

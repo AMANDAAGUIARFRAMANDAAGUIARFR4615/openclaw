@@ -168,7 +168,7 @@ private:
             auto identifier = *reinterpret_cast<const quint64*>(buffer.constData());
             
             if (identifier != 0xb7c2e0f542a39a3e) {
-                qCriticalEx() << "识别码不匹配，丢弃数据" << QString("0x%1").arg(identifier, 0, 16);
+                qCriticalEx() << HIDE("识别码不匹配，丢弃数据");
                 buffer.clear(); // 清空缓冲区
                 return;
             }
@@ -186,7 +186,7 @@ private:
 
             const auto& jsonData = AesCrypto::decrypt(data);
             if (jsonData.size() == 0) {
-                // qCriticalEx() << "解密失败";
+                qDebugEx() << HIDE("解密失败");
                 continue;
             }
 
@@ -197,7 +197,7 @@ private:
                 if (connection)
                     emit dataReceived(connection, doc.object());
             } else {
-                qCriticalEx() << "JSON 解析失败，丢弃数据";
+                qCriticalEx() << HIDE("JSON 解析失败，丢弃数据");
             }
         }
     }
