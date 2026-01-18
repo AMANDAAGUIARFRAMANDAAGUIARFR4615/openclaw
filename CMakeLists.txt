@@ -69,7 +69,7 @@ endif()
 # 3. 定义可执行文件
 # =========================================================
 add_executable(${PROJECT_NAME}
-    main.cpp Safe.h SafeObject.h SwitchButton.h ExplicitSelectionListWidget.h NaturalSortListWidgetItem.h ClickableLabel.h
+    main.cpp Safe.h SafeObject.h SwitchButton.h ExplicitSelectionListWidget.h NaturalSortListWidgetItem.h
     global.h global.cpp AesCrypto.h KeyMapping.h VideoVisibilityManager.h
     EmojiIconProvider.h Tools.h SettingsViewer.h JailbreakAssistantDialog.h AccountListDialog.h SwapExpirationDialog.h
     Logger.h LogWindow.h EventHub.h
