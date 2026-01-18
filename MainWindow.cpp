@@ -424,8 +424,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     hLayout->setSpacing(5);
     hLayout->addWidget(multiControlSwitchButton);
 
-    auto randomDelay = settings->value("randomDelay").toBool();
-    randomDelayCheckBox->setChecked(randomDelay);
+    auto randomDelayChecked = settings->value("randomDelayChecked").toBool();
+    randomDelayCheckBox->setChecked(randomDelayChecked);
     randomDelayCheckBox->hide();
 
     minDelaySpinBox->setRange(0, 99);
@@ -441,10 +441,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     rangeLayout->addWidget(minDelaySpinBox);
     rangeLayout->addWidget(new QLabel("—"));
     rangeLayout->addWidget(maxDelaySpinBox);
-    Tools::setLayoutVisible(rangeLayout, multiControlSwitchButton->isChecked() && randomDelay);
+    Tools::setLayoutVisible(rangeLayout, multiControlSwitchButton->isChecked() && randomDelayChecked);
 
     connect(randomDelayCheckBox, &QCheckBox::clicked, [=](bool checked) {
-        settings->setValue("randomDelay", checked);
+        settings->setValue("randomDelayChecked", checked);
         Tools::setLayoutVisible(rangeLayout, checked);
     });
 
@@ -456,10 +456,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     connect(minDelaySpinBox, &QSpinBox::valueChanged, [this](int value) {
         maxDelaySpinBox->setMinimum(value);
         settings->setValue("minDelay", value);
+        for (const auto& deviceWidget : getDeviceWidgets()) {
+            deviceWidget->randomDelay = 0;
+        }
     });
     connect(maxDelaySpinBox, &QSpinBox::valueChanged, [this](int value) {
         minDelaySpinBox->setMaximum(value);
         settings->setValue("maxDelay", value);
+        for (const auto& deviceWidget : getDeviceWidgets()) {
+            deviceWidget->randomDelay = 0;
+        }
     });
 
     hLayout->addWidget(randomDelayCheckBox);
@@ -785,7 +791,7 @@ void MainWindow::showSupportDialog()
     supportDialog->exec();
 }
 
-double MainWindow::getRandomDelay()
+float MainWindow::getRandomDelay()
 {
     if (!multiControlSwitchButton->isChecked())
         return 0;
@@ -793,9 +799,9 @@ double MainWindow::getRandomDelay()
     if (!randomDelayCheckBox->isChecked())
         return 0;
 
-    double min = minDelaySpinBox->value();
-    double max = maxDelaySpinBox->value();
-    return min + QRandomGenerator::global()->generateDouble() * (max - min);
+    float min = minDelaySpinBox->value();
+    float max = maxDelaySpinBox->value();
+    return min + (float)QRandomGenerator::global()->generateDouble() * (max - min);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
