@@ -30,7 +30,7 @@ public:
     const QList<BitMaskEditorDialog::Item>& getTabs() const { return tabs; }
     BitMaskEditorDialog::Item& getTab() { return tabs[tabWidget->currentIndex()]; }
     void showSupportDialog();
-    float getRandomDelay();
+    int getRandomDelay();
 
     void relayoutDevices();
 

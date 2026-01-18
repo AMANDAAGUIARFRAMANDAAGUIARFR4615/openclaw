@@ -789,7 +789,7 @@ void MainWindow::showSupportDialog()
     supportDialog->exec();
 }
 
-float MainWindow::getRandomDelay()
+int MainWindow::getRandomDelay()
 {
     if (!multiControlSwitchButton->isChecked())
         return 0;
@@ -797,9 +797,9 @@ float MainWindow::getRandomDelay()
     if (!randomDelayCheckBox->isChecked())
         return 0;
 
-    float min = minDelaySpinBox->value();
-    float max = maxDelaySpinBox->value();
-    return min + (float)QRandomGenerator::global()->generateDouble() * (max - min);
+    int min = minDelaySpinBox->value() * 1000;
+    int max = maxDelaySpinBox->value() * 1000;
+    return min + QRandomGenerator::global()->generateDouble() * (max - min);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
