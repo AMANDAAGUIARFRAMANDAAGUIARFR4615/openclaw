@@ -584,8 +584,11 @@ bool DeviceView::event(QEvent *event)
                         queueTimer->start();
                     }
 
-                    if (MainWindow::getInstance()->lineDispatcherSwitchButton->isChecked() && MainWindow::getInstance()->randomDelayCheckBox->isChecked()) {
-                        qint64 executeTime = QDateTime::currentMSecsSinceEpoch() + sourceView->randomDelay;
+                    if (MainWindow::getInstance()->multiControlSwitchButton->isChecked() && MainWindow::getInstance()->randomDelayCheckBox->isChecked()) {
+                        if (event->type() == QEvent::MouseButtonPress)
+                            targetView->randomDelay = MainWindow::getInstance()->getRandomDelay();
+
+                        qint64 executeTime = QDateTime::currentMSecsSinceEpoch() + targetView->randomDelay;
                         eventQueue.enqueue({executeTime, mappedEvent, targetView});
                     }
                     else {
@@ -623,11 +626,9 @@ bool DeviceView::event(QEvent *event)
     {
     case QEvent::MouseButtonPress:
         type = 1;
-        randomDelay = MainWindow::getInstance()->getRandomDelay();
         break;
     case QEvent::MouseButtonRelease:
         type = 2;
-        randomDelay = 0;
         break;
     case QEvent::MouseMove:
         type = 3;
