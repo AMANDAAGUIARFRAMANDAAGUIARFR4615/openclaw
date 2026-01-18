@@ -152,9 +152,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 
     auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
         if (isMultiControl) {
-            auto devices = MainWindow::getInstance()->getDevices();
-
-            for (const auto& device : devices) {
+            for (const auto& device : MainWindow::getInstance()->getDevices()) {
                 device->connection->send(event, jsonValue);
             }
         }
@@ -409,9 +407,7 @@ void DeviceView::dragEnterEvent(QDragEnterEvent *event)
         "mp4", "mov", "avi", "mkv", "flv", "wmv"
     };
 
-    const QList<QUrl> urls = event->mimeData()->urls();
-
-    for (const QUrl &url : urls)
+    for (const QUrl &url : event->mimeData()->urls())
     {
         QString suffix = QFileInfo(url.toLocalFile()).suffix().toLower();
         if (!allowedSuffixes.contains(suffix))
@@ -428,9 +424,7 @@ void DeviceView::dropEvent(QDropEvent *event)
 {
     qDebugEx() << "dropEvent" << this;
 
-    const QList<QUrl> urls = event->mimeData()->urls();
-
-    for (const QUrl& url : urls) {
+    for (const QUrl& url : event->mimeData()->urls()) {
         auto type = 2; // 收是1，发是2
         auto localPath = url.toLocalFile();
         auto size = Tools::getFileSize(localPath);
@@ -519,8 +513,7 @@ bool DeviceView::event(QEvent *event)
         case QEvent::Drop:
         case QEvent::Close:
             isDispatching = true;
-            const auto& deviceWidgets = MainWindow::getInstance()->getDeviceWidgets();
-            for (const auto& item : deviceWidgets) {
+            for (const auto& item : MainWindow::getInstance()->getDeviceWidgets()) {
                 auto targetWindow = item->getDeviceWindow();
                 if (item == this || targetWindow == (DeviceWindow*)this)
                     continue;

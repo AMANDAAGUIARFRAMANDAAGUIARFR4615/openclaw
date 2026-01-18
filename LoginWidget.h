@@ -280,8 +280,7 @@ protected:
 
                 if (res["msg"].isUndefined()) {
                     saveCredentials(phone, password);
-                    const auto& devices = res["devices"].toArray();
-                    for (const QJsonValue& device: devices) {
+                    for (const QJsonValue& device: res["devices"].toArray()) {
                         const auto& udid = device["udid"].toString();
                         expirations[udid] = device[HIDE("expireAt")].toInteger();
                     }

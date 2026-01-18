@@ -150,10 +150,8 @@ void DeviceWidget::launchDeviceWindow() {
 
     if (!isDispatching && MainWindow::getInstance()->multiControlSwitchButton->isChecked()) {
         isDispatching = true;
-        auto list = MainWindow::getInstance()->findChildren<DeviceWidget*>();
-        for (auto& item : list) {
-            if (item != this && item->isVisible())
-                item->launchDeviceWindow();
+        for (auto& item : MainWindow::getInstance()->getDeviceWidgets()) {
+            item->launchDeviceWindow();
         }
         isDispatching = false;
     }
@@ -190,10 +188,8 @@ void DeviceWidget::launchDeviceWindow() {
         QRect targetRect = deviceInfo->geometry;
         bool isVisible = false;
 
-        const auto screens = qApp->screens();
-        
         // 遍历所有屏幕，检查目标矩形是否与任意屏幕的可用区域相交
-        for (QScreen *screen : screens) {
+        for (QScreen *screen : qApp->screens()) {
             if (targetRect.intersects(screen->availableGeometry())) {
                 isVisible = true;
                 break; // 只要与任意一个屏幕有交集，就认为位置有效，停止检查

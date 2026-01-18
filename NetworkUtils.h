@@ -68,9 +68,7 @@ public:
     static QStringList getPhysicalIPs() {
         QStringList ips;
 
-        const QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
-
-        for (const QNetworkInterface &interface : interfaces) {
+        for (const QNetworkInterface &interface : QNetworkInterface::allInterfaces()) {
             if (!(interface.flags() & QNetworkInterface::IsUp) || !(interface.flags() & QNetworkInterface::IsRunning))
                 continue;
 
@@ -88,8 +86,7 @@ public:
                 }
             }
 
-            const QList<QNetworkAddressEntry> entries = interface.addressEntries();
-            for (const QNetworkAddressEntry &entry : entries) {
+            for (const QNetworkAddressEntry &entry : interface.addressEntries()) {
                 QHostAddress ip = entry.ip();
 
                 if (ip.protocol() != QAbstractSocket::IPv4Protocol)

@@ -148,8 +148,7 @@ private:
             table->setSortingEnabled(false);
             table->setRowCount(0);
 
-            QJsonArray appArray = data.toArray();
-            for (const QJsonValue &item : appArray) {
+            for (const QJsonValue &item : data.toArray()) {
                 if (!item.isObject())
                     continue;
 
@@ -341,8 +340,7 @@ private:
 
                 if (!name.endsWith("路径") && MainWindow::getInstance()->multiControlSwitchButton->isChecked())
                 {
-                    const auto& devices = MainWindow::getInstance()->getDevices();
-                    for(const auto& device : std::as_const(devices)) {
+                    for(const auto& device : MainWindow::getInstance()->getDevices()) {
                         device->connection->send("appOperation", dataObject);
                     }
                 }

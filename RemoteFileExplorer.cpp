@@ -504,8 +504,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
 
     if (type == 2 && MainWindow::getInstance()->multiControlSwitchButton->isChecked())
     {
-        const auto& devices = MainWindow::getInstance()->getDevices();
-        for(const auto& deviceInfo : std::as_const(devices)) {
+        for(const auto& deviceInfo : MainWindow::getInstance()->getDevices()) {
             if (deviceInfo->connection == connection)
                 continue;
 
@@ -670,9 +669,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
 
     auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
         if (MainWindow::getInstance()->multiControlSwitchButton->isChecked()) {
-            auto devices = MainWindow::getInstance()->getDevices();
-
-            for (const auto& device : devices) {
+            for (const auto& device : MainWindow::getInstance()->getDevices()) {
                 device->connection->send(event, jsonValue);
             }
         }
@@ -866,9 +863,7 @@ void RemoteFileExplorer::dragEnterEvent(QDragEnterEvent *event)
     if (!event->mimeData()->hasUrls()) 
         event->ignore();
 
-    auto urls = event->mimeData()->urls();
-
-    for (const QUrl &url : urls) {
+    for (const QUrl &url : event->mimeData()->urls()) {
         if (QFileInfo(url.toLocalFile()).isDir()) {
             event->ignore();
             return;
@@ -894,8 +889,6 @@ void RemoteFileExplorer::dragMoveEvent(QDragMoveEvent *event)
 
 void RemoteFileExplorer::dropEvent(QDropEvent *event)
 {
-    auto urls = event->mimeData()->urls();
-
     QPoint globalPos = mapToGlobal(event->position().toPoint());
     QPoint localPos = treeView->viewport()->mapFromGlobal(globalPos);
     
@@ -903,7 +896,7 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
     QString targetPath = index.data(Qt::UserRole).toString();
     bool isDir = index.data(Qt::UserRole + 2).toBool();
 
-    for (const QUrl &url : urls) {
+    for (const QUrl &url : event->mimeData()->urls()) {
         auto localPath = url.toLocalFile();
         auto size = Tools::getFileSize(localPath);
         if (size == -1) {

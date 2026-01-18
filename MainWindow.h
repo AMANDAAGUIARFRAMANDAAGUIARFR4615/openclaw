@@ -39,7 +39,7 @@ public:
     SwitchButton* const multiControlSwitchButton = new SwitchButton("同屏操作");
     SwitchButton* const lineDispatcherSwitchButton = new SwitchButton("文本逐行分发");
 
-    QCheckBox* const randomDelayCheckBox = new QCheckBox("随机延迟");
+    QCheckBox* const randomDelayCheckBox = new QCheckBox("鼠标随机延迟");
     QSpinBox* const minDelaySpinBox = new QSpinBox;
     QSpinBox* const maxDelaySpinBox = new QSpinBox;
 

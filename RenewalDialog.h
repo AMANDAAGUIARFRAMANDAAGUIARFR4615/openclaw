@@ -44,8 +44,7 @@ public:
         auto filterLabel = new QLabel("分组筛选:");
         filterComboBox = new QComboBox();
 
-        const auto& items = MainWindow::getInstance()->getTabs();
-        for (const auto& item : items) {
+        for (const auto& item : MainWindow::getInstance()->getTabs()) {
             filterComboBox->addItem(item.name, item.bit);
         }
 
@@ -213,9 +212,7 @@ public:
 
                 setVoucherBalance(res["balance"].toInt());
 
-                const auto& devices = res["devices"].toArray();
-
-                for (const QJsonValue &item : devices) {
+                for (const QJsonValue &item : res["devices"].toArray()) {
                     auto deviceInfo = DeviceInfo::getDevice(item["udid"].toString());
                     deviceInfo->expireAt = item[HIDE("expireAt")].toInteger();
                 }

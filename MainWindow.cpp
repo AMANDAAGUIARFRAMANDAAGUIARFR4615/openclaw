@@ -370,10 +370,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                         return;
                     }
 
-                    const auto& array = res.toArray();
                     QStringList codes;
 
-                    for (const QJsonValue &item : array) {
+                    for (const QJsonValue &item : res.toArray()) {
                         codes << item.toString(); 
                     }
 
@@ -389,9 +388,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                         return;
                     }
 
-                    const auto& array = res.toArray();
                     QStringList phoneNumbers;
-                    for (const QJsonValue &item : array) {
+                    for (const QJsonValue &item : res.toArray()) {
                         phoneNumbers << item.toString();
                     }
 
@@ -891,8 +889,7 @@ void MainWindow::addOptionMenu(QMenu* parent, const QString& title, const QStrin
 
 void MainWindow::syncVideoSettingsToDevices()
 {
-    const auto& devices = getDeviceWidgets();
-    for (const auto& device : devices) {
+    for (const auto& device : getDeviceWidgets()) {
         auto videoFrameWidget = device->getDeviceWindow() ? device->getDeviceWindow()->getVideoFrameWidget() : device->getVideoFrameWidget();
         const auto& size = videoFrameWidget->size();
         qApp->postEvent(videoFrameWidget, new QResizeEvent(size, size));
@@ -1140,8 +1137,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
                 page->deleteLater();
                 auto tab = tabs.takeAt(index);
                 auto mask = 1U << bit;
-                auto devices = DeviceInfo::getDevices(mask);
-                for (auto& deviceInfo : devices) {
+                for (auto& deviceInfo : DeviceInfo::getDevices(mask)) {
                     deviceInfo->groupMask &= ~mask;
                     settings->setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
                 }

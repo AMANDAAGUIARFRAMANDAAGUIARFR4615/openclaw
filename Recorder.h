@@ -234,8 +234,7 @@ protected:
         QString targetPath = targetDir.absoluteFilePath();
 
         if (targetDir.isDir()) {
-            QList<QUrl> urls = event->mimeData()->urls();
-            for (const QUrl &url : std::as_const(urls)) {
+            for (const QUrl &url : event->mimeData()->urls()) {
                 QString sourcePath = url.toLocalFile();
                 if (QFile::exists(sourcePath)) {
                     QFileInfo sourceFile(sourcePath);

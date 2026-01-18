@@ -326,10 +326,8 @@ private:
                 QToolTip::showText(QCursor::pos(), response.toString()); 
                 return; 
             }
-            
-            const auto& devicesArray = response.toArray();
-            
-            for (const QJsonValue &jsonValue : devicesArray) {
+
+            for (const QJsonValue &jsonValue : response.toArray()) {
                 auto deviceInfo = DeviceInfo::getDevice(jsonValue["udid"].toString());
                 if(deviceInfo)
                     deviceInfo->expireAt = jsonValue[HIDE("expireAt")].toInteger();
