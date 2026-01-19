@@ -23,7 +23,7 @@ public:
     static MainWindow* getInstance() { static MainWindow instance; return &instance; }
 
     void addItem(DeviceConnection* connection);
-    QList<DeviceInfo*> getDevices();
+    QList<DeviceConnection*> getDeviceConnections();
     QList<DeviceWidget*> getDeviceWidgets();
     QList<DeviceWindow*> getDeviceWindows();
     

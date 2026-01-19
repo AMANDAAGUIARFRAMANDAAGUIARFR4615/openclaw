@@ -151,12 +151,8 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     auto menu = new QMenu;
 
     auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
-        if (isMultiControl) {
-            for (const auto& device : MainWindow::getInstance()->getDevices()) {
-                device->connection->send(event, jsonValue);
-            }
-        }
-        else {
+        const auto& connections = isMultiControl ? MainWindow::getInstance()->getDeviceConnections() : (QList<DeviceInfo*>() << connection);
+        for (const auto& connection : connections) {
             connection->send(event, jsonValue);
         }
     };
@@ -752,15 +748,15 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
             }
 
             const auto& array = content.split("\n");
-            const auto& devices = MainWindow::getInstance()->getDevices();
-            if (array.size() != devices.size()) {
-                new ToastWidget(QString("您复制的%1行文本和%2台设备不匹配").arg(array.size()).arg(devices.size()), this);
+            const auto& connections = MainWindow::getInstance()->getDeviceConnections();
+            if (array.size() != connections.size()) {
+                new ToastWidget(QString("您复制的%1行文本和%2台设备不匹配").arg(array.size()).arg(connections.size()), this);
                 return;
             }
 
             for (auto i = 0; i < array.size(); i++) {
                 if (!array[i].isEmpty())
-                    devices[i]->connection->send("clipboard", QJsonObject{{"type", 1}, {"content", array[i]}});
+                    connections[i]->send("clipboard", QJsonObject{{"type", 1}, {"content", array[i]}});
             }
             return;
         }

@@ -507,11 +507,11 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
 
     if (type == 2 && MainWindow::getInstance()->multiControlSwitchButton->isChecked())
     {
-        for(const auto& deviceInfo : MainWindow::getInstance()->getDevices()) {
-            if (deviceInfo->connection == connection)
+        for(const auto& connection : MainWindow::getInstance()->getDeviceConnections()) {
+            if (connection == this->connection)
                 continue;
 
-            auto transfer = new FileTransfer(deviceInfo->connection, type, localPath, size);
+            auto transfer = new FileTransfer(connection, type, localPath, size);
 
             connect(transfer, &FileTransfer::progressUpdated, this, [=](quint64 transferred, quint64 total) {
                 if (transferred != total)
@@ -672,12 +672,8 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
     bool isDir = !selectedIndexes.empty() && std::ranges::all_of(selectedIndexes, [](const QModelIndex &index){ return (index.column() == 0 ? index : index.sibling(index.row(), 0)).data(Qt::UserRole + 2).toBool(); });
 
     auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
-        if (MainWindow::getInstance()->multiControlSwitchButton->isChecked()) {
-            for (const auto& device : MainWindow::getInstance()->getDevices()) {
-                device->connection->send(event, jsonValue);
-            }
-        }
-        else {
+        const auto& connections = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceConnections() : (QList<DeviceInfo*>() << connection);
+        for (const auto& connection : connections) {
             connection->send(event, jsonValue);
         }
     };

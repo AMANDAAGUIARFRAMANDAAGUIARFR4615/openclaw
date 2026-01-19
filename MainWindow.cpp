@@ -1051,12 +1051,12 @@ void MainWindow::addItem(DeviceConnection* connection)
     relayoutDevices();
 }
 
-QList<DeviceInfo*> MainWindow::getDevices()
+QList<DeviceConnection*> MainWindow::getDeviceConnections()
 {
     QList<DeviceInfo*> list;
  
     for (const auto& widget : getDeviceWidgets()) {
-        list.append(widget->deviceInfo);
+        list.append(widget->connection);
     }
 
     return list;
