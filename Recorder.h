@@ -163,14 +163,25 @@ private:
         });
 
         connect(startPlaybackButton,  &QPushButton::clicked, [=]() {
-            auto currentIndex = treeView->currentIndex();
-            if (!currentIndex.isValid()) {
-                new ToastWidget("请先选择回放文件", this);
+            QModelIndexList selectedRows = treeView->selectionModel()->selectedRows();
+            int selectionCount = selectedRows.count();
+            if (selectionCount == 0) {
+                new ToastWidget("请先选择要回放的文件", this);
                 return;
             }
 
-            auto srcIndex = filterModel->mapToSource(currentIndex);
+            if (selectionCount > 1) {
+                new ToastWidget("只能选择一个文件", this);
+                return;
+            }
+
+            auto srcIndex = filterModel->mapToSource(selectedRows[0]);
             auto fileInfo = fileSystemModel->fileInfo(srcIndex);
+            if (fileInfo.isDir()) {
+                new ToastWidget("不能选择文件夹", this);
+                return;
+            }
+
             auto path = fileInfo.absoluteFilePath();
             
             onStartPlayback(path);
@@ -247,6 +258,10 @@ protected:
 
     void showContextMenu(const QPoint &pos) {
         QModelIndex index = treeView->indexAt(pos);
+
+        QModelIndexList selectedRows = treeView->selectionModel()->selectedRows();
+        int selectionCount = selectedRows.count();
+
         QFileInfo fileInfo;
         QString path;
 
@@ -261,51 +276,38 @@ protected:
 
         QMenu menu;
 
-        if (index.isValid()) {
-            if (!fileInfo.isDir()) {
-                menu.addAction("编辑", [=]() {
-                    new FileViewer(path, this);
-                });
+        menu.addAction("编辑", [=]() {
+            new FileViewer(path, this);
+        })->setEnabled(selectionCount == 1 && !fileInfo.isDir());
 
-                if (!isPlaying) {
-                    menu.addAction("开始回放", [=]() {
-                        onStartPlayback(path);
-                    });
-                }
-                else {
-                    menu.addAction("停止回放", [this]() {
-                        onStopPlayback();
-                    });
+        menu.addAction("重命名", [=]() {
+            treeView->edit(index);
+        })->setEnabled(selectionCount == 1);
+
+        menu.addAction("删除", [=]() {
+            if (QMessageBox::question(this, "确认删除", QString("确定删除选中的 %1 项内容吗？").arg(selectionCount)) == QMessageBox::Yes) {
+                for (const auto &idx : selectedRows) {
+                    QModelIndex srcIdx = filterModel->mapToSource(idx);
+                    QFileInfo info = fileSystemModel->fileInfo(srcIdx);
+                    if (info.isDir())
+                        QDir(info.absoluteFilePath()).removeRecursively();
+                    else
+                        QFile::remove(info.absoluteFilePath());
                 }
             }
-
-            menu.addAction("重命名", [=]() {
-                treeView->edit(index);
-            });
-
-            menu.addAction("删除", [=]() {
-                if (QMessageBox::question(this, "确认删除",
-                                          QString("确定删除 “%1” 吗？").arg(fileInfo.fileName()))
-                    == QMessageBox::Yes) {
-                    if (fileInfo.isDir())
-                        QDir(path).removeRecursively();
-                    else
-                        QFile::remove(path);
-                }
-            });
-        }
+        })->setEnabled(selectionCount > 0);
 
         menu.addAction("新建文件夹", [=]() {
             bool ok;
             QString folderName = QInputDialog::getText(this, "新建文件夹",
-                                                       "文件夹名称：", QLineEdit::Normal,
-                                                       "新建文件夹", &ok);
+                                                        "文件夹名称：", QLineEdit::Normal,
+                                                        "新建文件夹", &ok);
             if (ok && !folderName.isEmpty()) {
                 QDir dir(fileInfo.isDir() ? path : fileInfo.dir());
                 if (!dir.mkdir(folderName))
                     new ToastWidget("无法创建文件夹！", this);
             }
-        });
+        })->setEnabled(selectionCount <= 1);
 
         menu.exec(treeView->viewport()->mapToGlobal(pos));
     }
