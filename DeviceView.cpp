@@ -214,7 +214,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         else if (labelPart == "同屏操作") {
             if (qobject_cast<DeviceWindow*>(this)) {
                 auto enabled = MainWindow::getInstance()->multiControlSwitchButton->isChecked();
-                auto action =menu->addAction(text, [=]() {
+                auto action = menu->addAction(text, [=]() {
                     MainWindow::getInstance()->multiControlSwitchButton->setChecked(!enabled);
                 });
                 action->setCheckable(true);

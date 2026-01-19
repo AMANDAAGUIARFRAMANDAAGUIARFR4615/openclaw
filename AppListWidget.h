@@ -330,15 +330,10 @@ private:
                 dataObject["name"] = name;
                 dataObject["type"] = i + 1;
 
-                if (!name.endsWith("路径") && MainWindow::getInstance()->multiControlSwitchButton->isChecked())
-                {
-                    for(const auto& device : MainWindow::getInstance()->getDevices()) {
-                        device->connection->send("appOperation", dataObject);
-                    }
-                }
-                else
-                {
-                    connection->send("appOperation", dataObject);
+                const auto& devices = !name.endsWith("路径") && MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDevices() : (QList<DeviceInfo*>() << connection->deviceInfo);
+
+                for (const auto& device : devices) {
+                    device->connection->send("appOperation", dataObject);
                 }
 
                 if (name == "卸载")
