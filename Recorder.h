@@ -35,7 +35,7 @@ public:
         QFileSystemModel *fileSystemModel = qobject_cast<QFileSystemModel *>(sourceModel());
         QFileInfo fileInfo = fileSystemModel->fileInfo(index);
 
-        return fileInfo.isFile() ? fileInfo.suffix() == "recordx" : true;
+        return fileInfo.isFile() ? fileInfo.suffix().compare("recordx", Qt::CaseInsensitive) == 0 : true;
     }
 
     Qt::DropActions supportedDropActions() const override {
@@ -45,7 +45,7 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override {
         QString text = value.toString();
         
-        if (role == Qt::EditRole && !text.endsWith(".recordx") && ((QFileSystemModel*)sourceModel())->fileInfo(mapToSource(index)).isFile()) {
+        if (role == Qt::EditRole && !text.endsWith(".recordx", Qt::CaseInsensitive) && ((QFileSystemModel*)sourceModel())->fileInfo(mapToSource(index)).isFile()) {
             return QSortFilterProxyModel::setData(index, text + ".recordx", role);
         }
         
