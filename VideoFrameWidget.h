@@ -130,11 +130,11 @@ protected:
             return;
 
         bool isPortrait = connection->deviceInfo->orientation == 1 || connection->deviceInfo->orientation == 2;
-        auto aspectRatio = isPortrait ? (double)connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth : (double)connection->deviceInfo->screenWidth / connection->deviceInfo->screenHeight;
+        auto aspectRatio = isPortrait ? (float)connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth : (float)connection->deviceInfo->screenWidth / connection->deviceInfo->screenHeight;
 
         // 宽度保持 16 字节对齐（很多编码器的硬性要求）
         int alignedWidth = (event->size().width() + 15) & ~15;
-        int alignedHeight = qRound((double)alignedWidth * aspectRatio);
+        int alignedHeight = qRound((float)alignedWidth * aspectRatio);
 
         // 高度强制设为偶数 (对齐到 2)
         // 视频编码通常要求宽高至少是 2 的倍数，奇数高度会导致崩溃或花屏

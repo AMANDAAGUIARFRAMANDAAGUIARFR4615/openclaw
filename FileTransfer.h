@@ -83,8 +83,8 @@ public:
         return tcpServer ? tcpServer->serverPort() : 0;
     }
 
-    double elapsedTime() const {
-        return timer.elapsed() / 1000.0;
+    float elapsedTime() const {
+        return timer.elapsed() / 1000.0f;
     }
 
 signals:

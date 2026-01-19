@@ -73,35 +73,35 @@ public:
     /**
      * @brief 获取最佳显示宽高比 (Height / Width)
      */
-    static double getOptimalAspectRatio(const QList<DeviceInfo*>& devices)
+    static float getOptimalAspectRatio(const QList<DeviceInfo*>& devices)
     {
         if (devices.isEmpty())
             return 1.0;
 
-        QList<double> allRatios;
+        QList<float> allRatios;
         allRatios.reserve(devices.size());
 
         for (auto device : devices) {
-            allRatios.append((double)device->screenHeight / device->screenWidth);
+            allRatios.append((float)device->screenHeight / device->screenWidth);
         }
 
         std::sort(allRatios.begin(), allRatios.end());
 
-        double bestRatio = allRatios.first();
-        double maxTotalFillRate = -1.0;
+        float bestRatio = allRatios.first();
+        float maxTotalFillRate = -1.0;
 
         for (int i = 0; i < allRatios.size(); ++i) {
-            double candidateR = allRatios[i];
+            float candidateR = allRatios[i];
 
             // 如果当前 candidate 和上一个非常接近，直接跳过
             // 避免因为精度问题重复计算 (例如 1.7777777 和 1.7777778)
             if (i > 0 && qAbs(candidateR - allRatios[i-1]) < 0.0001)
                 continue;
 
-            double currentTotalFillRate = 0.0;
+            float currentTotalFillRate = 0.0;
 
             // 内层循环：计算该 candidateR 适应所有设备时的总填充率
-            for (double devR : allRatios) {
+            for (float devR : allRatios) {
                 if (devR > candidateR)
                     currentTotalFillRate += candidateR / devR; // 框比设备“胖”，设备高度受限
                 else

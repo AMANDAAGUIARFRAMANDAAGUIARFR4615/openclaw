@@ -9,7 +9,7 @@
 class SwitchButton : public QWidget
 {
     Q_OBJECT
-    Q_PROPERTY(double offset READ offset WRITE setOffset)
+    Q_PROPERTY(float offset READ offset WRITE setOffset)
 
 public:
     explicit SwitchButton(const QString &onText, const QString &offText = QString(), QWidget *parent = nullptr) : m_onText(onText), m_offText(offText), QWidget(parent)
@@ -52,9 +52,9 @@ public:
         return QSize(w, h);
     }
 
-    double offset() const { return m_offset; }
+    float offset() const { return m_offset; }
 
-    void setOffset(double o) {
+    void setOffset(float o) {
         m_offset = o;
         update();
     }
@@ -118,9 +118,9 @@ protected:
             p.drawText(textRect, Qt::AlignCenter, m_offText);
         }
 
-        double startX = margin;
-        double endX = w - sliderSize - margin;
-        double currentX = startX + (endX - startX) * m_offset;
+        float startX = margin;
+        float endX = w - sliderSize - margin;
+        float currentX = startX + (endX - startX) * m_offset;
 
         p.setBrush(palette.color(QPalette::Base));
         p.drawEllipse(QRectF(currentX, margin, sliderSize, sliderSize));
@@ -128,7 +128,7 @@ protected:
 
 private:
     bool m_checked;
-    double m_offset;
+    float m_offset;
 
     QString m_onText;
     QString m_offText;

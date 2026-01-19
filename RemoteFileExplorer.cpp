@@ -514,7 +514,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
                 if (transferred != total)
                     return;
 
-                double elapsed = transfer->elapsedTime();
+                float elapsed = transfer->elapsedTime();
 
                 QJsonObject obj;
                 obj["startTime"] = startTime;
@@ -579,7 +579,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
     auto timeItem = transferTable->item(row, 8);
 
     connect(transfer, &FileTransfer::progressUpdated, transferTable, [=](quint64 transferred, quint64 total) {
-        double percent = (double)transferred / total * 100;
+        float percent = transferred * 100.0 / total;
         
         percentItem->setText(QString::number(percent, 'f', 1) + "%");
         sizeItem->setText(QString("%1/%2").arg(Tools::formatByteSize(transferred), Tools::formatByteSize(total)));

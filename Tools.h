@@ -78,7 +78,7 @@ public:
         if (!match.hasMatch())
             return -1;
 
-        double value = match.captured(1).toDouble();
+        float value = match.captured(1).toFloat();
         QString unit = match.captured(2);
 
         if (unit == "B" || unit.isEmpty())
