@@ -37,6 +37,10 @@ public:
 
         return fileInfo.isFile() ? fileInfo.suffix() == "recordx" : true;
     }
+
+    Qt::DropActions supportedDropActions() const override {
+        return Qt::CopyAction | Qt::MoveAction;
+    }
 };
 
 class Recorder : public QWidget {
@@ -98,6 +102,7 @@ private:
 
         fileSystemModel = new QFileSystemModel();
         fileSystemModel->setRootPath(recorderPath);
+        fileSystemModel->setReadOnly(false);
 
         filterModel = new FileFilterProxyModel();
         filterModel->setSourceModel(fileSystemModel);
@@ -111,6 +116,7 @@ private:
         treeView->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
         treeView->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
         treeView->header()->setStretchLastSection(false);
+        treeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
         statusBar = new QStatusBar(this);
 
@@ -124,6 +130,8 @@ private:
 
         treeView->setDragEnabled(true);
         treeView->setAcceptDrops(true);
+        treeView->setDragDropMode(QAbstractItemView::DragDrop); // 允许拖和放
+        treeView->setDefaultDropAction(Qt::MoveAction);         // 默认动作为移动
         treeView->setDropIndicatorShown(true);
 
         connect(infiniteCheckBox, &QCheckBox::toggled, [=](bool checked) {
@@ -227,34 +235,6 @@ protected:
         event->accept();
     }
 
-    void dropEvent(QDropEvent *event) override {
-        QModelIndex index = treeView->indexAt(event->position().toPoint());
-        if (!index.isValid()) return;
-
-        QSortFilterProxyModel *proxy = qobject_cast<QSortFilterProxyModel *>(treeView->model());
-        QModelIndex srcIndex = proxy->mapToSource(index);
-        QFileInfo targetDir = fileSystemModel->fileInfo(srcIndex);
-        QString targetPath = targetDir.absoluteFilePath();
-
-        if (targetDir.isDir()) {
-            for (const QUrl &url : event->mimeData()->urls()) {
-                QString sourcePath = url.toLocalFile();
-                if (QFile::exists(sourcePath)) {
-                    QFileInfo sourceFile(sourcePath);
-                    QString destinationPath = targetPath + QDir::separator() + sourceFile.fileName();
-
-                    if (QFile::rename(sourcePath, destinationPath)) {
-                        QMessageBox::information(this, "成功",
-                                                 QString("文件已移动到 %1").arg(targetPath));
-                    } else {
-                        QMessageBox::warning(this, "错误", "无法移动文件！");
-                    }
-                }
-            }
-        }
-        QWidget::dropEvent(event);
-    }
-
     void showContextMenu(const QPoint &pos) {
         QModelIndex index = treeView->indexAt(pos);
         QFileInfo fileInfo;
@@ -290,16 +270,7 @@ protected:
             }
 
             menu.addAction("重命名", [=]() {
-                bool ok;
-                QString newName = QInputDialog::getText(this, "重命名",
-                                                        "新名称：", QLineEdit::Normal,
-                                                        fileInfo.fileName(), &ok);
-                if (ok && !newName.isEmpty()) {
-                    QDir dir = fileInfo.dir();
-                    QString newPath = dir.filePath(newName);
-                    if (!QFile::rename(path, newPath))
-                        new ToastWidget("无法重命名文件！", this);
-                }
+                treeView->edit(index);
             });
 
             menu.addAction("删除", [=]() {
