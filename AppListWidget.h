@@ -322,16 +322,8 @@ private:
 
             connect(button, &QPushButton::clicked, [=](bool) {
                 bool needConfirm = forbiddenNames.contains(name);
-                if (needConfirm) {
-                    QMessageBox msgBox(this);
-                    msgBox.setWindowTitle("确认操作");
-                    msgBox.setText(QString("确定要执行“%1”操作吗？\n此操作不可撤销。").arg(name));
-                    msgBox.setIcon(QMessageBox::Warning);
-                    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-                    msgBox.setDefaultButton(QMessageBox::No);
-                    if (msgBox.exec() != QMessageBox::Yes)
-                        return;
-                }
+                if (needConfirm && QMessageBox::warning(this, "确认操作", QString("确定要执行“%1”操作吗？\n此操作不可撤销。").arg(name), QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes)
+                    return;
 
                 QJsonObject dataObject;
                 dataObject["identifier"] = packageName;
