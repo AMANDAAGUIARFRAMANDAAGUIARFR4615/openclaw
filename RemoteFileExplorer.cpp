@@ -657,7 +657,6 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         index = index.sibling(index.row(), 0);
 
     auto remotePath = index.isValid() ? index.data(Qt::UserRole).toString() : rootPath;
-    bool isDir = index.isValid() ? index.data(Qt::UserRole + 2).toBool() : true;
 
     QModelIndexList selectedIndexes = treeView->selectionModel()->selectedIndexes();
 
@@ -669,6 +668,8 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
     }
 
     qDebugEx() << paths;
+
+    bool isDir = !selectedIndexes.empty() && std::ranges::all_of(selectedIndexes, [](const QModelIndex &index){ return (index.column() == 0 ? index : index.sibling(index.row(), 0)).data(Qt::UserRole + 2).toBool(); });
 
     auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
         if (MainWindow::getInstance()->multiControlSwitchButton->isChecked()) {
@@ -683,130 +684,122 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
 
     int selectedCount = paths.count();
 
-    if (selectedCount > 0) {
-        auto localPath = getLocalPath(remotePath);
+    auto localPath = getLocalPath(remotePath);
 
-        if (isDir)
+    menu.addAction("查看", [=]() {
+        if (!QFile::exists(localPath))
         {
-            if (favorites.contains(remotePath)) {
-                menu.addAction("从快速访问移除", [=]() {
-                    removeFromFavorites(remotePath);
-                });
-            } else {
-                menu.addAction("添加到快速访问", [=]() {
-                    addToFavorites(remotePath);
-                });
-            }
-
-            menu.addAction("压缩", [=]() {
-                for (const QString& remotePath : paths) {
-                    send("compressArchive", remotePath);
-                }
-            });
-        }
-        else
-        {
-            menu.addAction("查看", [=]() {
-                if (!QFile::exists(localPath))
-                {
-                    new ToastWidget("文件不存在，请先下载", this);
-                    return;
-                }
-
-                new FileViewer(localPath, this);
-            })->setEnabled(selectedCount == 1);
-
-            menu.addAction("下载", [=]() {
-                for (const QString& remotePath : paths) {
-                    auto localPath = getLocalPath(remotePath);
-                    startFileTransfer(1, localPath, remotePath, 0);
-                }
-            });
-
-            menu.addAction("解压", [=]() {
-                for (const QString& remotePath : paths) {
-                    if (remotePath.endsWith(".zip") || remotePath.endsWith(".rar"))
-                        connection->send("extractArchive", remotePath);
-                }
-            });
+            new ToastWidget("文件不存在，请先下载", this);
+            return;
         }
 
-        menu.addAction("重命名", [=]() {
-            bool ok;
-            auto name = QInputDialog::getText(this, "重命名", "请输入名称:", QLineEdit::Normal, remotePath.section('/', -1), &ok);
-            
-            if (!ok || name.isEmpty())
-                return;
+        new FileViewer(localPath, this);
+    })->setEnabled(selectedCount == 1 && !isDir);
 
-            setStatusMessage("重命名: " + name);
+    menu.addAction("下载", [=]() {
+        for (const QString& remotePath : paths) {
+            auto localPath = getLocalPath(remotePath);
+            startFileTransfer(1, localPath, remotePath, 0);
+        }
+    })->setEnabled(selectedCount > 0 && !isDir);
 
-            QJsonObject dataObject;
-            dataObject["atPath"] = remotePath;
-            dataObject["toPath"] = name;
+    menu.addAction("解压", [=]() {
+        for (const QString& remotePath : paths) {
+            connection->send("extractArchive", remotePath);
+        }
+    })->setEnabled(selectedCount > 0 && std::ranges::all_of(paths, [](const QString &path){ return path.endsWith(".zip") || path.endsWith(".rar"); }) && !isDir);
 
-            send("renameItem", dataObject);
-        })->setEnabled(selectedCount == 1);
-
-        menu.addAction("删除", [=]() {
-            auto description = paths.count() > 1 ? QString("%1项").arg(paths.count()) : QFileInfo(remotePath).fileName();
-            auto reply = QMessageBox::question(this, "确认删除", "你确定要删除【" + description + "】吗？", QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-
-            if (reply != QMessageBox::Yes)
-                return;
-
-            qDebugEx() << "删除: " + paths.join(", ");
-            
-            for (const QString& remotePath : paths) {
-                send("removeItem", remotePath);
-            }
-        });
-
-        menu.addAction("在文件资源管理器中显示", [=]() {
-            Tools::showInFileExplorer(localPath);
-        });
-
-        menu.addAction("复制本地路径", [=]() {
-            QStringList list;
-            for (const QString& remotePath : paths) {
-                list << getLocalPath(remotePath);
-            }
-
-            qApp->clipboard()->setText(list.join("\n"));
-        });
-
-        menu.addAction("复制远程路径", [=]() {
-            qApp->clipboard()->setText(paths.join("\n"));
-        });
-
-        menu.addAction("复制文件", [=]() {
-            QMimeData *mimeData = new QMimeData();
-            QList<QUrl> urlList;
-            QList<QString> pendingDownloadPaths;
-            for (const QString& remotePath : paths) {
-                auto localPath = getLocalPath(remotePath);
-                if (!QFileInfo::exists(localPath)) 
-                    pendingDownloadPaths << remotePath;
-
-                urlList << QUrl::fromLocalFile(localPath);
-            }
-            mimeData->setUrls(urlList);
-  
-            qApp->clipboard()->setMimeData(mimeData, QClipboard::Clipboard);
-
-            if (pendingDownloadPaths.count() == 0)
-                return;
-
-            auto reply = QMessageBox::question(this, "下载提示", QString("有%1个文件还未下载不能复制，是否下载？").arg(pendingDownloadPaths.count()), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-
-            if (reply != QMessageBox::Yes)
-                return;
-
-            for (const QString &remotePath : pendingDownloadPaths) {
-                auto localPath = getLocalPath(remotePath);
-                startFileTransfer(1, localPath, remotePath, 0);
-            }
-        });
+    if (favorites.contains(remotePath)) {
+        menu.addAction("从快速访问移除", [=]() {
+            removeFromFavorites(remotePath);
+        })->setEnabled(selectedCount == 1 && isDir);
+    } else {
+        menu.addAction("添加到快速访问", [=]() {
+            addToFavorites(remotePath);
+        })->setEnabled(selectedCount == 1 && isDir);
     }
+
+    menu.addAction("压缩", [=]() {
+        for (const QString& remotePath : paths) {
+            send("compressArchive", remotePath);
+        }
+    })->setEnabled(isDir);
+
+    menu.addAction("重命名", [=]() {
+        bool ok;
+        auto name = QInputDialog::getText(this, "重命名", "请输入名称:", QLineEdit::Normal, remotePath.section('/', -1), &ok);
+        
+        if (!ok || name.isEmpty())
+            return;
+
+        setStatusMessage("重命名: " + name);
+
+        QJsonObject dataObject;
+        dataObject["atPath"] = remotePath;
+        dataObject["toPath"] = name;
+
+        send("renameItem", dataObject);
+    })->setEnabled(selectedCount == 1);
+
+    menu.addAction("删除", [=]() {
+        auto description = paths.count() > 1 ? QString("%1项").arg(paths.count()) : QFileInfo(remotePath).fileName();
+        auto reply = QMessageBox::question(this, "确认删除", "你确定要删除【" + description + "】吗？", QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+        if (reply != QMessageBox::Yes)
+            return;
+
+        qDebugEx() << "删除: " + paths.join(", ");
+        
+        for (const QString& remotePath : paths) {
+            send("removeItem", remotePath);
+        }
+    });
+
+    menu.addAction("在文件资源管理器中显示", [=]() {
+        Tools::showInFileExplorer(localPath);
+    })->setEnabled(selectedCount == 1);
+
+    menu.addAction("复制本地路径", [=]() {
+        QStringList list;
+        for (const QString& remotePath : paths) {
+            list << getLocalPath(remotePath);
+        }
+
+        qApp->clipboard()->setText(list.join("\n"));
+    });
+
+    menu.addAction("复制远程路径", [=]() {
+        qApp->clipboard()->setText(paths.join("\n"));
+    });
+
+    menu.addAction("复制文件", [=]() {
+        QMimeData *mimeData = new QMimeData();
+        QList<QUrl> urlList;
+        QList<QString> pendingDownloadPaths;
+        for (const QString& remotePath : paths) {
+            auto localPath = getLocalPath(remotePath);
+            if (!QFileInfo::exists(localPath)) 
+                pendingDownloadPaths << remotePath;
+
+            urlList << QUrl::fromLocalFile(localPath);
+        }
+        mimeData->setUrls(urlList);
+
+        qApp->clipboard()->setMimeData(mimeData, QClipboard::Clipboard);
+
+        if (pendingDownloadPaths.count() == 0)
+            return;
+
+        auto reply = QMessageBox::question(this, "下载提示", QString("有%1个文件还未下载不能复制，是否下载？").arg(pendingDownloadPaths.count()), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+        if (reply != QMessageBox::Yes)
+            return;
+
+        for (const QString &remotePath : pendingDownloadPaths) {
+            auto localPath = getLocalPath(remotePath);
+            startFileTransfer(1, localPath, remotePath, 0);
+        }
+    });
 
     menu.addAction("新建文件夹", [=]() {
         bool ok;
