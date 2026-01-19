@@ -151,7 +151,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     auto menu = new QMenu;
 
     auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
-        const auto& connections = isMultiControl ? MainWindow::getInstance()->getDeviceConnections() : (QList<DeviceInfo*>() << connection);
+        const auto& connections = isMultiControl ? MainWindow::getInstance()->getDeviceConnections() : (QList<DeviceConnection*>() << connection);
         for (const auto& connection : connections) {
             connection->send(event, jsonValue);
         }

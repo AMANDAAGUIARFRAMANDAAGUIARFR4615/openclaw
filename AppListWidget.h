@@ -330,8 +330,7 @@ private:
                 dataObject["name"] = name;
                 dataObject["type"] = i + 1;
 
-                const auto& connections = !name.endsWith("路径") && MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceConnections() : (QList<DeviceInfo*>() << connection->deviceInfo);
-
+                const auto& connections = !name.endsWith("路径") && MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceConnections() : (QList<DeviceConnection*>() << connection);
                 for (const auto& connection : connections) {
                     connection->send("appOperation", dataObject);
                 }

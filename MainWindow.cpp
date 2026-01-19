@@ -1053,7 +1053,7 @@ void MainWindow::addItem(DeviceConnection* connection)
 
 QList<DeviceConnection*> MainWindow::getDeviceConnections()
 {
-    QList<DeviceInfo*> list;
+    QList<DeviceConnection*> list;
  
     for (const auto& widget : getDeviceWidgets()) {
         list.append(widget->connection);
