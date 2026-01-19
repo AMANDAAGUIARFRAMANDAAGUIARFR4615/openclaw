@@ -3,6 +3,7 @@
 #include "EventHub.h"
 #include "MainWindow.h"
 #include "Safe.h"
+#include "Account.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -116,7 +117,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
         if (this->connection != connection)
             return;
 
-        if (data.toBool())
+        if (data.toBool() && deviceInfo->expireAt.get() > Account::getInstance()->loginTime.get() + elapsedTimer->elapsed())
             deviceInfo->expireAt = 1;
     });
 }
