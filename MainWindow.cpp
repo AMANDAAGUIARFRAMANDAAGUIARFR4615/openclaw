@@ -1035,7 +1035,7 @@ void MainWindow::addItem(DeviceConnection* connection)
                 <ul style='margin-left: -15px; margin-top: 5px;'>
                     <li>按住 <b>Ctrl + 点击</b>：切换选中</li>
                     <li>空白处 <b>Ctrl + A</b>：全选</li>
-                    <li>点击空白处：取消选中</li>
+                    <li>点击空白处：全不选</li>
                 </ul>
             </div>
         )");
