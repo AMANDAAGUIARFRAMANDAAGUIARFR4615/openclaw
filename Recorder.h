@@ -320,7 +320,7 @@ protected:
                                                        "文件夹名称：", QLineEdit::Normal,
                                                        "新建文件夹", &ok);
             if (ok && !folderName.isEmpty()) {
-                QDir dir(fileInfo.isDir() ? fileInfo.dir() : path);
+                QDir dir(fileInfo.isDir() ? path : fileInfo.dir());
                 if (!dir.mkdir(folderName))
                     new ToastWidget("无法创建文件夹！", this);
             }
