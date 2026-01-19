@@ -128,7 +128,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     model = new QStandardItemModel();
     model->setHorizontalHeaderLabels({"名称", "修改时间", "大小"});
     
-    auto proxyModel = new FileSystemSortProxyModel(this);
+    auto proxyModel = new FileSystemSortProxyModel();
     proxyModel->setSourceModel(model);
     treeView->setModel(proxyModel);
     treeView->setSortingEnabled(true);
@@ -331,6 +331,9 @@ RemoteFileExplorer::~RemoteFileExplorer()
 
     QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(openPath);
     instanceMap.remove(key);
+
+    delete ((QSortFilterProxyModel*)treeView->model())->sourceModel();
+    delete treeView->model();
 }
 
 void RemoteFileExplorer::setStatusMessage(const QString &message)

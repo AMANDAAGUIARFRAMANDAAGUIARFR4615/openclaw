@@ -203,6 +203,9 @@ private:
         EventHub::off(this, "playbackStatus");
 
         instanceMap.remove(connection);
+
+        delete ((QSortFilterProxyModel*)treeView->model())->sourceModel();
+        delete treeView->model();
     }
 
 protected:
