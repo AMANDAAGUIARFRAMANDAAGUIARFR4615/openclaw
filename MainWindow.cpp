@@ -1041,7 +1041,7 @@ void MainWindow::addItem(DeviceConnection* connection)
         )");
     });
 
-    player->checkBox->setCheckState(Qt::CheckState::Checked);
+    item->setSelected(true);
     
     deviceListWidget->addItem(item);
     deviceListWidget->setItemWidget(item, frame);
