@@ -291,7 +291,7 @@ protected:
 
             menu.addAction("重命名", [=]() {
                 bool ok;
-                QString newName = QInputDialog::getText(nullptr, "重命名",
+                QString newName = QInputDialog::getText(this, "重命名",
                                                         "新名称：", QLineEdit::Normal,
                                                         fileInfo.fileName(), &ok);
                 if (ok && !newName.isEmpty()) {
@@ -303,7 +303,7 @@ protected:
             });
 
             menu.addAction("删除", [=]() {
-                if (QMessageBox::question(nullptr, "确认删除",
+                if (QMessageBox::question(this, "确认删除",
                                           QString("确定删除 “%1” 吗？").arg(fileInfo.fileName()))
                     == QMessageBox::Yes) {
                     if (fileInfo.isDir())
@@ -316,7 +316,7 @@ protected:
 
         menu.addAction("新建文件夹", [=]() {
             bool ok;
-            QString folderName = QInputDialog::getText(nullptr, "新建文件夹",
+            QString folderName = QInputDialog::getText(this, "新建文件夹",
                                                        "文件夹名称：", QLineEdit::Normal,
                                                        "新建文件夹", &ok);
             if (ok && !folderName.isEmpty()) {
