@@ -266,7 +266,7 @@ protected:
             path = recorderPath;
         }
 
-        QMenu menu(treeView);
+        QMenu menu;
 
         if (index.isValid()) {
             if (!fileInfo.isDir()) {

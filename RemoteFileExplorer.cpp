@@ -647,7 +647,7 @@ void RemoteFileExplorer::keyPressEvent(QKeyEvent *event)
 
 void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
 {
-    QMenu menu(this);
+    QMenu menu;
 
     QModelIndex index = treeView->indexAt(pos);
     if (index.column() != 0)
@@ -835,7 +835,7 @@ void RemoteFileExplorer::showTableContextMenu(const QPoint &pos)
     QString localPath = transferTable->item(index.row(), 5)->text();
     QString remotePath = transferTable->item(index.row(), 6)->text();
 
-    QMenu menu(this);
+    QMenu menu;
 
     menu.addAction("查看", [=]() {
         new FileViewer(localPath, this);

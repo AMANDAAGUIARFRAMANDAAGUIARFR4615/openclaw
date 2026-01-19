@@ -352,7 +352,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (title == "开发者") {
-            QMenu menu(this);
+            QMenu menu;
             menu.addAction("数据查看", [=]() {
                 SettingsViewer dialog(settings, this);
                 dialog.exec();
@@ -1103,7 +1103,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
 
     auto& [bit, _, __, isLandscape, videoFps, videoQuality, connectionMethod, autoScanLANDevices, autoConnectUSBDevices] = tabs[index];
 
-    QMenu menu(this);
+    QMenu menu;
 
     for (int i = 0; i < tabBarMenu.count(); i++) {
         auto text = tabBarMenu[i];

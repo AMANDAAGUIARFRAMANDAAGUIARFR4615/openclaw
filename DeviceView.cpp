@@ -148,7 +148,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 
     auto isMultiControl = MainWindow::getInstance()->multiControlSwitchButton->isChecked();
 
-    auto menu = new QMenu(this);
+    auto menu = new QMenu;
 
     auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
         if (isMultiControl) {
@@ -269,7 +269,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
             });
         }
         else if (labelPart == "更新手机端") {
-            auto dynamicSubMenu = new QMenu(text, menu);
+            auto dynamicSubMenu = new QMenu(text);
             menu->addMenu(dynamicSubMenu);
 
             dynamicSubMenu->addAction("正在加载...")->setEnabled(false);
