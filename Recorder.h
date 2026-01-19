@@ -41,6 +41,16 @@ public:
     Qt::DropActions supportedDropActions() const override {
         return Qt::CopyAction | Qt::MoveAction;
     }
+
+    bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override {
+        QString text = value.toString();
+        
+        if (role == Qt::EditRole && !text.endsWith(".recordx") && ((QFileSystemModel*)sourceModel())->fileInfo(mapToSource(index)).isFile()) {
+            return QSortFilterProxyModel::setData(index, text + ".recordx", role);
+        }
+        
+        return QSortFilterProxyModel::setData(index, value, role);
+    }
 };
 
 class Recorder : public QWidget {
