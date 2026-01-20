@@ -158,4 +158,10 @@ public:
                 widget->setVisible(visible);
         }
     }
+
+    static bool isWindows11() {
+        auto os = QOperatingSystemVersion::current();
+        // Windows 11 内核版本仍是 10.0，但 Build Number 至少是 22000
+        return os.majorVersion() == 10 && os.microVersion() >= 22000;
+    }
 };
