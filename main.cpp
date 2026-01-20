@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    QLockFile lockFile(QDir::temp().absoluteFilePath(app.applicationName() + ".lock"));
+    QLockFile lockFile(QDir::temp().absoluteFilePath("RemotePro.lock"));
 
     // 尝试加锁，设置超时时间为 100 毫秒（防止之前的僵死进程导致的短暂锁定）
     if (!lockFile.tryLock(100)) {
