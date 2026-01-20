@@ -1187,7 +1187,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
             });
         }
         else if (text == "视频清晰度") {
-            QStringList list = {"默认", "", "图片流", "标清", "高清", "超清"};
+            QStringList list = {"默认", "", "低清", "标清", "高清", "超清"};
             addOptionMenu(&menu, text, list, &videoQuality, [=]() {
                 saveTabs(index);
 
