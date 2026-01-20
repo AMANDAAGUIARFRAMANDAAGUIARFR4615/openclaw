@@ -201,7 +201,7 @@ public:
             setEnabled(false); 
             setCursor(Qt::WaitCursor);
 
-            webSocketClient->emitEvent(HIDE("deviceRenew"), payload, [=](const QJsonValue &res) {
+            webSocketClient->emitEvent("deviceRenew", payload, [=](const QJsonValue &res) {
                 setEnabled(true);
                 unsetCursor();
 

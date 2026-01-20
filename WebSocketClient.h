@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AesCrypto.h"
+#include "Safe.h"
 #include <QWebSocket>
 #include <QJsonObject>
 #include <QJsonDocument>
@@ -37,14 +38,14 @@ public:
         }
     }
 
-    void emitEvent(const QString &event, const QJsonValue &data) {
-        sendJson({{"type", "event"}, {"event", event}, {"data", data}});
+    void emitEvent(const StringGuard::Obfuscator<>& event, const QJsonValue &data) {
+        sendJson({{"type", "event"}, {"event", event.decrypt()}, {"data", data}});
     }
 
-    void emitEvent(const QString &event, const QJsonValue &data, AckCallback cb) {
+    void emitEvent(const StringGuard::Obfuscator<>& event, const QJsonValue &data, AckCallback cb) {
         int id = ++m_nextId;
         m_pendingAcks[id] = cb;
-        sendJson({{"type", "event"}, {"event", event}, {"data", data}, {"id", id}});
+        sendJson({{"type", "event"}, {"event", event.decrypt()}, {"data", data}, {"id", id}});
     }
 
 private:

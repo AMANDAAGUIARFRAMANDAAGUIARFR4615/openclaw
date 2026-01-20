@@ -957,7 +957,7 @@ void MainWindow::addItem(DeviceConnection* connection)
                 return;
             }
 
-            webSocketClient->emitEvent(HIDE("deviceExpireAt"), deviceInfo->deviceId, [=](const QJsonValue &res) {
+            webSocketClient->emitEvent("deviceExpireAt", deviceInfo->deviceId, [=](const QJsonValue &res) {
                 deviceInfo->expireAt = res.toInteger();
                 DeviceInfo::expirations[deviceInfo->deviceId] = deviceInfo->expireAt;
             });

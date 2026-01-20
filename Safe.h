@@ -13,20 +13,29 @@ namespace StringGuard {
         return compileTimeHash(__TIME__, line);
     }
 
-    template <uint32_t N = 64>
+    template <uint32_t N = 32>
     struct Obfuscator {
         // 使用 mutable 允许在 const 对象中解密 (用于隐式转换)
         mutable char m_buffer[N];
         uint32_t m_key;
 
-        consteval Obfuscator(const char(&str)[N]) : m_buffer{}, m_key(getSeed(__LINE__))
+        template <uint32_t Len>
+        consteval Obfuscator(const char(&str)[Len]) : m_buffer{}
         {
-            encrypt(str);
+            static_assert(Len <= N, "String literal is too long for StringGuard::Obfuscator");
+            m_key = compileTimeHash(str, __TIME__);
+            encrypt(str, Len);
         }
 
-        // 统一的加密逻辑
-        constexpr void encrypt(const char(&str)[N]) {
-            for (uint32_t i = 0; i < N; ++i) {
+        template <uint32_t Len>
+        constexpr Obfuscator(const char(&str)[Len], uint32_t key) : m_buffer{}, m_key(key)
+        {
+             static_assert(Len <= N, "String literal is too long");
+             encrypt(str, Len);
+        }
+
+        constexpr void encrypt(const char* str, uint32_t len) {
+            for (uint32_t i = 0; i < len; ++i) {
                 m_buffer[i] = str[i] ^ static_cast<char>((m_key + i) * 71u);
             }
         }
@@ -51,4 +60,4 @@ namespace StringGuard {
     };
 }
 
-#define HIDE(str) (StringGuard::Obfuscator<sizeof(str)>(str).decrypt())
+#define HIDE(str) (StringGuard::Obfuscator<sizeof(str)>(str, StringGuard::getSeed(__LINE__)).decrypt())
