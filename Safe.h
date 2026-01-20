@@ -23,7 +23,7 @@ namespace StringGuard {
         consteval Obfuscator(const char(&str)[Len]) : m_buffer{}
         {
             static_assert(Len <= N, "String literal is too long for StringGuard::Obfuscator");
-            m_key = compileTimeHash(str, __TIME__);
+            m_key = compileTimeHash(str, __COUNTER__);
             encrypt(str, Len);
         }
 
