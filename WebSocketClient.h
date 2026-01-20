@@ -28,11 +28,11 @@ public:
     }
 
     template <typename Func>
-    void on(const QString &event, Func handler) {
+    void on(const StringGuard::Obfuscator<>& event, Func handler) {
         if constexpr (std::is_invocable_v<Func, QJsonValue, AckCallback>) {
-            m_handlers[event] = handler;
+            m_handlers[event.decrypt()] = handler;
         } else {
-            m_handlers[event] = [handler](const QJsonValue &data, AckCallback) {
+            m_handlers[event.decrypt()] = [handler](const QJsonValue &data, AckCallback) {
                 handler(data);
             };
         }

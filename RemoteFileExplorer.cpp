@@ -671,7 +671,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
 
     bool isDir = !selectedIndexes.empty() && std::ranges::all_of(selectedIndexes, [](const QModelIndex &index){ return (index.column() == 0 ? index : index.sibling(index.row(), 0)).data(Qt::UserRole + 2).toBool(); });
 
-    auto send = [=](const QString& event, const QJsonValue &jsonValue = QJsonValue()) {
+    auto send = [=](const StringGuard::Obfuscator<>& event, const QJsonValue &jsonValue = QJsonValue()) {
         const auto& connections = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceConnections() : (QList<DeviceConnection*>() << connection);
         for (const auto& connection : connections) {
             connection->send(event, jsonValue);
