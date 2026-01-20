@@ -9,10 +9,6 @@ namespace StringGuard {
         return *str ? compileTimeHash(str + 1, (seed ^ *str) * 16777619u) : seed;
     }
 
-    constexpr uint32_t getSeed(int line) {
-        return compileTimeHash(__TIME__, line);
-    }
-
     template <uint32_t N = 32>
     struct Obfuscator {
         // 使用 mutable 允许在 const 对象中解密 (用于隐式转换)
@@ -22,16 +18,17 @@ namespace StringGuard {
         template <uint32_t Len>
         consteval Obfuscator(const char(&str)[Len]) : m_buffer{}
         {
-            static_assert(Len <= N, "String literal is too long for StringGuard::Obfuscator");
-            m_key = compileTimeHash(str, __COUNTER__);
+            static_assert(Len <= N, "String literal is too long");
+            constexpr int seconds = []{ constexpr auto t = __TIME__; return ((t[0]-'0')*10+(t[1]-'0'))*3600 + ((t[3]-'0')*10+(t[4]-'0'))*60 + ((t[6]-'0')*10+(t[7]-'0')); }();
+            m_key = compileTimeHash(str, seconds);
             encrypt(str, Len);
         }
 
         template <uint32_t Len>
         constexpr Obfuscator(const char(&str)[Len], uint32_t key) : m_buffer{}, m_key(key)
         {
-             static_assert(Len <= N, "String literal is too long");
-             encrypt(str, Len);
+            static_assert(Len <= N, "String literal is too long");
+            encrypt(str, Len);
         }
 
         constexpr void encrypt(const char* str, uint32_t len) {
@@ -60,4 +57,4 @@ namespace StringGuard {
     };
 }
 
-#define HIDE(str) (StringGuard::Obfuscator<sizeof(str)>(str, StringGuard::getSeed(__LINE__)).decrypt())
+#define HIDE(str) (StringGuard::Obfuscator<sizeof(str)>(str, StringGuard::compileTimeHash(__TIME__, __LINE__)).decrypt())
