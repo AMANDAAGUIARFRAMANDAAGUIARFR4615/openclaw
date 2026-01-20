@@ -9,6 +9,13 @@
 #include <QList>
 #include <QRegularExpression>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <netfw.h>
+#include <objbase.h>
+#include <comutil.h>
+#endif
+
 class NetworkUtils
 {
 public:
@@ -68,25 +75,25 @@ public:
     static QStringList getPhysicalIPs() {
         QStringList ips;
 
-        for (const QNetworkInterface &interface : QNetworkInterface::allInterfaces()) {
-            if (!(interface.flags() & QNetworkInterface::IsUp) || !(interface.flags() & QNetworkInterface::IsRunning))
+        for (const QNetworkInterface &networkInterface : QNetworkInterface::allInterfaces()) {
+            if (!(networkInterface.flags() & QNetworkInterface::IsUp) || !(networkInterface.flags() & QNetworkInterface::IsRunning))
                 continue;
 
-            if (interface.flags() & QNetworkInterface::IsLoopBack)
+            if (networkInterface.flags() & QNetworkInterface::IsLoopBack)
                 continue;
 
             // 如果类型明确是 Wifi，绝对是物理网卡，跳过黑名单检查
-            bool isWifi = (interface.type() == QNetworkInterface::Wifi);
+            bool isWifi = (networkInterface.type() == QNetworkInterface::Wifi);
             
             if (!isWifi) {
                 // 如果不是 Wifi (通常是 Ethernet)，则检查名字是否包含虚拟关键字
-                if (isVirtualAdapter(interface.humanReadableName(), interface.name())) {
-                    qDebugEx() << "过滤掉虚拟网卡:" << interface.humanReadableName();
+                if (isVirtualAdapter(networkInterface.humanReadableName(), networkInterface.name())) {
+                    qDebugEx() << "过滤掉虚拟网卡:" << networkInterface.humanReadableName();
                     continue; 
                 }
             }
 
-            for (const QNetworkAddressEntry &entry : interface.addressEntries()) {
+            for (const QNetworkAddressEntry &entry : networkInterface.addressEntries()) {
                 QHostAddress ip = entry.ip();
 
                 if (ip.protocol() != QAbstractSocket::IPv4Protocol)
@@ -157,5 +164,100 @@ public:
         }
 
         return ipList;
+    }
+
+    static bool isFirewallAllowed()
+    {
+#ifdef Q_OS_WIN
+        HRESULT hr = S_OK;
+        INetFwPolicy2 *pNetFwPolicy2 = nullptr;
+        INetFwRules *pFwRules = nullptr;
+        INetFwRule *pFwRule = nullptr;
+        IUnknown *pEnumerator = nullptr;
+        IEnumVARIANT *pVariant = nullptr;
+        bool isAllowed = false;
+
+        // 1. 初始化 COM 库
+        hr = CoInitializeEx(0, COINIT_APARTMENTTHREADED);
+        // 注意：如果当前线程已经初始化过 COM，这里可能会返回 RPC_E_CHANGED_MODE 等，
+        // 通常应该检查 SUCCEEDED(hr) 或者特定的返回值，但在 helper 函数中这样写如果不影响外部逻辑也可以。
+        if (FAILED(hr)) return false; 
+
+        // 2. 创建防火墙策略实例
+        hr = CoCreateInstance(
+            __uuidof(NetFwPolicy2),
+            nullptr,
+            CLSCTX_INPROC_SERVER,
+            __uuidof(INetFwPolicy2),
+            (void**)&pNetFwPolicy2
+        );
+
+        if (SUCCEEDED(hr)) {
+            // 3. 获取规则集合
+            hr = pNetFwPolicy2->get_Rules(&pFwRules);
+        }
+
+        if (SUCCEEDED(hr)) {
+            // 4. 枚举规则
+            hr = pFwRules->get__NewEnum(&pEnumerator);
+            if (pEnumerator) {
+                hr = pEnumerator->QueryInterface(__uuidof(IEnumVARIANT), (void**)&pVariant);
+            }
+        }
+
+        if (SUCCEEDED(hr) && pVariant) {
+            QString currentAppPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+            currentAppPath = currentAppPath.toLower(); 
+
+            ULONG cFetched = 0;
+            VARIANT var;
+            VariantInit(&var);
+
+            while (pVariant->Next(1, &var, &cFetched) == S_OK) {
+                // var.pdispVal 持有引用，pFwRule 只是一个别名指针，不需要单独 Release
+                pFwRule = (INetFwRule*)var.pdispVal;
+                
+                BSTR bstrAppPath = nullptr;
+                if (SUCCEEDED(pFwRule->get_ApplicationName(&bstrAppPath)) && bstrAppPath != nullptr) {
+                    QString ruleAppPath = QString::fromWCharArray(bstrAppPath).toLower();
+                    SysFreeString(bstrAppPath);
+
+                    if (ruleAppPath == currentAppPath) {
+                        VARIANT_BOOL bEnabled;
+                        NET_FW_ACTION action;
+                        pFwRule->get_Enabled(&bEnabled);
+                        pFwRule->get_Action(&action);
+
+                        if (bEnabled == VARIANT_TRUE && action == NET_FW_ACTION_ALLOW) {
+                            isAllowed = true;
+                            // 找到后直接 break，清理工作交给循环外的 VariantClear
+                            break; 
+                        }
+                    }
+                }
+                
+                // 重要修改：删除 pFwRule->Release()
+                // 重要修改：在循环内清理 var，释放当前对象的引用，准备下一次 Next
+                VariantClear(&var); 
+            }
+            
+            // 循环结束后（无论是正常结束还是 break 出来的），清理 var
+            // 如果是从 break 出来的，这里会释放找到的那个对象的引用
+            // 如果是循环自然结束的，var 已经是空的，这里调用是安全的
+            VariantClear(&var);
+            
+            pVariant->Release();
+            pEnumerator->Release();
+        }
+
+        if (pFwRules) pFwRules->Release();
+        if (pNetFwPolicy2) pNetFwPolicy2->Release();
+        
+        CoUninitialize();
+
+        return isAllowed;
+#else
+        return true;
+#endif
     }
 };

@@ -3,6 +3,7 @@
 #include "global.h"
 #include "SafeObject.h"
 #include "Safe.h"
+#include "NetworkUtils.h"
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -112,6 +113,9 @@ public:
         });
 
         webSocketClient->open(QUrl("ws://" + Config::SERVER_IP + ":" + QString::number(Config::SERVER_PORT)));
+
+        auto server = new QTcpServer(this);
+        server->listen(QHostAddress::Any, 0);
     }
     
 signals:
@@ -219,6 +223,11 @@ protected:
 
     void onAction()
     {
+        if (!NetworkUtils::isFirewallAllowed()) {
+            setStatus("防火墙阻止了连接，需要点击允许访问\n如果已经关闭弹窗，请换到其他路径再次运行程序");
+            return;
+        }
+
         const auto& phone = phoneLineEdit->text().trimmed();
         const auto& password = passwordLineEdit->text();
 
