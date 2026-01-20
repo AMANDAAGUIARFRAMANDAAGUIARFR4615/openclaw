@@ -13,20 +13,13 @@ namespace StringGuard {
         return compileTimeHash(__TIME__, line);
     }
 
-    template <uint32_t N>
+    template <uint32_t N = 64>
     struct Obfuscator {
         // 使用 mutable 允许在 const 对象中解密 (用于隐式转换)
         mutable char m_buffer[N];
         uint32_t m_key;
 
-        constexpr Obfuscator(const char(&str)[N], uint32_t key) 
-            : m_buffer{}, m_key(key) 
-        {
-            encrypt(str);
-        }
-
-        consteval Obfuscator(const char(&str)[N]) 
-            : m_buffer{}, m_key(getSeed(__LINE__))
+        consteval Obfuscator(const char(&str)[N]) : m_buffer{}, m_key(getSeed(__LINE__))
         {
             encrypt(str);
         }
