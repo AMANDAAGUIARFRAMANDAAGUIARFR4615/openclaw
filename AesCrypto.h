@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Logger.h"
+#include "Safe.h"
 #include <QByteArray>
 #include <QString>
 #include <QDebug>
@@ -51,14 +52,14 @@ private:
         static QLibrary lib;
 
 #ifdef Q_OS_WIN
-        lib.setFileName("libcrypto-3-x64.dll");
+        lib.setFileName(HIDE("libcrypto-3-x64.dll"));
 #else
-        QString libName = "libcrypto.3.dylib";
+        QString libName = HIDE("libcrypto.3.dylib");
         QString frameworksDir = qApp->applicationDirPath() + "/../Frameworks/";
         if (QDir(frameworksDir).exists())
             lib.setFileName(frameworksDir + libName);
         else
-            lib.setFileName(QString("/opt/homebrew/opt/openssl/lib/") + libName);
+            lib.setFileName(QString(HIDE("/opt/homebrew/opt/openssl/lib/")) + libName);
 #endif
 
         lib.load();
@@ -67,16 +68,16 @@ private:
 
         // qDebugEx() << "libcrypto加载成功" << lib.fileName();
 
-        ctx_new = (Func_EVP_CIPHER_CTX_new)lib.resolve("EVP_CIPHER_CTX_new");
-        ctx_free = (Func_EVP_CIPHER_CTX_free)lib.resolve("EVP_CIPHER_CTX_free");
-        aes_128_gcm = (Func_EVP_aes_128_gcm)lib.resolve("EVP_aes_128_gcm");
-        ctx_ctrl = (Func_EVP_CIPHER_CTX_ctrl)lib.resolve("EVP_CIPHER_CTX_ctrl");
-        encrypt_init = (Func_EVP_EncryptInit_ex)lib.resolve("EVP_EncryptInit_ex");
-        encrypt_update = (Func_EVP_EncryptUpdate)lib.resolve("EVP_EncryptUpdate");
-        encrypt_final = (Func_EVP_EncryptFinal_ex)lib.resolve("EVP_EncryptFinal_ex");
-        decrypt_init = (Func_EVP_DecryptInit_ex)lib.resolve("EVP_DecryptInit_ex");
-        decrypt_update = (Func_EVP_DecryptUpdate)lib.resolve("EVP_DecryptUpdate");
-        decrypt_final = (Func_EVP_DecryptFinal_ex)lib.resolve("EVP_DecryptFinal_ex");
+        ctx_new = (Func_EVP_CIPHER_CTX_new)lib.resolve(HIDE("EVP_CIPHER_CTX_new"));
+        ctx_free = (Func_EVP_CIPHER_CTX_free)lib.resolve(HIDE("EVP_CIPHER_CTX_free"));
+        aes_128_gcm = (Func_EVP_aes_128_gcm)lib.resolve(HIDE("EVP_aes_128_gcm"));
+        ctx_ctrl = (Func_EVP_CIPHER_CTX_ctrl)lib.resolve(HIDE("EVP_CIPHER_CTX_ctrl"));
+        encrypt_init = (Func_EVP_EncryptInit_ex)lib.resolve(HIDE("EVP_EncryptInit_ex"));
+        encrypt_update = (Func_EVP_EncryptUpdate)lib.resolve(HIDE("EVP_EncryptUpdate"));
+        encrypt_final = (Func_EVP_EncryptFinal_ex)lib.resolve(HIDE("EVP_EncryptFinal_ex"));
+        decrypt_init = (Func_EVP_DecryptInit_ex)lib.resolve(HIDE("EVP_DecryptInit_ex"));
+        decrypt_update = (Func_EVP_DecryptUpdate)lib.resolve(HIDE("EVP_DecryptUpdate"));
+        decrypt_final = (Func_EVP_DecryptFinal_ex)lib.resolve(HIDE("EVP_DecryptFinal_ex"));
 
         if (ctx_new && ctx_free && aes_128_gcm && ctx_ctrl &&
             encrypt_init && encrypt_update && encrypt_final &&
