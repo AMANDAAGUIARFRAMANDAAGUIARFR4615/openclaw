@@ -251,7 +251,7 @@ private:
             tableWidget->setItem(i, 2, new QTableWidgetItem(device->model));
 
             // Expiration Column
-            auto timeString = QDateTime::fromMSecsSinceEpoch(device->expireAt.get()).toString("yyyy-MM-dd HH:mm:ss");
+            auto timeString = QDateTime::fromMSecsSinceEpoch(device->expireAt.get()).toString(HIDE("yyyy-MM-dd HH:mm:ss"));
             auto itemTime = new QTableWidgetItem(timeString);
             bool isExpired = device->expireAt.get() < QDateTime::currentMSecsSinceEpoch();
             itemTime->setData(Qt::UserRole, isExpired); 

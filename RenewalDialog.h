@@ -324,7 +324,7 @@ protected:
             tableWidget->setItem(i, 1, new QTableWidgetItem(deviceInfo->deviceName));
             tableWidget->setItem(i, 2, new QTableWidgetItem(deviceInfo->model));
 
-            auto expireAt = QDateTime::fromMSecsSinceEpoch(deviceInfo->expireAt.get()).toString("yyyy-MM-dd HH:mm:ss");
+            auto expireAt = QDateTime::fromMSecsSinceEpoch(deviceInfo->expireAt.get()).toString(HIDE("yyyy-MM-dd HH:mm:ss"));
             auto expireItem = new QTableWidgetItem(expireAt);
             tableWidget->setItem(i, 3, expireItem);
 
