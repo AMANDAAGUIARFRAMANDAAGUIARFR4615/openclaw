@@ -113,8 +113,6 @@ public:
 
         webSocketClient->open(QUrl("ws://" + Config::SERVER_IP + ":" + QString::number(Config::SERVER_PORT)));
     }
-
-    inline static QHash<QString, SafeObject<qint64>> expirations;
     
 signals:
     void authorized(const QJsonValue &account);
@@ -282,7 +280,7 @@ protected:
                     saveCredentials(phone, password);
                     for (const QJsonValue& device: res["devices"].toArray()) {
                         const auto& udid = device["udid"].toString();
-                        expirations[udid] = device[HIDE("expireAt")].toInteger();
+                        DeviceInfo::expirations[udid] = device[HIDE("expireAt")].toInteger();
                     }
                     emit authorized(res["account"]);
                     close();

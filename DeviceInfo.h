@@ -136,6 +136,8 @@ public:
     QRect geometry;
     SafeObject<qint64> expireAt;
 
+    inline static QHash<QString, SafeObject<qint64>> expirations;
+
 private:
     inline static QList<DeviceInfo*> allDevices;
     inline static QHash<QString, DeviceInfo*> devices;

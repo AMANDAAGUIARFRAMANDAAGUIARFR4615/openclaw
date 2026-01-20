@@ -117,8 +117,10 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
         if (this->connection != connection)
             return;
 
-        if (data.toBool() && deviceInfo->expireAt.get() > Account::getInstance()->loginTime.get() + elapsedTimer->elapsed())
+        if (data.toBool() && deviceInfo->expireAt.get() > Account::getInstance()->loginTime.get() + elapsedTimer->elapsed()) {
             deviceInfo->expireAt = 1;
+            DeviceInfo::expirations[deviceInfo->deviceId] = deviceInfo->expireAt;
+        }
     });
 }
 

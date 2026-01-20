@@ -201,7 +201,7 @@ public:
             setEnabled(false); 
             setCursor(Qt::WaitCursor);
 
-            webSocketClient->emitEvent("deviceRenew", payload, [=](const QJsonValue &res) {
+            webSocketClient->emitEvent(HIDE("deviceRenew"), payload, [=](const QJsonValue &res) {
                 setEnabled(true);
                 unsetCursor();
 
@@ -215,6 +215,7 @@ public:
                 for (const QJsonValue &item : res["devices"].toArray()) {
                     auto deviceInfo = DeviceInfo::getDevice(item["udid"].toString());
                     deviceInfo->expireAt = item[HIDE("expireAt")].toInteger();
+                    DeviceInfo::expirations[deviceInfo->deviceId] = deviceInfo->expireAt;
                 }
 
                 accept();

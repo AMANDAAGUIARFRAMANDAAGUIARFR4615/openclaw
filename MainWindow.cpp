@@ -13,7 +13,6 @@
 #include "JailbreakAssistantDialog.h"
 #include "RenewalDialog.h"
 #include "Account.h"
-#include "LoginWidget.h"
 #include "AccountListDialog.h"
 #include "SwapExpirationDialog.h"
 #include "DeviceWindow.h"
@@ -945,7 +944,7 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     auto player = new DeviceWidget(connection, deviceInfo);
 
-    deviceInfo->expireAt = LoginWidget::expirations.value(deviceInfo->deviceId);
+    deviceInfo->expireAt = DeviceInfo::expirations.value(deviceInfo->deviceId);
     if (deviceInfo->expireAt.get() == 0)
     {
         auto retryTimer = new QTimer(player);
@@ -960,6 +959,7 @@ void MainWindow::addItem(DeviceConnection* connection)
 
             webSocketClient->emitEvent(HIDE("deviceExpireAt"), deviceInfo->deviceId, [=](const QJsonValue &res) {
                 deviceInfo->expireAt = res.toInteger();
+                DeviceInfo::expirations[deviceInfo->deviceId] = deviceInfo->expireAt;
             });
         });
 
