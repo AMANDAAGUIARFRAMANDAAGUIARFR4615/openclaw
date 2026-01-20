@@ -223,7 +223,7 @@ protected:
 
     void onAction()
     {
-        if (!NetworkUtils::isFirewallAllowed()) {
+        if (!NetworkUtils::isFirewallPrivateAllowed()) {
             setStatus("防火墙阻止了连接，需要点击允许访问\n如果已经关闭弹窗，请换到其他路径再次运行程序");
             return;
         }

@@ -166,7 +166,7 @@ public:
         return ipList;
     }
 
-    static bool isFirewallAllowed()
+    static bool isFirewallPrivateAllowed()
     {
 #ifdef Q_OS_WIN
         HRESULT hr = S_OK;
@@ -179,9 +179,10 @@ public:
 
         // 1. 初始化 COM 库
         hr = CoInitializeEx(0, COINIT_APARTMENTTHREADED);
-        // 注意：如果当前线程已经初始化过 COM，这里可能会返回 RPC_E_CHANGED_MODE 等，
-        // 通常应该检查 SUCCEEDED(hr) 或者特定的返回值，但在 helper 函数中这样写如果不影响外部逻辑也可以。
-        if (FAILED(hr)) return false; 
+        // 处理 RPC_E_CHANGED_MODE，表示 COM 已经在其他模式下初始化过，这对我们来说是可以接受的
+        if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
+            return false;
+        }
 
         // 2. 创建防火墙策略实例
         hr = CoCreateInstance(
@@ -207,14 +208,14 @@ public:
 
         if (SUCCEEDED(hr) && pVariant) {
             QString currentAppPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
-            currentAppPath = currentAppPath.toLower(); 
+            currentAppPath = currentAppPath.toLower();
 
             ULONG cFetched = 0;
             VARIANT var;
             VariantInit(&var);
 
             while (pVariant->Next(1, &var, &cFetched) == S_OK) {
-                // var.pdispVal 持有引用，pFwRule 只是一个别名指针，不需要单独 Release
+                // var.pdispVal 持有引用，强制转换为 INetFwRule 接口
                 pFwRule = (INetFwRule*)var.pdispVal;
                 
                 BSTR bstrAppPath = nullptr;
@@ -225,26 +226,36 @@ public:
                     if (ruleAppPath == currentAppPath) {
                         VARIANT_BOOL bEnabled;
                         NET_FW_ACTION action;
+                        long lProfiles = 0; // 用于存储规则适用的网络类型
+
                         pFwRule->get_Enabled(&bEnabled);
                         pFwRule->get_Action(&action);
+                        pFwRule->get_Profiles(&lProfiles); // 获取该规则适用的 Profile
 
-                        if (bEnabled == VARIANT_TRUE && action == NET_FW_ACTION_ALLOW) {
+                        // 检查逻辑：
+                        // 1. 规则必须启用 (Enabled)
+                        // 2. 动作必须是允许 (Allow)
+                        // 3. 核心修改：规则必须包含专用网络 (NET_FW_PROFILE2_PRIVATE)
+                        //    注意：lProfiles 是一个位掩码，可能同时包含 Public 和 Private
+                        if (bEnabled == VARIANT_TRUE && 
+                            action == NET_FW_ACTION_ALLOW && 
+                            (lProfiles & NET_FW_PROFILE2_PRIVATE)) 
+                        {
                             isAllowed = true;
-                            // 找到后直接 break，清理工作交给循环外的 VariantClear
+                            // 找到满足“专用网络”允许的规则后，清理并退出循环
+                            VariantClear(&var); 
                             break; 
                         }
                     }
                 }
                 
-                // 重要修改：删除 pFwRule->Release()
-                // 重要修改：在循环内清理 var，释放当前对象的引用，准备下一次 Next
+                // 这是一个不匹配的规则，或者虽然匹配程序路径但没有开启专用网络权限
+                // 清理当前对象，继续查找下一个
                 VariantClear(&var); 
             }
             
-            // 循环结束后（无论是正常结束还是 break 出来的），清理 var
-            // 如果是从 break 出来的，这里会释放找到的那个对象的引用
-            // 如果是循环自然结束的，var 已经是空的，这里调用是安全的
-            VariantClear(&var);
+            // 确保最后一次 VariantClear 被调用（虽然 break 处调用了，但为了安全起见）
+            if (var.vt != VT_EMPTY) VariantClear(&var);
             
             pVariant->Release();
             pEnumerator->Release();
@@ -253,6 +264,9 @@ public:
         if (pFwRules) pFwRules->Release();
         if (pNetFwPolicy2) pNetFwPolicy2->Release();
         
+        // 如果 CoInitializeEx 返回的是 S_OK 或 S_FALSE，则需要 Uninitialize
+        // 如果是 RPC_E_CHANGED_MODE，通常不建议在这里 Uninitialize，因为不是我们开启的
+        // 但为了简单起见，且遵循成对调用的原则，通常保持原样即可，或者根据项目严谨度调整
         CoUninitialize();
 
         return isAllowed;
