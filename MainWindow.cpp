@@ -685,7 +685,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
     });
 
-    webSocketClient->on("setDeviceLocker", [this](const QJsonValue &data, AckCallback callback) {
+    webSocketClient->on("setDeviceLocker", [this](const QJsonValue &data) {
         const auto& udid = data["udid"].toString();
         const auto& locker = data["locker"].toString();
 
