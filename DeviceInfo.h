@@ -135,6 +135,7 @@ public:
     quint32 groupMask = 0;
     QRect geometry;
     SafeObject<qint64> expireAt;
+    QString locker;
 
     inline static QHash<QString, SafeObject<qint64>> expirations;
 

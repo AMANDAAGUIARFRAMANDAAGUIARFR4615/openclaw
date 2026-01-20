@@ -1,9 +1,10 @@
 #pragma once
 
 #include "global.h"
-#include "SafeObject.h"
 #include "Safe.h"
 #include "NetworkUtils.h"
+#include "Tools.h"
+#include "DeviceInfo.h"
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -15,6 +16,9 @@
 #include <QJsonArray>
 #include <QApplication>
 #include <QStyleHints>
+#include <QRegularExpressionValidator>
+#include <QTcpServer>
+#include <QKeyEvent>
 
 class LoginWidget : public QWidget
 {

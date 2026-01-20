@@ -618,8 +618,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
 
         for (int i = 0; i < deviceListWidget->count(); i++) {
-            QListWidgetItem* item = deviceListWidget->item(i);
-            auto deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
+            const auto& item = deviceListWidget->item(i);
+            const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
             if (deviceWidget->connection == connection) {
                 delete deviceListWidget->takeItem(i);
                 break;
@@ -665,8 +665,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         if (udid != nullptr && !udid.isEmpty())
         {
             for (int i = 0; i < deviceListWidget->count(); i++) {
-                QListWidgetItem* item = deviceListWidget->item(i);
-                auto deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
+                const auto& item = deviceListWidget->item(i);
+                const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
                 if (deviceWidget->deviceInfo->deviceId == udid) {
                     const auto& byteArray = deviceWidget->grabFrame();
                     callback(QJsonValue::fromVariant(byteArray.toBase64()));
@@ -682,6 +682,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
             grab().save(&buffer, "JPG");
             callback(QJsonValue::fromVariant(byteArray.toBase64()));
+        }
+    });
+
+    webSocketClient->on("setDeviceLocker", [this](const QJsonValue &data, AckCallback callback) {
+        const auto& udid = data["udid"].toString();
+        const auto& locker = data["locker"].toString();
+
+        const auto& deviceInfo = DeviceInfo::getDevice(udid);
+        if (deviceInfo) {
+            deviceInfo->locker = locker;
+
+            if (locker == Account::getInstance()->phone)
+                return;
+
+            if (!locker.isEmpty())
+                deviceInfo->connection->close();
         }
     });
 
@@ -1086,6 +1102,17 @@ QList<DeviceWindow*> MainWindow::getDeviceWindows()
     for (const auto& widget : getDeviceWidgets()) {
         if (widget->getDeviceWindow())
             list.append(widget->getDeviceWindow());
+    }
+
+    return list;
+}
+
+QList<QString> MainWindow::getDeviceUdids()
+{
+    QList<QString> list;
+ 
+    for (const auto& widget : getDeviceConnections()) {
+        list.append(widget->deviceInfo->deviceId);
     }
 
     return list;

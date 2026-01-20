@@ -374,6 +374,14 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
                 });
             });
         }
+        else if (labelPart == "开启独占") {
+            const auto& udids = MainWindow::getInstance()->getDeviceUdids();
+
+            if (deviceInfo->locker.isEmpty())
+                menu->addAction("🚩开启独占", [&](){ webSocketClient->emitEvent("setDeviceLocker", QJsonValue({"uuids", QJsonArray::fromStringList(udids), "locked", true})); });
+            else
+                menu->addAction("🏳️退出独占", [&](){ webSocketClient->emitEvent("setDeviceLocker", QJsonValue({"uuids", QJsonArray::fromStringList(udids), "locked", false})); });
+        }
     }
 
 #ifdef Q_OS_WIN

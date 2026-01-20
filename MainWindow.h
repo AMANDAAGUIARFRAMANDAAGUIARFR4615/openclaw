@@ -26,6 +26,7 @@ public:
     QList<DeviceConnection*> getDeviceConnections();
     QList<DeviceWidget*> getDeviceWidgets();
     QList<DeviceWindow*> getDeviceWindows();
+    QList<QString> getDeviceUdids();
     
     const QList<BitMaskEditorDialog::Item>& getTabs() const { return tabs; }
     BitMaskEditorDialog::Item& getTab() { return tabs[tabWidget->currentIndex()]; }
