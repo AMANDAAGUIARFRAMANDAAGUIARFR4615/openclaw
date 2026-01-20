@@ -44,6 +44,14 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
+    QLockFile lockFile(QDir::temp().absoluteFilePath(app.applicationName() + ".lock"));
+
+    // 尝试加锁，设置超时时间为 100 毫秒（防止之前的僵死进程导致的短暂锁定）
+    if (!lockFile.tryLock(100)) {
+        QMessageBox::warning(nullptr, "警告", "应用程序已经在运行中！");
+        return 0;
+    }
+
     // app.styleHints()->setColorScheme(Qt::ColorScheme::Light);
     QStyle *fusionStyle = QStyleFactory::create("Fusion");
     app.setStyle(fusionStyle);
