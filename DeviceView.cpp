@@ -375,10 +375,15 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
             });
         }
         else if (labelPart == "开启独占") {
+            auto send = [this](bool locked) {
+                const auto& udids = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceUdids() : (QList<QString>() << deviceInfo->deviceId);
+                webSocketClient->emitEvent("setDeviceLocker", QJsonObject{{"udids", QJsonArray::fromStringList(udids)}, {"locked", locked}});
+            };
+            
             if (deviceInfo->locker.isEmpty())
-                menu->addAction("🚩开启独占", [](){ webSocketClient->emitEvent("setDeviceLocker", QJsonObject{{"udids", QJsonArray::fromStringList(MainWindow::getInstance()->getDeviceUdids())}, {"locked", true}}); });
+                menu->addAction("🚩开启独占", [&](){send(true);});
             else
-                menu->addAction("🏳️退出独占", [](){ webSocketClient->emitEvent("setDeviceLocker", QJsonObject{{"udids", QJsonArray::fromStringList(MainWindow::getInstance()->getDeviceUdids())}, {"locked", false}}); });
+                menu->addAction("🏳️退出独占", [&](){send(false);});
         }
     }
 
