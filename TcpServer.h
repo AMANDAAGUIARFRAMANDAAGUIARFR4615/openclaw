@@ -14,7 +14,8 @@
 
 #if defined(_WIN32)
 #include <winsock2.h>
-#include <ws2tcpip.h>
+// #include <ws2tcpip.h>
+#include <mstcpip.h>
 #elif defined(__linux__) || defined(__APPLE__)
 #include <sys/socket.h>
 #include <netinet/tcp.h>
