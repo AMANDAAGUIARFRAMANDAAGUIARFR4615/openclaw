@@ -75,7 +75,7 @@ public:
 
 private:
     Recorder(DeviceConnection* connection) : connection(connection), QWidget() {
-        instanceMap[connection] = this;
+        instanceMap.insert(connection, this);
 
         setAttribute(Qt::WA_DeleteOnClose);
 

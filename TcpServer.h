@@ -102,7 +102,7 @@ private slots:
             connect(socket, &QTcpSocket::disconnected, this, &TcpServer::onDisconnected);
             connect(socket, &QTcpSocket::errorOccurred, this, &TcpServer::onErrorOccurred);
 
-            clientBuffers[socket] = QByteArray();
+            clientBuffers.insert(socket, QByteArray());
             
             auto connection = new DeviceConnection(socket);
             connections.insert(socket, connection);
@@ -120,7 +120,7 @@ private slots:
         auto data = socket->readAll();
         if (data.isEmpty()) return;
 
-        clientBuffers[socket].append(data);
+        clientBuffers.value(socket).append(data);
         processBufferedData(socket);
     }
 
@@ -133,7 +133,7 @@ private slots:
 
         qDebugEx() << "连接断开" << ip + ":" + QString::number(port);
 
-        auto connection = connections.value(socket, nullptr);
+        auto connection = connections.value(socket);
 
         clientBuffers.remove(socket);
         connections.remove(socket);
@@ -150,7 +150,7 @@ private slots:
 
         qCriticalEx() << "onErrorOccurred" << error << socket->errorString();
         
-        auto connection = connections.value(socket, nullptr);
+        auto connection = connections.value(socket);
         if (connection)
             emit clientError(connection, error);
     }
@@ -192,7 +192,7 @@ private:
             const auto& doc = QJsonDocument::fromJson(jsonData);
             
             if (!doc.isNull()) {
-                auto connection = connections.value(socket, nullptr);
+                auto connection = connections.value(socket);
                 if (connection)
                     emit dataReceived(connection, doc.object());
             } else {

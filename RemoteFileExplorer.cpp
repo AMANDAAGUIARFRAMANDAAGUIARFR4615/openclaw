@@ -62,7 +62,7 @@ protected:
 RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& openPath) : connection(connection), openPath(openPath), QWidget()
 {
     QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(openPath);
-    instanceMap[key] = this;
+    instanceMap.insert(key, this);
 
     rootPath = openPath;
     
