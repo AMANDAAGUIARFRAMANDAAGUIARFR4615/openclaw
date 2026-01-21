@@ -184,6 +184,9 @@ void UsbDeviceManager::handlePollFinished() {
             qInfoEx() << "📱检测到新设备:" << udid;
             devices[udid] = false;
 
+            if (DeviceInfo::isLockByOther(udid))
+                continue;
+
             bool isUsbSetting = MainWindow::getInstance()->getTab().getConnectionMethod() == 0;
             if (isUsbSetting)
                 connectDevice(udid, 32839, false);

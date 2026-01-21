@@ -35,7 +35,7 @@ public:
         });
     }
 
-    void sendData(const QJsonObject &jsonObject, const QHostAddress &host, quint16 port, quint16 retryCount = 5) {
+    void sendData(const QJsonObject &jsonObject, const QString &host, quint16 port) {
         if (state() != QAbstractSocket::BoundState) {
             qCriticalEx() << "UDP 套接字未绑定，无法发送数据！";
             return;
@@ -53,7 +53,7 @@ public:
         dataToSend.append(reinterpret_cast<const char*>(&size), sizeof(size));
         dataToSend.append(data);
 
-        auto sent = writeDatagram(dataToSend, host, port);
+        auto sent = writeDatagram(dataToSend, QHostAddress(host), port);
 
         // if (sent != dataToSend.size())
         //     qCriticalEx() << "发送失败" << dataToSend.size() << host.toString() + ":" + QString::number(port);

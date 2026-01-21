@@ -691,7 +691,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
         const auto& deviceInfo = DeviceInfo::getDevice(udid);
         if (deviceInfo) {
-            deviceInfo->locker = locker;
+            deviceInfo->setLocker(locker);
 
             if (locker == Account::getInstance()->phone)
                 return;
@@ -724,21 +724,24 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
         const auto& ips = TcpServer::getInstance()->getConnectedIps();
         for (const auto &subnet : subnetList) {
-            QString currentLocalIP = localIPs.first();
+            auto currentLocalIP = localIPs.first();
             
-            for (const QString& ip : localIPs) {
+            for (const auto& ip : localIPs) {
                 if (NetworkUtils::getSubnet(ip) == subnet) {
                     currentLocalIP = ip;
                     break;
                 }
             }
 
-            QList<QHostAddress> subnetIPs = NetworkUtils::getSubnetIPs(subnet);
-            for (const QHostAddress &ip : std::as_const(subnetIPs)) {
-                if (ips.contains(ip.toString()))
+            const auto& subnetIPs = NetworkUtils::getSubnetIPs(subnet);
+            for (const auto& ip : std::as_const(subnetIPs)) {
+                if (ips.contains(ip))
                     continue;
 
-                auto deviceInfo = DeviceInfo::getDevice(ip.toString());
+                if (DeviceInfo::isLockByOther(ip))
+                    continue;
+
+                auto deviceInfo = DeviceInfo::getDevice(ip);
                 if (!deviceInfo || deviceInfo->connection->type == DeviceConnection::Usb && !isUsbSetting)
                     udpTransport->sendData(TcpServer::getInstance()->getHostInfo(currentLocalIP), ip, 32838);
             }

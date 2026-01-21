@@ -140,9 +140,9 @@ public:
     }
     
     // 遍历同一子网的IP地址，IP范围从 .1 到 .254
-    static QList<QHostAddress> getSubnetIPs(const QString& localIP)
+    static QList<QString> getSubnetIPs(const QString& localIP)
     {
-        QList<QHostAddress> ipList;
+        QList<QString> ipList;
 
         QHostAddress networkAddress(localIP);
         if (networkAddress.isNull()) {
@@ -160,7 +160,7 @@ public:
             QHostAddress ip(ipIpv4);
 
             if (ip.toString() != localIP)
-                ipList.append(ip);
+                ipList.append(ip.toString());
         }
 
         return ipList;

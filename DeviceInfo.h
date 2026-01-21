@@ -2,6 +2,7 @@
 
 #include "global.h"
 #include "SafeObject.h"
+#include "Account.h"
 #include <QJsonObject>
 #include <QString>
 #include <QApplication>
@@ -13,7 +14,7 @@ class DeviceConnection;
 class DeviceInfo {
 public:
     explicit DeviceInfo(DeviceConnection* const connection, const QJsonObject &json)
-      : connection(connection),
+        : connection(connection),
         deviceId(json["deviceId"].toString()),
         deviceName(json["deviceName"].toString()),
         videoPort(json["videoPort"].toInt()),
@@ -22,7 +23,7 @@ public:
             QHostAddress address;
             if (address.setAddress(ip))
                 return ip;
-            
+
             return QString();
         }(json["localIp"].toString())),
         orientation(json["orientation"].toInt()),
@@ -40,7 +41,7 @@ public:
         devices.insert(deviceId, this);
         devices.insert(localIp, this);
     }
-    
+
     ~DeviceInfo() {
         allDevices.removeOne(this);
 
@@ -49,6 +50,25 @@ public:
 
         if (devices.value(localIp) == this)
             devices.remove(localIp);
+    }
+
+    bool hasLocker()
+    {
+        return !locker.isEmpty();
+    }
+
+    void setLocker(QString value)
+    {
+        locker = value;
+
+        lockers.insert(deviceId, value);
+        lockers.insert(localIp, value);
+    }
+
+    static bool isLockByOther(QString id)
+    {
+        const auto& locker = lockers.value(id);
+        return !locker.isEmpty() && locker != Account::getInstance()->phone;
     }
 
     static DeviceInfo* getDevice(const QString& id)
@@ -118,7 +138,7 @@ public:
     }
 
     DeviceConnection* const connection;
-    
+
     const QString deviceId;
     QString deviceName;
     const int videoPort;
@@ -135,11 +155,13 @@ public:
     quint32 groupMask = 0;
     QRect geometry;
     SafeObject<qint64> expireAt;
-    QString locker;
 
     inline static QHash<QString, SafeObject<qint64>> expirations;
 
 private:
+    QString locker;
+
     inline static QList<DeviceInfo*> allDevices;
     inline static QHash<QString, DeviceInfo*> devices;
+    inline static QHash<QString, QString> lockers;
 };

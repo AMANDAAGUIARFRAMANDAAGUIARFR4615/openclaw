@@ -380,7 +380,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
                 webSocketClient->emitEvent("setDeviceLocker", QJsonObject{{"udids", QJsonArray::fromStringList(udids)}, {"locked", locked}});
             };
             
-            if (deviceInfo->locker.isEmpty())
+            if (!deviceInfo->hasLocker())
                 menu->addAction("🚩开启独占", [&](){send(true);});
             else
                 menu->addAction("🏳️退出独占", [&](){send(false);});
