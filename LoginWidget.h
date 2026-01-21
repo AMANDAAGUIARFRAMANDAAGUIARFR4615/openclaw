@@ -297,6 +297,7 @@ protected:
                     for (const QJsonValue& device: res["devices"].toArray()) {
                         const auto& udid = device["udid"].toString();
                         DeviceInfo::expirations[udid] = device[HIDE("expireAt")].toInteger();
+                        DeviceInfo::setLocker(udid, device["locker"].toString());
                     }
                     emit authorized(res["account"]);
                     close();

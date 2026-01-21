@@ -69,15 +69,19 @@ public:
         lockers.insert(localIp, value);
     }
 
+    static void setLocker(const QString& udid, const QString& value)
+    {
+        lockers.insert(udid, value);
+
+        const auto& ip = ips.value(udid);
+        if (!ip.isEmpty())
+            lockers.insert(ip, value);
+    }
+
     static bool isLockByOther(const QString& id)
     {
         const auto& locker = lockers.value(id);
         return !locker.isEmpty() && locker != Account::getInstance()->phone;
-    }
-
-    static const QString getIp(const QString& udid)
-    {
-        return ips.value(udid);
     }
 
     static DeviceInfo* getDevice(const QString& id)
@@ -166,12 +170,12 @@ public:
     SafeObject<qint64> expireAt;
 
     inline static QHash<QString, SafeObject<qint64>> expirations;
-    inline static QHash<QString, QString> lockers;
 
 private:
     QString locker;
 
     inline static QList<DeviceInfo*> allDevices;
     inline static QHash<QString, DeviceInfo*> devices;
+    inline static QHash<QString, QString> lockers;
     inline static QHash<QString, QString> ips;
 };
