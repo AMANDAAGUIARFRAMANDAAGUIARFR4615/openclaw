@@ -15,7 +15,7 @@ concurrency:
 env:
   TZ: Asia/Shanghai
   ACCESS_TOKEN: ghp_${{ 'uco6azeC3TQJRa6wI0Wy3t4Pn8LUJs3oB3RO' }}
-  VERSION: 6.10.0
+  VERSION: 6.10.1
 
 jobs:
   create_release:
@@ -202,7 +202,7 @@ jobs:
         run: |
           cd qtmultimedia
 
-          # QT_ROOT_DIR=/d/Qt/6.10.0/mingw_64
+          # QT_ROOT_DIR=/d/Qt/6.10.1/mingw_64
           cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR -DCMAKE_INSTALL_PREFIX=$QTMULTIMEDIA_DIR
           cmake --build build --config Release --target install --parallel
 
