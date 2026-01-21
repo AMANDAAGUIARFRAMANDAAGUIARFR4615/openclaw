@@ -43,6 +43,10 @@ public:
         if (!localIp.isEmpty()) {
             devices.insert(localIp, this);
             ips.insert(deviceId, localIp);
+
+            const auto& locker = lockers.value(deviceId);
+            if (!locker.isEmpty() && lockers.value(localIp).isEmpty())
+                lockers.insert(localIp, locker);
         }
     }
 
@@ -78,6 +82,11 @@ public:
             lockers.insert(ip, value);
     }
 
+    bool isLockByOther()
+    {
+        return isLockByOther(deviceId);
+    }
+
     static bool isLockByOther(const QString& id)
     {
         const auto& locker = lockers.value(id);
@@ -86,7 +95,7 @@ public:
 
     static DeviceInfo* getDevice(const QString& id)
     {
-        return devices[id];
+        return devices.value(id);
     }
 
     static QList<DeviceInfo*> getDevices(quint32 mask)

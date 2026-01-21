@@ -605,10 +605,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             }
         }
 
-        // for (int i = 0; i < 100; i++) {
-            connection->deviceInfo = new DeviceInfo(connection, data.toObject());
-            addItem(connection);
-        // }
+        deviceInfo = new DeviceInfo(connection, data.toObject());
+        if (deviceInfo->isLockByOther()) {
+            delete deviceInfo;
+            connection->close();
+            return;
+        }
+        
+        connection->deviceInfo = deviceInfo;
+        addItem(connection);
     });
 
     EventHub::on(this, "disconnected", [this](const QJsonValue &data, DeviceConnection* connection) {
