@@ -328,7 +328,7 @@ private:
             }
 
             for (const QJsonValue &jsonValue : response.toArray()) {
-                auto deviceInfo = DeviceInfo::getDevice(jsonValue["udid"].toString());
+                auto deviceInfo = DeviceInfo::getDevice(jsonValue[HIDE("udid")].toString());
                 deviceInfo->expireAt = jsonValue[HIDE("expireAt")].toInteger();
                 DeviceInfo::expirations[deviceInfo->deviceId] = deviceInfo->expireAt;
             }

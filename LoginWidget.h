@@ -294,8 +294,8 @@ protected:
 
                 if (res["msg"].isUndefined()) {
                     saveCredentials(phone, password);
-                    for (const QJsonValue& device: res["devices"].toArray()) {
-                        const auto& udid = device["udid"].toString();
+                    for (const QJsonValue& device: res[HIDE("devices")].toArray()) {
+                        const auto& udid = device[HIDE("udid")].toString();
                         DeviceInfo::expirations[udid] = device[HIDE("expireAt")].toInteger();
                         DeviceInfo::setLocker(udid, device["locker"].toString());
                     }

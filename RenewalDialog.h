@@ -212,8 +212,8 @@ public:
 
                 setVoucherBalance(res["balance"].toInt());
 
-                for (const QJsonValue &item : res["devices"].toArray()) {
-                    auto deviceInfo = DeviceInfo::getDevice(item["udid"].toString());
+                for (const QJsonValue &item : res[HIDE("devices")].toArray()) {
+                    auto deviceInfo = DeviceInfo::getDevice(item[HIDE("udid")].toString());
                     deviceInfo->expireAt = item[HIDE("expireAt")].toInteger();
                     DeviceInfo::expirations[deviceInfo->deviceId] = deviceInfo->expireAt;
                 }

@@ -686,7 +686,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     });
 
     webSocketClient->on("setDeviceLocker", [this](const QJsonValue &data) {
-        const auto& udid = data["udid"].toString();
+        const auto& udid = data[HIDE("udid")].toString();
         const auto& locker = data["locker"].toString();
 
         const auto& deviceInfo = DeviceInfo::getDevice(udid);
