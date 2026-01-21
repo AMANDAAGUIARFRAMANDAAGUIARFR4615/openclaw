@@ -21,6 +21,7 @@
 #include <QWindow>
 
 #ifdef Q_OS_WIN
+#include <winsock2.h>
 #include <windows.h>
 #include <winuser.h>
 #endif

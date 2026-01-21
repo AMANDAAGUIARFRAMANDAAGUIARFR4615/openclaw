@@ -10,6 +10,7 @@
 #include <QRegularExpression>
 
 #ifdef Q_OS_WIN
+#include <winsock2.h>
 #include <windows.h>
 #include <netfw.h>
 #include <objbase.h>
