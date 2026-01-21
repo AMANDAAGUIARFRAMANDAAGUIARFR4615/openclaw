@@ -39,7 +39,11 @@ public:
 
         allDevices.append(this);
         devices.insert(deviceId, this);
-        devices.insert(localIp, this);
+
+        if (!localIp.isEmpty()) {
+            devices.insert(localIp, this);
+            ips.insert(deviceId, localIp);
+        }
     }
 
     ~DeviceInfo() {
@@ -57,7 +61,7 @@ public:
         return !locker.isEmpty();
     }
 
-    void setLocker(QString value)
+    void setLocker(const QString& value)
     {
         locker = value;
 
@@ -65,10 +69,15 @@ public:
         lockers.insert(localIp, value);
     }
 
-    static bool isLockByOther(QString id)
+    static bool isLockByOther(const QString& id)
     {
         const auto& locker = lockers.value(id);
         return !locker.isEmpty() && locker != Account::getInstance()->phone;
+    }
+
+    static const QString getIp(const QString& udid)
+    {
+        return ips.value(udid);
     }
 
     static DeviceInfo* getDevice(const QString& id)
@@ -157,11 +166,12 @@ public:
     SafeObject<qint64> expireAt;
 
     inline static QHash<QString, SafeObject<qint64>> expirations;
+    inline static QHash<QString, QString> lockers;
 
 private:
     QString locker;
 
     inline static QList<DeviceInfo*> allDevices;
     inline static QHash<QString, DeviceInfo*> devices;
-    inline static QHash<QString, QString> lockers;
+    inline static QHash<QString, QString> ips;
 };

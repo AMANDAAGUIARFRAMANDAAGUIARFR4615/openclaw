@@ -27,6 +27,9 @@ void UsbDeviceManager::start() {
 
         for (auto it = devices.keyValueBegin(); it != devices.keyValueEnd(); ++it) {
             if (!it->second) {
+                if (DeviceInfo::isLockByOther(it->first))
+                    continue;
+
                 auto deviceInfo = DeviceInfo::getDevice(it->first);
 
                 if (!deviceInfo || deviceInfo->connection->type != DeviceConnection::Usb && isUsbSetting)

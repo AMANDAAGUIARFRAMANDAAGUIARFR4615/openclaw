@@ -699,6 +699,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             if (!locker.isEmpty())
                 deviceInfo->connection->close();
         }
+        else {
+            DeviceInfo::lockers.insert(udid, locker);
+        
+            const auto& ip = DeviceInfo::getIp(udid);
+            if (!ip.isEmpty())
+                DeviceInfo::lockers.insert(ip, locker);
+        }
     });
 
     loadTabs();
