@@ -89,7 +89,7 @@ public:
 
     static bool isLockByOther(const QString& id)
     {
-        const auto& locker = lockers.value(id);
+        const auto locker = lockers.value(id);
         return !locker.isEmpty() && locker != Account::getInstance()->phone;
     }
 
