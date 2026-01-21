@@ -173,34 +173,39 @@ public:
         HRESULT hr = S_OK;
         INetFwPolicy2 *pNetFwPolicy2 = nullptr;
         INetFwRules *pFwRules = nullptr;
-        INetFwRule *pFwRule = nullptr;
         IUnknown *pEnumerator = nullptr;
         IEnumVARIANT *pVariant = nullptr;
-        bool isAllowed = false;
+        
+        bool hasAllowRule = false; // 是否发现了允许规则
+        bool hasBlockRule = false; // 是否发现了阻止规则
 
-        // 1. 初始化 COM 库
+        // 1. 初始化 COM
         hr = CoInitializeEx(0, COINIT_APARTMENTTHREADED);
-        // 处理 RPC_E_CHANGED_MODE，表示 COM 已经在其他模式下初始化过，这对我们来说是可以接受的
         if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
             return false;
         }
 
         // 2. 创建防火墙策略实例
-        hr = CoCreateInstance(
-            __uuidof(NetFwPolicy2),
-            nullptr,
-            CLSCTX_INPROC_SERVER,
-            __uuidof(INetFwPolicy2),
-            (void**)&pNetFwPolicy2
-        );
+        hr = CoCreateInstance(__uuidof(NetFwPolicy2), nullptr, CLSCTX_INPROC_SERVER, 
+                            __uuidof(INetFwPolicy2), (void**)&pNetFwPolicy2);
 
         if (SUCCEEDED(hr)) {
-            // 3. 获取规则集合
+            // --- 步骤 A: 检查防火墙总开关 ---
+            // 如果专用网络(Private)的防火墙被彻底关闭了，那么程序自然是有权限的
+            VARIANT_BOOL fwEnabled;
+            if (SUCCEEDED(pNetFwPolicy2->get_FirewallEnabled(NET_FW_PROFILE2_PRIVATE, &fwEnabled))) {
+                if (fwEnabled == VARIANT_FALSE) {
+                    pNetFwPolicy2->Release();
+                    CoUninitialize();
+                    return true; // 防火墙没开，直接允许
+                }
+            }
+
+            // --- 步骤 B: 获取规则集合 ---
             hr = pNetFwPolicy2->get_Rules(&pFwRules);
         }
 
         if (SUCCEEDED(hr)) {
-            // 4. 枚举规则
             hr = pFwRules->get__NewEnum(&pEnumerator);
             if (pEnumerator) {
                 hr = pEnumerator->QueryInterface(__uuidof(IEnumVARIANT), (void**)&pVariant);
@@ -208,55 +213,54 @@ public:
         }
 
         if (SUCCEEDED(hr) && pVariant) {
-            QString currentAppPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
-            currentAppPath = currentAppPath.toLower();
-
+            QString currentAppPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath()).toLower();
+            
             ULONG cFetched = 0;
             VARIANT var;
             VariantInit(&var);
 
+            // --- 步骤 C: 遍历所有规则 (核心逻辑修复) ---
             while (pVariant->Next(1, &var, &cFetched) == S_OK) {
-                // var.pdispVal 持有引用，强制转换为 INetFwRule 接口
-                pFwRule = (INetFwRule*)var.pdispVal;
-                
+                INetFwRule *pFwRule = (INetFwRule*)var.pdispVal;
                 BSTR bstrAppPath = nullptr;
+
+                // 获取规则关联的程序路径
                 if (SUCCEEDED(pFwRule->get_ApplicationName(&bstrAppPath)) && bstrAppPath != nullptr) {
                     QString ruleAppPath = QString::fromWCharArray(bstrAppPath).toLower();
                     SysFreeString(bstrAppPath);
 
+                    // 只有路径匹配才进行深入检查
                     if (ruleAppPath == currentAppPath) {
                         VARIANT_BOOL bEnabled;
-                        NET_FW_ACTION action;
-                        long lProfiles = 0; // 用于存储规则适用的网络类型
-
                         pFwRule->get_Enabled(&bEnabled);
-                        pFwRule->get_Action(&action);
-                        pFwRule->get_Profiles(&lProfiles); // 获取该规则适用的 Profile
 
-                        // 检查逻辑：
-                        // 1. 规则必须启用 (Enabled)
-                        // 2. 动作必须是允许 (Allow)
-                        // 3. 核心修改：规则必须包含专用网络 (NET_FW_PROFILE2_PRIVATE)
-                        //    注意：lProfiles 是一个位掩码，可能同时包含 Public 和 Private
-                        if (bEnabled == VARIANT_TRUE && 
-                            action == NET_FW_ACTION_ALLOW && 
-                            (lProfiles & NET_FW_PROFILE2_PRIVATE)) 
-                        {
-                            isAllowed = true;
-                            // 找到满足“专用网络”允许的规则后，清理并退出循环
-                            VariantClear(&var); 
-                            break; 
+                        // 只有启用的规则才有效
+                        if (bEnabled == VARIANT_TRUE) {
+                            NET_FW_ACTION action;
+                            long lProfiles = 0;
+                            pFwRule->get_Action(&action);
+                            pFwRule->get_Profiles(&lProfiles);
+
+                            // 检查该规则是否适用于专用网络(Private)
+                            // 注意：Profile 是位掩码，必须用 & 运算
+                            if (lProfiles & NET_FW_PROFILE2_PRIVATE) {
+                                if (action == NET_FW_ACTION_BLOCK) {
+                                    // 发现了一条针对 Private 网络的【阻止】规则
+                                    hasBlockRule = true;
+                                    // 根据 Windows 逻辑，Block 优先级最高，一旦发现可以直接认定为不通
+                                    // 但为了代码稳健，我们可以继续循环或者直接 break
+                                    VariantClear(&var);
+                                    break; 
+                                } else if (action == NET_FW_ACTION_ALLOW) {
+                                    // 发现了一条针对 Private 网络的【允许】规则
+                                    hasAllowRule = true;
+                                }
+                            }
                         }
                     }
                 }
-                
-                // 这是一个不匹配的规则，或者虽然匹配程序路径但没有开启专用网络权限
-                // 清理当前对象，继续查找下一个
-                VariantClear(&var); 
+                VariantClear(&var); // 释放当前项
             }
-            
-            // 确保最后一次 VariantClear 被调用（虽然 break 处调用了，但为了安全起见）
-            if (var.vt != VT_EMPTY) VariantClear(&var);
             
             pVariant->Release();
             pEnumerator->Release();
@@ -264,13 +268,14 @@ public:
 
         if (pFwRules) pFwRules->Release();
         if (pNetFwPolicy2) pNetFwPolicy2->Release();
-        
-        // 如果 CoInitializeEx 返回的是 S_OK 或 S_FALSE，则需要 Uninitialize
-        // 如果是 RPC_E_CHANGED_MODE，通常不建议在这里 Uninitialize，因为不是我们开启的
-        // 但为了简单起见，且遵循成对调用的原则，通常保持原样即可，或者根据项目严谨度调整
         CoUninitialize();
 
-        return isAllowed;
+        // --- 步骤 D: 最终判定 ---
+        // 必须满足：有允许规则 且 没有阻止规则
+        if (hasBlockRule)
+            return false; // 被显式阻止
+
+        return hasAllowRule; // 如果有允许规则则通过，否则(没弹窗/没规则)为不通
 #else
         return true;
 #endif
