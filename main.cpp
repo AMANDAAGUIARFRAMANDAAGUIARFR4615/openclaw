@@ -6,6 +6,7 @@
 #include "LoginWidget.h"
 #include "LogWindow.h"
 #include "Account.h"
+#include "DeviceWindow.h"
 #include <QApplication>
 #include <QNetworkProxy>
 #include <QLoggingCategory>
@@ -110,16 +111,16 @@ int main(int argc, char *argv[])
     timer->start();
 #endif
 
-    // QObject::connect(&app, &QApplication::focusChanged, [](QWidget *old, QWidget *now) {
-    //     qDebugEx() << "焦点从" << old << "变为" << now;
+    QObject::connect(&app, &QApplication::focusChanged, [](QWidget *old, QWidget *now) {
+        qDebugEx() << "焦点从" << old << "变为" << now;
 
-    //     if (!now || now->isWindow())
-    //         return;
+        if (!now || now->isWindow())
+            return;
 
-    //     auto window = qobject_cast<DeviceWindow*>(now->window());
-    //     if (window)
-    //         window->setFocus();
-    // });
+        auto window = qobject_cast<DeviceWindow*>(now->window());
+        if (window)
+            window->setFocus();
+    });
 
     QNetworkProxy::setApplicationProxy(QNetworkProxy::NoProxy);
 
