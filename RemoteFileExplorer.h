@@ -5,7 +5,7 @@
 #include <QNetworkAccessManager>
 #include <QTreeView>
 #include <QStandardItemModel>
-#include <QMap>
+#include <QHash>
 #include <QStyledItemDelegate>
 #include <QPainter>
 #include <QStatusBar>
@@ -99,5 +99,5 @@ protected:
 
     QTableWidget* transferTable = nullptr;
 
-    inline static QMap<QString, RemoteFileExplorer*> instanceMap;
+    inline static QHash<QString, RemoteFileExplorer*> instanceMap;
 };

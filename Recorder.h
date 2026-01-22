@@ -22,7 +22,7 @@
 #include <QWidget>
 #include <QStandardPaths>
 #include <QCheckBox>
-#include <QMap>
+#include <QHash>
 #include <QStatusBar>
 #include <QHeaderView>
 
@@ -373,5 +373,5 @@ protected:
     QTreeView *treeView;
     QStatusBar *statusBar;
 
-    inline static QMap<DeviceConnection*, Recorder*> instanceMap;
+    inline static QHash<DeviceConnection*, Recorder*> instanceMap;
 };

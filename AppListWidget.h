@@ -389,5 +389,5 @@ private:
     DeviceConnection* const connection;
     QTableWidget *table;
 
-    inline static QMap<DeviceConnection*, AppListWidget*> instanceMap;
+    inline static QHash<DeviceConnection*, AppListWidget*> instanceMap;
 };

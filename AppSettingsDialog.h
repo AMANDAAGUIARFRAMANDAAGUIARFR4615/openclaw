@@ -53,8 +53,8 @@ public:
     }
 
 private:
-    QMap<QString, QStringList> m_listDefaults;
-    QMap<QString, int> m_intDefaults;
+    QHash<QString, QStringList> m_listDefaults;
+    QHash<QString, int> m_intDefaults;
 
     explicit AppSettingsDialog(QWidget *parent = nullptr) : QDialog(parent)
     {

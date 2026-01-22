@@ -8,7 +8,7 @@
 #include <QTcpSocket>
 #include <QByteArray>
 #include <QJsonObject>
-#include <QMap>
+#include <QHash>
 #include <QJsonDocument>
 #include <QHostInfo>
 
@@ -157,8 +157,8 @@ private slots:
     }
 
 private:
-    QMap<QTcpSocket*, QByteArray> clientBuffers;
-    QMap<QTcpSocket*, DeviceConnection*> connections;
+    QHash<QTcpSocket*, QByteArray> clientBuffers;
+    QHash<QTcpSocket*, DeviceConnection*> connections;
  
     void processBufferedData(QTcpSocket* socket) {
         while (clientBuffers.contains(socket)) {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Logger.h"
-#include <QMap>
+#include <QHash>
 #include <QList>
 #include <QJsonValue>
 #include <functional>
@@ -90,5 +90,5 @@ private:
         bool     once = false;
     };
 
-    inline static QMap<QString, QList<Item>> events;
+    inline static QHash<QString, QList<Item>> events;
 };
