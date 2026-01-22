@@ -12,6 +12,7 @@
 #include <QPainter>
 #include <QLayout>
 #include <QWidget>
+#include <QToolTip>
 
 using namespace qrcodegen;
 
@@ -96,6 +97,11 @@ public:
     }
 
     static void showInFileExplorer(const QString& path) {
+        if (!QFileInfo::exists(path)) {
+            QToolTip::showText(QCursor::pos(), "文件不存在");
+            return; 
+        }
+
 #if defined(Q_OS_WIN)
         QStringList args;
         args << "/select," << QDir::toNativeSeparators(path);
