@@ -182,7 +182,13 @@ protected:
             recvFile.write(buffer);
             transferredBytes += buffer.size();
             buffer.clear();
-            emit progressUpdated(transferredBytes, size);
+            
+            // 完成时或每隔100ms才发送一次信号
+            qint64 currentTime = timer.elapsed();
+            if (transferredBytes == size || currentTime - lastNotifyTime > 100) {
+                emit progressUpdated(transferredBytes, size);
+                lastNotifyTime = currentTime;
+            }
 
             if (recvFile.size() == size) {
                 recvFile.close();
@@ -195,7 +201,13 @@ protected:
                 buffer.remove(0, 8);
 
                 transferredBytes = bytesSent;
-                emit progressUpdated(transferredBytes, size);
+
+                // 完成时或每隔100ms才发送一次信号
+                qint64 currentTime = timer.elapsed();
+                if (transferredBytes == size || currentTime - lastNotifyTime > 100) {
+                    emit progressUpdated(transferredBytes, size);
+                    lastNotifyTime = currentTime;
+                }
 
                 if (bytesSent == size) {
                     deleteLater();
@@ -218,4 +230,6 @@ protected:
 
     QElapsedTimer timer;
     quint64 transferredBytes = 0;
+    
+    qint64 lastNotifyTime = 0;
 };
