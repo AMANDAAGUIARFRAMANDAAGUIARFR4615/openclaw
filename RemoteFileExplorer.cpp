@@ -575,11 +575,11 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
         transferTable->setItem(row, col, item);
     }
 
-    auto statusItem = transferTable->item(row, 2);
-    auto percentItem = transferTable->item(row, 3);
-    auto sizeItem = transferTable->item(row, 4);
-    auto speedItem = transferTable->item(row, 7);
-    auto timeItem = transferTable->item(row, 8);
+    const auto& statusItem = transferTable->item(row, 2);
+    const auto& percentItem = transferTable->item(row, 3);
+    const auto& sizeItem = transferTable->item(row, 4);
+    const auto& speedItem = transferTable->item(row, 7);
+    const auto& timeItem = transferTable->item(row, 8);
 
     connect(transfer, &FileTransfer::progressUpdated, transferTable, [=](quint64 transferred, quint64 total) {
         float percent = transferred * 100.0 / total;
