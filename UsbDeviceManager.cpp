@@ -22,21 +22,7 @@ void UsbDeviceManager::start() {
     timer->start(2000);
 
     auto connectTimer = new QTimer(this);
-    connectTimer->callOnTimeout([this]() {
-        bool isUsbSetting = MainWindow::getInstance()->getTab().getConnectionMethod() == 0;
-
-        for (auto it = devices.keyValueBegin(); it != devices.keyValueEnd(); ++it) {
-            if (!it->second) {
-                if (DeviceInfo::isLockByOther(it->first))
-                    continue;
-
-                auto deviceInfo = DeviceInfo::getDevice(it->first);
-
-                if (!deviceInfo || deviceInfo->connection->type != DeviceConnection::Usb && isUsbSetting)
-                    connectDevice(it->first, 32839, false);
-            }
-        }
-    });
+    connectTimer->callOnTimeout(this, &UsbDeviceManager::connectPendingDevices);
     connectTimer->start(2000);
 }
 
@@ -46,6 +32,36 @@ void UsbDeviceManager::stop() {
     const auto connections = connToContext.keys();
     for (auto conn : connections) {
         disconnectDevice(conn);
+    }
+}
+
+void UsbDeviceManager::connectPendingDevices() {
+    bool isUsbSetting = MainWindow::getInstance()->getTab().getConnectionMethod() == 0;
+
+    for (auto it = devices.keyValueBegin(); it != devices.keyValueEnd(); ++it) {
+        // 如果握手未完成(it->second为false)
+        if (!it->second) {
+            QString udid = it->first;
+
+            // 检查是否已经有对应的 Context 正在连接中或已连接
+            // 避免定时器和热插拔事件同时触发导致重复连接
+            bool contextExists = false;
+            for (auto ctx : connToContext) {
+                if (ctx->udid == udid && ctx->port == 32839) {
+                    contextExists = true;
+                    break;
+                }
+            }
+            if (contextExists) continue;
+
+            if (DeviceInfo::isLockByOther(udid))
+                continue;
+
+            auto deviceInfo = DeviceInfo::getDevice(udid);
+
+            if (!deviceInfo || deviceInfo->connection->type != DeviceConnection::Usb && isUsbSetting)
+                connectDevice(udid, 32839, false);
+        }
     }
 }
 
@@ -186,13 +202,6 @@ void UsbDeviceManager::handlePollFinished() {
         if (!previousDevices.contains(udid)) {
             qInfoEx() << "📱检测到新设备:" << udid;
             devices[udid] = false;
-
-            if (DeviceInfo::isLockByOther(udid))
-                continue;
-
-            bool isUsbSetting = MainWindow::getInstance()->getTab().getConnectionMethod() == 0;
-            if (isUsbSetting)
-                connectDevice(udid, 32839, false);
         }
     }
 
@@ -211,6 +220,8 @@ void UsbDeviceManager::handlePollFinished() {
     }
 
     previousDevices = currentDevices;
+
+    connectPendingDevices();
 }
 
 void UsbDeviceManager::processBufferedData(UsbDeviceContext* ctx) {

@@ -38,6 +38,7 @@ private slots:
     void handlePollFinished();
 
 private:
+    void connectPendingDevices();
     void pollDevices();
     void processBufferedData(UsbDeviceContext* usbDeviceContext);
 
