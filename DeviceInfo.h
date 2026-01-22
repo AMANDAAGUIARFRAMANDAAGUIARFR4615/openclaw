@@ -40,11 +40,12 @@ public:
         allDevices.append(this);
         devices.insert(deviceId, this);
 
+        locker = lockers.value(deviceId);
+
         if (!localIp.isEmpty()) {
             devices.insert(localIp, this);
             ips.insert(deviceId, localIp);
 
-            const auto& locker = lockers.value(deviceId);
             if (!locker.isEmpty() && lockers.value(localIp).isEmpty())
                 lockers.insert(localIp, locker);
         }
