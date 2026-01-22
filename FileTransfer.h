@@ -9,6 +9,7 @@
 #include <QDataStream>
 #include <QtConcurrent>
 #include <QUuid>
+#include <QThread>
 
 // type 1收2发
 
@@ -156,6 +157,10 @@ protected:
                         transferConnection->write(buffer);
                     });
                 }
+
+                // 防止循环过快，瞬间将大文件全部读入内存并向主线程发送数千个write事件，导致主线程卡死
+                // 休眠10ms意味着最大发送速率约为 100MB/s，对于网络传输通常足够，但能极大缓解UI压力
+                QThread::msleep(10);
             }
 
             sendFile.close();
@@ -178,6 +183,10 @@ protected:
                 if (buffer.size() == 0)
                     return;
             }
+
+            // 只有当 buffer 积累到 64KB 以上，或者文件接收完毕时，才执行写盘操作。
+            if (buffer.size() < 64 * 1024 && transferredBytes + buffer.size() < size)
+                return;
 
             recvFile.write(buffer);
             transferredBytes += buffer.size();
