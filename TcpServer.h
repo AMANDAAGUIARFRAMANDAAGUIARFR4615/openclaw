@@ -121,7 +121,7 @@ private slots:
         auto data = socket->readAll();
         if (data.isEmpty()) return;
 
-        clientBuffers.value(socket).append(data);
+        clientBuffers[socket].append(data);
         processBufferedData(socket);
     }
 
