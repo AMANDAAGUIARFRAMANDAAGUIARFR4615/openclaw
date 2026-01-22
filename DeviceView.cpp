@@ -691,7 +691,7 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
     const auto modifiers = event->modifiers() & ~Qt::KeypadModifier;
 
     if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
-#ifdef _WIN32
+#ifdef Q_OS_WIN
         char c = KeyMapping::toChar(event->nativeScanCode());
 #else
         char c = KeyMapping::toChar(event->nativeVirtualKey());

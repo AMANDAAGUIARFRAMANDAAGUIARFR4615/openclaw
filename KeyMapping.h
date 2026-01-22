@@ -3,7 +3,7 @@
 class KeyMapping {
 public:
     enum class ScanCode {
-#ifdef _WIN32
+#ifdef Q_OS_WIN
         DIK_1           = 0x02,
         DIK_2           = 0x03,
         DIK_3           = 0x04,
