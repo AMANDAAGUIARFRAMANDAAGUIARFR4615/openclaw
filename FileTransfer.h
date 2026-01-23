@@ -21,8 +21,11 @@ public:
         if (type == 1) {
             if (pathLocked.contains(path)) {
                 qCriticalEx() << "拒绝传输，文件正在处理中" << path;
-                emit progressUpdated(-1, 0);
-                QTimer::singleShot(0, this, &QObject::deleteLater);
+                
+                QTimer::singleShot(0, this, [this]() {
+                    emit progressUpdated(-1, 0);
+                    deleteLater();
+                });
                 return;
             }
 
