@@ -18,6 +18,17 @@ class FileTransfer : public QObject
 public:
     FileTransfer(DeviceConnection* connection, int type, const QString &path, quint64 size, QObject* parent) : id(QUuid::createUuid().toString(QUuid::WithoutBraces)), connection(connection), type(type), path(path), size(size), QObject(parent)
     {
+        if (type == 1) {
+            if (pathLocked.contains(path)) {
+                qCriticalEx() << "拒绝传输，文件正在处理中" << path;
+                emit progressUpdated(-1, 0);
+                QTimer::singleShot(0, this, &QObject::deleteLater);
+                return;
+            }
+
+            pathLocked.insert(path);
+        }
+
         qDebugEx() << "FileTransfer" << path << type;
 
         timer.start();
@@ -87,6 +98,9 @@ public:
             UsbDeviceManager::getInstance()->disconnectDevice(transferConnection);
 
         connection = nullptr;
+
+        if (type == 1)
+            pathLocked.remove(path);
     }
 
     const QString id;
@@ -250,4 +264,6 @@ protected:
     quint64 transferredBytes = 0;
     
     qint64 lastNotifyTime = 0;
+
+    inline static QSet<QString> pathLocked;
 };
