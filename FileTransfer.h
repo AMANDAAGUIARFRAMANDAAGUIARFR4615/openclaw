@@ -145,7 +145,7 @@ protected:
                 return;
             }
 
-            const qint64 chunkSize = 64 * 1024; 
+            const qint64 chunkSize = 512 * 1024; 
 
             while (!sendFile.atEnd())
             {
@@ -181,8 +181,8 @@ protected:
                     return;
             }
 
-            // 只有当 buffer 积累到 64KB 以上，或者文件接收完毕时，才执行写盘操作。
-            if (buffer.size() < 64 * 1024 && transferredBytes + buffer.size() < size)
+            // 只有当 buffer 积累到 512KB 以上，或者文件接收完毕时，才执行写盘操作。
+            if (buffer.size() < 512 * 1024 && transferredBytes + buffer.size() < size)
                 return;
 
             recvFile.write(buffer);
@@ -191,7 +191,7 @@ protected:
             
             // 完成时或每隔100ms才发送一次信号
             qint64 currentTime = timer.elapsed();
-            if (transferredBytes == size || currentTime - lastNotifyTime > 100) {
+            if (transferredBytes == size || currentTime - lastNotifyTime > 500) {
                 emit progressUpdated(transferredBytes, size);
                 lastNotifyTime = currentTime;
             }
@@ -210,7 +210,7 @@ protected:
 
                 // 完成时或每隔100ms才发送一次信号
                 qint64 currentTime = timer.elapsed();
-                if (transferredBytes == size || currentTime - lastNotifyTime > 100) {
+                if (transferredBytes == size || currentTime - lastNotifyTime > 500) {
                     emit progressUpdated(transferredBytes, size);
                     lastNotifyTime = currentTime;
                 }
