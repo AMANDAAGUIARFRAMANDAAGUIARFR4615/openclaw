@@ -381,9 +381,9 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
             };
             
             if (!deviceInfo->hasLocker())
-                menu->addAction("🚩开启独占", [&](){send(true);});
+                menu->addAction("🚩开启独占", [=](){send(true);});
             else
-                menu->addAction("🏳️退出独占", [&](){send(false);});
+                menu->addAction("🏳️退出独占", [=](){send(false);});
         }
     }
 
