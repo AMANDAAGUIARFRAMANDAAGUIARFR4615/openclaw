@@ -511,7 +511,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
             if (connection == this->connection)
                 continue;
 
-            auto transfer = new FileTransfer(connection, type, localPath, size);
+            auto transfer = new FileTransfer(connection, type, localPath, size, this);
 
             connect(transfer, &FileTransfer::progressUpdated, this, [=](quint64 transferred, quint64 total) {
                 if (transferred != total)
@@ -548,7 +548,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
         }
     }
 
-    auto transfer = new FileTransfer(connection, type, localPath, size);
+    auto transfer = new FileTransfer(connection, type, localPath, size, this);
 
     int row = 0;
     transferTable->insertRow(row);

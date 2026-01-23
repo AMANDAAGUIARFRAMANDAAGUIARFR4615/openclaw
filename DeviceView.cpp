@@ -437,7 +437,7 @@ void DeviceView::dropEvent(QDropEvent *event)
         auto localPath = url.toLocalFile();
         auto size = Tools::getFileSize(localPath);
         
-        auto transfer = new FileTransfer(connection, type, localPath, size);
+        auto transfer = new FileTransfer(connection, type, localPath, size, this);
 
         QJsonObject dataObject;
         dataObject["id"] = transfer->id;

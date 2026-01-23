@@ -16,7 +16,7 @@ class FileTransfer : public QObject
 {
     Q_OBJECT
 public:
-    FileTransfer(DeviceConnection* connection, int type, const QString &path, quint64 size) : id(QUuid::createUuid().toString(QUuid::WithoutBraces)), connection(connection), type(type), path(path), size(size)
+    FileTransfer(DeviceConnection* connection, int type, const QString &path, quint64 size, QObject* parent) : id(QUuid::createUuid().toString(QUuid::WithoutBraces)), connection(connection), type(type), path(path), size(size), QObject(parent)
     {
         qDebugEx() << "FileTransfer" << path << type;
 
