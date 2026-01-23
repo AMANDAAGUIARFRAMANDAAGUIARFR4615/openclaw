@@ -73,7 +73,7 @@ signals:
 protected:
     static void scheduleNext() {
         // 允许同时运行5个
-        while (runningList.size() < 5 && !pendingList.isEmpty()) {
+        while (runningList.size() < 1 && !pendingList.isEmpty()) {
             FileTransfer* task = pendingList.takeFirst();
             runningList.append(task);
             task->startTransfer();
