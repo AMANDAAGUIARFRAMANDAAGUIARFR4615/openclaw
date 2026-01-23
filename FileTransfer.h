@@ -149,7 +149,7 @@ protected:
 
             while (!sendFile.atEnd())
             {
-                auto buffer = sendFile.read(chunkSize);
+                const auto& buffer = sendFile.read(chunkSize);
 
                 // 使用 Qt::BlockingQueuedConnection，这会阻塞当前子线程，直到主线程完成 write 调用。
                 // 这起到了两个作用：
