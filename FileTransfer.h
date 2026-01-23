@@ -9,7 +9,6 @@
 #include <QDataStream>
 #include <QtConcurrent>
 #include <QUuid>
-#include <QThread>
 
 // type 1收2发
 
@@ -137,7 +136,7 @@ protected:
             return;
         }
 
-        QtConcurrent::run([=]() {
+        QtConcurrent::run([this]() {
             QFile sendFile(path);
 
             if (!sendFile.open(QIODevice::ReadOnly))
@@ -146,21 +145,20 @@ protected:
                 return;
             }
 
+            const qint64 chunkSize = 64 * 1024; 
+
             while (!sendFile.atEnd())
             {
-                auto buffer = sendFile.read(1024 * 1024);
-                if (connection->type == DeviceConnection::Usb) {
-                    transferConnection->write(buffer);
-                }
-                else {
-                    QMetaObject::invokeMethod(this, [=]() {
-                        transferConnection->write(buffer);
-                    });
-                }
+                auto buffer = sendFile.read(chunkSize);
 
-                // 防止循环过快，瞬间将大文件全部读入内存并向主线程发送数千个write事件，导致主线程卡死
-                // 休眠10ms意味着最大发送速率约为 100MB/s，对于网络传输通常足够，但能极大缓解UI压力
-                QThread::msleep(10);
+                // 使用 Qt::BlockingQueuedConnection，这会阻塞当前子线程，直到主线程完成 write 调用。
+                // 这起到了两个作用：
+                // 1. 防止子线程读取速度过快，导致主线程事件队列堆积成千上万个事件（卡死UI的主因）。
+                // 2. 自动实现了“背压”，即读取速度自动适配网络/主线程处理速度。
+                QMetaObject::invokeMethod(this, [=]() {
+                    if (transferConnection)
+                        transferConnection->write(buffer);
+                }, Qt::BlockingQueuedConnection);
             }
 
             sendFile.close();
