@@ -544,7 +544,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
     QStringList texts = {
         startTime,
         name,
-        type == 1 ? "接收中" : "发送中",
+        "排队中",
         "0%",
         "",
         localPath,
@@ -574,6 +574,9 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
             statusItem->setText("传输失败");
             return;
         }
+
+        if (statusItem->text() == "排队中")
+            statusItem->setText(type == 1 ? "接收中" : "发送中");
 
         float percent = transferred * 100.0 / total;
         
