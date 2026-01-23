@@ -97,7 +97,7 @@ protected:
         transferConnection = new DeviceConnection(socket);
 
         tcpServer->close();
-        qDebugEx() << "已接受第一个连接，服务器停止监听新连接。";
+        qDebugEx() << "已接受第一个连接，停止监听新连接。";
 
         connect(socket, &QTcpSocket::readyRead, this, &FileTransfer::onReadyRead);
         // connect(socket, &QTcpSocket::bytesWritten, this, &FileTransfer::onBytesWritten);

@@ -31,12 +31,9 @@ public:
     {
         connect(this, &QTcpServer::newConnection, this, &TcpServer::onNewConnection);
 
-        if (!this->listen(QHostAddress::Any, 0)) {
-            qCriticalEx() << "无法启动服务器";
-            return;
-        }
+        listen(QHostAddress::Any, 0);
 
-        qInfoEx() << "服务器已启动,监听端口:" << serverPort();
+        qInfoEx() << "服务已启动，监听端口:" << serverPort();
     }
 
     static TcpServer* getInstance() { static TcpServer instance; return &instance; }
