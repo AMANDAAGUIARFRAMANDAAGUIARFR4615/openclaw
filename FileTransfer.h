@@ -156,8 +156,7 @@ protected:
                 // 1. 防止子线程读取速度过快，导致主线程事件队列堆积成千上万个事件（卡死UI的主因）。
                 // 2. 自动实现了“背压”，即读取速度自动适配网络/主线程处理速度。
                 QMetaObject::invokeMethod(this, [=]() {
-                    if (transferConnection)
-                        transferConnection->write(buffer);
+                    transferConnection->write(buffer);
                 }, Qt::BlockingQueuedConnection);
             }
 
