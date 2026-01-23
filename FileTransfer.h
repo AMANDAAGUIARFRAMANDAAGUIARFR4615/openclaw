@@ -17,11 +17,11 @@ class FileTransfer : public QObject
 {
     Q_OBJECT
 public:
-    FileTransfer(DeviceConnection* connection, int type, const QString &path, const QString remotePath, QObject* parent) : connection(connection), type(type), path(path), remotePath(remotePath), QObject(parent)
+    FileTransfer(DeviceConnection* connection, int type, const QString &localPath, const QString remotePath, QObject* parent) : connection(connection), type(type), localPath(localPath), remotePath(remotePath), QObject(parent)
     {
         if (type == 1) {
-            if (pathLocked.contains(path)) {
-                qCriticalEx() << "拒绝传输，文件正在处理中" << path;
+            if (pathLocked.contains(localPath)) {
+                qCriticalEx() << "拒绝传输，文件正在处理中" << localPath;
                 
                 QTimer::singleShot(0, this, [this]() {
                     emit progressUpdated(-1, 0);
@@ -30,7 +30,7 @@ public:
                 return;
             }
 
-            pathLocked.insert(path);
+            pathLocked.insert(localPath);
         }
 
         pendingList.append(this);
@@ -38,6 +38,9 @@ public:
     }
 
     ~FileTransfer() {
+        if (id.isEmpty())
+            return;
+
         if (runningList.contains(this)) {
             runningList.removeOne(this);
             scheduleNext(); // 有空位了，调度下一个
@@ -55,7 +58,7 @@ public:
             UsbDeviceManager::getInstance()->disconnectDevice(transferConnection);
 
         if (type == 1)
-            pathLocked.remove(path);
+            pathLocked.remove(localPath);
     }
 
     float elapsedTime() const {
@@ -78,7 +81,7 @@ protected:
     }
 
     void startTransfer() {
-        qDebugEx() << "FileTransfer Start" << path << type;
+        qDebugEx() << "FileTransfer Start" << localPath << type;
 
         timer.start();
 
@@ -140,7 +143,7 @@ protected:
             dataObject["name"] = remotePath;
 
         if (type == 2) {
-            size = Tools::getFileSize(path);
+            size = Tools::getFileSize(localPath);
             dataObject["size"] = size;
         }
 
@@ -175,13 +178,13 @@ protected:
     {
         if (type == 1)
         {
-            QString dirPath = QFileInfo(path).absolutePath();
+            QString dirPath = QFileInfo(localPath).absolutePath();
 
             static QDir dir;
             if (!dir.exists(dirPath))
                 dir.mkpath(dirPath);
 
-            recvFile.setFileName(path);
+            recvFile.setFileName(localPath);
 
             if (!recvFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
             {
@@ -193,7 +196,7 @@ protected:
         }
 
         QtConcurrent::run([this]() {
-            QFile sendFile(path);
+            QFile sendFile(localPath);
 
             if (!sendFile.open(QIODevice::ReadOnly))
             {
@@ -260,7 +263,7 @@ protected:
             if (recvFile.size() == size) {
                 recvFile.close();
                 deleteLater();
-                qDebugEx() << path << "接收完成断开连接" << size;
+                qDebugEx() << localPath << "接收完成断开连接" << size;
             }
         } else {
             while (buffer.size() >= 8) {
@@ -278,7 +281,7 @@ protected:
 
                 if (bytesSent == size) {
                     deleteLater();
-                    qDebugEx() << path << "发送完成断开连接" << size;
+                    qDebugEx() << localPath << "发送完成断开连接" << size;
                 }
             }
         }
@@ -288,7 +291,7 @@ protected:
 
     DeviceConnection* const connection;
     const int type;
-    const QString path;
+    const QString localPath;
     const QString remotePath;
     qint64 size = 0;
 
