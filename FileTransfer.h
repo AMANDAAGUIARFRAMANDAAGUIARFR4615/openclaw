@@ -17,7 +17,7 @@ class FileTransfer : public QObject
 {
     Q_OBJECT
 public:
-    FileTransfer(DeviceConnection* connection, int type, const QString &path, const QString remotePath, QObject* parent) : id(QUuid::createUuid().toString(QUuid::WithoutBraces)), connection(connection), type(type), path(path), remotePath(remotePath), QObject(parent)
+    FileTransfer(DeviceConnection* connection, int type, const QString &path, const QString remotePath, QObject* parent) : connection(connection), type(type), path(path), remotePath(remotePath), QObject(parent)
     {
         if (type == 1) {
             if (pathLocked.contains(path)) {
@@ -56,12 +56,6 @@ public:
 
         if (type == 1)
             pathLocked.remove(path);
-    }
-
-    const QString id;
-
-    quint16 serverPort() {
-        return tcpServer ? tcpServer->serverPort() : 0;
     }
 
     float elapsedTime() const {
@@ -138,7 +132,7 @@ protected:
         QJsonObject dataObject;
         dataObject["id"] = id;
         dataObject["type"] = type;
-        dataObject["port"] = serverPort();
+        dataObject["port"] = tcpServer ? tcpServer->serverPort() : 0;
 
         if (remotePath.startsWith("/"))
             dataObject["path"] = remotePath;
@@ -289,6 +283,8 @@ protected:
             }
         }
     }
+
+    const QString id = QUuid::createUuid().toString(QUuid::WithoutBraces);
 
     DeviceConnection* const connection;
     const int type;
