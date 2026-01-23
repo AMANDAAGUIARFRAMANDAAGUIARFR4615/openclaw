@@ -32,7 +32,58 @@ public:
             pathLocked.insert(path);
         }
 
-        qDebugEx() << "FileTransfer" << path << type;
+        pendingList.append(this);
+        scheduleNext();
+    }
+
+    ~FileTransfer() {
+        if (runningList.contains(this)) {
+            runningList.removeOne(this);
+            scheduleNext(); // 有空位了，调度下一个
+        } else {
+            pendingList.removeOne(this); // 还在排队就销毁了
+        }
+
+        EventHub::off(this, "transferPort");
+        EventHub::off(this, "transferStatus");
+
+        if (tcpServer)
+            tcpServer->deleteLater();
+        
+        if (connection->type == DeviceConnection::Usb)
+            UsbDeviceManager::getInstance()->disconnectDevice(transferConnection);
+
+        if (type == 1)
+            pathLocked.remove(path);
+    }
+
+    const QString id;
+
+    quint16 serverPort() {
+        return tcpServer ? tcpServer->serverPort() : 0;
+    }
+
+    float elapsedTime() const {
+        // 如果还在排队（timer没开始），返回0
+        if (!timer.isValid()) return 0.0f;
+        return timer.elapsed() / 1000.0f;
+    }
+
+signals:
+    void progressUpdated(qint64 transferred, qint64 total);
+
+protected:
+    static void scheduleNext() {
+        // 允许同时运行5个
+        while (runningList.size() < 5 && !pendingList.isEmpty()) {
+            FileTransfer* task = pendingList.takeFirst();
+            runningList.append(task);
+            task->startTransfer();
+        }
+    }
+
+    void startTransfer() {
+        qDebugEx() << "FileTransfer Start" << path << type;
 
         timer.start();
 
@@ -42,14 +93,8 @@ public:
 
             connect(tcpServer, &QTcpServer::newConnection, this, &FileTransfer::onNewConnection);
 
-            if (!tcpServer->listen(QHostAddress::Any, 0))
-            {
-                qCriticalEx() << "Server failed to start";
-            }
-            else
-            {
-                qDebugEx() << "Server started, waiting for connections...";
-            }
+            tcpServer->listen(QHostAddress::Any, 0);
+            qDebugEx() << "文件传输服务已启动，监听端口" << tcpServer->serverPort();
         }
         else
         {
@@ -90,36 +135,6 @@ public:
         });
     }
 
-    ~FileTransfer() {
-        EventHub::off(this, "transferPort");
-        EventHub::off(this, "transferStatus");
-
-        if (tcpServer)
-            tcpServer->deleteLater();
-        
-        if (connection->type == DeviceConnection::Usb)
-            UsbDeviceManager::getInstance()->disconnectDevice(transferConnection);
-
-        connection = nullptr;
-
-        if (type == 1)
-            pathLocked.remove(path);
-    }
-
-    const QString id;
-
-    quint16 serverPort() {
-        return tcpServer ? tcpServer->serverPort() : 0;
-    }
-
-    float elapsedTime() const {
-        return timer.elapsed() / 1000.0f;
-    }
-
-signals:
-    void progressUpdated(qint64 transferred, qint64 total);
-
-protected:
     void onNewConnection()
     {
         auto socket = tcpServer->nextPendingConnection();
@@ -171,6 +186,8 @@ protected:
             if (!sendFile.open(QIODevice::ReadOnly))
             {
                 qCriticalEx() << "Failed to open file for sending.";
+                // 确保在主线程析构
+                QMetaObject::invokeMethod(this, [this](){ deleteLater(); });
                 return;
             }
 
@@ -178,6 +195,9 @@ protected:
 
             while (!sendFile.atEnd())
             {
+                // 如果任务已被移出运行队列（被外部删除了），停止发送
+                if (!runningList.contains(this)) break;
+
                 const auto& buffer = sendFile.read(chunkSize);
 
                 // 使用 Qt::BlockingQueuedConnection，这会阻塞当前子线程，直到主线程完成 write 调用。
@@ -252,7 +272,7 @@ protected:
         }
     }
 
-    DeviceConnection* connection;
+    const DeviceConnection* connection;
     const int type;
     const QString path;
     quint64 size;
@@ -269,4 +289,7 @@ protected:
     qint64 lastNotifyTime = 0;
 
     inline static QSet<QString> pathLocked;
+    
+    inline static QList<FileTransfer*> pendingList;
+    inline static QList<FileTransfer*> runningList;
 };
