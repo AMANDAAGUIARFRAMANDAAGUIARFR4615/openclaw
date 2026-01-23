@@ -63,10 +63,22 @@ public:
                 handleNewConnection();
             });
         }
+
+        EventHub::on(this, "transferStatus", [this](QJsonValue data, DeviceConnection* connection) {
+            if (this->connection != connection)
+                return;
+
+            if (data["code"].toInt() != 0 && data["id"].toString() == id) {
+                emit progressUpdated(-1, 0);
+                qDebugEx() << "传输失败断开连接" << data;
+                deleteLater();
+            }
+        });
     }
 
     ~FileTransfer() {
         EventHub::off(this, "transferPort");
+        EventHub::off(this, "transferStatus");
 
         if (tcpServer)
             tcpServer->deleteLater();
@@ -88,7 +100,7 @@ public:
     }
 
 signals:
-    void progressUpdated(quint64 transferred, quint64 total);
+    void progressUpdated(qint64 transferred, qint64 total);
 
 protected:
     void onNewConnection()

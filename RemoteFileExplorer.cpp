@@ -153,16 +153,15 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         if (this->connection != connection)
             return;
 
-        auto code = data["code"].toInt();
-        if (code != 0) {
+        if (data["code"].toInt() != 0) {
             setStatusMessage("传输失败: " + data["msg"].toString());
             return;
         }
 
-        auto result = data["result"];
-        auto fullPath = result["path"].toString();
-        auto date = result["date"].toString();
-        auto size = result["size"].toInteger();
+        const auto& result = data["result"];
+        const auto& fullPath = result["path"].toString();
+        const auto& date = result["date"].toString();
+        const auto& size = result["size"].toInteger();
 
         addItemToTreeView(fullPath, "NSFileTypeRegular", date, size);
     });
@@ -513,7 +512,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
 
             auto transfer = new FileTransfer(connection, type, localPath, size, this);
 
-            connect(transfer, &FileTransfer::progressUpdated, this, [=](quint64 transferred, quint64 total) {
+            connect(transfer, &FileTransfer::progressUpdated, this, [=](qint64 transferred, qint64 total) {
                 if (transferred != total)
                     return;
 
@@ -581,7 +580,12 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
     const auto& speedItem = transferTable->item(row, 7);
     const auto& timeItem = transferTable->item(row, 8);
 
-    connect(transfer, &FileTransfer::progressUpdated, transferTable, [=](quint64 transferred, quint64 total) {
+    connect(transfer, &FileTransfer::progressUpdated, transferTable, [=](qint64 transferred, qint64 total) {
+        if (transferred < 0) {
+            statusItem->setText("传输失败");
+            return;
+        }
+
         float percent = transferred * 100.0 / total;
         
         percentItem->setText(QString::number(percent, 'f', 1) + "%");
@@ -594,8 +598,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
         if (transferred != total)
             return;
 
-        QString finalStatus = type == 1 ? "接收完成" : "发送完成";
-        statusItem->setText(finalStatus);
+        statusItem->setText(type == 1 ? "接收完成" : "发送完成");
 
         QJsonObject obj;
         obj["startTime"] = startTime;
