@@ -433,20 +433,8 @@ void DeviceView::dropEvent(QDropEvent *event)
     qDebugEx() << "dropEvent" << this;
 
     for (const QUrl& url : event->mimeData()->urls()) {
-        auto type = 2; // 收是1，发是2
         auto localPath = url.toLocalFile();
-        auto size = Tools::getFileSize(localPath);
-        
-        auto transfer = new FileTransfer(connection, type, localPath, size, this);
-
-        QJsonObject dataObject;
-        dataObject["id"] = transfer->id;
-        dataObject["type"] = type;
-        dataObject["port"] = transfer->serverPort();
-        dataObject["name"] = localPath.section('/', -1);
-        dataObject["size"] = size;
-
-        connection->send("transferFile", dataObject);
+        new FileTransfer(connection, 2, localPath, localPath.section('/', -1), this);
     }
 
     event->accept();

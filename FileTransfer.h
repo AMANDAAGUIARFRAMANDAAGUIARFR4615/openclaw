@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Logger.h"
+#include "Tools.h"
 #include "EventHub.h"
 #include "DeviceConnection.h"
 #include "UsbDeviceManager.h"
@@ -16,7 +17,7 @@ class FileTransfer : public QObject
 {
     Q_OBJECT
 public:
-    FileTransfer(DeviceConnection* connection, int type, const QString &path, quint64 size, QObject* parent) : id(QUuid::createUuid().toString(QUuid::WithoutBraces)), connection(connection), type(type), path(path), size(size), QObject(parent)
+    FileTransfer(DeviceConnection* connection, int type, const QString &path, const QString remotePath, QObject* parent) : id(QUuid::createUuid().toString(QUuid::WithoutBraces)), connection(connection), type(type), path(path), remotePath(remotePath), QObject(parent)
     {
         if (type == 1) {
             if (pathLocked.contains(path)) {
@@ -133,6 +134,23 @@ protected:
                 deleteLater();
             }
         });
+
+        QJsonObject dataObject;
+        dataObject["id"] = id;
+        dataObject["type"] = type;
+        dataObject["port"] = serverPort();
+
+        if (remotePath.startsWith("/"))
+            dataObject["path"] = remotePath;
+        else
+            dataObject["name"] = remotePath;
+
+        if (type == 2) {
+            size = Tools::getFileSize(path);
+            dataObject["size"] = size;
+        }
+
+        connection->send("transferFile", dataObject);
     }
 
     void onNewConnection()
@@ -272,10 +290,11 @@ protected:
         }
     }
 
-    const DeviceConnection* connection;
+    DeviceConnection* const connection;
     const int type;
     const QString path;
-    quint64 size;
+    const QString remotePath;
+    qint64 size = 0;
 
     QByteArray buffer;
     QFile recvFile;

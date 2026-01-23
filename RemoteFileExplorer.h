@@ -70,7 +70,7 @@ protected:
     void updateDirectoryView(const QString &path, const QJsonArray &list);
     void onDirectoryExpanded(const QModelIndex &index);
     QString getLocalPath(const QString& remotePath);
-    void startFileTransfer(int type, const QString &localPath, const QString &remotePath, int size);
+    void startFileTransfer(int type, const QString &localPath, const QString &remotePath);
     void keyPressEvent(QKeyEvent *event) override;
     void showTreeContextMenu(const QPoint &pos);
     void showTableContextMenu(const QPoint &pos);

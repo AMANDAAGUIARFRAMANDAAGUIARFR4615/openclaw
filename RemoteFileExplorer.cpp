@@ -499,7 +499,7 @@ QString RemoteFileExplorer::getLocalPath(const QString& remotePath) {
     return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + connection->deviceInfo->deviceId + "/" + QFileInfo(remotePath).fileName();
 }
 
-void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, const QString &remotePath, int size)
+void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, const QString &remotePath)
 {
     const auto startTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
     const auto name = QFileInfo(localPath).fileName();
@@ -510,7 +510,7 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
             if (connection == this->connection)
                 continue;
 
-            auto transfer = new FileTransfer(connection, type, localPath, size, this);
+            auto transfer = new FileTransfer(connection, type, localPath, remotePath, this);
 
             connect(transfer, &FileTransfer::progressUpdated, this, [=](qint64 transferred, qint64 total) {
                 if (transferred != total)
@@ -533,21 +533,10 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
                 history.append(obj);
                 settings->setValue(key, history);
             });
-
-            QJsonObject dataObject;
-            dataObject["id"] = transfer->id;
-            dataObject["type"] = type;
-            dataObject["port"] = transfer->serverPort();
-            dataObject["path"] = remotePath;
-
-            if (type == 2)
-                dataObject["size"] = size;
-
-            connection->send("transferFile", dataObject);
         }
     }
 
-    auto transfer = new FileTransfer(connection, type, localPath, size, this);
+    auto transfer = new FileTransfer(connection, type, localPath, remotePath, this);
 
     int row = 0;
     transferTable->insertRow(row);
@@ -615,17 +604,6 @@ void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, c
         history.append(obj);
         settings->setValue(key, history);
     });
-
-    QJsonObject dataObject;
-    dataObject["id"] = transfer->id;
-    dataObject["type"] = type;
-    dataObject["port"] = transfer->serverPort();
-    dataObject["path"] = remotePath;
-
-    if (type == 2)
-        dataObject["size"] = size;
-
-    connection->send("transferFile", dataObject);
 }
 
 void RemoteFileExplorer::keyPressEvent(QKeyEvent *event)
@@ -697,8 +675,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
 
     menu.addAction("下载", [=]() {
         for (const QString& remotePath : paths) {
-            auto localPath = getLocalPath(remotePath);
-            startFileTransfer(1, localPath, remotePath, 0);
+            startFileTransfer(1, getLocalPath(remotePath), remotePath);
         }
     })->setEnabled(selectedCount > 0 && !isDir);
 
@@ -795,8 +772,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
             return;
 
         for (const QString &remotePath : pendingDownloadPaths) {
-            auto localPath = getLocalPath(remotePath);
-            startFileTransfer(1, localPath, remotePath, 0);
+            startFileTransfer(1, getLocalPath(remotePath), remotePath);
         }
     });
 
@@ -893,17 +869,12 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
 
     for (const QUrl &url : event->mimeData()->urls()) {
         auto localPath = url.toLocalFile();
-        auto size = Tools::getFileSize(localPath);
-        if (size == -1) {
-            qCriticalEx() << localPath << "=>" << targetPath;
-            continue;
-        }
 
         qDebugEx() << localPath << "=>" << targetPath;
 
         auto dir = isDir ? targetPath : targetPath.left(targetPath.lastIndexOf('/'));
 
-        startFileTransfer(2, localPath, dir + QString("/") + QFileInfo(localPath).fileName(), size);
+        startFileTransfer(2, localPath, dir + QString("/") + QFileInfo(localPath).fileName());
     }
 
     event->accept();
