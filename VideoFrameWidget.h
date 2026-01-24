@@ -11,6 +11,7 @@
 #include <QBuffer>
 #include <QPainter>
 #include <QMouseEvent>
+#include <QTimer>
 
 class VideoFrameWidget : public QGraphicsView
 {
@@ -50,6 +51,11 @@ public:
             qCriticalEx() << "errorOccurred" << error << errorString;
         });
 
+        layoutTimer = new QTimer(this);
+        layoutTimer->setSingleShot(true);
+        layoutTimer->setInterval(10);
+        connect(layoutTimer, &QTimer::timeout, this, &VideoFrameWidget::applyVideoSettings);
+
         EventHub::on(this, "orientation", [this](const QJsonValue &data, DeviceConnection* connection) {
             if (this->connection != connection)
                 return;
@@ -87,53 +93,35 @@ public:
     QMediaPlayer* const mediaPlayer = new QMediaPlayer(this);
 
 protected:
-    void dragEnterEvent(QDragEnterEvent *event) override {
-        event->ignore();
-    }
-
-    void dragMoveEvent(QDragMoveEvent *event) override {
-        event->ignore();
-    }
-
-    void dropEvent(QDropEvent *event) override {
-        event->ignore();
-    }
-
-    void mousePressEvent(QMouseEvent *event) override {
-        event->ignore(); 
-    }
-
-    void mouseMoveEvent(QMouseEvent *event) override {
-        event->ignore();
-    }
-
-    void mouseReleaseEvent(QMouseEvent *event) override {
-        event->ignore();
-    }
-
-    void paintEvent(QPaintEvent *event) override {
-        QGraphicsView::paintEvent(event);
-
-        if (!hasPainted) {
-            hasPainted = true;
-            
-            QResizeEvent re(size(), size());
-            resizeEvent(&re);
-        }
-    }
+    void dragEnterEvent(QDragEnterEvent *event) override { event->ignore(); }
+    void dragMoveEvent(QDragMoveEvent *event) override { event->ignore(); }
+    void dropEvent(QDropEvent *event) override { event->ignore(); }
+    void mousePressEvent(QMouseEvent *event) override { event->ignore(); }
+    void mouseMoveEvent(QMouseEvent *event) override { event->ignore(); }
+    void mouseReleaseEvent(QMouseEvent *event) override { event->ignore(); }
     
     void resizeEvent(QResizeEvent *event) override
     {
         QGraphicsView::resizeEvent(event);
 
-         if (!hasPainted)
+        // --- 防抖动逻辑 ---
+        // 每次 resize 被触发时，重新启动定时器。
+        // 如果布局调整连续触发了 4 次，前 3 次的计时会被重置。
+        // 只有最后一次稳定下来后，定时器才会耗尽并执行 applyVideoSettings。
+        layoutTimer->start();
+    }
+
+private:
+    void applyVideoSettings()
+    {
+        if (!isVisible() || width() <= 0 || height() <= 0)
             return;
 
         bool isPortrait = connection->deviceInfo->orientation == 1 || connection->deviceInfo->orientation == 2;
         auto aspectRatio = isPortrait ? (float)connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth : (float)connection->deviceInfo->screenWidth / connection->deviceInfo->screenHeight;
 
         // 宽度保持 16 字节对齐（很多编码器的硬性要求）
-        int alignedWidth = (event->size().width() + 15) & ~15;
+        int alignedWidth = (width() + 15) & ~15;
         int alignedHeight = qRound((float)alignedWidth * aspectRatio);
 
         // 高度强制设为偶数 (对齐到 2)
@@ -169,7 +157,7 @@ protected:
             {"quality", videoQuality}
         }));
 
-        QSize containerSize = event->size();
+        QSize containerSize = size();
         QSize sourceSize(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight);
 
         QSizeF targetSize = (isPortrait ? sourceSize : sourceSize.transposed()).scaled(containerSize, Qt::KeepAspectRatio);
@@ -185,8 +173,6 @@ protected:
     }
 
     DeviceConnection* connection;
-
-private:
     QGraphicsVideoItem* videoItem;
-    bool hasPainted = false;
+    QTimer* layoutTimer;
 };
