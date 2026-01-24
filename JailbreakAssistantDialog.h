@@ -559,7 +559,7 @@ public:
         containerLayout->setContentsMargins(20, 20, 20, 20);
         containerLayout->setSpacing(0);
 
-        QString url = "https://gitee.com/RemotePro/RemotePro/releases/download/v2/TrollRestore";
+        QString url = "https://gitee.com/RemotePro/RemotePro/releases/download/v3/TrollRestore";
 
 #ifdef Q_OS_WIN
         url.append(".exe");
