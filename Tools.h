@@ -13,6 +13,8 @@
 #include <QLayout>
 #include <QWidget>
 #include <QToolTip>
+#include <QOperatingSystemVersion>
+#include <QSettings>
 
 using namespace qrcodegen;
 
@@ -169,5 +171,32 @@ public:
         auto os = QOperatingSystemVersion::current();
         // Windows 11 内核版本仍是 10.0，但 Build Number 至少是 22000
         return os.majorVersion() == 10 && os.microVersion() >= 22000;
+    }
+
+    static bool isAppleMobileDeviceSupportInstalled()
+    {
+        // 需要检查两个位置，因为在64位系统上，32位程序和64位程序的注册表位置不同
+        QStringList registryPaths = {
+            "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+            "HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall"
+        };
+
+        for (const QString &path : registryPaths) {
+            QSettings settings(path, QSettings::NativeFormat);
+            QStringList groups = settings.childGroups();
+
+            for (const QString &group : groups) {
+                settings.beginGroup(group);
+                QString displayName = settings.value("DisplayName").toString();
+                settings.endGroup();
+
+                if (displayName.contains("Apple Mobile Device", Qt::CaseInsensitive)) {
+                    qDebugEx() << "Found installed software:" << displayName;
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 };

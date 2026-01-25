@@ -1,6 +1,7 @@
 #pragma once
 
 #include "global.h"
+#include "Tools.h"
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -92,7 +93,10 @@ private:
 
         mainLayout->addWidget(defaultBox);
 
-        QStringList sideBarMenu{"🔗设备连接", "⚙️设置", "💡帮助", "📲越狱助手", "📱手机软件源", "⏳续费", "🤝换绑"};
+        QStringList sideBarMenu{"🔗设备连接", "⚙️设置", "💡帮助", "📲越狱助手", "📱手机软件源", "💿USB驱动", "⏳续费", "🤝换绑"};
+
+        if (Tools::isAppleMobileDeviceSupportInstalled())
+            sideBarMenu.removeOne("💿USB驱动");
 
         if (QFile::exists(qApp->applicationDirPath() + "/support.jpg"))
             sideBarMenu.append("💬客服");
