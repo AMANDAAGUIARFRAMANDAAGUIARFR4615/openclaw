@@ -721,27 +721,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
 
         bool isUsbSetting = getTab().getConnectionMethod() == 0;
-
-        auto subnetList = settings->value("subnets").toStringList();
-
-        for (const QString& ip : localIPs) {
-            QString subnet = NetworkUtils::getSubnet(ip);
-            if (!subnetList.contains(subnet))
-                subnetList << subnet;
-        }
-
         const auto& ips = TcpServer::getInstance()->getConnectedIps();
-        for (const auto &subnet : subnetList) {
-            auto currentLocalIP = localIPs.first();
-            
-            for (const auto& ip : localIPs) {
-                if (NetworkUtils::getSubnet(ip) == subnet) {
-                    currentLocalIP = ip;
-                    break;
-                }
-            }
-
-            const auto& subnetIPs = NetworkUtils::getSubnetIPs(subnet);
+        for (const auto& localIP : localIPs) {
+            const auto& subnetIPs = NetworkUtils::getSubnetIPs(localIP);
             for (const auto& ip : std::as_const(subnetIPs)) {
                 if (ips.contains(ip))
                     continue;
@@ -749,9 +731,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 if (DeviceInfo::isLockByOther(ip))
                     continue;
 
-                auto deviceInfo = DeviceInfo::getDevice(ip);
+                const auto& deviceInfo = DeviceInfo::getDevice(ip);
                 if (!deviceInfo || deviceInfo->connection->type == DeviceConnection::Usb && !isUsbSetting)
-                    udpTransport->sendData(TcpServer::getInstance()->getHostInfo(currentLocalIP), ip, 32838);
+                    udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
             }
         }
     };
@@ -982,17 +964,6 @@ void MainWindow::addItem(DeviceConnection* connection)
     connection->send("server", QJsonObject{{"accountId", Account::getInstance()->id}, {"ip", Config::SERVER_IP}, {"port", Config::SERVER_PORT}});
 
     auto deviceInfo = connection->deviceInfo;
-
-    auto subnet = NetworkUtils::getSubnet(deviceInfo->localIp);
-    
-    if (!subnet.isEmpty()) {
-        auto subnetList = settings->value("subnets").toStringList();
-
-        if (!subnetList.contains(subnet)) {
-            subnetList.append(subnet);
-            settings->setValue("subnets", subnetList);
-        }
-    }
 
     auto player = new DeviceWidget(connection, deviceInfo);
 
