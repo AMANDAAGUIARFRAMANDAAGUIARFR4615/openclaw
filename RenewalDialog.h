@@ -305,7 +305,7 @@ protected:
 
     void loadDeviceTable(int bit)
     {
-        auto devices = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+        auto devices = DeviceInfo::getDevices(1U << bit);
 
         tableWidget->blockSignals(true);
 

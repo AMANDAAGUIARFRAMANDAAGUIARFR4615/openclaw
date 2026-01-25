@@ -34,8 +34,10 @@ public:
         lockedStatus(json["lockedStatus"].toBool()),
         version(json["version"].toString()) {
 
-        groupMask = settings->value(deviceId + "/groupMask", 0u).toUInt();
+        groupMask = settings->value(deviceId + "/groupMask", 1u).toUInt();
         geometry = settings->value(deviceId + "/geometry").toRect();
+
+        settings->setValue(deviceId + "/deviceName", deviceName);
 
         allDevices.append(this);
         devices.insert(deviceId, this);
@@ -101,9 +103,6 @@ public:
 
     static QList<DeviceInfo*> getDevices(quint32 mask)
     {
-        if (!mask)
-            return allDevices;
-
         QList<DeviceInfo*> result;
         for (const auto& deviceInfo : std::as_const(allDevices)) {
             if (deviceInfo->groupMask & mask)
@@ -175,7 +174,7 @@ public:
 
     int orientation;
     bool lockedStatus;
-    quint32 groupMask = 0;
+    quint32 groupMask;
     QRect geometry;
     SafeObject<qint64> expireAt;
 

@@ -215,7 +215,7 @@ private:
         if (filterComboBox->currentIndex() < 0) return;
         
         auto bitMask = filterComboBox->currentData().toUInt();
-        auto devices = DeviceInfo::getDevices(bitMask == 0 ? 0 : (1U << bitMask));
+        auto devices = DeviceInfo::getDevices(1U << bitMask);
         
         // 获取对面表格已经选中的设备ID
         QSet<QString> lockedDeviceIds;

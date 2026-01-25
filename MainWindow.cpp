@@ -634,7 +634,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     webSocketClient->on("online_devices", [this](const QJsonValue &data, AckCallback callback) {
         auto& tab = getTab();
-        const auto& devices = DeviceInfo::getDevices(tab.bit == 0 ? 0 : (1U << tab.bit));
+        const auto& devices = DeviceInfo::getDevices(1U << tab.bit);
 
         QJsonArray jsonArray;
 
@@ -929,7 +929,7 @@ void MainWindow::relayoutDevices()
     const auto scale = tab.scale == 0 ? 1 : tab.scale / 100.0f;
     const auto isLandscape = tab.getIsLandscape();
     
-    const auto& devicesInGroup = DeviceInfo::getDevices(bit == 0 ? 0 : (1U << bit));
+    const auto& devicesInGroup = DeviceInfo::getDevices(1U << bit);
     
     auto frameItemHeight = frameItemWidth * DeviceInfo::getOptimalAspectRatio(devicesInGroup);
     int targetW = (isLandscape ? frameItemHeight : frameItemWidth) * scale;
