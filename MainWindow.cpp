@@ -918,6 +918,8 @@ void MainWindow::relayoutDevices()
     int targetH = (isLandscape ? frameItemWidth : frameItemHeight) * scale;
     QSize targetSize(targetW, targetH);
 
+    QVector<int> tabDeviceCounts(tabs.size(), 0);
+
     for (int i = 0; i < deviceListWidget->count(); ++i) {
         const auto& item = deviceListWidget->item(i);
         
@@ -929,31 +931,16 @@ void MainWindow::relayoutDevices()
             item->setSizeHint(targetSize + QSize(0, 46));
             deviceWidget->setFixedSize(targetSize + QSize(0, 46));
         }
+
+        for (int i = 0; i < tabs.size(); ++i) {
+            if (deviceWidget->deviceInfo->groupMask & (1U << tabs[i].bit))
+                tabDeviceCounts[i]++;
+        }
     }
 
-    static int deviceCount = 0;
-
-    if (deviceListWidget->count() != deviceCount) {
-        QVector<int> tabDeviceCounts(tabs.size(), 0);
-
-        for (int i = 0; i < deviceListWidget->count(); ++i) {
-            const auto& item = deviceListWidget->item(i);
-
-            const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
-
-            for (int i = 0; i < tabs.size(); ++i) {
-                if (deviceWidget->deviceInfo->groupMask & (1U << tabs[i].bit))
-                    tabDeviceCounts[i]++;
-            }
-        }
-
-        for (int i = 0; i < tabWidget->count(); ++i) {
-            const auto& tab = tabs[i];
-
-            tabWidget->setTabText(i, QString("%1 [%2]").arg(tab.name).arg(tabDeviceCounts[i]));
-        }
-
-        deviceCount = deviceListWidget->count();
+    for (int i = 0; i < tabWidget->count(); ++i) {
+        const auto& tab = tabs[i];
+        tabWidget->setTabText(i, QString("%1 [%2]").arg(tab.name).arg(tabDeviceCounts[i]));
     }
 
     // videoVisibilityManager->refresh();
