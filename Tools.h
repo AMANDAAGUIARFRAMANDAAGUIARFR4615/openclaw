@@ -175,6 +175,7 @@ public:
 
     static bool isAppleMobileDeviceSupportInstalled()
     {
+#ifdef Q_OS_WIN
         // 需要检查两个位置，因为在64位系统上，32位程序和64位程序的注册表位置不同
         QStringList registryPaths = {
             "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
@@ -198,5 +199,8 @@ public:
         }
 
         return false;
+#else
+        return true;
+#endif
     }
 };
