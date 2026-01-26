@@ -187,9 +187,17 @@ public:
                             __uuidof(INetFwPolicy2), (void**)&pNetFwPolicy2);
 
         if (SUCCEEDED(hr)) {
-            hr = pNetFwPolicy2->get_CurrentProfileTypes(&currentProfileMask);
-            // 1=Domain, 2=Private, 4=Public. 如果是 4 或 6(2+4)，说明系统认为你是公用网络
-            qInfoEx() << "网络配置类型:" << currentProfileMask;
+            long rawMask = 0;
+            hr = pNetFwPolicy2->get_CurrentProfileTypes(&rawMask);
+            // 1=Domain, 2=Private, 4=Public
+            qInfoEx() << "网络配置掩码:" << rawMask;
+
+            if (rawMask & NET_FW_PROFILE2_DOMAIN)
+                currentProfileMask = NET_FW_PROFILE2_DOMAIN;
+            else if (rawMask & NET_FW_PROFILE2_PRIVATE)
+                currentProfileMask = NET_FW_PROFILE2_PRIVATE;
+            else 
+                currentProfileMask = rawMask;
         }
 
         if (SUCCEEDED(hr)) {
