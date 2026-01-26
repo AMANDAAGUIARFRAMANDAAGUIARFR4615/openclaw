@@ -231,7 +231,11 @@ public:
         }
 
         if (SUCCEEDED(hr) && pVariant) {
-            QString currentAppPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath()).toLower();
+            // --- 获取当前程序的标准化长路径 ---
+            QString rawPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+            WCHAR longPathBuffer[MAX_PATH] = { 0 };
+            GetLongPathNameW((LPCWSTR)rawPath.utf16(), longPathBuffer, MAX_PATH);
+            QString currentAppPath = QString::fromWCharArray(longPathBuffer).toLower();
             
             ULONG cFetched = 0;
             VARIANT var;
@@ -246,7 +250,14 @@ public:
                     // Windows Server 规则常包含环境变量(%SystemDrive%等)，必须展开否则匹配失败
                     WCHAR expandedPath[MAX_PATH] = { 0 };
                     ExpandEnvironmentStringsW(bstrAppPath, expandedPath, MAX_PATH);
-                    QString ruleAppPath = QString::fromWCharArray(expandedPath).toLower();
+                    
+                    // --- 对规则路径也进行长路径标准化 ---
+                    WCHAR ruleLongPathBuffer[MAX_PATH] = { 0 };
+                    if (GetLongPathNameW(expandedPath, ruleLongPathBuffer, MAX_PATH) == 0) {
+                        // 如果转换失败（例如文件不存在），则直接使用展开后的路径
+                        wcscpy_s(ruleLongPathBuffer, expandedPath);
+                    }
+                    QString ruleAppPath = QString::fromWCharArray(ruleLongPathBuffer).toLower();
                     
                     SysFreeString(bstrAppPath);
 
