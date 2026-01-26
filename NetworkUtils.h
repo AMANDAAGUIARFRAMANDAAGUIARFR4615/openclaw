@@ -243,28 +243,37 @@ public:
                 BSTR bstrAppPath = nullptr;
 
                 if (SUCCEEDED(pFwRule->get_ApplicationName(&bstrAppPath)) && bstrAppPath != nullptr) {
-                    QString ruleAppPath = QString::fromWCharArray(bstrAppPath).toLower();
+                    // Windows Server 规则常包含环境变量(%SystemDrive%等)，必须展开否则匹配失败
+                    WCHAR expandedPath[MAX_PATH] = { 0 };
+                    ExpandEnvironmentStringsW(bstrAppPath, expandedPath, MAX_PATH);
+                    QString ruleAppPath = QString::fromWCharArray(expandedPath).toLower();
+                    
                     SysFreeString(bstrAppPath);
 
                     if (ruleAppPath == currentAppPath) {
-                        VARIANT_BOOL bEnabled;
-                        pFwRule->get_Enabled(&bEnabled);
+                        // 只检查入站(Inbound)规则
+                        NET_FW_RULE_DIRECTION dir;
+                        if (SUCCEEDED(pFwRule->get_Direction(&dir)) && dir == NET_FW_RULE_DIR_IN) {
+                            
+                            VARIANT_BOOL bEnabled;
+                            pFwRule->get_Enabled(&bEnabled);
 
-                        if (bEnabled == VARIANT_TRUE) {
-                            NET_FW_ACTION action;
-                            long ruleProfiles = 0;
-                            pFwRule->get_Action(&action);
-                            pFwRule->get_Profiles(&ruleProfiles);
+                            if (bEnabled == VARIANT_TRUE) {
+                                NET_FW_ACTION action;
+                                long ruleProfiles = 0;
+                                pFwRule->get_Action(&action);
+                                pFwRule->get_Profiles(&ruleProfiles);
 
-                            // 检查这条规则适用的网络 (ruleProfiles) 是否包含当前的网络环境 (currentProfileMask)
-                            // 只有当规则适用于“当前环境”时，我们才关心它是 Allow 还是 Block
-                            if (ruleProfiles & currentProfileMask) {
-                                if (action == NET_FW_ACTION_BLOCK) {
-                                    hasBlockRule = true;
-                                    VariantClear(&var);
-                                    break; // 发现针对当前网络的阻止规则，直接结束
-                                } else if (action == NET_FW_ACTION_ALLOW) {
-                                    hasAllowRule = true;
+                                // 检查这条规则适用的网络 (ruleProfiles) 是否包含当前的网络环境 (currentProfileMask)
+                                // 只有当规则适用于“当前环境”时，我们才关心它是 Allow 还是 Block
+                                if (ruleProfiles & currentProfileMask) {
+                                    if (action == NET_FW_ACTION_BLOCK) {
+                                        hasBlockRule = true;
+                                        VariantClear(&var);
+                                        break; // 发现针对当前网络的阻止规则，直接结束
+                                    } else if (action == NET_FW_ACTION_ALLOW) {
+                                        hasAllowRule = true;
+                                    }
                                 }
                             }
                         }
