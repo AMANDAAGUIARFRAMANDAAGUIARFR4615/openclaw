@@ -98,7 +98,7 @@ private:
         if (Tools::isAppleMobileDeviceSupportInstalled())
             sideBarMenu.removeOne("💿USB驱动");
 
-        if (QFile::exists(qApp->applicationDirPath() + "/support.jpg"))
+        if (QFile::exists(qApp->applicationDirPath() + "/imageformats/qpng.dll"))
             sideBarMenu.append("💬客服");
 
 #ifndef QT_NO_DEBUG_OUTPUT
