@@ -44,6 +44,7 @@
 #include <QToolButton>
 #include <QActionGroup>
 #include <QToolTip>
+#include <QDesktopServices>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
@@ -325,6 +326,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
         }
 
+        if (title == "USB驱动") {
+            auto reply = QMessageBox::question(this, "需安装 iTunes",
+                                  "检测到您尚未安装 iTunes（或版本过低）。\n\n"
+                                  "将跳转至浏览器下载安装包，\n"
+                                  "下载完成后按默认选项安装即可。",
+                                  QMessageBox::Yes | QMessageBox::No);
+
+            if (reply == QMessageBox::Yes) {
+                bool success = QDesktopServices::openUrl(QUrl("https://www.apple.com/itunes/download/win64"));
+                if (!success)
+                    QMessageBox::critical(this, "错误", "无法打开浏览器，请手动访问 https://www.apple.com/itunes/download/win64 下载");
+            }
+            
+            return;
+        }
+        
         if (title == "续费") {
             RenewalDialog dialog(this);
             dialog.exec();
