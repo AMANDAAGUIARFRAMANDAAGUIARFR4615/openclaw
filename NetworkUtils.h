@@ -169,7 +169,7 @@ public:
 
     static bool isCurrentNetworkAllowed()
     {
-    #ifdef Q_OS_WIN
+#ifdef Q_OS_WIN
         HRESULT hr = S_OK;
         INetFwPolicy2 *pNetFwPolicy2 = nullptr;
         INetFwRules *pFwRules = nullptr;
@@ -286,15 +286,34 @@ public:
             pEnumerator->Release();
         }
 
+        // --- 步骤 D: 最终判定 ---
+        bool result = false;
+        if (hasBlockRule) {
+            result = false;
+        } else if (hasAllowRule) {
+            result = true;
+        } else {
+            // 如果既没有匹配的 Allow 规则，也没有 Block 规则
+            // 则需要检查当前网络环境下的“默认入站动作”
+            NET_FW_ACTION defaultAction = NET_FW_ACTION_BLOCK;
+            // 只要当前激活的 Profile 中有一个是默认阻止的，通常系统表现就是阻止
+            if (currentProfileMask & NET_FW_PROFILE2_DOMAIN) 
+                pNetFwPolicy2->get_DefaultInboundAction(NET_FW_PROFILE2_DOMAIN, &defaultAction);
+            else if (currentProfileMask & NET_FW_PROFILE2_PRIVATE)
+                pNetFwPolicy2->get_DefaultInboundAction(NET_FW_PROFILE2_PRIVATE, &defaultAction);
+            else if (currentProfileMask & NET_FW_PROFILE2_PUBLIC)
+                pNetFwPolicy2->get_DefaultInboundAction(NET_FW_PROFILE2_PUBLIC, &defaultAction);
+
+            result = defaultAction == NET_FW_ACTION_ALLOW;
+        }
+
         if (pFwRules) pFwRules->Release();
         if (pNetFwPolicy2) pNetFwPolicy2->Release();
         CoUninitialize();
 
-        // --- 步骤 D: 最终判定 ---
-        if (hasBlockRule) return false;
-        return hasAllowRule; 
-    #else
+        return result; 
+#else
         return true;
-    #endif
+#endif
     }
 };
