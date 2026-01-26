@@ -181,16 +181,15 @@ public:
         long currentProfileMask = 0; // 用于存储当前激活的网络类型（公用/专用/域）
 
         hr = CoInitializeEx(0, COINIT_APARTMENTTHREADED);
-        if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
-            return false;
-        }
+        if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) return false;
 
         hr = CoCreateInstance(__uuidof(NetFwPolicy2), nullptr, CLSCTX_INPROC_SERVER, 
                             __uuidof(INetFwPolicy2), (void**)&pNetFwPolicy2);
 
         if (SUCCEEDED(hr)) {
-            // 获取当前激活的网络配置文件类型，比如 NET_FW_PROFILE2_PUBLIC 或 NET_FW_PROFILE2_PRIVATE
             hr = pNetFwPolicy2->get_CurrentProfileTypes(&currentProfileMask);
+            // 1=Domain, 2=Private, 4=Public. 如果是 4 或 6(2+4)，说明系统认为你是公用网络
+            qInfoEx() << "网络配置类型:" << currentProfileMask;
         }
 
         if (SUCCEEDED(hr)) {
@@ -202,9 +201,8 @@ public:
             // 检查特定 Profile 是否在当前掩码中，且是否开启了防火墙
             auto checkProfile = [&](NET_FW_PROFILE_TYPE2 type) {
                 if (currentProfileMask & type) {
-                    if (SUCCEEDED(pNetFwPolicy2->get_FirewallEnabled(type, &fwEnabled)) && fwEnabled == VARIANT_TRUE) {
+                    if (SUCCEEDED(pNetFwPolicy2->get_FirewallEnabled(type, &fwEnabled)) && fwEnabled == VARIANT_TRUE)
                         isFirewallOnForCurrent = true;
-                    }
                 }
             };
 
@@ -293,18 +291,25 @@ public:
         } else if (hasAllowRule) {
             result = true;
         } else {
-            // 如果既没有匹配的 Allow 规则，也没有 Block 规则
-            // 则需要检查当前网络环境下的“默认入站动作”
-            NET_FW_ACTION defaultAction = NET_FW_ACTION_BLOCK;
-            // 只要当前激活的 Profile 中有一个是默认阻止的，通常系统表现就是阻止
-            if (currentProfileMask & NET_FW_PROFILE2_DOMAIN) 
-                pNetFwPolicy2->get_DefaultInboundAction(NET_FW_PROFILE2_DOMAIN, &defaultAction);
-            else if (currentProfileMask & NET_FW_PROFILE2_PRIVATE)
-                pNetFwPolicy2->get_DefaultInboundAction(NET_FW_PROFILE2_PRIVATE, &defaultAction);
-            else if (currentProfileMask & NET_FW_PROFILE2_PUBLIC)
-                pNetFwPolicy2->get_DefaultInboundAction(NET_FW_PROFILE2_PUBLIC, &defaultAction);
+            // 如果没有匹配的规则，我们需要检查所有当前激活的 Profile 的默认行为
+            // 只要有一个 Profile 是 Block，结果就应该是 Block（保守策略）
+            bool anyProfileBlocks = false;
+            NET_FW_ACTION defaultAction;
 
-            result = defaultAction == NET_FW_ACTION_ALLOW;
+            auto checkDefaultAction = [&](NET_FW_PROFILE_TYPE2 type) {
+                if (currentProfileMask & type) {
+                    if (SUCCEEDED(pNetFwPolicy2->get_DefaultInboundAction(type, &defaultAction))) {
+                        if (defaultAction != NET_FW_ACTION_ALLOW)
+                            anyProfileBlocks = true;
+                    }
+                }
+            };
+
+            checkDefaultAction(NET_FW_PROFILE2_DOMAIN);
+            checkDefaultAction(NET_FW_PROFILE2_PRIVATE);
+            checkDefaultAction(NET_FW_PROFILE2_PUBLIC);
+
+            result = !anyProfileBlocks;
         }
 
         if (pFwRules) pFwRules->Release();
