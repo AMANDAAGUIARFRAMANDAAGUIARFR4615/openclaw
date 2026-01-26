@@ -227,11 +227,8 @@ protected:
 
     void onAction()
     {
-        if (!NetworkUtils::isFirewallPrivateAllowed()) {
-            if (Tools::isWindows11())
-                setStatus("防火墙阻止了连接，请允许专用网络访问。【在显示更多里勾选专用网络】\n如果已经关闭弹窗，请换到其他路径再次运行程序");
-            else
-                setStatus("防火墙阻止了连接，请允许专用网络访问。【勾选专用网络】\n如果已经关闭弹窗，请换到其他路径再次运行程序");
+        if (!NetworkUtils::isCurrentNetworkAllowed()) {
+            setStatus("防火墙阻止了连接，请在弹窗中点击允许访问\n如果已经关闭弹窗，请换到其他路径再次运行程序");
             return;
         }
 

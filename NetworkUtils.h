@@ -167,38 +167,56 @@ public:
         return ipList;
     }
 
-    static bool isFirewallPrivateAllowed()
+    static bool isCurrentNetworkAllowed()
     {
-#ifdef Q_OS_WIN
+    #ifdef Q_OS_WIN
         HRESULT hr = S_OK;
         INetFwPolicy2 *pNetFwPolicy2 = nullptr;
         INetFwRules *pFwRules = nullptr;
         IUnknown *pEnumerator = nullptr;
         IEnumVARIANT *pVariant = nullptr;
         
-        bool hasAllowRule = false; // 是否发现了允许规则
-        bool hasBlockRule = false; // 是否发现了阻止规则
+        bool hasAllowRule = false;
+        bool hasBlockRule = false;
+        long currentProfileMask = 0; // 用于存储当前激活的网络类型（公用/专用/域）
 
-        // 1. 初始化 COM
         hr = CoInitializeEx(0, COINIT_APARTMENTTHREADED);
         if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
             return false;
         }
 
-        // 2. 创建防火墙策略实例
         hr = CoCreateInstance(__uuidof(NetFwPolicy2), nullptr, CLSCTX_INPROC_SERVER, 
                             __uuidof(INetFwPolicy2), (void**)&pNetFwPolicy2);
 
         if (SUCCEEDED(hr)) {
-            // --- 步骤 A: 检查防火墙总开关 ---
-            // 如果专用网络(Private)的防火墙被彻底关闭了，那么程序自然是有权限的
+            // 获取当前激活的网络配置文件类型，比如 NET_FW_PROFILE2_PUBLIC 或 NET_FW_PROFILE2_PRIVATE
+            hr = pNetFwPolicy2->get_CurrentProfileTypes(&currentProfileMask);
+        }
+
+        if (SUCCEEDED(hr)) {
+            // --- 步骤 A: 检查当前网络类型的防火墙总开关 ---
+            // 我们只关心当前网络类型的防火墙是否开启
+            bool isFirewallOnForCurrent = false;
             VARIANT_BOOL fwEnabled;
-            if (SUCCEEDED(pNetFwPolicy2->get_FirewallEnabled(NET_FW_PROFILE2_PRIVATE, &fwEnabled))) {
-                if (fwEnabled == VARIANT_FALSE) {
-                    pNetFwPolicy2->Release();
-                    CoUninitialize();
-                    return true; // 防火墙没开，直接允许
+
+            // 检查特定 Profile 是否在当前掩码中，且是否开启了防火墙
+            auto checkProfile = [&](NET_FW_PROFILE_TYPE2 type) {
+                if (currentProfileMask & type) {
+                    if (SUCCEEDED(pNetFwPolicy2->get_FirewallEnabled(type, &fwEnabled)) && fwEnabled == VARIANT_TRUE) {
+                        isFirewallOnForCurrent = true;
+                    }
                 }
+            };
+
+            checkProfile(NET_FW_PROFILE2_DOMAIN);
+            checkProfile(NET_FW_PROFILE2_PRIVATE);
+            checkProfile(NET_FW_PROFILE2_PUBLIC);
+
+            // 如果当前网络环境的防火墙压根没开，那就直接允许
+            if (!isFirewallOnForCurrent) {
+                pNetFwPolicy2->Release();
+                CoUninitialize();
+                return true; 
             }
 
             // --- 步骤 B: 获取规则集合 ---
@@ -219,47 +237,40 @@ public:
             VARIANT var;
             VariantInit(&var);
 
-            // --- 步骤 C: 遍历所有规则 (核心逻辑修复) ---
+            // --- 步骤 C: 遍历所有规则 ---
             while (pVariant->Next(1, &var, &cFetched) == S_OK) {
                 INetFwRule *pFwRule = (INetFwRule*)var.pdispVal;
                 BSTR bstrAppPath = nullptr;
 
-                // 获取规则关联的程序路径
                 if (SUCCEEDED(pFwRule->get_ApplicationName(&bstrAppPath)) && bstrAppPath != nullptr) {
                     QString ruleAppPath = QString::fromWCharArray(bstrAppPath).toLower();
                     SysFreeString(bstrAppPath);
 
-                    // 只有路径匹配才进行深入检查
                     if (ruleAppPath == currentAppPath) {
                         VARIANT_BOOL bEnabled;
                         pFwRule->get_Enabled(&bEnabled);
 
-                        // 只有启用的规则才有效
                         if (bEnabled == VARIANT_TRUE) {
                             NET_FW_ACTION action;
-                            long lProfiles = 0;
+                            long ruleProfiles = 0;
                             pFwRule->get_Action(&action);
-                            pFwRule->get_Profiles(&lProfiles);
+                            pFwRule->get_Profiles(&ruleProfiles);
 
-                            // 检查该规则是否适用于专用网络(Private)
-                            // 注意：Profile 是位掩码，必须用 & 运算
-                            if (lProfiles & NET_FW_PROFILE2_PRIVATE) {
+                            // 检查这条规则适用的网络 (ruleProfiles) 是否包含当前的网络环境 (currentProfileMask)
+                            // 只有当规则适用于“当前环境”时，我们才关心它是 Allow 还是 Block
+                            if (ruleProfiles & currentProfileMask) {
                                 if (action == NET_FW_ACTION_BLOCK) {
-                                    // 发现了一条针对 Private 网络的【阻止】规则
                                     hasBlockRule = true;
-                                    // 根据 Windows 逻辑，Block 优先级最高，一旦发现可以直接认定为不通
-                                    // 但为了代码稳健，我们可以继续循环或者直接 break
                                     VariantClear(&var);
-                                    break; 
+                                    break; // 发现针对当前网络的阻止规则，直接结束
                                 } else if (action == NET_FW_ACTION_ALLOW) {
-                                    // 发现了一条针对 Private 网络的【允许】规则
                                     hasAllowRule = true;
                                 }
                             }
                         }
                     }
                 }
-                VariantClear(&var); // 释放当前项
+                VariantClear(&var);
             }
             
             pVariant->Release();
@@ -271,13 +282,10 @@ public:
         CoUninitialize();
 
         // --- 步骤 D: 最终判定 ---
-        // 必须满足：有允许规则 且 没有阻止规则
-        if (hasBlockRule)
-            return false; // 被显式阻止
-
-        return hasAllowRule; // 如果有允许规则则通过，否则(没弹窗/没规则)为不通
-#else
+        if (hasBlockRule) return false;
+        return hasAllowRule; 
+    #else
         return true;
-#endif
+    #endif
     }
 };
