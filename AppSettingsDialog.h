@@ -71,6 +71,23 @@ public:
         return result;
     }
 
+    QHash<QString, QKeySequence> getShortcuts(const QString &key) {
+        QHash<QString, QKeySequence> result;
+
+        QJsonArray array = settings->value(key).toJsonArray();
+        for (const auto &val : array) {
+            QJsonObject obj = val.toObject();
+            QString name = obj["name"].toString();
+            QString shortcut = obj["shortcut"].toString();
+            bool enable = obj["enable"].toBool();
+
+            if (enable)
+                result.insert(name, QKeySequence(shortcut));
+        }
+        
+        return result;
+    }
+
 private:
     QHash<QString, QStringList> m_listDefaults;
     QHash<QString, int> m_intDefaults;
