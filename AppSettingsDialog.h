@@ -14,6 +14,9 @@
 #include <QJsonObject>
 #include <QGroupBox>
 #include <QToolTip>
+#include <QKeySequenceEdit>
+#include <QDialogButtonBox>
+#include <QPushButton>
 
 class AppSettingsDialog : public QDialog
 {
@@ -108,7 +111,7 @@ private:
         if (qEnvironmentVariableIsSet("FROM_QT_CREATOR"))
             sideBarMenu.append("🛠️开发者");
 
-        addSortableGroup(mainLayout, "sideBarMenu", "左侧栏 (拖拽调整)", sideBarMenu);
+        addSortableGroup(mainLayout, "sideBarMenu", "左侧栏 (拖拽调整顺序)", sideBarMenu);
 
         QStringList windowMenuItems = {
             "🏠主屏幕", "🎛️控制中心", "↕️应用切换", "🧹清理应用", "📁文件管理", 
@@ -124,10 +127,10 @@ private:
         windowShortcuts["🔈音量-"] = "Ctrl+Down";
         windowShortcuts["📌置顶"] = "Ctrl+T";
 
-        addSortableGroup(mainLayout, "windowMenu", "投屏窗口右键菜单 (拖拽调整)", 
+        addSortableGroup(mainLayout, "windowMenu", "投屏窗口右键菜单 (拖拽调整顺序 / 双击修改快捷键)", 
             windowMenuItems, windowShortcuts);
 
-        addSortableGroup(mainLayout, "tabBarMenu", "分组标签页右键菜单 (拖拽调整)", 
+        addSortableGroup(mainLayout, "tabBarMenu", "分组标签页右键菜单 (拖拽调整顺序)", 
             {"重命名分组", "添加分组", "删除分组", "投屏显示", "视频清晰度", "连接方式", "自动连接局域网设备", "自动连接USB设备"});
     }
 
@@ -155,15 +158,56 @@ private:
         listWidget->setDragDropMode(QAbstractItemView::InternalMove);
         listWidget->setDefaultDropAction(Qt::MoveAction);
         listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+        
+        if (!defaultShortcuts.isEmpty()) {
+            listWidget->setToolTip("双击项目即可修改快捷键");
+            connect(listWidget, &QListWidget::itemDoubleClicked, this, [=](QListWidgetItem *item) {
+                QString name = item->data(Qt::UserRole).toString();
+                QString shortcut = item->data(Qt::UserRole + 1).toString();
 
-        auto addItem = [&](const QString &name, bool checked, const QString &shortcutStr) {
+                QDialog dialog(this);
+                dialog.setWindowTitle("设置快捷键 - " + name);
+                dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
+                dialog.resize(300, 120);
+
+                QVBoxLayout *vLayout = new QVBoxLayout(&dialog);
+                vLayout->addWidget(new QLabel("请按下键盘输入新的快捷键:", &dialog));
+
+                QKeySequenceEdit *keyEdit = new QKeySequenceEdit(QKeySequence(shortcut), &dialog);
+                vLayout->addWidget(keyEdit);
+
+                QHBoxLayout *hLayout = new QHBoxLayout();
+                QPushButton *clearButton = new QPushButton("清除快捷键", &dialog);
+                clearButton->setFocusPolicy(Qt::NoFocus); 
+                connect(clearButton, &QPushButton::clicked, keyEdit, &QKeySequenceEdit::clear);
+                
+                QDialogButtonBox *box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+                connect(box, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+                connect(box, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+                hLayout->addWidget(clearButton);
+                hLayout->addWidget(box);
+                vLayout->addLayout(hLayout);
+
+                if (dialog.exec() == QDialog::Accepted) {
+                    QString keySequence = keyEdit->keySequence().toString(QKeySequence::NativeText);
+                    item->setData(Qt::UserRole + 1, keySequence);
+                    
+                    QString displayText = name;
+                    if (!keySequence.isEmpty()) displayText += QString(" [%1]").arg(keySequence);
+                    item->setText(displayText);
+                }
+            });
+        }
+
+        auto addItem = [&](const QString &name, bool checked, const QString &shortcut) {
             QString displayText = name;
-            if (!shortcutStr.isEmpty())
-                displayText += QString(" [%1]").arg(shortcutStr);
+            if (!shortcut.isEmpty())
+                displayText += QString(" [%1]").arg(shortcut);
 
             QListWidgetItem *item = new QListWidgetItem(displayText);
             item->setData(Qt::UserRole, name);
-            item->setData(Qt::UserRole + 1, shortcutStr);
+            item->setData(Qt::UserRole + 1, shortcut);
 
             item->setFlags(item->flags() ^ (checkable ? Qt::NoItemFlags : Qt::ItemIsUserCheckable));
             if (checkable) item->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
