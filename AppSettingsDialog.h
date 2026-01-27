@@ -110,8 +110,22 @@ private:
 
         addSortableGroup(mainLayout, "sideBarMenu", "左侧栏 (拖拽调整)", sideBarMenu);
 
+        QStringList windowMenuItems = {
+            "🏠主屏幕", "🎛️控制中心", "↕️应用切换", "🧹清理应用", "📁文件管理", 
+            "⏺️录制+回放", "🧩应用管理", "📸截图", "🔄重启", "🔒锁屏", 
+            "🗑️清空相册", "🔊音量+", "🔈音量-", "🕹️同屏操作", "📌置顶", 
+            "🔧修改分组", "🚀更新手机端", "🚩开启独占"
+        };
+        
+        QHash<QString, QString> windowShortcuts;
+        windowShortcuts["🏠主屏幕"] = "Ctrl+H";
+        windowShortcuts["↕️应用切换"] = "Ctrl+Tab";
+        windowShortcuts["🔊音量+"] = "Ctrl+Up";
+        windowShortcuts["🔈音量-"] = "Ctrl+Down";
+        windowShortcuts["📌置顶"] = "Ctrl+T";
+
         addSortableGroup(mainLayout, "windowMenu", "投屏窗口右键菜单 (拖拽调整)", 
-            {"🏠主屏幕", "🎛️控制中心", "↕️应用切换", "🧹清理应用", "📁文件管理", "⏺️录制+回放", "🧩应用管理", "📸截图", "🔄重启", "🔒锁屏", "🗑️清空相册", "🔊音量+", "🔈音量-", "🕹️同屏操作", "📌置顶", "🔧修改分组", "🚀更新手机端", "🚩开启独占"});
+            windowMenuItems, windowShortcuts);
 
         addSortableGroup(mainLayout, "tabBarMenu", "分组标签页右键菜单 (拖拽调整)", 
             {"重命名分组", "添加分组", "删除分组", "投屏显示", "视频清晰度", "连接方式", "自动连接局域网设备", "自动连接USB设备"});
@@ -123,7 +137,8 @@ signals:
     void configurationChanged(const QString &key);
 
 private:
-    void addSortableGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, const QStringList &defaults, bool checkable = true)
+    void addSortableGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, 
+                          const QStringList &defaults, const QHash<QString, QString> &defaultShortcuts = {}, bool checkable = true)
     {
         m_listDefaults.insert(key, defaults);
 
@@ -141,8 +156,15 @@ private:
         listWidget->setDefaultDropAction(Qt::MoveAction);
         listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
-        auto addItem = [&](const QString &text, bool checked) {
-            QListWidgetItem *item = new QListWidgetItem(text);
+        auto addItem = [&](const QString &name, bool checked, const QString &shortcutStr) {
+            QString displayText = name;
+            if (!shortcutStr.isEmpty())
+                displayText += QString(" [%1]").arg(shortcutStr);
+
+            QListWidgetItem *item = new QListWidgetItem(displayText);
+            item->setData(Qt::UserRole, name);
+            item->setData(Qt::UserRole + 1, shortcutStr);
+
             item->setFlags(item->flags() ^ (checkable ? Qt::NoItemFlags : Qt::ItemIsUserCheckable));
             if (checkable) item->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
             listWidget->addItem(item);
@@ -152,19 +174,22 @@ private:
         QSet<QString> loadedKeys;
 
         if (array.isEmpty()) {
-            for (const auto &t : defaults) addItem(t, true);
+            for (const auto &t : defaults) addItem(t, true, defaultShortcuts.value(t));
         } else {
             for (const auto &val : array) {
                 QJsonObject obj = val.toObject();
                 QString name = obj["name"].toString();
+                // 优先读取配置中的快捷键，否则使用默认
+                QString savedShortcut = obj.contains("shortcut") ? obj["shortcut"].toString() : defaultShortcuts.value(name);
+                
                 if (!name.isEmpty() && defaults.contains(name)) {
-                    addItem(name, obj["enable"].toBool());
+                    addItem(name, obj["enable"].toBool(), savedShortcut);
                     loadedKeys.insert(name);
                 }
             }
             // 补充缺失的默认项
             for (const auto &def : defaults) {
-                if (!loadedKeys.contains(def)) addItem(def, true);
+                if (!loadedKeys.contains(def)) addItem(def, true, defaultShortcuts.value(def));
             }
         }
 
@@ -184,7 +209,10 @@ private:
                 bool checked = !checkable || it->checkState() == Qt::Checked;
                 
                 QJsonObject obj;
-                obj["name"] = it->text();
+                obj["name"] = it->data(Qt::UserRole).toString();
+                QString shortcut = it->data(Qt::UserRole + 1).toString();
+                if(!shortcut.isEmpty()) obj["shortcut"] = shortcut;
+
                 obj["enable"] = checked;
                 jsonArray.append(obj);
             }
@@ -195,7 +223,8 @@ private:
 
         connect(listWidget->model(), &QAbstractItemModel::rowsMoved, saveFunc);
         connect(listWidget, &QListWidget::itemChanged, [=](QListWidgetItem *item) {
-            if (item->text() == "⚙️设置" && item->checkState() == Qt::Unchecked) {
+            QString originalName = item->data(Qt::UserRole).toString();
+            if (originalName == "⚙️设置" && item->checkState() == Qt::Unchecked) {
                 QToolTip::showText(QCursor::pos(), "[⚙️设置]不可隐藏");
                 // 🚫 立即强制改回选中
                 const QSignalBlocker blocker(listWidget); // 暂时屏蔽信号，防止递归调用
