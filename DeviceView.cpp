@@ -219,6 +219,19 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
         action->setShortcut(shortcutMap[text]);
         action->setShortcutContext(Qt::WindowShortcut); 
     }
+
+    for(const auto& action : actions()) {
+        const auto& text = action->text();
+        QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
+        finder.toNextBoundary();
+        int splitPos = finder.position();
+
+        auto iconPart = text.left(splitPos);
+        auto labelPart = text.mid(splitPos);
+        action->setText(labelPart);
+        action->setIcon(EmojiIconProvider::createIcon(iconPart));
+        action->setIconVisibleInMenu(true);
+    }
 }
 
 DeviceView::~DeviceView()
@@ -287,8 +300,8 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
     auto menu = new QMenu;
     menu->addActions(actions());
 
-    auto dynamicSubMenu = new QMenu("🚀更新手机端");
-    menu->addMenu(dynamicSubMenu);
+    auto dynamicSubMenu = menu->addMenu(EmojiIconProvider::createIcon("🚀"), "更新手机端");
+    dynamicSubMenu->menuAction()->setIconVisibleInMenu(true);
 
     dynamicSubMenu->addAction("正在加载...")->setEnabled(false);
 
@@ -395,20 +408,6 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
             dynamicSubMenu->setProperty("isLoaded", true);
         });
     });
-
-#ifdef Q_OS_WIN
-    for(const auto& action : menu->actions()) {
-        const auto& text = action->text();
-        QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
-        finder.toNextBoundary();
-        int splitPos = finder.position();
-
-        auto iconPart = text.left(splitPos);
-        auto labelPart = text.mid(splitPos);
-        action->setText(labelPart);
-        action->setIcon(EmojiIconProvider::createIcon(iconPart));
-    }
-#endif
 
     menu->exec(event->globalPos());
     menu->deleteLater();
