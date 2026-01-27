@@ -80,6 +80,138 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 
         new ToastWidget("此类型暂不支持", this);
     });
+
+    
+    auto isMultiControl = MainWindow::getInstance()->multiControlSwitchButton->isChecked();
+
+    auto send = [=](const StringGuard::Obfuscator<>& event, const QJsonValue &jsonValue = QJsonValue()) {
+        const auto& connections = isMultiControl ? MainWindow::getInstance()->getDeviceConnections() : (QList<DeviceConnection*>() << connection);
+        for (const auto& connection : connections) {
+            connection->send(StringGuard::Obfuscator<>(event), jsonValue);
+        }
+    };
+
+    auto windowMenu = AppSettingsDialog::getInstance()->getEnabledList("windowMenu");
+
+    for (int i = 0; i < windowMenu.count(); i++) {
+        auto text = windowMenu[i];
+        QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
+        finder.toNextBoundary();
+        int splitPos = finder.position();
+
+        auto labelPart = text.mid(splitPos);
+
+        if (labelPart == "主屏幕") {
+            addAction(text, [=](){send("homeScreen");});
+        }
+        if (labelPart == "控制中心") {
+            addAction(text, [=](){send("showCenterController");});
+        }
+        if (labelPart == "应用切换") {
+            addAction(text, [=](){send("appSwitcher");});
+        }
+        else if (labelPart == "清理应用") {
+            addAction(text, [=](){send("killAllApp");});
+        }
+        else if (labelPart == "文件管理") {
+            addAction(text, [=](){RemoteFileExplorer::open(connection);});
+        }
+        else if (labelPart == "录制+回放") {
+            addAction(text, [=](){Recorder::open(connection);});
+        }
+        else if (labelPart == "应用管理") {
+            addAction(text, [=](){AppListWidget::open(connection);});
+        }
+        else if (labelPart == "截图") {
+            addAction(text, [=](){connection->send("screenshot");})->setEnabled(!isMultiControl);
+        }
+        else if (labelPart == "重启") {
+            addAction(text, [=](){send("reboot");});
+        }
+        else if (labelPart == "锁屏") {
+            if (deviceInfo->lockedStatus)
+                addAction("🔓解锁", [=](){send("changeScreenLockedStatus", 0);});
+            else
+                addAction("🔒锁屏", [=](){send("changeScreenLockedStatus", 1);});
+        }
+        else if (labelPart == "清空相册") {
+            addAction(text, [=](){send("deleteAllPhotos");});
+        }
+        else if (labelPart == "音量+") {
+            addAction(text, [=](){send("volumeControl", "+");});
+        }
+        else if (labelPart == "音量-") {
+            addAction(text, [=](){send("volumeControl", "-");});
+        }
+        else if (labelPart == "同屏操作") {
+            if (qobject_cast<DeviceWindow*>(this)) {
+                auto enabled = MainWindow::getInstance()->multiControlSwitchButton->isChecked();
+                auto action = addAction(text, [=]() {
+                    MainWindow::getInstance()->multiControlSwitchButton->setChecked(!enabled);
+                });
+                action->setCheckable(true);
+                action->setChecked(enabled);
+            }
+        }
+        else if (labelPart == "置顶") {
+            if (qobject_cast<DeviceWindow*>(this)) {
+                Qt::WindowFlags flags = windowFlags();
+
+                auto action = addAction(text, [=]() {
+                    const auto& devices = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceWindows() : (QList<DeviceWindow*>() << (DeviceWindow*)this);
+
+                    for (const auto& deviceWidget : std::as_const(devices)) {
+                        auto f = deviceWidget->windowFlags();
+                        auto title = deviceWidget->windowTitle();
+
+                        if (flags & Qt::WindowStaysOnTopHint)
+                        {
+                            f &= ~Qt::WindowStaysOnTopHint;
+                            title.replace("📌", "");
+                        }
+                        else
+                        {
+                            f |= Qt::WindowStaysOnTopHint;
+                            if (!title.contains("📌")) title += "📌";
+                        }
+
+                        deviceWidget->setWindowFlags(f);
+                        deviceWidget->setWindowTitle(title);
+                        deviceWidget->show();
+                    }
+                });
+
+                action->setCheckable(true);
+                action->setChecked(flags & Qt::WindowStaysOnTopHint);
+            }
+        }
+        else if (labelPart == "修改分组") {
+            addAction(text, [=]() {
+                if (MainWindow::getInstance()->getTabs().count() <= 1) {
+                    QToolTip::showText(QCursor::pos(), "请先右键点击标签页添加自定义分组");
+                    return;
+                }
+
+                BitMaskEditorDialog dialog(MainWindow::getInstance()->getTabs(), deviceInfo->groupMask, this);
+                dialog.setWindowTitle("修改分组");
+                if (dialog.exec() != QDialog::Accepted) return;
+
+                settings->setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
+                MainWindow::getInstance()->relayoutDevices();
+            });
+        }
+        else if (labelPart == "开启独占") {
+            auto send = [=](bool locked) {
+                const auto& udids = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceUdids() : (QList<QString>() << deviceInfo->deviceId);
+                webSocketClient->emitEvent("setDeviceLocker", QJsonObject{{"udids", QJsonArray::fromStringList(udids)}, {"locked", locked}});
+            };
+            
+            if (!deviceInfo->hasLocker())
+                addAction("🚩开启独占", [=](){send(true);});
+            else
+                addAction("🏳️退出独占", [=](){send(false);});
+        }
+    }
 }
 
 DeviceView::~DeviceView()
@@ -137,8 +269,7 @@ void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
 
 void DeviceView::contextMenuEvent(QContextMenuEvent *event)
 {
-    auto windowMenu = AppSettingsDialog::getInstance()->getEnabledList("windowMenu");
-    if (windowMenu.count() == 0)
+    if (actions().count() == 0)
         return;
 
     if (deviceInfo->expireAt.get() < Account::getInstance()->loginTime.get() + elapsedTimer->elapsed()) {
@@ -146,259 +277,130 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         return;
     }
 
-    auto isMultiControl = MainWindow::getInstance()->multiControlSwitchButton->isChecked();
-
     auto menu = new QMenu;
+    menu->addActions(actions());
 
-    auto send = [=](const StringGuard::Obfuscator<>& event, const QJsonValue &jsonValue = QJsonValue()) {
-        const auto& connections = isMultiControl ? MainWindow::getInstance()->getDeviceConnections() : (QList<DeviceConnection*>() << connection);
-        for (const auto& connection : connections) {
-            connection->send(StringGuard::Obfuscator<>(event), jsonValue);
-        }
-    };
+    auto dynamicSubMenu = new QMenu("🚀更新手机端");
+    menu->addMenu(dynamicSubMenu);
 
-    for (int i = 0; i < windowMenu.count(); i++) {
-        auto text = windowMenu[i];
+    dynamicSubMenu->addAction("正在加载...")->setEnabled(false);
+
+    dynamicSubMenu->setProperty("isLoaded", false);
+
+    connect(dynamicSubMenu, &QMenu::aboutToShow, [=]() {
+        if (dynamicSubMenu->property("isLoaded").toBool())
+            return;
+
+        QString url = "https://" + Config::DOMAIN_NAME;
+        QNetworkRequest request(url + "/Packages");
+        QNetworkReply *reply = networkAccessManager->get(request);
+
+        connect(reply, &QNetworkReply::finished, dynamicSubMenu, [=]() {
+            reply->deleteLater();
+
+            dynamicSubMenu->clear();
+
+            if (reply->error() != QNetworkReply::NoError) {
+                dynamicSubMenu->addAction(reply->errorString())->setEnabled(false);
+                return;
+            }
+
+            QString content = QString::fromUtf8(reply->readAll());
+
+            QString targetArch = QStringList({"iphoneos-arm", "iphoneos-arm64", "iphoneos-arm64e"}).value(deviceInfo->jbType - 1);
+
+            // Packages 文件通常由空行分隔每个包的信息
+            // 使用正则表达式分割块，兼容 \n\n 或 \r\n\r\n
+            QStringList packageBlocks = content.split(QRegularExpression("\\n\\s*\\n"), Qt::SkipEmptyParts);
+            std::reverse(packageBlocks.begin(), packageBlocks.end());
+
+            // 遍历每一个包块
+            for (const QString &block : packageBlocks) {
+                QString pkgName;
+                QString pkgVer;
+                QString pkgArch;
+                QString pkgFile;
+
+                // 按行解析当前块
+                QStringList lines = block.split('\n', Qt::SkipEmptyParts);
+                for (const QString &line : lines) {
+                    // 简单的字符串查找，提取 Key: Value
+                    if (line.startsWith("Package: "))
+                        pkgName = line.mid(9).trimmed();
+                    else if (line.startsWith("Version: "))
+                        pkgVer = line.mid(9).trimmed();
+                    else if (line.startsWith("Architecture: "))
+                        pkgArch = line.mid(14).trimmed();
+                    else if (line.startsWith("Filename: "))
+                        pkgFile = line.mid(10).trimmed();
+                }
+
+                if (pkgName != "com.sky.ykpro" || pkgArch != targetArch)
+                    continue;
+
+                auto action = dynamicSubMenu->addAction(pkgVer);
+
+                connect(action, &QAction::triggered, [=](){
+                    QNetworkRequest request(url + "/" + pkgFile);
+                    QNetworkReply *reply = networkAccessManager->get(request);
+
+                    connect(reply, &QNetworkReply::finished, this, [=]() {
+                        reply->deleteLater();
+
+                        if (reply->error() != QNetworkReply::NoError) {
+                            new ToastWidget(reply->errorString(), this);
+                            return;
+                        }
+
+                        const auto& data = reply->readAll();
+
+                        // 获取系统临时文件夹路径 (例如 Windows 的 C:/Users/xxx/AppData/Local/Temp)
+                        QString tempDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+
+                        QString localPath = QDir(tempDir).filePath(pkgFile.section('/', -1));
+
+                        QFile file(localPath);
+                        if (!file.open(QIODevice::WriteOnly)) {
+                            new ToastWidget("无法写入临时文件: " + file.errorString(), this);
+                            return;
+                        }
+
+                        file.write(data);
+                        file.close();
+
+                        QList<QUrl> urls;
+                        urls << QUrl::fromLocalFile(localPath);
+
+                        QMimeData *mimeData = new QMimeData();
+                        mimeData->setUrls(urls);
+
+                        QDragEnterEvent dragEnterEvent(QPoint(0, 0), Qt::CopyAction, mimeData, Qt::LeftButton, Qt::NoModifier);
+                        qApp->sendEvent(this, &dragEnterEvent);
+
+                        QDropEvent dropEvent(QPoint(0, 0), Qt::CopyAction, mimeData, Qt::LeftButton, Qt::NoModifier);
+                        qApp->sendEvent(this, &dropEvent);
+
+                        delete mimeData;
+                    });
+                });
+            }
+
+            dynamicSubMenu->setProperty("isLoaded", true);
+        });
+    });
+
+#ifdef Q_OS_WIN
+    for(const auto& action : menu->actions()) {
+        const auto& text = action->text();
         QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
         finder.toNextBoundary();
         int splitPos = finder.position();
 
+        auto iconPart = text.left(splitPos);
         auto labelPart = text.mid(splitPos);
-
-        if (labelPart == "主屏幕") {
-            menu->addAction(text, [&](){send("homeScreen");});
-        }
-        if (labelPart == "控制中心") {
-            menu->addAction(text, [&](){send("showCenterController");});
-        }
-        if (labelPart == "应用切换") {
-            menu->addAction(text, [&](){send("appSwitcher");});
-        }
-        else if (labelPart == "清理应用") {
-            menu->addAction(text, [&](){send("killAllApp");});
-        }
-        else if (labelPart == "文件管理") {
-            menu->addAction(text, [this](){RemoteFileExplorer::open(connection);});
-        }
-        else if (labelPart == "录制+回放") {
-            menu->addAction(text, [this](){Recorder::open(connection);});
-        }
-        else if (labelPart == "应用管理") {
-            menu->addAction(text, [this](){AppListWidget::open(connection);});
-        }
-        else if (labelPart == "截图") {
-            menu->addAction(text, [this](){connection->send("screenshot");})->setEnabled(!isMultiControl);
-        }
-        else if (labelPart == "重启") {
-            menu->addAction(text, [&](){send("reboot");});
-        }
-        else if (labelPart == "锁屏") {
-            if (deviceInfo->lockedStatus)
-                menu->addAction("🔓解锁", [&](){send("changeScreenLockedStatus", 0);});
-            else
-                menu->addAction("🔒锁屏", [&](){send("changeScreenLockedStatus", 1);});
-        }
-        else if (labelPart == "清空相册") {
-            menu->addAction(text, [&](){send("deleteAllPhotos");});
-        }
-        else if (labelPart == "音量+") {
-            menu->addAction(text, [&](){send("volumeControl", "+");});
-        }
-        else if (labelPart == "音量-") {
-            menu->addAction(text, [&](){send("volumeControl", "-");});
-        }
-        else if (labelPart == "同屏操作") {
-            if (qobject_cast<DeviceWindow*>(this)) {
-                auto enabled = MainWindow::getInstance()->multiControlSwitchButton->isChecked();
-                auto action = menu->addAction(text, [=]() {
-                    MainWindow::getInstance()->multiControlSwitchButton->setChecked(!enabled);
-                });
-                action->setCheckable(true);
-                action->setChecked(enabled);
-            }
-        }
-        else if (labelPart == "置顶") {
-            if (qobject_cast<DeviceWindow*>(this)) {
-                Qt::WindowFlags flags = windowFlags();
-
-                auto action = menu->addAction(text, [=]() {
-                    const auto& devices = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceWindows() : (QList<DeviceWindow*>() << (DeviceWindow*)this);
-
-                    for (const auto& deviceWidget : std::as_const(devices)) {
-                        auto f = deviceWidget->windowFlags();
-                        auto title = deviceWidget->windowTitle();
-
-                        if (flags & Qt::WindowStaysOnTopHint)
-                        {
-                            f &= ~Qt::WindowStaysOnTopHint;
-                            title.replace("📌", "");
-                        }
-                        else
-                        {
-                            f |= Qt::WindowStaysOnTopHint;
-                            if (!title.contains("📌")) title += "📌";
-                        }
-
-                        deviceWidget->setWindowFlags(f);
-                        deviceWidget->setWindowTitle(title);
-                        deviceWidget->show();
-                    }
-                });
-
-                action->setCheckable(true);
-                action->setChecked(flags & Qt::WindowStaysOnTopHint);
-            }
-        }
-        else if (labelPart == "修改分组") {
-            menu->addAction(text, [this]() {
-                if (MainWindow::getInstance()->getTabs().count() <= 1) {
-                    QToolTip::showText(QCursor::pos(), "请先右键点击标签页添加自定义分组");
-                    return;
-                }
-
-                BitMaskEditorDialog dialog(MainWindow::getInstance()->getTabs(), deviceInfo->groupMask, this);
-                dialog.setWindowTitle("修改分组");
-                if (dialog.exec() != QDialog::Accepted) return;
-
-                settings->setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
-                MainWindow::getInstance()->relayoutDevices();
-            });
-        }
-        else if (labelPart == "更新手机端") {
-            auto dynamicSubMenu = new QMenu(text);
-            menu->addMenu(dynamicSubMenu);
-
-            dynamicSubMenu->addAction("正在加载...")->setEnabled(false);
-
-            dynamicSubMenu->setProperty("isLoaded", false);
-
-            connect(dynamicSubMenu, &QMenu::aboutToShow, [=]() {
-                if (dynamicSubMenu->property("isLoaded").toBool())
-                    return;
-
-                QString url = "https://" + Config::DOMAIN_NAME;
-                QNetworkRequest request(url + "/Packages");
-                QNetworkReply *reply = networkAccessManager->get(request);
-
-                connect(reply, &QNetworkReply::finished, dynamicSubMenu, [=]() {
-                    reply->deleteLater();
-
-                    dynamicSubMenu->clear();
-
-                    if (reply->error() != QNetworkReply::NoError) {
-                        dynamicSubMenu->addAction(reply->errorString())->setEnabled(false);
-                        return;
-                    }
-
-                    QString content = QString::fromUtf8(reply->readAll());
-
-                    QString targetArch = QStringList({"iphoneos-arm", "iphoneos-arm64", "iphoneos-arm64e"}).value(deviceInfo->jbType - 1);
-
-                    // Packages 文件通常由空行分隔每个包的信息
-                    // 使用正则表达式分割块，兼容 \n\n 或 \r\n\r\n
-                    QStringList packageBlocks = content.split(QRegularExpression("\\n\\s*\\n"), Qt::SkipEmptyParts);
-                    std::reverse(packageBlocks.begin(), packageBlocks.end());
-
-                    // 遍历每一个包块
-                    for (const QString &block : packageBlocks) {
-                        QString pkgName;
-                        QString pkgVer;
-                        QString pkgArch;
-                        QString pkgFile;
-
-                        // 按行解析当前块
-                        QStringList lines = block.split('\n', Qt::SkipEmptyParts);
-                        for (const QString &line : lines) {
-                            // 简单的字符串查找，提取 Key: Value
-                            if (line.startsWith("Package: "))
-                                pkgName = line.mid(9).trimmed();
-                            else if (line.startsWith("Version: "))
-                                pkgVer = line.mid(9).trimmed();
-                            else if (line.startsWith("Architecture: "))
-                                pkgArch = line.mid(14).trimmed();
-                            else if (line.startsWith("Filename: "))
-                                pkgFile = line.mid(10).trimmed();
-                        }
-
-                        if (pkgName != "com.sky.ykpro" || pkgArch != targetArch)
-                            continue;
-
-                        auto action = dynamicSubMenu->addAction(pkgVer);
-
-                        connect(action, &QAction::triggered, [=](){
-                            QNetworkRequest request(url + "/" + pkgFile);
-                            QNetworkReply *reply = networkAccessManager->get(request);
-
-                            connect(reply, &QNetworkReply::finished, this, [=]() {
-                                reply->deleteLater();
-
-                                if (reply->error() != QNetworkReply::NoError) {
-                                    new ToastWidget(reply->errorString(), this);
-                                    return;
-                                }
-
-                                const auto& data = reply->readAll();
-
-                                // 获取系统临时文件夹路径 (例如 Windows 的 C:/Users/xxx/AppData/Local/Temp)
-                                QString tempDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-
-                                QString localPath = QDir(tempDir).filePath(pkgFile.section('/', -1));
-
-                                QFile file(localPath);
-                                if (!file.open(QIODevice::WriteOnly)) {
-                                    new ToastWidget("无法写入临时文件: " + file.errorString(), this);
-                                    return;
-                                }
-
-                                file.write(data);
-                                file.close();
-
-                                QList<QUrl> urls;
-                                urls << QUrl::fromLocalFile(localPath);
-
-                                QMimeData *mimeData = new QMimeData();
-                                mimeData->setUrls(urls);
-
-                                QDragEnterEvent dragEnterEvent(QPoint(0, 0), Qt::CopyAction, mimeData, Qt::LeftButton, Qt::NoModifier);
-                                qApp->sendEvent(this, &dragEnterEvent);
-
-                                QDropEvent dropEvent(QPoint(0, 0), Qt::CopyAction, mimeData, Qt::LeftButton, Qt::NoModifier);
-                                qApp->sendEvent(this, &dropEvent);
-
-                                delete mimeData;
-                            });
-                        });
-                    }
-
-                    dynamicSubMenu->setProperty("isLoaded", true);
-                });
-            });
-        }
-        else if (labelPart == "开启独占") {
-            auto send = [this](bool locked) {
-                const auto& udids = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceUdids() : (QList<QString>() << deviceInfo->deviceId);
-                webSocketClient->emitEvent("setDeviceLocker", QJsonObject{{"udids", QJsonArray::fromStringList(udids)}, {"locked", locked}});
-            };
-            
-            if (!deviceInfo->hasLocker())
-                menu->addAction("🚩开启独占", [=](){send(true);});
-            else
-                menu->addAction("🏳️退出独占", [=](){send(false);});
-        }
+        action->setText(labelPart);
+        action->setIcon(EmojiIconProvider::createIcon(iconPart));
     }
-
-#ifdef Q_OS_WIN
-        for(const auto& action : menu->actions()) {
-            const auto& text = action->text();
-            QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
-            finder.toNextBoundary();
-            int splitPos = finder.position();
-
-            auto iconPart = text.left(splitPos);
-            auto labelPart = text.mid(splitPos);
-            action->setText(labelPart);
-            action->setIcon(EmojiIconProvider::createIcon(iconPart));
-        }
 #endif
 
     menu->exec(event->globalPos());
