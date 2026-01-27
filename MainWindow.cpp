@@ -69,6 +69,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     sideBarList->setViewMode(QListView::IconMode);
     sideBarList->setFixedWidth(80);
     sideBarList->setCursor(Qt::PointingHandCursor);
+    sideBarList->setDragDropMode(QAbstractItemView::NoDragDrop);
     sideBarList->setStyleSheet(R"(
         QListWidget {
             border: none;
