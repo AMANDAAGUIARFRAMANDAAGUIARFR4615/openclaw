@@ -8,6 +8,8 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Network Concurrent Multimedia Multi
 
 qt_standard_project_setup()
 
+add_subdirectory(nodeeditor)
+
 # =========================================================
 #  将 __FILE__ 映射为相对路径
 # =========================================================
@@ -170,6 +172,7 @@ endif()
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network 
     Qt6::Concurrent Qt6::Multimedia Qt6::MultimediaWidgets Qt6::WebSockets 
+    QtNodes
     ${THIRD_PARTY_LIBS}
 )
 
