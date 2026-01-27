@@ -212,6 +212,13 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                 addAction("🏳️退出独占", [=](){send(false);});
         }
     }
+
+    const auto& shortcutMap = AppSettingsDialog::getInstance()->getShortcuts("windowMenu");
+    for(const auto& action : actions()) {
+        const auto& text = action->text();
+        action->setShortcut(shortcutMap[text]);
+        action->setShortcutContext(Qt::WindowShortcut); 
+    }
 }
 
 DeviceView::~DeviceView()
