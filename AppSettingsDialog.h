@@ -73,8 +73,17 @@ public:
 
     QHash<QString, QKeySequence> getShortcuts(const QString &key) {
         QHash<QString, QKeySequence> result;
-
+        
+        auto defaults = m_shortcutDefaults.value(key);
         QJsonArray array = settings->value(key).toJsonArray();
+
+        if (array.isEmpty()) {
+            for (auto it = defaults.constBegin(); it != defaults.constEnd(); ++it) {
+                if (!it.value().isEmpty()) result.insert(it.key(), it.value());
+            }
+            return result;
+        }
+
         for (const auto &val : array) {
             QJsonObject obj = val.toObject();
             QString name = obj["name"].toString();
@@ -91,6 +100,7 @@ public:
 private:
     QHash<QString, QStringList> m_listDefaults;
     QHash<QString, int> m_intDefaults;
+    QHash<QString, QHash<QString, QString>> m_shortcutDefaults;
 
     explicit AppSettingsDialog(QWidget *parent = nullptr) : QDialog(parent)
     {
@@ -176,6 +186,7 @@ private:
                           const QStringList &defaults, const QHash<QString, QString> &defaultShortcuts = {}, bool checkable = true)
     {
         m_listDefaults.insert(key, defaults);
+        m_shortcutDefaults.insert(key, defaultShortcuts);
 
         QVBoxLayout *groupLayout = new QVBoxLayout();
         groupLayout->setSpacing(5);
@@ -255,8 +266,7 @@ private:
             for (const auto &val : array) {
                 QJsonObject obj = val.toObject();
                 QString name = obj["name"].toString();
-                // 优先读取配置中的快捷键，否则使用默认
-                QString savedShortcut = obj.contains("shortcut") ? obj["shortcut"].toString() : defaultShortcuts.value(name);
+                QString savedShortcut = obj["shortcut"].toString(defaultShortcuts.value(name));
                 
                 if (!name.isEmpty() && defaults.contains(name)) {
                     addItem(name, obj["enable"].toBool(), savedShortcut);
