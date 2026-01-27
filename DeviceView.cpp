@@ -276,7 +276,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
                 if (dynamicSubMenu->property("isLoaded").toBool())
                     return;
 
-                QString url = deviceInfo->jbType == 1 ? "https://cydia-1302990626.cos.ap-guangzhou.myqcloud.com" : "https://sileo-1302990626.cos.ap-guangzhou.myqcloud.com";
+                QString url = "https://" + Config::DOMAIN_NAME;
                 QNetworkRequest request(url + "/Packages");
                 QNetworkReply *reply = networkAccessManager->get(request);
 
