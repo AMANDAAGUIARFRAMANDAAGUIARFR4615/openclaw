@@ -18,6 +18,21 @@
 #include <QDialogButtonBox>
 #include <QPushButton>
 
+class SingleKeySequenceEdit : public QKeySequenceEdit {
+public:
+    using QKeySequenceEdit::QKeySequenceEdit;
+
+protected:
+    void keyPressEvent(QKeyEvent *e) override {
+        // 如果当前已经有保存的快捷键序列，并且用户按下了新的按键
+        // 则先清空旧的，实现"覆盖"效果，而不是追加
+        if (!keySequence().isEmpty())
+            clear();
+        
+        QKeySequenceEdit::keyPressEvent(e);
+    }
+};
+
 class AppSettingsDialog : public QDialog
 {
     Q_OBJECT
@@ -173,7 +188,7 @@ private:
                 QVBoxLayout *vLayout = new QVBoxLayout(&dialog);
                 vLayout->addWidget(new QLabel("请按下键盘输入新的快捷键:", &dialog));
 
-                QKeySequenceEdit *keyEdit = new QKeySequenceEdit(QKeySequence(shortcut), &dialog);
+                QKeySequenceEdit *keyEdit = new SingleKeySequenceEdit(QKeySequence(shortcut), &dialog);
                 vLayout->addWidget(keyEdit);
 
                 QHBoxLayout *hLayout = new QHBoxLayout();
