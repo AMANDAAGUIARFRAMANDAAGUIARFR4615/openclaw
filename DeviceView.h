@@ -29,6 +29,7 @@ public:
 protected:
     void showOverlay(const QString &text);
     void hideOverlay();
+    void addContextMenuActions();
     void contextMenuEvent(QContextMenuEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
     Q_INVOKABLE void dropEvent(QDropEvent *event) override;
