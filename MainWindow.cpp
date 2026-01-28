@@ -913,8 +913,8 @@ void MainWindow::addOptionMenu(QMenu* parent, const QString& title, const QStrin
 
 void MainWindow::syncVideoSettingsToDevices()
 {
-    for (const auto& device : getDeviceWidgets()) {
-        auto videoFrameWidget = device->getDeviceWindow() ? device->getDeviceWindow()->getVideoFrameWidget() : device->getVideoFrameWidget();
+    for (const auto& deviceWidget : getDeviceWidgets()) {
+        auto videoFrameWidget = deviceWidget->getDeviceWindow() ? deviceWidget->getDeviceWindow()->getVideoFrameWidget() : deviceWidget->getVideoFrameWidget();
         const auto& size = videoFrameWidget->size();
         qApp->postEvent(videoFrameWidget, new QResizeEvent(size, size));
     }
