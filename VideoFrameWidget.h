@@ -20,7 +20,7 @@ class VideoFrameWidget : public QGraphicsView
 public:
     explicit VideoFrameWidget(DeviceConnection* connection, QWidget *parent = nullptr) : connection(connection), QGraphicsView(parent)
     {
-        setAcceptDrops(true);
+        setAttribute(Qt::WA_TransparentForMouseEvents);
 
         auto scene = new QGraphicsScene(this);
         scene->setBackgroundBrush(Qt::black);
@@ -93,13 +93,6 @@ public:
     QMediaPlayer* const mediaPlayer = new QMediaPlayer(this);
 
 protected:
-    void dragEnterEvent(QDragEnterEvent *event) override { event->ignore(); }
-    void dragMoveEvent(QDragMoveEvent *event) override { event->ignore(); }
-    void dropEvent(QDropEvent *event) override { event->ignore(); }
-    void mousePressEvent(QMouseEvent *event) override { event->ignore(); }
-    void mouseMoveEvent(QMouseEvent *event) override { event->ignore(); }
-    void mouseReleaseEvent(QMouseEvent *event) override { event->ignore(); }
-    
     void resizeEvent(QResizeEvent *event) override
     {
         QGraphicsView::resizeEvent(event);
