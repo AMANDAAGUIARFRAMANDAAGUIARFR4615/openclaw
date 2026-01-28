@@ -17,19 +17,25 @@
 #include <QKeySequenceEdit>
 #include <QDialogButtonBox>
 #include <QPushButton>
+#include <QKeyEvent>
 
 class SingleKeySequenceEdit : public QKeySequenceEdit {
 public:
     using QKeySequenceEdit::QKeySequenceEdit;
 
 protected:
-    void keyPressEvent(QKeyEvent *e) override {
+    void keyPressEvent(QKeyEvent *event) override {
+        if (event->key() == Qt::Key_Escape) {
+            window()->close();
+            return;
+        }
+            
         // 如果当前已经有保存的快捷键序列，并且用户按下了新的按键
         // 则先清空旧的，实现"覆盖"效果，而不是追加
         if (!keySequence().isEmpty())
             clear();
         
-        QKeySequenceEdit::keyPressEvent(e);
+        QKeySequenceEdit::keyPressEvent(event);
     }
 };
 
@@ -217,20 +223,15 @@ private:
                 vLayout->addWidget(new QLabel("请按下键盘输入新的快捷键:", &dialog));
 
                 QKeySequenceEdit *keyEdit = new SingleKeySequenceEdit(QKeySequence(shortcut), &dialog);
+                keyEdit->setClearButtonEnabled(true);
+                keyEdit->setMaximumSequenceLength(1);
                 vLayout->addWidget(keyEdit);
 
-                QHBoxLayout *hLayout = new QHBoxLayout();
-                QPushButton *clearButton = new QPushButton("清除快捷键", &dialog);
-                clearButton->setFocusPolicy(Qt::NoFocus); 
-                connect(clearButton, &QPushButton::clicked, keyEdit, &QKeySequenceEdit::clear);
-                
                 QDialogButtonBox *box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
                 connect(box, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
                 connect(box, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
-                hLayout->addWidget(clearButton);
-                hLayout->addWidget(box);
-                vLayout->addLayout(hLayout);
+                vLayout->addWidget(box);
 
                 if (dialog.exec() == QDialog::Accepted) {
                     QString keySequence = keyEdit->keySequence().toString(QKeySequence::NativeText);

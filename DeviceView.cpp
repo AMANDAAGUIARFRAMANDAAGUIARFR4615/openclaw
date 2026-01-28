@@ -80,6 +80,8 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 
         new ToastWidget("此类型暂不支持", this);
     });
+
+    addContextMenuActions();
 }
 
 DeviceView::~DeviceView()
@@ -184,10 +186,7 @@ void DeviceView::addContextMenuActions()
             addAction(text, [=](){send("reboot");});
         }
         else if (labelPart == "锁屏") {
-            if (deviceInfo->lockedStatus)
-                addAction("🔓解锁", [=](){send("changeScreenLockedStatus", 0);});
-            else
-                addAction("🔒锁屏", [=](){send("changeScreenLockedStatus", 1);});
+            addAction(text, [=](){send("changeScreenLockedStatus", deviceInfo->lockedStatus ? 0 : 1);});
         }
         else if (labelPart == "清空相册") {
             addAction(text, [=](){send("deleteAllPhotos");});
@@ -367,23 +366,24 @@ void DeviceView::addContextMenuActions()
             });
         }
         else if (labelPart == "开启独占") {
-            auto send = [this](bool locked) {
+            addAction(text, [=](){
                 const auto& udids = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceUdids() : (QList<QString>() << deviceInfo->deviceId);
-                webSocketClient->emitEvent("setDeviceLocker", QJsonObject{{"udids", QJsonArray::fromStringList(udids)}, {"locked", locked}});
-            };
-            
-            if (!deviceInfo->hasLocker())
-                addAction("🚩开启独占", [=](){send(true);});
-            else
-                addAction("🏳️退出独占", [=](){send(false);});
+                webSocketClient->emitEvent("setDeviceLocker", QJsonObject{{"udids", QJsonArray::fromStringList(udids)}, {"locked", !deviceInfo->hasLocker()}});
+            });
         }
     }
 
     const auto& shortcutMap = AppSettingsDialog::getInstance()->getShortcuts("windowMenu");
     for(const auto& action : actions()) {
-        const auto& text = action->text();
+        auto text = action->text();
         action->setShortcut(shortcutMap[text]);
-        action->setShortcutContext(Qt::WindowShortcut); 
+        action->setShortcutContext(Qt::WidgetShortcut);
+
+        if (text == "🔒锁屏" && deviceInfo->lockedStatus)
+            text = "🔓解锁";
+
+        if (text == "🚩开启独占" && deviceInfo->hasLocker())
+            text = "🏳️退出独占";
 
         QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
         finder.toNextBoundary();
