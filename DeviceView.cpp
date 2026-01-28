@@ -82,6 +82,14 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
     });
 
     addContextMenuActions();
+
+    connect(AppSettingsDialog::getInstance(), &AppSettingsDialog::configurationChanged, this, [this](const QString &key) {
+        if (key == "windowMenu")
+        {
+            addContextMenuActions();
+            return;
+        }
+    });
 }
 
 DeviceView::~DeviceView()

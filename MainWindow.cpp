@@ -115,14 +115,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     updateSideBar();
 
-    connect(AppSettingsDialog::getInstance(), &AppSettingsDialog::configurationChanged, [=](const QString &key) {
+    connect(AppSettingsDialog::getInstance(), &AppSettingsDialog::configurationChanged, this, [=](const QString &key) {
         if (key == "sideBarMenu")
         {
             updateSideBar();
             return;
         }
-
-        auto value = AppSettingsDialog::getInstance()->getValue(key);
 
         if (key == "isLandscape") {
             relayoutDevices();
