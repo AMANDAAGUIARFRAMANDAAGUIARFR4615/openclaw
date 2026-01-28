@@ -57,8 +57,36 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 
         if (type == 1)
         {
-            qApp->clipboard()->setText(content);
-            new ToastWidget("文本已复制到剪切板", this);
+            if (MainWindow::getInstance()->multiControlSwitchButton->isChecked()) {
+                clipboardText = content;
+
+                static QTimer clipboardTimer;
+                static bool isInitialized = false;
+                if (!isInitialized) {
+                    clipboardTimer.setSingleShot(true);
+                    clipboardTimer.setInterval(500);
+                    connect(&clipboardTimer, &QTimer::timeout, []() {
+                        QStringList lines;
+                        for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()){
+                            const auto& targetView = deviceWidget->getDeviceWindow() ? (DeviceView*)deviceWidget->getDeviceWindow() : deviceWidget;
+                            lines.append(targetView->clipboardText);
+
+                            targetView->clipboardText = "";
+                        }
+
+                        qApp->clipboard()->setText(lines.join('\n'));
+                        new ToastWidget("文本已复制到剪切板", MainWindow::getInstance());
+                    });
+
+                    isInitialized = true;
+                }
+
+                clipboardTimer.start();
+            }
+            else {
+                qApp->clipboard()->setText(content);
+                new ToastWidget("文本已复制到剪切板", this);
+            }
             return;
         }
         

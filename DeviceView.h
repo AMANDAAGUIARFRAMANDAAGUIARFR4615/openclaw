@@ -25,6 +25,7 @@ public:
     DeviceInfo* const deviceInfo;
 
     int randomDelay = 0;
+    QString clipboardText;
 
 protected:
     void showOverlay(const QString &text);
