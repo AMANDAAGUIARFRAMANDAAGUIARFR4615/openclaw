@@ -228,7 +228,28 @@ private:
                 vLayout->addWidget(keyEdit);
 
                 QDialogButtonBox *box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
-                connect(box, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+                
+                connect(box, &QDialogButtonBox::accepted, [&](){
+                    QString shortcut = keyEdit->keySequence().toString(QKeySequence::NativeText);
+                    
+                    // 如果设置了新的快捷键，检查是否有重复
+                    if (!shortcut.isEmpty()) {
+                        for (int i = 0; i < listWidget->count(); ++i) {
+                            QListWidgetItem *otherItem = listWidget->item(i);
+                            if (otherItem == item) continue;
+
+                            QString otherShortcut = otherItem->data(Qt::UserRole + 1).toString();
+                            if (otherShortcut == shortcut) {
+                                QString conflictName = otherItem->data(Qt::UserRole).toString();
+                                QToolTip::showText(QCursor::pos(), QString("快捷键 '%1' 已被 '%2' 占用，请更换").arg(shortcut, conflictName));
+                                return;
+                            }
+                        }
+                    }
+
+                    dialog.accept();
+                });
+
                 connect(box, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
                 vLayout->addWidget(box);
