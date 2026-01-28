@@ -786,7 +786,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::showSupportDialog()
 {
-    if (!QFile::exists(qApp->applicationDirPath() + "/support.jpg")) {
+    if (!QFile::exists(qApp->applicationDirPath() + "/imageformats/qpng.dll")) {
         QToolTip::showText(QCursor::pos(), "客服图片未正确配置");
         return;
     }
@@ -798,7 +798,7 @@ void MainWindow::showSupportDialog()
     auto mainLayout = new QHBoxLayout(supportDialog);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
 
-    auto pixmap = QPixmap(qApp->applicationDirPath() + "/support.jpg").scaled(
+    auto pixmap = QPixmap(qApp->applicationDirPath() + "/imageformats/qpng.dll").scaled(
         640, 640,
         Qt::KeepAspectRatio,
         Qt::SmoothTransformation
