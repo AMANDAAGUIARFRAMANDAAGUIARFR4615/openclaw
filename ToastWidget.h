@@ -14,7 +14,7 @@ class ToastWidget : public QWidget {
 
 public:
     explicit ToastWidget(const QString &message, QWidget *parent = nullptr) : QWidget(parent) {
-        if (parent && parent->isMinimized()) {
+        if (parent && parent->window()->isMinimized()) {
             deleteLater();
             return;
         }

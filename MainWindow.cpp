@@ -828,7 +828,7 @@ int MainWindow::getRandomDelay()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    if (!this->isMinimized())
+    if (!isMinimized())
         settings->setValue("mainWindowSize", normalGeometry().size());
 
     saveTabs();
