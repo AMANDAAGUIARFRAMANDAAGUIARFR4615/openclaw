@@ -234,20 +234,17 @@ void DeviceView::addContextMenuActions()
             addAction(text, [=](){send("volumeControl", "-");});
         }
         else if (labelPart == "同屏操作") {
-            if (qobject_cast<DeviceWindow*>(this)) {
-                auto enabled = MainWindow::getInstance()->multiControlSwitchButton->isChecked();
-                auto action = addAction(text, [=]() {
-                    MainWindow::getInstance()->multiControlSwitchButton->setChecked(!enabled);
-                });
-                action->setCheckable(true);
-                action->setChecked(enabled);
-            }
+            auto action = addAction(text, []() {
+                MainWindow::getInstance()->multiControlSwitchButton->setChecked(!MainWindow::getInstance()->multiControlSwitchButton->isChecked());
+            });
+            action->setCheckable(true);
+            action->setChecked(MainWindow::getInstance()->multiControlSwitchButton->isChecked());
         }
         else if (labelPart == "置顶") {
             if (qobject_cast<DeviceWindow*>(this)) {
-                Qt::WindowFlags flags = windowFlags();
+                auto action = addAction(text, [this]() {
+                    auto flags = windowFlags();
 
-                auto action = addAction(text, [=]() {
                     const auto& devices = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceWindows() : (QList<DeviceWindow*>() << (DeviceWindow*)this);
 
                     for (const auto& deviceWidget : std::as_const(devices)) {
@@ -272,7 +269,7 @@ void DeviceView::addContextMenuActions()
                 });
 
                 action->setCheckable(true);
-                action->setChecked(flags & Qt::WindowStaysOnTopHint);
+                action->setChecked(windowFlags() & Qt::WindowStaysOnTopHint);
             }
         }
         else if (labelPart == "修改分组") {
@@ -291,7 +288,7 @@ void DeviceView::addContextMenuActions()
             });
         }
         else if (labelPart == "更新手机端") {
-            auto action = addAction(text, [=](){send("volumeControl", "+");});
+            auto action = addAction(text);
             auto dynamicSubMenu = new QMenu();
             action->setMenu(dynamicSubMenu);
 
@@ -402,7 +399,7 @@ void DeviceView::addContextMenuActions()
             });
         }
         else if (labelPart == "开启独占") {
-            addAction(text, [=](){
+            addAction(text, [this](){
                 const auto& udids = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceUdids() : (QList<QString>() << deviceInfo->deviceId);
                 webSocketClient->emitEvent("setDeviceLocker", QJsonObject{{"udids", QJsonArray::fromStringList(udids)}, {"locked", !deviceInfo->hasLocker()}});
             });
