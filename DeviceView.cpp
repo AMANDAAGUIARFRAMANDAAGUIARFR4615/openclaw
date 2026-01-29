@@ -65,7 +65,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                 static bool isInitialized = false;
                 if (!isInitialized) {
                     clipboardTimer.setSingleShot(true);
-                    clipboardTimer.setInterval(count <= 10 ? 1000 : 2000);
+                    clipboardTimer.setInterval(3000);
                     connect(&clipboardTimer, &QTimer::timeout, []() {
                         QStringList lines;
                         for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()){
@@ -73,6 +73,11 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                             lines.append(targetView->clipboardText);
 
                             targetView->clipboardText = "";
+                        }
+
+                        if (lines.count() == 0) {
+                            new ToastWidget("复制失败", MainWindow::getInstance());
+                            return;
                         }
 
                         qApp->clipboard()->setText(lines.join('\n'));
