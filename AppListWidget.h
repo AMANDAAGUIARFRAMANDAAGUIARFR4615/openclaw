@@ -28,7 +28,7 @@ class AppListWidget : public QWidget
     Q_OBJECT
 
 public:
-    static AppListWidget* open(DeviceConnection* connection, const DeviceView* deviceView) {
+    static AppListWidget* open(DeviceConnection* connection, DeviceView* deviceView) {
         auto existing = instanceMap.value(connection);
         if (existing) {
             existing->setWindowState(existing->windowState() & ~Qt::WindowMinimized);
@@ -47,7 +47,7 @@ public:
     }
 
 private:
-    explicit AppListWidget(DeviceConnection* connection, const DeviceView* deviceView) : connection(connection), QWidget() {
+    explicit AppListWidget(DeviceConnection* connection, DeviceView* deviceView) : connection(connection), deviceView(deviceView), QWidget() {
         instanceMap.insert(connection, this);
 
         setAttribute(Qt::WA_DeleteOnClose);
@@ -333,7 +333,7 @@ private:
                 dataObject["name"] = name;
                 dataObject["type"] = i + 1;
 
-                const auto& connections = !name.endsWith("路径") ? MainWindow::getInstance()->getDeviceConnections(deviceView) : { connection };
+                const auto& connections = !name.endsWith("路径") ? MainWindow::getInstance()->getDeviceConnections(deviceView) : (QList<DeviceConnection*>() << connection);
                 for (const auto& connection : connections) {
                     connection->send("appOperation", dataObject);
                 }
@@ -390,6 +390,7 @@ private:
     }
 
     DeviceConnection* const connection;
+    DeviceView* const deviceView;
     QTableWidget *table;
 
     inline static QHash<DeviceConnection*, AppListWidget*> instanceMap;

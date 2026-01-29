@@ -58,7 +58,7 @@ class Recorder : public QWidget {
     Q_OBJECT
 
 public:
-    static Recorder* open(DeviceConnection* connection, const DeviceView* deviceView) {
+    static Recorder* open(DeviceConnection* connection, DeviceView* deviceView) {
         auto existing = instanceMap.value(connection);
         if (existing) {
             existing->setWindowState(existing->windowState() & ~Qt::WindowMinimized);
@@ -75,7 +75,7 @@ public:
     }
 
 private:
-    Recorder(DeviceConnection* connection, const DeviceView* deviceView) : connection(connection), QWidget() {
+    Recorder(DeviceConnection* connection, DeviceView* deviceView) : connection(connection), deviceView(deviceView), QWidget() {
         instanceMap.insert(connection, this);
 
         setAttribute(Qt::WA_DeleteOnClose);
@@ -357,7 +357,8 @@ protected:
         statusBar->showMessage("[" + timestamp + "] " + message);
     }
 
-    DeviceConnection* connection;
+    DeviceConnection* const connection;
+    DeviceView* const deviceView;
     QString recorderPath;
 
     QPushButton *startButton;

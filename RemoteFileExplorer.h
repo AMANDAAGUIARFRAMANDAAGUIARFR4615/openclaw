@@ -41,7 +41,7 @@ class RemoteFileExplorer : public QWidget
     Q_OBJECT
 
 public:
-    static RemoteFileExplorer* open(DeviceConnection* connection, const QString& openPath, const DeviceView* deviceView) {
+    static RemoteFileExplorer* open(DeviceConnection* connection, const QString& openPath, DeviceView* deviceView) {
         QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(openPath);
         auto existing = instanceMap.value(key);
         if (existing) {
@@ -60,7 +60,7 @@ public:
     }
 
 private:
-    explicit RemoteFileExplorer(DeviceConnection* connection, const QString& openPath, const DeviceView* deviceView);
+    explicit RemoteFileExplorer(DeviceConnection* connection, const QString& openPath, DeviceView* deviceView);
     ~RemoteFileExplorer();
 
 protected:
@@ -79,7 +79,8 @@ protected:
     void dragMoveEvent(QDragMoveEvent *event) override;
     void dropEvent(QDropEvent *event) override;
 
-    DeviceConnection* connection;
+    DeviceConnection* const connection;
+    DeviceView* const deviceView;
     const QString openPath;
     QString rootPath;
     

@@ -59,7 +59,7 @@ protected:
     }
 };
 
-RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& openPath, const DeviceView* deviceView) : connection(connection), openPath(openPath), QWidget()
+RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& openPath, DeviceView* deviceView) : connection(connection), openPath(openPath), deviceView(deviceView), QWidget()
 {
     QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(openPath);
     instanceMap.insert(key, this);
