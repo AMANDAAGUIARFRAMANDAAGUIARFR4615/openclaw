@@ -12,6 +12,7 @@
 #include <QSlider>
 #include <QSpinBox>
 
+class DeviceView;
 class DeviceWidget;
 class DeviceWindow;
 
@@ -24,7 +25,7 @@ public:
 
     void addItem(DeviceConnection* connection);
     QList<DeviceConnection*> getDeviceConnections();
-    QList<DeviceWidget*> getDeviceWidgets();
+    QList<DeviceWidget*> getDeviceWidgets(DeviceView* mainDeviceView = nullptr);
     QList<DeviceWindow*> getDeviceWindows();
     QList<QString> getDeviceUdids();
     

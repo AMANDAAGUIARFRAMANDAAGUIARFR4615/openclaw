@@ -153,7 +153,7 @@ void DeviceWidget::launchDeviceWindow() {
 
     if (!isDispatching && MainWindow::getInstance()->multiControlSwitchButton->isChecked()) {
         isDispatching = true;
-        for (auto& item : MainWindow::getInstance()->getDeviceWidgets()) {
+        for (auto& item : MainWindow::getInstance()->getDeviceWidgets(this)) {
             item->launchDeviceWindow();
         }
         isDispatching = false;
@@ -177,7 +177,7 @@ void DeviceWidget::launchDeviceWindow() {
     auto videoFrameWidgetLocal = videoFrameWidget;
     auto placeholder = new QWidget();
 
-    deviceWindow = new DeviceWindow(connection, deviceInfo);
+    deviceWindow = new DeviceWindow(connection, deviceInfo, this);
     connect(deviceWindow, &QObject::destroyed, this, [=]() {
         addVideoFrameWidget(videoFrameWidgetLocal);
 

@@ -1088,8 +1088,16 @@ QList<DeviceConnection*> MainWindow::getDeviceConnections()
     return list;
 }
 
-QList<DeviceWidget*> MainWindow::getDeviceWidgets()
+QList<DeviceWidget*> MainWindow::getDeviceWidgets(DeviceView* mainDeviceView)
 {
+    if (mainDeviceView) {
+        auto deviceWidget = qobject_cast<DeviceWidget*>(mainDeviceView);
+        if (deviceWidget)
+            mainDeviceView = deviceWidget;
+        else
+            mainDeviceView = qobject_cast<DeviceWindow*>(mainDeviceView)->deviceWidget;
+    }
+
     QList<DeviceWidget*> list;
 
     for (int i = 0; i < deviceListWidget->count(); i++) {
@@ -1100,6 +1108,8 @@ QList<DeviceWidget*> MainWindow::getDeviceWidgets()
         const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
         if (deviceWidget->checkBox->isChecked())
             list.append(deviceWidget);
+        else if (deviceWidget == mainDeviceView)
+            return {};
     }
 
     return list;

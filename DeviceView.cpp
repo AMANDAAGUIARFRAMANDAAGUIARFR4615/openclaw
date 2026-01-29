@@ -564,7 +564,7 @@ bool DeviceView::event(QEvent *event)
             }
 
             isDispatching = true;
-            for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()) {
+            for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets(this)) {
                 auto targetWindow = deviceWidget->getDeviceWindow();
                 if (deviceWidget == this || targetWindow == (DeviceWindow*)this)
                     continue;

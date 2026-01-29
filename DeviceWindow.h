@@ -9,8 +9,10 @@ class DeviceWindow : public DeviceView
 {
     Q_OBJECT
 public:
-    explicit DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo);
+    explicit DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget);
     ~DeviceWindow();
+
+    DeviceWidget* const deviceWidget;
 
 protected:
     void changeOrientation(int orientation);
