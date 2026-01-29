@@ -4,6 +4,7 @@
 #include "ToastWidget.h"
 #include "EventHub.h"
 #include "FileViewer.h"
+#include "DeviceView.h"
 #include <QTreeView>
 #include <QFileSystemModel>
 #include <QSortFilterProxyModel>
@@ -57,7 +58,7 @@ class Recorder : public QWidget {
     Q_OBJECT
 
 public:
-    static Recorder* open(DeviceConnection* connection) {
+    static Recorder* open(DeviceConnection* connection, const DeviceView* deviceView) {
         auto existing = instanceMap.value(connection);
         if (existing) {
             existing->setWindowState(existing->windowState() & ~Qt::WindowMinimized);
@@ -66,7 +67,7 @@ public:
             return existing;
         }
 
-        auto recorder = new Recorder(connection);
+        auto recorder = new Recorder(connection, deviceView);
         recorder->setWindowTitle(connection->displayName());
         recorder->resize(920, 400);
         recorder->show();
@@ -74,10 +75,12 @@ public:
     }
 
 private:
-    Recorder(DeviceConnection* connection) : connection(connection), QWidget() {
+    Recorder(DeviceConnection* connection, const DeviceView* deviceView) : connection(connection), QWidget() {
         instanceMap.insert(connection, this);
 
         setAttribute(Qt::WA_DeleteOnClose);
+
+        connect(deviceView, &QObject::destroyed, this, &QWidget::close);
 
         recorderPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/recorder";
 

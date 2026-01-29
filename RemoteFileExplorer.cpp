@@ -59,7 +59,7 @@ protected:
     }
 };
 
-RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& openPath) : connection(connection), openPath(openPath), QWidget()
+RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& openPath, const DeviceView* deviceView) : connection(connection), openPath(openPath), QWidget()
 {
     QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(openPath);
     instanceMap.insert(key, this);
@@ -68,6 +68,8 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     
     setAttribute(Qt::WA_DeleteOnClose);
     setAcceptDrops(true);
+
+    connect(deviceView, &QObject::destroyed, this, &QWidget::close);
 
     QHBoxLayout* headerLayout = new QHBoxLayout();
     headerLayout->setContentsMargins(0, 0, 0, 0); // 可选：根据需要调整边距

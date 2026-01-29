@@ -5,6 +5,7 @@
 #include "RemoteFileExplorer.h"
 #include "ToastWidget.h"
 #include "MainWindow.h"
+#include "DeviceView.h"
 #include <QWidget>
 #include <QTableWidget>
 #include <QPushButton>
@@ -27,7 +28,7 @@ class AppListWidget : public QWidget
     Q_OBJECT
 
 public:
-    static AppListWidget* open(DeviceConnection* connection) {
+    static AppListWidget* open(DeviceConnection* connection, const DeviceView* deviceView) {
         auto existing = instanceMap.value(connection);
         if (existing) {
             existing->setWindowState(existing->windowState() & ~Qt::WindowMinimized);
@@ -38,7 +39,7 @@ public:
 
         connection->send("appList");
 
-        AppListWidget *appList = new AppListWidget(connection);
+        auto appList = new AppListWidget(connection, deviceView);
         appList->setWindowTitle(connection->displayName() + " - 应用管理");
         appList->resize(1080, 720);
         appList->show();
@@ -46,10 +47,12 @@ public:
     }
 
 private:
-    explicit AppListWidget(DeviceConnection* connection) : connection(connection), QWidget() {
+    explicit AppListWidget(DeviceConnection* connection, const DeviceView* deviceView) : connection(connection), QWidget() {
         instanceMap.insert(connection, this);
 
         setAttribute(Qt::WA_DeleteOnClose);
+
+        connect(deviceView, &QObject::destroyed, this, &QWidget::close);
         
         QLineEdit *searchEdit = new QLineEdit(this);
         searchEdit->setPlaceholderText("🔍 搜索应用名或包名...");
@@ -157,7 +160,7 @@ private:
             table->setSortingEnabled(true);
         });
 
-        EventHub::on(this, "appOperation", [this](const QJsonValue &data, DeviceConnection* connection) {
+        EventHub::on(this, "appOperation", [=](const QJsonValue &data, DeviceConnection* connection) {
             if (this->connection != connection)
                 return;
 
@@ -170,7 +173,7 @@ private:
                 return;
             }
 
-            RemoteFileExplorer::open(connection, path);
+            RemoteFileExplorer::open(connection, path, deviceView);
         });
     }
 

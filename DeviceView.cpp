@@ -208,13 +208,13 @@ void DeviceView::addContextMenuActions()
             addAction(text, [=](){send("killAllApp");});
         }
         else if (labelPart == "文件管理") {
-            addAction(text, [this](){RemoteFileExplorer::open(connection);});
+            addAction(text, [this](){RemoteFileExplorer::open(connection, "/", this);});
         }
         else if (labelPart == "录制+回放") {
-            addAction(text, [this](){Recorder::open(connection);});
+            addAction(text, [this](){Recorder::open(connection, this);});
         }
         else if (labelPart == "应用管理") {
-            addAction(text, [this](){AppListWidget::open(connection);});
+            addAction(text, [this](){AppListWidget::open(connection, this);});
         }
         else if (labelPart == "截图") {
             addAction(text, [this](){connection->send("screenshot");})->setEnabled(!MainWindow::getInstance()->multiControlSwitchButton->isChecked());

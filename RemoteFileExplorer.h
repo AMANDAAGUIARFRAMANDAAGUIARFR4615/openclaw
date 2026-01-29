@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceConnection.h"
+#include "DeviceView.h"
 #include <QWidget>
 #include <QNetworkAccessManager>
 #include <QTreeView>
@@ -40,7 +41,7 @@ class RemoteFileExplorer : public QWidget
     Q_OBJECT
 
 public:
-    static RemoteFileExplorer* open(DeviceConnection* connection, const QString& openPath = "/") {
+    static RemoteFileExplorer* open(DeviceConnection* connection, const QString& openPath, const DeviceView* deviceView) {
         QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(openPath);
         auto existing = instanceMap.value(key);
         if (existing) {
@@ -50,7 +51,7 @@ public:
             return existing;
         }
 
-        auto explorer = new RemoteFileExplorer(connection, openPath);
+        auto explorer = new RemoteFileExplorer(connection, openPath, deviceView);
         explorer->setWindowTitle(connection->displayName() + " - 文件管理");
         QSize screenSize = qApp->primaryScreen()->availableSize();
         explorer->resize(screenSize.width() * 0.7, screenSize.height() * 0.7);
@@ -59,7 +60,7 @@ public:
     }
 
 private:
-    explicit RemoteFileExplorer(DeviceConnection* connection, const QString& openPath = "/");
+    explicit RemoteFileExplorer(DeviceConnection* connection, const QString& openPath, const DeviceView* deviceView);
     ~RemoteFileExplorer();
 
 protected:
