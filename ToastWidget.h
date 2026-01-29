@@ -14,11 +14,6 @@ class ToastWidget : public QWidget {
 
 public:
     explicit ToastWidget(const QString &message, QWidget *parent = nullptr) : QWidget() {
-        if (parent && parent->window()->isMinimized()) {
-            deleteLater();
-            return;
-        }
-
         setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint | Qt::WindowTransparentForInput);
         setAttribute(Qt::WA_TranslucentBackground);
 
@@ -71,12 +66,16 @@ public:
 
 private:
     void centerWidget(QWidget *parent) {
+        QWidget *target = parent;
+        if (!target)
+            target = qApp->activeWindow();
+
         int x, y;
-        if (parent) {
+        if (target) {
             // 居中于父窗口
-            QPoint parentCenter = parent->mapToGlobal(parent->rect().center());
-            x = parentCenter.x() - width() / 2;
-            y = parentCenter.y() - height() / 2;
+            QPoint center = target->mapToGlobal(target->rect().center());
+            x = center.x() - width() / 2;
+            y = center.y() - height() / 2;
         } else {
             // 居中于屏幕
             QRect screenGeom = qApp->primaryScreen()->availableGeometry();
