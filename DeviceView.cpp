@@ -180,7 +180,7 @@ void DeviceView::addContextMenuActions()
     auto windowMenu = AppSettingsDialog::getInstance()->getEnabledList("windowMenu");
     
     auto send = [=](const StringGuard::Obfuscator<>& event, const QJsonValue &jsonValue = QJsonValue()) {
-        const auto& connections = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceConnections() : (QList<DeviceConnection*>() << connection);
+        const auto& connections = MainWindow::getInstance()->getDeviceConnections(this);
         for (const auto& connection : connections) {
             connection->send(StringGuard::Obfuscator<>(event), jsonValue);
         }
@@ -243,10 +243,8 @@ void DeviceView::addContextMenuActions()
         else if (labelPart == "置顶") {
             auto action = addAction(text, [this]() {
                 auto flags = windowFlags();
-
-                const auto& devices = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceWindows() : (QList<DeviceWindow*>() << (DeviceWindow*)this);
-
-                for (const auto& deviceWidget : std::as_const(devices)) {
+                
+                for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWindows(this)) {
                     auto f = deviceWidget->windowFlags();
                     auto title = deviceWidget->windowTitle();
 
@@ -398,7 +396,7 @@ void DeviceView::addContextMenuActions()
         }
         else if (labelPart == "开启独占") {
             addAction(text, [this](){
-                const auto& udids = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceUdids() : (QList<QString>() << deviceInfo->deviceId);
+                const auto& udids = MainWindow::getInstance()->getDeviceUdids(this);
                 webSocketClient->emitEvent("setDeviceLocker", QJsonObject{{"udids", QJsonArray::fromStringList(udids)}, {"locked", !deviceInfo->hasLocker()}});
             });
         }
@@ -789,7 +787,7 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
             }
 
             const auto& array = content.split("\n");
-            const auto& connections = MainWindow::getInstance()->getDeviceConnections();
+            const auto& connections = MainWindow::getInstance()->getDeviceConnections(this);
             if (array.size() != connections.size()) {
                 new ToastWidget(QString("您复制的%1行文本和%2台设备不匹配").arg(array.size()).arg(connections.size()), this);
                 return;

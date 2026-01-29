@@ -154,7 +154,8 @@ void DeviceWidget::launchDeviceWindow() {
     if (!isDispatching && MainWindow::getInstance()->multiControlSwitchButton->isChecked()) {
         isDispatching = true;
         for (auto& item : MainWindow::getInstance()->getDeviceWidgets(this)) {
-            item->launchDeviceWindow();
+            if (item != this)
+                item->launchDeviceWindow();
         }
         isDispatching = false;
     }

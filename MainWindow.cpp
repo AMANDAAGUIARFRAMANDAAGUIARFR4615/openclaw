@@ -1077,11 +1077,11 @@ void MainWindow::addItem(DeviceConnection* connection)
     relayoutDevices();
 }
 
-QList<DeviceConnection*> MainWindow::getDeviceConnections()
+QList<DeviceConnection*> MainWindow::getDeviceConnections(DeviceView* mainDeviceView)
 {
     QList<DeviceConnection*> list;
  
-    for (const auto& widget : getDeviceWidgets()) {
+    for (const auto& widget : getDeviceWidgets(mainDeviceView)) {
         list.append(widget->connection);
     }
 
@@ -1096,6 +1096,8 @@ QList<DeviceWidget*> MainWindow::getDeviceWidgets(DeviceView* mainDeviceView)
             mainDeviceView = deviceWidget;
         else
             mainDeviceView = qobject_cast<DeviceWindow*>(mainDeviceView)->deviceWidget;
+
+        if (!multiControlSwitchButton->isChecked()) return { (DeviceWidget*)mainDeviceView };
     }
 
     QList<DeviceWidget*> list;
@@ -1109,17 +1111,17 @@ QList<DeviceWidget*> MainWindow::getDeviceWidgets(DeviceView* mainDeviceView)
         if (deviceWidget->checkBox->isChecked())
             list.append(deviceWidget);
         else if (deviceWidget == mainDeviceView)
-            return {};
+            return { deviceWidget };
     }
 
     return list;
 }
 
-QList<DeviceWindow*> MainWindow::getDeviceWindows()
+QList<DeviceWindow*> MainWindow::getDeviceWindows(DeviceView* mainDeviceView)
 {
     QList<DeviceWindow*> list;
  
-    for (const auto& widget : getDeviceWidgets()) {
+    for (const auto& widget : getDeviceWidgets(mainDeviceView)) {
         if (widget->getDeviceWindow())
             list.append(widget->getDeviceWindow());
     }
@@ -1127,11 +1129,11 @@ QList<DeviceWindow*> MainWindow::getDeviceWindows()
     return list;
 }
 
-QList<QString> MainWindow::getDeviceUdids()
+QList<QString> MainWindow::getDeviceUdids(DeviceView* mainDeviceView)
 {
     QList<QString> list;
  
-    for (const auto& widget : getDeviceConnections()) {
+    for (const auto& widget : getDeviceWidgets(mainDeviceView)) {
         list.append(widget->deviceInfo->deviceId);
     }
 

@@ -24,10 +24,10 @@ public:
     static MainWindow* getInstance() { static MainWindow instance; return &instance; }
 
     void addItem(DeviceConnection* connection);
-    QList<DeviceConnection*> getDeviceConnections();
+    QList<DeviceConnection*> getDeviceConnections(DeviceView* mainDeviceView = nullptr);
     QList<DeviceWidget*> getDeviceWidgets(DeviceView* mainDeviceView = nullptr);
-    QList<DeviceWindow*> getDeviceWindows();
-    QList<QString> getDeviceUdids();
+    QList<DeviceWindow*> getDeviceWindows(DeviceView* mainDeviceView = nullptr);
+    QList<QString> getDeviceUdids(DeviceView* mainDeviceView = nullptr);
     
     const QList<BitMaskEditorDialog::Item>& getTabs() const { return tabs; }
     BitMaskEditorDialog::Item& getTab() { return tabs[tabWidget->currentIndex()]; }
