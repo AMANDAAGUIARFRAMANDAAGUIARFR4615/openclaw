@@ -57,7 +57,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 
         if (type == 1)
         {
-            if (MainWindow::getInstance()->multiControlSwitchButton->isChecked()) {
+            if (MainWindow::getInstance()->getDeviceWidgets(this).count() > 1) {
                 clipboardText = content;
 
                 static QTimer clipboardTimer;
