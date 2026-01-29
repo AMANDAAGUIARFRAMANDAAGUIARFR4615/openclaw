@@ -75,12 +75,12 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                         }
 
                         if (lines.count() == 0) {
-                            new ToastWidget("复制失败", MainWindow::getInstance());
+                            new ToastWidget("复制失败");
                             return;
                         }
 
                         qApp->clipboard()->setText(lines.join('\n'));
-                        new ToastWidget("文本已复制到剪切板", MainWindow::getInstance());
+                        new ToastWidget("文本已复制到剪切板");
                     });
 
                     isInitialized = true;
