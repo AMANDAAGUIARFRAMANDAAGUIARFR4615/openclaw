@@ -334,8 +334,7 @@ protected:
         dataObject["script"] = QString::fromUtf8(file.readAll());
         dataObject["repeat"] = infiniteCheckBox->isChecked() ? -1 : playbackTimesSpinBox->value();
 
-        const auto& connections = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceConnections() : (QList<DeviceConnection*>() << connection);
-        for (const auto& connection : connections) {
+        for (const auto& connection : MainWindow::getInstance()->getDeviceConnections(deviceView)) {
             connection->send("playback", dataObject);
         }
 
