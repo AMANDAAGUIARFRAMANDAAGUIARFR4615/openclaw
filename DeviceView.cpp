@@ -241,36 +241,34 @@ void DeviceView::addContextMenuActions()
             action->setChecked(MainWindow::getInstance()->multiControlSwitchButton->isChecked());
         }
         else if (labelPart == "置顶") {
-            if (qobject_cast<DeviceWindow*>(this)) {
-                auto action = addAction(text, [this]() {
-                    auto flags = windowFlags();
+            auto action = addAction(text, [this]() {
+                auto flags = windowFlags();
 
-                    const auto& devices = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceWindows() : (QList<DeviceWindow*>() << (DeviceWindow*)this);
+                const auto& devices = MainWindow::getInstance()->multiControlSwitchButton->isChecked() ? MainWindow::getInstance()->getDeviceWindows() : (QList<DeviceWindow*>() << (DeviceWindow*)this);
 
-                    for (const auto& deviceWidget : std::as_const(devices)) {
-                        auto f = deviceWidget->windowFlags();
-                        auto title = deviceWidget->windowTitle();
+                for (const auto& deviceWidget : std::as_const(devices)) {
+                    auto f = deviceWidget->windowFlags();
+                    auto title = deviceWidget->windowTitle();
 
-                        if (flags & Qt::WindowStaysOnTopHint)
-                        {
-                            f &= ~Qt::WindowStaysOnTopHint;
-                            title.replace("📌", "");
-                        }
-                        else
-                        {
-                            f |= Qt::WindowStaysOnTopHint;
-                            if (!title.contains("📌")) title += "📌";
-                        }
-
-                        deviceWidget->setWindowFlags(f);
-                        deviceWidget->setWindowTitle(title);
-                        deviceWidget->show();
+                    if (flags & Qt::WindowStaysOnTopHint)
+                    {
+                        f &= ~Qt::WindowStaysOnTopHint;
+                        title.replace("📌", "");
                     }
-                });
+                    else
+                    {
+                        f |= Qt::WindowStaysOnTopHint;
+                        if (!title.contains("📌")) title += "📌";
+                    }
 
-                action->setCheckable(true);
-                action->setChecked(windowFlags() & Qt::WindowStaysOnTopHint);
-            }
+                    deviceWidget->setWindowFlags(f);
+                    deviceWidget->setWindowTitle(title);
+                    deviceWidget->show();
+                }
+            });
+
+            action->setCheckable(true);
+            action->setChecked(windowFlags() & Qt::WindowStaysOnTopHint);
         }
         else if (labelPart == "修改分组") {
             addAction(text, [this]() {

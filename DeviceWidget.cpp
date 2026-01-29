@@ -168,7 +168,7 @@ void DeviceWidget::launchDeviceWindow() {
 
     if (overlay->isVisible())
     {
-        QToolTip::showText(QCursor::pos(), "需要先解锁才能控制");
+        QToolTip::showText(QCursor::pos(), "请先解锁");
         return;
     }
 
