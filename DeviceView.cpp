@@ -57,15 +57,14 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 
         if (type == 1)
         {
-            auto count = MainWindow::getInstance()->getDeviceWidgets(this).count();
-            if (count > 1) {
+            if (MainWindow::getInstance()->getDeviceWidgets(this).count() > 1) {
                 clipboardText = content;
 
                 static QTimer clipboardTimer;
                 static bool isInitialized = false;
                 if (!isInitialized) {
                     clipboardTimer.setSingleShot(true);
-                    clipboardTimer.setInterval(3000);
+                    clipboardTimer.setInterval(2000);
                     connect(&clipboardTimer, &QTimer::timeout, []() {
                         QStringList lines;
                         for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()){
