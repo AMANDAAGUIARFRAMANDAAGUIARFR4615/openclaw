@@ -19,7 +19,7 @@ public:
             return;
         }
 
-        setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint);
+        setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint | Qt::WindowTransparentForInput);
         setAttribute(Qt::WA_TranslucentBackground);
 
         QLabel *label = new QLabel(message, this);
