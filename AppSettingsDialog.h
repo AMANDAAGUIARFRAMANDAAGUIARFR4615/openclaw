@@ -175,7 +175,7 @@ private:
         windowShortcuts["🔈音量-"] = "Ctrl+Down";
         windowShortcuts["📌置顶"] = "Ctrl+T";
 
-        addSortableGroup(mainLayout, "windowMenu", "投屏窗口右键菜单 (拖拽调整顺序 / 双击修改快捷键)", 
+        addSortableGroup(mainLayout, "windowMenu", "投屏窗口右键菜单 (拖拽调整顺序 / 双击设置快捷键)", 
             windowMenuItems, windowShortcuts);
 
         addSortableGroup(mainLayout, "tabBarMenu", "分组标签页右键菜单 (拖拽调整顺序)", 
