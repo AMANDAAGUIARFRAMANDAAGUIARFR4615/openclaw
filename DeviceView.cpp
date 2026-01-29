@@ -64,7 +64,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                 static bool isInitialized = false;
                 if (!isInitialized) {
                     clipboardTimer.setSingleShot(true);
-                    clipboardTimer.setInterval(2000);
+                    clipboardTimer.setInterval(1500);
                     connect(&clipboardTimer, &QTimer::timeout, []() {
                         QStringList lines;
                         for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()){
