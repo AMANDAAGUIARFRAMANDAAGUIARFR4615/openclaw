@@ -13,13 +13,13 @@ class ToastWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ToastWidget(const QString &message, QWidget *parent = nullptr) : QWidget(parent) {
+    explicit ToastWidget(const QString &message, QWidget *parent = nullptr) : QWidget() {
         if (parent && parent->window()->isMinimized()) {
             deleteLater();
             return;
         }
 
-        setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+        setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint);
         setAttribute(Qt::WA_TranslucentBackground);
 
         QLabel *label = new QLabel(message, this);
