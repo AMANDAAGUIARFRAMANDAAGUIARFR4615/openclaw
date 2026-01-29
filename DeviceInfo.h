@@ -36,6 +36,7 @@ public:
 
         groupMask = settings->value(deviceId + "/groupMask", 1u).toUInt();
         geometry = settings->value(deviceId + "/geometry").toRect();
+        controller = settings->value(deviceId + "/controller", true).toBool();
 
         settings->setValue(deviceId + "/deviceName", deviceName);
 
@@ -176,6 +177,7 @@ public:
     bool lockedStatus;
     quint32 groupMask;
     QRect geometry;
+    bool controller;
     SafeObject<qint64> expireAt;
 
     inline static QHash<QString, SafeObject<qint64>> expirations;

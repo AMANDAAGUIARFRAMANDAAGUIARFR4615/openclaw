@@ -1055,6 +1055,10 @@ void MainWindow::addItem(DeviceConnection* connection)
     connect(player->checkBox, &QCheckBox::stateChanged, [=](int state) {
         const QSignalBlocker blocker(deviceListWidget);
         item->setSelected(state == Qt::Checked);
+        bool isUserAction = player->checkBox->hasFocus() || player->checkBox->isDown();
+        if (!isUserAction)
+            return;
+            
         QToolTip::showText(QCursor::pos(), R"(
             <div>
                 <b>快捷操作指南：</b>
@@ -1097,7 +1101,7 @@ QList<DeviceWidget*> MainWindow::getDeviceWidgets(DeviceView* mainDeviceView)
         else
             mainDeviceView = qobject_cast<DeviceWindow*>(mainDeviceView)->deviceWidget;
 
-        if (!multiControlSwitchButton->isChecked()) return { (DeviceWidget*)mainDeviceView };
+        if (!multiControlSwitchButton->isChecked() || !mainDeviceView->deviceInfo->controller) return { (DeviceWidget*)mainDeviceView };
     }
 
     QList<DeviceWidget*> list;

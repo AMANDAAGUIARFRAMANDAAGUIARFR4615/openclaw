@@ -238,12 +238,25 @@ void DeviceView::addContextMenuActions()
         else if (labelPart == "音量-") {
             addAction(text, [=](){send("volumeControl", "-");});
         }
-        else if (labelPart == "同屏操作") {
-            auto action = addAction(text, []() {
-                MainWindow::getInstance()->multiControlSwitchButton->setChecked(!MainWindow::getInstance()->multiControlSwitchButton->isChecked());
+        else if (labelPart == "主控") {
+            auto action = addAction(text, [this]() {
+                deviceInfo->controller = !deviceInfo->controller;
+                settings->setValue(deviceInfo->deviceId + "/controller", deviceInfo->controller);
             });
             action->setCheckable(true);
-            action->setChecked(MainWindow::getInstance()->multiControlSwitchButton->isChecked());
+            action->setChecked(deviceInfo->controller);
+        }
+        else if (labelPart == "被控") {
+            auto deviceWidget = qobject_cast<DeviceWidget*>(this);
+            auto deviceWindow = qobject_cast<DeviceWindow*>(this);
+            if (!deviceWidget && deviceWindow)
+                deviceWidget = deviceWindow->deviceWidget;
+
+            auto action = addAction(text, [=]() {
+                deviceWidget->checkBox->setChecked(!deviceWidget->checkBox->isChecked());
+            });
+            action->setCheckable(true);
+            action->setChecked(deviceWidget ? deviceWidget->checkBox->isChecked() : false);
         }
         else if (labelPart == "置顶") {
             auto action = addAction(text, [this]() {
