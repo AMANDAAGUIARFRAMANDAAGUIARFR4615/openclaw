@@ -66,12 +66,14 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                     static bool isInitialized = false;
                     if (!isInitialized) {
                         timer.setSingleShot(true);
-                        timer.setInterval(1000);
+                        timer.setInterval(2000);
                         connect(&timer, &QTimer::timeout, []() {
                             QStringList lines;
-                            for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()){
-                                lines.append(deviceWidget->deviceInfo->clipboardText);
-                                deviceWidget->deviceInfo->clipboardText = "";
+                            for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()) {
+                                if (!deviceWidget->deviceInfo->clipboardText.isEmpty()) {
+                                    lines.append(deviceWidget->deviceInfo->clipboardText);
+                                    deviceWidget->deviceInfo->clipboardText = "";
+                                }
                             }
 
                             if (lines.count() == 0) {
@@ -80,7 +82,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                             }
 
                             qApp->clipboard()->setText(lines.join('\n'));
-                            new ToastWidget("文本已复制到剪切板");
+                            new ToastWidget("手机剪切板内容已同步");
                         });
 
                         isInitialized = true;
