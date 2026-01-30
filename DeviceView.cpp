@@ -465,14 +465,14 @@ void DeviceView::dragEnterEvent(QDragEnterEvent *event)
     for (const QUrl &url : event->mimeData()->urls())
     {
         QString suffix = QFileInfo(url.toLocalFile()).suffix().toLower();
-        if (!allowedSuffixes.contains(suffix))
-        {
-            event->ignore();
+        if (!allowedSuffixes.contains(suffix)) {
+            event->setDropAction(Qt::IgnoreAction);
+            event->accept();
             return;
         }
     }
 
-    event->accept();
+    event->acceptProposedAction();
 }
 
 void DeviceView::dropEvent(QDropEvent *event)
@@ -484,7 +484,7 @@ void DeviceView::dropEvent(QDropEvent *event)
         new FileTransfer(connection, 2, localPath, localPath.section('/', -1), this);
     }
 
-    event->accept();
+    event->acceptProposedAction();
 }
 
 QPoint DeviceView::getTransformedPosition(QPoint pos) {
