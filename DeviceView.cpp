@@ -57,36 +57,24 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 
         if (type == 1)
         {
-            if (MainWindow::getInstance()->getDeviceWidgets(this).count() > 1) {
-                clipboardText = content;
+            if (clipboardTotal > 1) {
+                if (!clipboardTimer->isActive())
+                    return;
 
-                static QTimer clipboardTimer;
-                static bool isInitialized = false;
-                if (!isInitialized) {
-                    clipboardTimer.setSingleShot(true);
-                    clipboardTimer.setInterval(1500);
-                    connect(&clipboardTimer, &QTimer::timeout, []() {
-                        QStringList lines;
-                        for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()){
-                            const auto& targetView = deviceWidget->getDeviceWindow() ? (DeviceView*)deviceWidget->getDeviceWindow() : deviceWidget;
-                            lines.append(targetView->clipboardText);
+                this->deviceInfo->clipboardText = content;
 
-                            targetView->clipboardText = "";
-                        }
+                clipboardCount++;
+                if (clipboardCount == clipboardTotal) {
+                    clipboardTimer->stop();
 
-                        if (lines.count() == 0) {
-                            new ToastWidget("复制失败");
-                            return;
-                        }
+                    QStringList lines;
+                    for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()) {
+                        lines.append(deviceWidget->deviceInfo->clipboardText);
+                    }
 
-                        qApp->clipboard()->setText(lines.join('\n'));
-                        new ToastWidget("文本已复制到剪切板");
-                    });
-
-                    isInitialized = true;
+                    qApp->clipboard()->setText(lines.join('\n'));
+                    new ToastWidget("文本已复制到剪切板");
                 }
-
-                clipboardTimer.start();
             }
             else {
                 qApp->clipboard()->setText(content);
@@ -752,6 +740,30 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
         if (key >= Qt::Key_A && key <= Qt::Key_Z) {
             connection->send("keyboard", QJsonObject{{"type", "keyPress"}, {"key", event->text()}, {"repeat", event->isAutoRepeat()}});
             return;
+        }
+    }
+
+    if (event->matches(QKeySequence::Copy)) {
+        if (!clipboardTimer) {
+            clipboardTimer = new QTimer;
+            clipboardTimer->setSingleShot(true);
+            clipboardTimer->setInterval(3000);
+            connect(clipboardTimer, &QTimer::timeout, []() {
+                new ToastWidget("复制失败");
+            });
+        }
+
+        if (hasFocus()) {
+            const auto& deviceWidgets = MainWindow::getInstance()->getDeviceWidgets(this);
+            for (const auto& deviceWidget : deviceWidgets) {
+                deviceWidget->deviceInfo->clipboardText = "";
+            }
+
+            clipboardTotal = deviceWidgets.count();
+            clipboardCount = 0;
+
+            if (clipboardTotal > 1)
+                clipboardTimer->start();
         }
     }
 

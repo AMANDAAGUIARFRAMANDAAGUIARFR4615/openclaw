@@ -178,6 +178,7 @@ public:
     quint32 groupMask;
     QRect geometry;
     bool controller;
+    QString clipboardText;
     SafeObject<qint64> expireAt;
 
     inline static QHash<QString, SafeObject<qint64>> expirations;

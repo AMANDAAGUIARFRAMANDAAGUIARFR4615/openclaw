@@ -25,7 +25,6 @@ public:
     DeviceInfo* const deviceInfo;
 
     int randomDelay = 0;
-    QString clipboardText;
 
 protected:
     void showOverlay(const QString &text);
@@ -51,4 +50,8 @@ protected:
     int accumulatedDelta = 0;
     const int maxSteps = 5;
     int stepCount = 0;
+
+    inline static QTimer *clipboardTimer = nullptr;
+    inline static int clipboardTotal = 0;
+    inline static int clipboardCount = 0;
 };
