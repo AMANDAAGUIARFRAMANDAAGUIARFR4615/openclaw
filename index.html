@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>鹰眼中控 - 新一代企业级手机群控系统</title>
-    <!-- 引入 Tailwind CSS (快速样式库) -->
+    <title>鹰眼中控 - 专业iOS越狱群控系统 (Win/Mac)</title>
+    <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 FontAwesome (图标库) -->
+    <!-- 引入 FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- 引入 Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -20,11 +20,8 @@
                     },
                     colors: {
                         brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0ea5e9', // 天蓝色
-                            600: '#0284c7',
-                            900: '#0c4a6e', //以此为深色背景基调
+                            500: '#3b82f6', 
+                            900: '#0f172a',
                         }
                     }
                 }
@@ -32,313 +29,301 @@
         }
     </script>
     <style>
-        /* 自定义动画和背景 */
         body {
-            background-color: #0f172a; /* 深蓝黑背景 */
+            background-color: #020617; /* 极深蓝背景 */
             color: #f8fafc;
             overflow-x: hidden;
+            scroll-behavior: smooth;
         }
         .hero-bg {
-            background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
-            position: relative;
-        }
-        .hero-bg::before {
-            content: '';
-            position: absolute;
-            top: -10%;
-            right: -10%;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
-            border-radius: 50%;
-            z-index: 0;
+            background: radial-gradient(circle at 50% 0%, #1e3a8a 0%, #020617 60%);
         }
         .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.3s ease;
         }
         .glass-card:hover {
+            background: rgba(30, 41, 59, 0.6);
+            border-color: rgba(59, 130, 246, 0.4);
             transform: translateY(-5px);
-            border-color: rgba(14, 165, 233, 0.5);
-            box-shadow: 0 10px 40px -10px rgba(14, 165, 233, 0.3);
         }
         .gradient-text {
-            background: linear-gradient(to right, #38bdf8, #818cf8);
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .btn-primary {
-            background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%);
-            transition: all 0.3s ease;
+        .download-btn {
+            transition: all 0.3s;
         }
-        .btn-primary:hover {
-            filter: brightness(1.1);
-            box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
         }
     </style>
 </head>
 <body class="antialiased font-sans">
 
     <!-- 导航栏 -->
-    <nav class="fixed w-full z-50 top-0 start-0 border-b border-gray-800 bg-slate-900/90 backdrop-blur-md">
+    <nav class="fixed w-full z-50 top-0 start-0 border-b border-white/5 bg-slate-950/80 backdrop-blur-md">
         <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between px-6 py-4">
-            <a href="#" class="flex items-center space-x-3 rtl:space-x-reverse">
-                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+            <a href="#" class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-900/50">
                     <i class="fa-solid fa-eye"></i>
                 </div>
-                <span class="self-center text-2xl font-bold whitespace-nowrap text-white">鹰眼中控 <span class="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded ml-2 border border-blue-700">企业版</span></span>
+                <span class="self-center text-2xl font-bold whitespace-nowrap text-white">鹰眼中控</span>
             </a>
-            <div class="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
-                <a href="#download" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-all">
-                    登录 / 注册
-                </a>
-                <button data-collapse-toggle="navbar-sticky" type="button" class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-400 rounded-lg md:hidden hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600">
-                    <span class="sr-only">打开菜单</span>
-                    <i class="fa-solid fa-bars text-xl"></i>
-                </button>
-            </div>
-            <div class="items-center justify-between hidden w-full md:flex md:w-auto md:order-1" id="navbar-sticky">
-                <ul class="flex flex-col p-4 md:p-0 mt-4 font-medium border border-gray-700 rounded-lg bg-gray-800 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-transparent">
-                    <li><a href="#" class="block py-2 px-3 text-blue-400 bg-transparent md:p-0" aria-current="page">首页</a></li>
-                    <li><a href="#features" class="block py-2 px-3 text-gray-300 hover:text-white md:p-0 transition-colors">核心功能</a></li>
-                    <li><a href="#tutorial" class="block py-2 px-3 text-gray-300 hover:text-white md:p-0 transition-colors">使用教程</a></li>
-                    <li><a href="#pricing" class="block py-2 px-3 text-gray-300 hover:text-white md:p-0 transition-colors">购买授权</a></li>
+            
+            <!-- 移动端菜单按钮 -->
+            <button data-collapse-toggle="navbar-sticky" type="button" class="inline-flex items-center p-2 w-10 h-10 justify-center text-gray-400 rounded-lg md:hidden hover:bg-gray-800 focus:outline-none">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+            
+            <!-- 菜单链接 -->
+            <div class="items-center justify-between hidden w-full md:flex md:w-auto" id="navbar-sticky">
+                <ul class="flex flex-col p-4 md:p-0 mt-4 font-medium border border-gray-800 rounded-lg bg-gray-900 md:space-x-8 md:flex-row md:mt-0 md:border-0 md:bg-transparent">
+                    <li><a href="#" class="block py-2 px-3 text-blue-400" aria-current="page">首页</a></li>
+                    <li><a href="#features" class="block py-2 px-3 text-gray-300 hover:text-white transition-colors">核心功能</a></li>
+                    <li><a href="#faq" class="block py-2 px-3 text-gray-300 hover:text-white transition-colors">常见问题</a></li>
+                    <li><a href="#download" class="block py-2 px-3 text-gray-300 hover:text-white transition-colors">下载客户端</a></li>
                 </ul>
+            </div>
+            
+            <!-- 桌面端右侧直接显示下载引导，不放登录注册 -->
+            <div class="hidden md:flex">
+                <a href="#download" class="text-sm font-semibold text-blue-300 hover:text-white transition-colors">
+                    <i class="fa-solid fa-download mr-1"></i> 获取最新版本
+                </a>
             </div>
         </div>
     </nav>
 
     <!-- 首屏 Hero Section -->
     <section class="hero-bg pt-32 pb-20 md:pt-48 md:pb-32 px-6">
-        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <!-- 左侧文本 -->
-            <div class="text-center md:text-left z-10">
-                <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight mb-6">
-                    重新定义 <br>
-                    <span class="gradient-text">手机群控自动化</span>
-                </h1>
-                <p class="text-gray-400 text-lg md:text-xl mb-8 max-w-2xl mx-auto md:mx-0">
-                    鹰眼中控系统为您提供 iOS/Android 免越狱群控解决方案。批量管理、远程投屏、脚本自动化，让工作室效率提升 10 倍以上。
-                </p>
-                
-                <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                    <a href="#" class="btn-primary text-white font-semibold rounded-lg text-lg px-8 py-4 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/30">
-                        <i class="fa-brands fa-windows"></i> PC端下载 V3.1
-                    </a>
-                    <a href="#" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-semibold rounded-lg text-lg px-8 py-4 flex items-center justify-center gap-3 transition-all">
-                        <i class="fa-solid fa-book-open"></i> 查看教程
-                    </a>
-                </div>
-                
-                <div class="mt-8 flex items-center justify-center md:justify-start gap-6 text-sm text-gray-500">
-                    <span class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> iOS免越狱</span>
-                    <span class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> 安卓通用</span>
-                    <span class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> 安全稳定</span>
-                </div>
+        <div class="max-w-7xl mx-auto text-center">
+            <div class="inline-block px-4 py-1.5 mb-6 text-xs font-semibold tracking-wider text-blue-300 uppercase bg-blue-900/30 rounded-full border border-blue-800">
+                支持 iOS 12 - 16+ 越狱系统
             </div>
-
-            <!-- 右侧视觉图 (模拟软件界面) -->
-            <div class="relative z-10 hidden md:block">
-                <div class="relative mx-auto border-gray-800 bg-gray-800 border-[8px] rounded-t-xl h-[172px] max-w-[301px] md:h-[294px] md:max-w-[512px]">
-                    <div class="rounded-lg overflow-hidden h-[156px] md:h-[278px] bg-gray-800">
-                        <!-- 模拟软件界面 -->
-                        <div class="bg-slate-900 w-full h-full p-2 grid grid-cols-4 gap-2">
-                            <div class="bg-blue-500/20 border border-blue-500/30 rounded flex items-center justify-center text-xs text-blue-300">Device 01</div>
-                            <div class="bg-blue-500/20 border border-blue-500/30 rounded flex items-center justify-center text-xs text-blue-300">Device 02</div>
-                            <div class="bg-blue-500/20 border border-blue-500/30 rounded flex items-center justify-center text-xs text-blue-300">Device 03</div>
-                            <div class="bg-blue-500/20 border border-blue-500/30 rounded flex items-center justify-center text-xs text-blue-300">Device 04</div>
-                            <div class="bg-blue-500/20 border border-blue-500/30 rounded flex items-center justify-center text-xs text-blue-300">Device 05</div>
-                            <div class="bg-blue-500/20 border border-blue-500/30 rounded flex items-center justify-center text-xs text-blue-300">Device 06</div>
-                            <div class="bg-slate-800 rounded col-span-2 flex items-center justify-center text-gray-500 text-xs">Running Script...</div>
-                        </div>
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight mb-8">
+                专业级 iOS 设备<br>
+                <span class="gradient-text">批量投屏与群控</span>
+            </h1>
+            <p class="text-gray-400 text-lg md:text-xl mb-10 max-w-2xl mx-auto">
+                专为工作室打造的高效管理工具。通过 USB 或局域网连接，在 Windows 或 Mac 上实现低延迟、高帧率的 iPhone 批量控制。
+            </p>
+            
+            <!-- 下载按钮组 -->
+            <div class="flex flex-col sm:flex-row gap-5 justify-center items-center" id="download-hero">
+                <a href="#" class="download-btn bg-blue-600 hover:bg-blue-500 text-white text-lg font-semibold rounded-xl px-8 py-4 flex items-center min-w-[200px] justify-center gap-3">
+                    <i class="fa-brands fa-windows text-2xl"></i>
+                    <div class="text-left">
+                        <div class="text-xs opacity-80">Windows 版</div>
+                        <div class="leading-none">立即下载</div>
                     </div>
-                </div>
-                <div class="relative mx-auto bg-gray-900 rounded-b-xl rounded-t-sm h-[17px] max-w-[351px] md:h-[21px] md:max-w-[597px]">
-                    <div class="absolute left-1/2 top-0 -translate-x-1/2 rounded-b-xl w-[56px] h-[5px] md:w-[96px] md:h-[8px] bg-gray-800"></div>
-                </div>
-                <!-- 浮动徽章 -->
-                <div class="absolute -bottom-10 -left-10 bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl animate-bounce" style="animation-duration: 3s;">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-green-500/20 p-2 rounded-full text-green-400">
-                            <i class="fa-solid fa-wifi"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-400">连接状态</p>
-                            <p class="font-bold text-sm">低延迟流畅</p>
-                        </div>
+                </a>
+                <a href="#" class="download-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white text-lg font-semibold rounded-xl px-8 py-4 flex items-center min-w-[200px] justify-center gap-3">
+                    <i class="fa-brands fa-apple text-2xl"></i>
+                    <div class="text-left">
+                        <div class="text-xs opacity-80">macOS 版</div>
+                        <div class="leading-none">立即下载</div>
                     </div>
-                </div>
+                </a>
             </div>
+            
+            <p class="mt-6 text-sm text-gray-600">
+                <i class="fa-solid fa-shield-halved mr-1"></i> 安全纯净无广告 · 持续更新维护
+            </p>
         </div>
     </section>
 
-    <!-- 功能特点 Features -->
-    <section id="features" class="py-20 bg-slate-900 relative">
+    <!-- 核心功能 Features -->
+    <section id="features" class="py-20 bg-slate-950 relative">
         <div class="max-w-7xl mx-auto px-6">
             <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-4xl font-bold mb-4">为什么选择鹰眼中控？</h2>
-                <p class="text-gray-400 max-w-2xl mx-auto">专为工作室和企业打造的一站式移动设备管理平台，解决繁琐的人工操作。</p>
+                <h2 class="text-3xl font-bold mb-4">核心功能亮点</h2>
+                <p class="text-gray-400">摒弃繁杂，专注于稳定连接与高效操作</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Card 1 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Feature 1 -->
                 <div class="glass-card p-8 rounded-2xl">
-                    <div class="w-14 h-14 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 text-2xl mb-6">
-                        <i class="fa-solid fa-layer-group"></i>
+                    <div class="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-400 text-xl mb-4">
+                        <i class="fa-solid fa-desktop"></i>
                     </div>
-                    <h3 class="text-xl font-bold mb-3">批量设备管理</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        支持同时控制几十台至上千台设备。自定义分组管理，一键同步操作，大幅降低人力成本。
+                    <h3 class="text-lg font-bold mb-2">双端电脑支持</h3>
+                    <p class="text-gray-400 text-sm">
+                        打破系统壁垒，无论您使用的是 Windows PC 还是 MacBook，都能获得一致的流畅群控体验。
                     </p>
                 </div>
 
-                <!-- Card 2 -->
+                <!-- Feature 2 -->
                 <div class="glass-card p-8 rounded-2xl">
-                    <div class="w-14 h-14 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-400 text-2xl mb-6">
-                        <i class="fa-solid fa-code"></i>
+                    <div class="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center text-purple-400 text-xl mb-4">
+                        <i class="fa-solid fa-bolt"></i>
                     </div>
-                    <h3 class="text-xl font-bold mb-3">脚本自动化运行</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        集成按键精灵云控技术，支持自定义脚本任务。可设置定时、循环、开机自启，实现7x24小时无人值守。
+                    <h3 class="text-lg font-bold mb-2">低延迟实时投屏</h3>
+                    <p class="text-gray-400 text-sm">
+                        优化底层传输协议，支持 USB 直连与局域网 WiFi 连接，画面清晰流畅，操作响应毫秒级。
                     </p>
                 </div>
 
-                <!-- Card 3 -->
+                <!-- Feature 3 -->
                 <div class="glass-card p-8 rounded-2xl">
-                    <div class="w-14 h-14 bg-teal-500/10 rounded-xl flex items-center justify-center text-teal-400 text-2xl mb-6">
-                        <i class="fa-solid fa-mobile-screen-button"></i>
+                    <div class="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center text-green-400 text-xl mb-4">
+                        <i class="fa-solid fa-keyboard"></i>
                     </div>
-                    <h3 class="text-xl font-bold mb-3">高清实时投屏</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        低延迟传输技术，支持横竖屏切换、画质调节。在电脑大屏上清晰监控每一台手机的运行状态。
+                    <h3 class="text-lg font-bold mb-2">同步输入与粘贴</h3>
+                    <p class="text-gray-400 text-sm">
+                        支持电脑键盘直接在手机输入框打字，支持剪贴板内容一键同步粘贴到所有选中设备。
                     </p>
                 </div>
 
-                <!-- Card 4 -->
+                <!-- Feature 4 -->
                 <div class="glass-card p-8 rounded-2xl">
-                    <div class="w-14 h-14 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-400 text-2xl mb-6">
-                        <i class="fa-brands fa-apple"></i>
+                    <div class="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center text-orange-400 text-xl mb-4">
+                        <i class="fa-solid fa-power-off"></i>
                     </div>
-                    <h3 class="text-xl font-bold mb-3">iOS 免越狱支持</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        独家技术支持 iOS 13-17+ 系统，无需越狱即可实现投屏与控制，保障设备安全与质保。
+                    <h3 class="text-lg font-bold mb-2">一键设备管理</h3>
+                    <p class="text-gray-400 text-sm">
+                        批量注销(Respring)、重启、关机。快速唤醒屏幕、黑屏省电模式，轻松管理成百上千台设备。
                     </p>
                 </div>
 
-                <!-- Card 5 -->
+                <!-- Feature 5 -->
                 <div class="glass-card p-8 rounded-2xl">
-                    <div class="w-14 h-14 bg-pink-500/10 rounded-xl flex items-center justify-center text-pink-400 text-2xl mb-6">
-                        <i class="fa-solid fa-file-import"></i>
+                    <div class="w-12 h-12 bg-pink-500/10 rounded-lg flex items-center justify-center text-pink-400 text-xl mb-4">
+                        <i class="fa-brands fa-app-store-ios"></i>
                     </div>
-                    <h3 class="text-xl font-bold mb-3">文件批量传输</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        一键将图片、视频、文本文件导入所有设备。支持相册清理和应用安装卸载。
+                    <h3 class="text-lg font-bold mb-2">应用安装与卸载</h3>
+                    <p class="text-gray-400 text-sm">
+                        拖入 IPA 文件即可批量安装应用，亦可一键卸载指定 App，极速部署业务环境。
                     </p>
                 </div>
 
-                <!-- Card 6 -->
+                <!-- Feature 6 -->
                 <div class="glass-card p-8 rounded-2xl">
-                    <div class="w-14 h-14 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400 text-2xl mb-6">
-                        <i class="fa-solid fa-network-wired"></i>
+                    <div class="w-12 h-12 bg-teal-500/10 rounded-lg flex items-center justify-center text-teal-400 text-xl mb-4">
+                        <i class="fa-solid fa-folder-open"></i>
                     </div>
-                    <h3 class="text-xl font-bold mb-3">多网络连接模式</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        支持局域网、广域网及 USB 数据线连接。无论设备在身边还是异地，都能轻松掌控。
+                    <h3 class="text-lg font-bold mb-2">设备信息监控</h3>
+                    <p class="text-gray-400 text-sm">
+                        实时查看设备 IP、电量、iOS 版本、存储空间等信息，异常状态一目了然。
                     </p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 价格/下载区域 -->
-    <section id="pricing" class="py-20 bg-slate-950">
+    <!-- 常见问题 FAQ -->
+    <section id="faq" class="py-20 bg-slate-900 border-t border-gray-800">
         <div class="max-w-4xl mx-auto px-6">
-            <div class="bg-gradient-to-r from-blue-900 to-slate-900 rounded-3xl p-8 md:p-12 border border-blue-800 text-center relative overflow-hidden">
-                <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-blue-500 opacity-10 blur-3xl"></div>
-                
-                <h2 class="text-3xl font-bold mb-4 text-white">开始您的自动化之旅</h2>
-                <p class="text-blue-200 mb-8">按设备数量灵活计费，新用户注册即享免费试用授权。</p>
-                
-                <div class="flex flex-col md:flex-row justify-center gap-6 mb-10">
-                    <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-700 w-full md:w-1/3">
-                        <div class="text-sm text-gray-400 mb-2">月授权</div>
-                        <div class="text-3xl font-bold text-white">¥10 <span class="text-sm font-normal text-gray-500">/台</span></div>
-                        <p class="text-xs text-gray-500 mt-2">短期项目首选</p>
-                    </div>
-                    <div class="bg-blue-600/20 p-6 rounded-xl border border-blue-500 w-full md:w-1/3 transform scale-105 shadow-xl">
-                        <div class="absolute top-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-bl-lg rounded-tr-lg">推荐</div>
-                        <div class="text-sm text-blue-300 mb-2">年授权</div>
-                        <div class="text-3xl font-bold text-white">¥45 <span class="text-sm font-normal text-blue-200">/台</span></div>
-                        <p class="text-xs text-blue-200 mt-2">长期运营超值</p>
-                    </div>
-                    <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-700 w-full md:w-1/3">
-                        <div class="text-sm text-gray-400 mb-2">试用体验</div>
-                        <div class="text-3xl font-bold text-white">免费 <span class="text-sm font-normal text-gray-500">/3天</span></div>
-                        <p class="text-xs text-gray-500 mt-2">全功能开放</p>
-                    </div>
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-4">常见问题 (FAQ)</h2>
+                <p class="text-gray-400">使用前的常见疑问解答</p>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Question 1 -->
+                <div class="bg-slate-800/50 rounded-xl p-6 border border-gray-700">
+                    <h3 class="flex items-center text-lg font-semibold text-white mb-2">
+                        <i class="fa-regular fa-circle-question text-blue-500 mr-3"></i>
+                        支持安卓手机吗？
+                    </h3>
+                    <p class="text-gray-400 ml-8 text-sm leading-relaxed">
+                        暂不支持。目前鹰眼中控专注于 **iOS 系统** 的底层优化，以提供最极致的流畅度和稳定性。
+                    </p>
                 </div>
 
-                <a href="#" class="inline-block w-full md:w-auto bg-white text-blue-900 hover:bg-gray-100 font-bold py-4 px-12 rounded-full transition-colors">
-                    立即注册并下载
-                </a>
-                <p class="mt-4 text-xs text-gray-500">支持 Windows 10/11 · iOS 13+ · Android 7+</p>
+                <!-- Question 2 -->
+                <div class="bg-slate-800/50 rounded-xl p-6 border border-gray-700">
+                    <h3 class="flex items-center text-lg font-semibold text-white mb-2">
+                        <i class="fa-regular fa-circle-question text-blue-500 mr-3"></i>
+                        手机需要越狱吗？
+                    </h3>
+                    <p class="text-gray-400 ml-8 text-sm leading-relaxed">
+                        **是的，必须越狱。**<br>
+                        我们需要 Root 权限来实现模拟点击和屏幕捕获。支持通过 unc0ver, Taurine, palera1n, checkra1n 等工具越狱的设备。暂不支持免越狱控制。
+                    </p>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="bg-slate-800/50 rounded-xl p-6 border border-gray-700">
+                    <h3 class="flex items-center text-lg font-semibold text-white mb-2">
+                        <i class="fa-regular fa-circle-question text-blue-500 mr-3"></i>
+                        支持远程广域网控制吗？
+                    </h3>
+                    <p class="text-gray-400 ml-8 text-sm leading-relaxed">
+                        目前仅支持 **局域网 (同一 WiFi 下)** 或 **USB 数据线** 连接。这种方式能保证最低的延迟和最好的画质，暂未开放广域网远程功能。
+                    </p>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="bg-slate-800/50 rounded-xl p-6 border border-gray-700">
+                    <h3 class="flex items-center text-lg font-semibold text-white mb-2">
+                        <i class="fa-regular fa-circle-question text-blue-500 mr-3"></i>
+                        对电脑配置有什么要求？
+                    </h3>
+                    <p class="text-gray-400 ml-8 text-sm leading-relaxed">
+                        普通办公电脑即可。
+                        <br>Windows：Win10 或 Win11 系统。
+                        <br>Mac：macOS 10.15 及以上版本，支持 Intel 和 M系列芯片。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 下载区域 -->
+    <section id="download" class="py-20 bg-gradient-to-b from-slate-900 to-blue-950">
+        <div class="max-w-5xl mx-auto px-6 text-center">
+            <h2 class="text-3xl font-bold text-white mb-8">立即开始您的群控体验</h2>
+            <p class="text-blue-200 mb-12">选择对应系统的客户端下载，解压即用</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+                <!-- Windows Card -->
+                <div class="bg-slate-800 p-8 rounded-3xl border border-slate-600 hover:border-blue-500 transition-colors group">
+                    <i class="fa-brands fa-windows text-5xl text-blue-500 mb-6 group-hover:scale-110 transition-transform duration-300"></i>
+                    <h3 class="text-xl font-bold text-white mb-2">Windows 客户端</h3>
+                    <p class="text-gray-400 text-sm mb-8">适用于 Win10 / Win11 64位系统</p>
+                    <a href="#" class="block w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        点击下载
+                    </a>
+                </div>
+
+                <!-- Mac Card -->
+                <div class="bg-slate-800 p-8 rounded-3xl border border-slate-600 hover:border-gray-400 transition-colors group">
+                    <i class="fa-brands fa-apple text-5xl text-white mb-6 group-hover:scale-110 transition-transform duration-300"></i>
+                    <h3 class="text-xl font-bold text-white mb-2">macOS 客户端</h3>
+                    <p class="text-gray-400 text-sm mb-8">适用于 macOS 10.15+ (Intel/M1/M2)</p>
+                    <a href="#" class="block w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        点击下载
+                    </a>
+                </div>
+            </div>
+            
+            <div class="mt-12 p-4 bg-blue-900/30 rounded-lg inline-block border border-blue-800/50">
+                <p class="text-sm text-blue-200">
+                    <i class="fa-solid fa-headset mr-2"></i> 如需购买授权或技术咨询，请联系客服 QQ：12345678
+                </p>
             </div>
         </div>
     </section>
 
     <!-- 页脚 Footer -->
-    <footer class="bg-slate-900 border-t border-gray-800 pt-12 pb-8">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                <div class="col-span-1 md:col-span-1">
-                    <div class="flex items-center space-x-2 mb-4">
-                        <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white">
-                            <i class="fa-solid fa-eye"></i>
-                        </div>
-                        <span class="text-xl font-bold text-white">鹰眼中控</span>
-                    </div>
-                    <p class="text-gray-500 text-sm">专业的手机群控与自动化解决方案提供商。</p>
-                </div>
-                
-                <div>
-                    <h4 class="text-white font-semibold mb-4">产品下载</h4>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li><a href="#" class="hover:text-blue-400 transition">PC 客户端</a></li>
-                        <li><a href="#" class="hover:text-blue-400 transition">Android 守护端</a></li>
-                        <li><a href="#" class="hover:text-blue-400 transition">iOS 鹰眼源</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="text-white font-semibold mb-4">技术支持</h4>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li><a href="#" class="hover:text-blue-400 transition">使用手册</a></li>
-                        <li><a href="#" class="hover:text-blue-400 transition">常见问题</a></li>
-                        <li><a href="#" class="hover:text-blue-400 transition">脚本开发文档</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="text-white font-semibold mb-4">联系我们</h4>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li><i class="fa-brands fa-qq mr-2"></i> 客服QQ: 1845085988</li>
-                        <li><i class="fa-solid fa-users mr-2"></i> 交流群: 584310299</li>
-                        <li><i class="fa-solid fa-clock mr-2"></i> 周一至周日 9:00-22:00</li>
-                    </ul>
-                </div>
+    <footer class="bg-slate-950 border-t border-gray-900 py-10">
+        <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
+            <div class="flex justify-center space-x-6 mb-6">
+                <a href="#" class="hover:text-white transition">关于我们</a>
+                <a href="#" class="hover:text-white transition">使用协议</a>
+                <a href="#" class="hover:text-white transition">隐私政策</a>
             </div>
-            
-            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600">
-                <p>Copyright © 2024 福州禹创科技有限公司 All rights reserved.</p>
-                <p class="mt-2 md:mt-0">闽ICP备2024065593号</p>
-            </div>
+            <p>Copyright © 2026 鹰眼中控 All rights reserved.</p>
         </div>
     </footer>
 
     <script>
-        // 简单的移动端菜单切换逻辑
+        // 移动端菜单切换逻辑
         const btn = document.querySelector('[data-collapse-toggle="navbar-sticky"]');
         const menu = document.getElementById('navbar-sticky');
         
