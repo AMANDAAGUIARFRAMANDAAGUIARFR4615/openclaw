@@ -57,6 +57,44 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 
         if (type == 1)
         {
+            if (clipboardTotal == 0) {
+                // 手机上触发的复制
+                if (MainWindow::getInstance()->getDeviceWidgets().count() > 1) {
+                    this->deviceInfo->clipboardText = content;
+
+                    static QTimer timer;
+                    static bool isInitialized = false;
+                    if (!isInitialized) {
+                        timer.setSingleShot(true);
+                        timer.setInterval(1000);
+                        connect(&timer, &QTimer::timeout, []() {
+                            QStringList lines;
+                            for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()){
+                                lines.append(deviceWidget->deviceInfo->clipboardText);
+                                deviceWidget->deviceInfo->clipboardText = "";
+                            }
+
+                            if (lines.count() == 0) {
+                                new ToastWidget("复制失败");
+                                return;
+                            }
+
+                            qApp->clipboard()->setText(lines.join('\n'));
+                            new ToastWidget("文本已复制到剪切板");
+                        });
+
+                        isInitialized = true;
+                    }
+
+                    timer.start();
+                }
+                else {
+                    qApp->clipboard()->setText(content);
+                    new ToastWidget("文本已复制到剪切板", this);
+                }
+                return;
+            }
+
             if (clipboardTotal > 1) {
                 if (!clipboardTimer->isActive())
                     return;
