@@ -14,6 +14,11 @@ class ToastWidget : public QWidget {
 
 public:
     explicit ToastWidget(const QString &message, QWidget *parent = nullptr) : QWidget() {
+        if (parent && parent->window()->isMinimized()) {
+            deleteLater();
+            return;
+        }
+
         setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint | Qt::WindowTransparentForInput);
         setAttribute(Qt::WA_TranslucentBackground);
 
