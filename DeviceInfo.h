@@ -69,6 +69,11 @@ public:
         return !locker.isEmpty();
     }
 
+    const QString& getLocker()
+    {
+        return locker;
+    }
+
     void setLocker(const QString& value)
     {
         locker = value;

@@ -623,8 +623,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
         deviceInfo = new DeviceInfo(connection, data.toObject());
         if (deviceInfo->isLockByOther()) {
-            delete deviceInfo;
+            // connection->send("reject", QString("此设备被【%1】独占，需要该账号退出独占模式您才能连接").arg(deviceInfo->getLocker()));
             connection->close();
+            delete deviceInfo;
             return;
         }
         
@@ -1058,7 +1059,7 @@ void MainWindow::addItem(DeviceConnection* connection)
         bool isUserAction = player->checkBox->hasFocus() || player->checkBox->isDown();
         if (!isUserAction)
             return;
-            
+
         QToolTip::showText(QCursor::pos(), R"(
             <div>
                 <b>快捷操作指南：</b>
