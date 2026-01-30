@@ -14,7 +14,6 @@
 #include <QMessageBox>
 #include <QDragEnterEvent>
 #include <QMimeData>
-#include <QDropEvent>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -142,7 +141,6 @@ private:
         connect(treeView, &QTreeView::customContextMenuRequested, this, &Recorder::showContextMenu);
 
         treeView->setDragEnabled(true);
-        treeView->setAcceptDrops(true);
         treeView->setDragDropMode(QAbstractItemView::DragDrop); // 允许拖和放
         treeView->setDefaultDropAction(Qt::MoveAction);         // 默认动作为移动
         treeView->setDropIndicatorShown(true);
@@ -246,17 +244,6 @@ protected:
             close();
         else
             QWidget::keyPressEvent(event);
-    }
-
-    void dragEnterEvent(QDragEnterEvent *event) override {
-        if (event->mimeData()->hasUrls())
-            event->acceptProposedAction();
-        else
-            event->ignore();
-    }
-
-    void dragMoveEvent(QDragMoveEvent *event) override {
-        event->accept();
     }
 
     void showContextMenu(const QPoint &pos) {
