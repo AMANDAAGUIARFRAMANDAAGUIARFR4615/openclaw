@@ -1,0 +1,52 @@
+name: Trojan Proxy Workflow
+
+on: [push, workflow_dispatch]
+
+jobs:
+  use-proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure and Start Trojan
+        run: |
+          sudo apt update
+          sudo apt install -y trojan
+
+          cat <<EOF > config.json
+          {
+              "run_type": "client",
+              "local_addr": "127.0.0.1",
+              "local_port": 1080,
+              "remote_addr": "${{ secrets.TROJAN_HOST }}",
+              "remote_port": ${{ secrets.TROJAN_PORT }},
+              "password": ["${{ secrets.TROJAN_PASSWORD }}"],
+              "log_level": 1,
+              "ssl": {
+                  "verify": true,
+                  "verify_hostname": true,
+                  "cert": "",
+                  "sni": "${{ secrets.TROJAN_HOST }}"
+              }
+          }
+          EOF
+          
+          sudo trojan -c config.json > trojan.log 2>&1 &
+          
+          # 等待几秒钟确保服务启动成功
+          sleep 5
+          
+          sudo netstat -tunlp | grep 1080 || echo "Trojan 启动失败"
+
+      - run: |
+          curl -s https://api.ipify.org
+
+      - name: Set Global Proxy Vars
+        run: |
+          echo "http_proxy=socks5://127.0.0.1:1080" >> $GITHUB_ENV
+          echo "https_proxy=socks5://127.0.0.1:1080" >> $GITHUB_ENV
+          echo "all_proxy=socks5://127.0.0.1:1080" >> $GITHUB_ENV
+
+      - run: |
+          curl -s https://api.ipify.org
