@@ -33,7 +33,7 @@ protected:
     void addContextMenuActions();
     void contextMenuEvent(QContextMenuEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
-    Q_INVOKABLE void dropEvent(QDropEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
     
     QPoint getTransformedPosition(QPoint pos);
     bool event(QEvent *event) override;
