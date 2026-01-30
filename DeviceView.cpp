@@ -637,9 +637,9 @@ bool DeviceView::event(QEvent *event)
 
                     if (MainWindow::getInstance()->multiControlSwitchButton->isChecked() && MainWindow::getInstance()->randomDelayCheckBox->isChecked()) {
                         if (event->type() == QEvent::MouseButtonPress)
-                            targetView->randomDelay = MainWindow::getInstance()->getRandomDelay();
+                            targetView->deviceInfo->randomDelay = MainWindow::getInstance()->getRandomDelay();
 
-                        qint64 execTime = QDateTime::currentMSecsSinceEpoch() + targetView->randomDelay;
+                        qint64 execTime = QDateTime::currentMSecsSinceEpoch() + targetView->deviceInfo->randomDelay;
                         eventQueue.enqueue({execTime, mappedEvent, targetView});
                     }
                     else {

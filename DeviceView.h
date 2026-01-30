@@ -24,8 +24,6 @@ public:
     DeviceConnection* const connection;
     DeviceInfo* const deviceInfo;
 
-    int randomDelay = 0;
-
 protected:
     void showOverlay(const QString &text);
     void hideOverlay();

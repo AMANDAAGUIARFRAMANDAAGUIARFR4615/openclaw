@@ -179,6 +179,7 @@ public:
     QRect geometry;
     bool controller;
     QString clipboardText;
+    int randomDelay = 0;
     SafeObject<qint64> expireAt;
 
     inline static QHash<QString, SafeObject<qint64>> expirations;

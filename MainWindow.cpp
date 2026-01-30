@@ -470,14 +470,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         maxDelaySpinBox->setMinimum(value);
         settings->setValue("minDelay", value);
         for (const auto& deviceWidget : getDeviceWidgets()) {
-            deviceWidget->randomDelay = 0;
+            deviceWidget->deviceInfo->randomDelay = 0;
         }
     });
     connect(maxDelaySpinBox, &QSpinBox::valueChanged, [this](int value) {
         minDelaySpinBox->setMaximum(value);
         settings->setValue("maxDelay", value);
         for (const auto& deviceWidget : getDeviceWidgets()) {
-            deviceWidget->randomDelay = 0;
+            deviceWidget->deviceInfo->randomDelay = 0;
         }
     });
 
