@@ -66,6 +66,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                 clipboardCount++;
                 if (clipboardCount == clipboardTotal) {
                     clipboardTimer->stop();
+                    clipboardTotal = 0;
 
                     QStringList lines;
                     for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()) {
@@ -749,6 +750,7 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
             clipboardTimer->setSingleShot(true);
             clipboardTimer->setInterval(3000);
             connect(clipboardTimer, &QTimer::timeout, []() {
+                clipboardTotal = 0;
                 new ToastWidget("复制失败");
             });
         }
