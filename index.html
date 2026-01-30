@@ -61,6 +61,21 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
         }
+        /* 模态框滚动条样式 */
+        .modal-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .modal-scroll::-webkit-scrollbar-track {
+            background: #1e293b; 
+            border-radius: 4px;
+        }
+        .modal-scroll::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+        .modal-scroll::-webkit-scrollbar-thumb:hover {
+            background: #64748b; 
+        }
     </style>
 </head>
 <body class="antialiased font-sans">
@@ -263,14 +278,133 @@
     <!-- 页脚 Footer -->
     <footer class="bg-slate-950 border-t border-gray-900 py-10">
         <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
-            <div class="flex justify-center space-x-6 mb-6">
-                <a href="#" class="hover:text-white transition">关于我们</a>
-                <a href="#" class="hover:text-white transition">使用协议</a>
-                <a href="#" class="hover:text-white transition">隐私政策</a>
+            <div class="flex flex-wrap justify-center gap-6 mb-6">
+                <!-- 这里的链接改为按钮触发模态框 -->
+                <button onclick="openModal('about-modal')" class="hover:text-white transition focus:outline-none">关于我们</button>
+                <button onclick="openModal('terms-modal')" class="hover:text-white transition focus:outline-none">使用协议</button>
+                <button onclick="openModal('privacy-modal')" class="hover:text-white transition focus:outline-none">隐私政策</button>
             </div>
             <p>Copyright © 2026 远控Pro All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- 模态框：关于我们 -->
+    <div id="about-modal" class="fixed inset-0 z-[60] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeModal('about-modal')"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-slate-900 border border-slate-700 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-xl">
+                    <div class="px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-900/50 sm:mx-0 sm:h-10 sm:w-10">
+                                <i class="fa-solid fa-users text-blue-400"></i>
+                            </div>
+                            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                                <h3 class="text-xl font-semibold leading-6 text-white" id="modal-title">关于我们</h3>
+                                <div class="mt-4 text-gray-300 text-sm space-y-3 modal-scroll max-h-[60vh] overflow-y-auto pr-2">
+                                    <p>
+                                        <strong>远控Pro</strong> 是一支专注于移动设备自动化管理与群控技术的极客团队。我们致力于为应用测试、游戏工作室及设备运维人员提供最高效的 iOS 管理方案。
+                                    </p>
+                                    <p>
+                                        我们的愿景是打破 iOS 系统封闭性的限制，通过合法的越狱技术，让设备管理变得像操作电脑一样简单直观。
+                                    </p>
+                                    <!-- <p class="border-t border-slate-700 pt-3">
+                                        <strong>联系方式：</strong><br>
+                                        商务合作：business@remotepro.cn<br>
+                                        技术支持：support@remotepro.cn
+                                    </p> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-800/50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button" class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto" onclick="closeModal('about-modal')">关闭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：使用协议 -->
+    <div id="terms-modal" class="fixed inset-0 z-[60] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeModal('terms-modal')"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-slate-900 border border-slate-700 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
+                    <div class="px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-purple-900/50 sm:mx-0 sm:h-10 sm:w-10">
+                                <i class="fa-solid fa-file-contract text-purple-400"></i>
+                            </div>
+                            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                                <h3 class="text-xl font-semibold leading-6 text-white" id="modal-title">使用协议</h3>
+                                <div class="mt-4 text-gray-300 text-sm space-y-3 modal-scroll max-h-[60vh] overflow-y-auto pr-2 text-justify">
+                                    <p>欢迎使用远控Pro。请您仔细阅读以下条款，使用本软件即表示您同意受本协议约束。</p>
+                                    
+                                    <h4 class="text-white font-bold mt-2">1. 授权范围</h4>
+                                    <p>本软件授予您非排他性的、不可转让的许可，仅供您在个人或企业内部的合法设备上安装和使用。严禁对本软件进行反向工程、反编译或破解。</p>
+                                    
+                                    <h4 class="text-white font-bold mt-2">2. 合法使用承诺</h4>
+                                    <p>您承诺仅将本软件用于合法的测试、管理或运维目的。<strong>严禁将本软件用于网络诈骗、流量劫持、非法攻击或其他违反当地法律法规的行为。</strong>若发现违规行为，我们将立即终止服务并配合执法部门调查。</p>
+                                    
+                                    <h4 class="text-white font-bold mt-2">3. 越狱风险提示</h4>
+                                    <p>本软件依赖于 iOS 越狱环境运行。您知悉并同意：越狱可能会导致设备保修失效或系统不稳定。由此产生的设备损坏或数据丢失风险由用户自行承担。</p>
+                                    
+                                    <h4 class="text-white font-bold mt-2">4. 免责声明</h4>
+                                    <p>本软件按“现状”提供，不提供任何明示或暗示的保证。对于因使用本软件造成的任何间接损失（包括但不限于利润损失、业务中断），开发团队不承担赔偿责任。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-800/50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button" class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto" onclick="closeModal('terms-modal')">我已阅读并同意</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：隐私政策 -->
+    <div id="privacy-modal" class="fixed inset-0 z-[60] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeModal('privacy-modal')"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-slate-900 border border-slate-700 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
+                    <div class="px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-green-900/50 sm:mx-0 sm:h-10 sm:w-10">
+                                <i class="fa-solid fa-shield-halved text-green-400"></i>
+                            </div>
+                            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                                <h3 class="text-xl font-semibold leading-6 text-white" id="modal-title">隐私政策</h3>
+                                <div class="mt-4 text-gray-300 text-sm space-y-3 modal-scroll max-h-[60vh] overflow-y-auto pr-2 text-justify">
+                                    <p>远控Pro 高度重视您的隐私安全。由于本软件的特殊性（本地局域网控制），我们在数据处理上遵循“本地优先”原则。</p>
+                                    
+                                    <h4 class="text-white font-bold mt-2">1. 数据传输机制</h4>
+                                    <p>本软件的核心功能（投屏画面、触控指令、文件传输）均通过 <strong>USB 数据线或局域网 (LAN)</strong> 直接点对点传输。这些数据<strong>不会</strong>经过我们的云端服务器，我们也无法查看您的屏幕内容。</p>
+                                    
+                                    <h4 class="text-white font-bold mt-2">2. 我们收集的信息</h4>
+                                    <ul class="list-disc list-inside ml-2">
+                                        <li><strong>授权验证信息：</strong>仅收集设备的 UDID 或序列号用于验证软件授权状态。</li>
+                                        <li><strong>崩溃日志：</strong>经您同意发送的程序错误日志，用于修复 Bug。</li>
+                                    </ul>
+                                    
+                                    <h4 class="text-white font-bold mt-2">3. 权限调用</h4>
+                                    <p>电脑端需要访问您的网络权限（用于连接手机）和文件读写权限（用于传输文件）。手机端越狱插件需要 Root 权限以实现底层控制，但不会窃取您的通讯录、相册等隐私数据。</p>
+                                    
+                                    <h4 class="text-white font-bold mt-2">4. 第三方服务</h4>
+                                    <p>本网站及软件不包含任何第三方广告 SDK，也不会将您的任何信息出售给第三方。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-800/50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button" class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto" onclick="closeModal('privacy-modal')">理解并关闭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // 移动端菜单切换逻辑
@@ -279,6 +413,30 @@
         
         btn.addEventListener('click', () => {
             menu.classList.toggle('hidden');
+        });
+
+        // 模态框控制逻辑
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // 禁止背景滚动
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            document.body.style.overflow = 'auto'; // 恢复背景滚动
+        }
+
+        // 点击 ESC 键关闭所有模态框
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                const modals = document.querySelectorAll('[role="dialog"]');
+                modals.forEach(modal => {
+                    if (!modal.classList.contains('hidden')) {
+                        modal.classList.add('hidden');
+                        document.body.style.overflow = 'auto';
+                    }
+                });
+            }
         });
     </script>
 </body>
