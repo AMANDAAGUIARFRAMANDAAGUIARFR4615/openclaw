@@ -66,7 +66,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                     static bool isInitialized = false;
                     if (!isInitialized) {
                         timer.setSingleShot(true);
-                        timer.setInterval(2000);
+                        timer.setInterval(1000);
                         connect(&timer, &QTimer::timeout, []() {
                             QStringList lines;
                             for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()) {
