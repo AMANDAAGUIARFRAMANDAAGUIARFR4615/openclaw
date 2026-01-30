@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鹰眼中控 - 新一代企业级手机群控系统</title>
+    <!-- 引入 Tailwind CSS (快速样式库) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 FontAwesome (图标库) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans SC"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9', // 天蓝色
+                            600: '#0284c7',
+                            900: '#0c4a6e', //以此为深色背景基调
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 自定义动画和背景 */
+        body {
+            background-color: #0f172a; /* 深蓝黑背景 */
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .hero-bg {
+            background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+            position: relative;
+        }
+        .hero-bg::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            border-radius: 50%;
+            z-index: 0;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(14, 165, 233, 0.5);
+            box-shadow: 0 10px 40px -10px rgba(14, 165, 233, 0.3);
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+        }
+    </style>
+</head>
+<body class="antialiased font-sans">
+
+    <!-- 导航栏 -->
+    <nav class="fixed w-full z-50 top-0 start-0 border-b border-gray-800 bg-slate-900/90 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between px-6 py-4">
+            <a href="#" class="flex items-center space-x-3 rtl:space-x-reverse">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                    <i class="fa-solid fa-eye"></i>
+                </div>
+                <span class="self-center text-2xl font-bold whitespace-nowrap text-white">鹰眼中控 <span class="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded ml-2 border border-blue-700">企业版</span></span>
+            </a>
+            <div class="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
+                <a href="#download" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-all">
+                    登录 / 注册
+                </a>
+                <button data-collapse-toggle="navbar-sticky" type="button" class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-400 rounded-lg md:hidden hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600">
+                    <span class="sr-only">打开菜单</span>
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+            <div class="items-center justify-between hidden w-full md:flex md:w-auto md:order-1" id="navbar-sticky">
+                <ul class="flex flex-col p-4 md:p-0 mt-4 font-medium border border-gray-700 rounded-lg bg-gray-800 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-transparent">
+                    <li><a href="#" class="block py-2 px-3 text-blue-400 bg-transparent md:p-0" aria-current="page">首页</a></li>
+                    <li><a href="#features" class="block py-2 px-3 text-gray-300 hover:text-white md:p-0 transition-colors">核心功能</a></li>
+                    <li><a href="#tutorial" class="block py-2 px-3 text-gray-300 hover:text-white md:p-0 transition-colors">使用教程</a></li>
+                    <li><a href="#pricing" class="block py-2 px-3 text-gray-300 hover:text-white md:p-0 transition-colors">购买授权</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 首屏 Hero Section -->
+    <section class="hero-bg pt-32 pb-20 md:pt-48 md:pb-32 px-6">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <!-- 左侧文本 -->
+            <div class="text-center md:text-left z-10">
+                <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight mb-6">
+                    重新定义 <br>
+                    <span class="gradient-text">手机群控自动化</span>
+                </h1>
+                <p class="text-gray-400 text-lg md:text-xl mb-8 max-w-2xl mx-auto md:mx-0">
+                    鹰眼中控系统为您提供 iOS/Android 免越狱群控解决方案。批量管理、远程投屏、脚本自动化，让工作室效率提升 10 倍以上。
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                    <a href="#" class="btn-primary text-white font-semibold rounded-lg text-lg px-8 py-4 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/30">
+                        <i class="fa-brands fa-windows"></i> PC端下载 V3.1
+                    </a>
+                    <a href="#" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-semibold rounded-lg text-lg px-8 py-4 flex items-center justify-center gap-3 transition-all">
+                        <i class="fa-solid fa-book-open"></i> 查看教程
+                    </a>
+                </div>
+                
+                <div class="mt-8 flex items-center justify-center md:justify-start gap-6 text-sm text-gray-500">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> iOS免越狱</span>
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> 安卓通用</span>
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-check text-green-500"></i> 安全稳定</span>
+                </div>
+            </div>
+
+            <!-- 右侧视觉图 (模拟软件界面) -->
+            <div class="relative z-10 hidden md:block">
+                <div class="relative mx-auto border-gray-800 bg-gray-800 border-[8px] rounded-t-xl h-[172px] max-w-[301px] md:h-[294px] md:max-w-[512px]">
+                    <div class="rounded-lg overflow-hidden h-[156px] md:h-[278px] bg-gray-800">
+                        <!-- 模拟软件界面 -->
+                        <div class="bg-slate-900 w-full h-full p-2 grid grid-cols-4 gap-2">
+                            <div class="bg-blue-500/20 border border-blue-500/30 rounded flex items-center justify-center text-xs text-blue-300">Device 01</div>
+                            <div class="bg-blue-500/20 border border-blue-500/30 rounded flex items-center justify-center text-xs text-blue-300">Device 02</div>
+                            <div class="bg-blue-500/20 border border-blue-500/30 rounded flex items-center justify-center text-xs text-blue-300">Device 03</div>
+                            <div class="bg-blue-500/20 border border-blue-500/30 rounded flex items-center justify-center text-xs text-blue-300">Device 04</div>
+                            <div class="bg-blue-500/20 border border-blue-500/30 rounded flex items-center justify-center text-xs text-blue-300">Device 05</div>
+                            <div class="bg-blue-500/20 border border-blue-500/30 rounded flex items-center justify-center text-xs text-blue-300">Device 06</div>
+                            <div class="bg-slate-800 rounded col-span-2 flex items-center justify-center text-gray-500 text-xs">Running Script...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative mx-auto bg-gray-900 rounded-b-xl rounded-t-sm h-[17px] max-w-[351px] md:h-[21px] md:max-w-[597px]">
+                    <div class="absolute left-1/2 top-0 -translate-x-1/2 rounded-b-xl w-[56px] h-[5px] md:w-[96px] md:h-[8px] bg-gray-800"></div>
+                </div>
+                <!-- 浮动徽章 -->
+                <div class="absolute -bottom-10 -left-10 bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl animate-bounce" style="animation-duration: 3s;">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-green-500/20 p-2 rounded-full text-green-400">
+                            <i class="fa-solid fa-wifi"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400">连接状态</p>
+                            <p class="font-bold text-sm">低延迟流畅</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 功能特点 Features -->
+    <section id="features" class="py-20 bg-slate-900 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">为什么选择鹰眼中控？</h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">专为工作室和企业打造的一站式移动设备管理平台，解决繁琐的人工操作。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Card 1 -->
+                <div class="glass-card p-8 rounded-2xl">
+                    <div class="w-14 h-14 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 text-2xl mb-6">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">批量设备管理</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        支持同时控制几十台至上千台设备。自定义分组管理，一键同步操作，大幅降低人力成本。
+                    </p>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="glass-card p-8 rounded-2xl">
+                    <div class="w-14 h-14 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-400 text-2xl mb-6">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">脚本自动化运行</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        集成按键精灵云控技术，支持自定义脚本任务。可设置定时、循环、开机自启，实现7x24小时无人值守。
+                    </p>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="glass-card p-8 rounded-2xl">
+                    <div class="w-14 h-14 bg-teal-500/10 rounded-xl flex items-center justify-center text-teal-400 text-2xl mb-6">
+                        <i class="fa-solid fa-mobile-screen-button"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">高清实时投屏</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        低延迟传输技术，支持横竖屏切换、画质调节。在电脑大屏上清晰监控每一台手机的运行状态。
+                    </p>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="glass-card p-8 rounded-2xl">
+                    <div class="w-14 h-14 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-400 text-2xl mb-6">
+                        <i class="fa-brands fa-apple"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">iOS 免越狱支持</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        独家技术支持 iOS 13-17+ 系统，无需越狱即可实现投屏与控制，保障设备安全与质保。
+                    </p>
+                </div>
+
+                <!-- Card 5 -->
+                <div class="glass-card p-8 rounded-2xl">
+                    <div class="w-14 h-14 bg-pink-500/10 rounded-xl flex items-center justify-center text-pink-400 text-2xl mb-6">
+                        <i class="fa-solid fa-file-import"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">文件批量传输</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        一键将图片、视频、文本文件导入所有设备。支持相册清理和应用安装卸载。
+                    </p>
+                </div>
+
+                <!-- Card 6 -->
+                <div class="glass-card p-8 rounded-2xl">
+                    <div class="w-14 h-14 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400 text-2xl mb-6">
+                        <i class="fa-solid fa-network-wired"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">多网络连接模式</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        支持局域网、广域网及 USB 数据线连接。无论设备在身边还是异地，都能轻松掌控。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 价格/下载区域 -->
+    <section id="pricing" class="py-20 bg-slate-950">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="bg-gradient-to-r from-blue-900 to-slate-900 rounded-3xl p-8 md:p-12 border border-blue-800 text-center relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-blue-500 opacity-10 blur-3xl"></div>
+                
+                <h2 class="text-3xl font-bold mb-4 text-white">开始您的自动化之旅</h2>
+                <p class="text-blue-200 mb-8">按设备数量灵活计费，新用户注册即享免费试用授权。</p>
+                
+                <div class="flex flex-col md:flex-row justify-center gap-6 mb-10">
+                    <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-700 w-full md:w-1/3">
+                        <div class="text-sm text-gray-400 mb-2">月授权</div>
+                        <div class="text-3xl font-bold text-white">¥10 <span class="text-sm font-normal text-gray-500">/台</span></div>
+                        <p class="text-xs text-gray-500 mt-2">短期项目首选</p>
+                    </div>
+                    <div class="bg-blue-600/20 p-6 rounded-xl border border-blue-500 w-full md:w-1/3 transform scale-105 shadow-xl">
+                        <div class="absolute top-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-bl-lg rounded-tr-lg">推荐</div>
+                        <div class="text-sm text-blue-300 mb-2">年授权</div>
+                        <div class="text-3xl font-bold text-white">¥45 <span class="text-sm font-normal text-blue-200">/台</span></div>
+                        <p class="text-xs text-blue-200 mt-2">长期运营超值</p>
+                    </div>
+                    <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-700 w-full md:w-1/3">
+                        <div class="text-sm text-gray-400 mb-2">试用体验</div>
+                        <div class="text-3xl font-bold text-white">免费 <span class="text-sm font-normal text-gray-500">/3天</span></div>
+                        <p class="text-xs text-gray-500 mt-2">全功能开放</p>
+                    </div>
+                </div>
+
+                <a href="#" class="inline-block w-full md:w-auto bg-white text-blue-900 hover:bg-gray-100 font-bold py-4 px-12 rounded-full transition-colors">
+                    立即注册并下载
+                </a>
+                <p class="mt-4 text-xs text-gray-500">支持 Windows 10/11 · iOS 13+ · Android 7+</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 Footer -->
+    <footer class="bg-slate-900 border-t border-gray-800 pt-12 pb-8">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div class="col-span-1 md:col-span-1">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white">
+                            <i class="fa-solid fa-eye"></i>
+                        </div>
+                        <span class="text-xl font-bold text-white">鹰眼中控</span>
+                    </div>
+                    <p class="text-gray-500 text-sm">专业的手机群控与自动化解决方案提供商。</p>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-semibold mb-4">产品下载</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-blue-400 transition">PC 客户端</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition">Android 守护端</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition">iOS 鹰眼源</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-semibold mb-4">技术支持</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-blue-400 transition">使用手册</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition">常见问题</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition">脚本开发文档</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-semibold mb-4">联系我们</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><i class="fa-brands fa-qq mr-2"></i> 客服QQ: 1845085988</li>
+                        <li><i class="fa-solid fa-users mr-2"></i> 交流群: 584310299</li>
+                        <li><i class="fa-solid fa-clock mr-2"></i> 周一至周日 9:00-22:00</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600">
+                <p>Copyright © 2024 福州禹创科技有限公司 All rights reserved.</p>
+                <p class="mt-2 md:mt-0">闽ICP备2024065593号</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 简单的移动端菜单切换逻辑
+        const btn = document.querySelector('[data-collapse-toggle="navbar-sticky"]');
+        const menu = document.getElementById('navbar-sticky');
+        
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>
