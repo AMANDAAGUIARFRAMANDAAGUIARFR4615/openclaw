@@ -46,7 +46,7 @@ jobs:
         run: |
           echo "http_proxy=http://127.0.0.1:1080" >> $GITHUB_ENV
           echo "https_proxy=http://127.0.0.1:1080" >> $GITHUB_ENV
-          echo "all_proxy=socks5://127.0.0.1:1080" >> $GITHUB_ENV
+          echo "all_proxy=socks5h://127.0.0.1:1080" >> $GITHUB_ENV
 
       - run: |
           curl -s https://api.ipify.org
