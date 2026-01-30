@@ -751,7 +751,18 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
             clipboardTimer->setInterval(3000);
             connect(clipboardTimer, &QTimer::timeout, []() {
                 clipboardTotal = 0;
-                new ToastWidget("复制失败");
+
+                QStringList lines;
+                for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()) {
+                    if (!deviceWidget->deviceInfo->clipboardText.isEmpty())
+                        lines.append(deviceWidget->deviceInfo->clipboardText);
+                }
+
+                if (lines.count() == 0)
+                    return;
+
+                qApp->clipboard()->setText(lines.join('\n'));
+                new ToastWidget("部分文本已复制到剪切板");
             });
         }
 
