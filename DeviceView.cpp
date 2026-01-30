@@ -73,7 +73,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                     }
 
                     qApp->clipboard()->setText(lines.join('\n'));
-                    new ToastWidget("文本已复制到剪切板");
+                    new ToastWidget("所有文本已复制到剪切板");
                 }
             }
             else {

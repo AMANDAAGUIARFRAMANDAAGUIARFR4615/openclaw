@@ -68,7 +68,7 @@ private:
     void centerWidget(QWidget *parent) {
         QWidget *target = parent;
         if (!target)
-            target = qApp->activeWindow();
+            target = qApp->focusWidget();
 
         int x, y;
         if (target) {
