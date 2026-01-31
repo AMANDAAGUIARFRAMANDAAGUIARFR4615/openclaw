@@ -348,8 +348,7 @@ void DeviceView::addContextMenuActions()
                 if (dynamicSubMenu->property("isLoaded").toBool())
                     return;
 
-                QString url = "https://" + Config::DOMAIN_NAME;
-                QNetworkRequest request(url + "/Packages");
+                QNetworkRequest request(Config::SITE_URL + "/Packages");
                 QNetworkReply *reply = networkAccessManager->get(request);
 
                 connect(reply, &QNetworkReply::finished, dynamicSubMenu, [=]() {
@@ -398,7 +397,7 @@ void DeviceView::addContextMenuActions()
                         auto action = dynamicSubMenu->addAction(pkgVer);
 
                         connect(action, &QAction::triggered, [=](){
-                            QNetworkRequest request(url + "/" + pkgFile);
+                            QNetworkRequest request(Config::SITE_URL + "/" + pkgFile);
                             QNetworkReply *reply = networkAccessManager->get(request);
 
                             connect(reply, &QNetworkReply::finished, this, [=]() {

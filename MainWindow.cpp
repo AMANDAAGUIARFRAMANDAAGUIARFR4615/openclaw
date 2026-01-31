@@ -277,8 +277,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
             struct SourceInfo { QString title; QString url; };
             QList<SourceInfo> sources = {
-                {"Sileo", "sileo://source/https://" + Config::DOMAIN_NAME},
-                {"Cydia", "cydia://url/https://cydia.saurik.com/api/share#?source=https://cydia." + Config::DOMAIN_NAME}
+                {"Sileo", "sileo://source/" + Config::SITE_URL},
+                {"Cydia", "cydia://url/https://cydia.saurik.com/api/share#?source=" + Config::SITE_URL}
             };
 
             int qrSize = 400;
