@@ -118,6 +118,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                 }
             }
             else {
+                clipboardTotal = 0;
                 qApp->clipboard()->setText(content);
                 new ToastWidget("文本已复制到剪切板", this);
             }
