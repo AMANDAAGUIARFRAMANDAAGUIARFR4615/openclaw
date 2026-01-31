@@ -2,10 +2,6 @@ name: Build Qt Application
 
 on:
   push:
-    branches:
-      - '*'
-    # tags:
-    #   - '*'
   workflow_dispatch:
 
 concurrency:
@@ -297,3 +293,154 @@ jobs:
             -H "Content-Type: application/octet-stream" \
             --data-binary @RemotePro.zip \
             "${{ needs.create_release.outputs.upload_url }}?name=${{ needs.create_release.outputs.tag_name }}-${{ matrix.os }}.zip"
+
+      - name: Install sing-box
+        run: |
+          set -e
+          VERSION=1.8.6
+          curl -L -o sing-box.tar.gz \
+            https://github.com/SagerNet/sing-box/releases/download/v${VERSION}/sing-box-${VERSION}-linux-amd64.tar.gz
+          tar -xzf sing-box.tar.gz
+          sudo mv sing-box-${VERSION}-linux-amd64/sing-box /usr/local/bin/sing-box
+          sing-box version
+
+      - name: Generate sing-box config
+        run: |
+          cat > config.json << 'EOF'
+          {
+            "log": {
+              "level": "info"
+            },
+            "inbounds": [
+              {
+                "type": "socks",
+                "tag": "socks-in",
+                "listen": "127.0.0.1",
+                "listen_port": 1080
+              }
+            ],
+            "outbounds": [
+              {
+                "type": "trojan",
+                "tag": "trojan-out",
+                "server": "f533f9b2-c69a-4dd0-bc63-f2ab94dd5f53.f1eb10ae-1d82-4c6a-b4dd-bd9525520956.com",
+                "server_port": 10101,
+                "password": "${{ secrets.TROJAN_PASSWORD }}",
+                "tls": {
+                  "enabled": true,
+                  "server_name": "sni.eos-suzhou-4.cmecloud.cn"
+                }
+              }
+            ],
+            "route": {
+              "rules": [
+                {
+                  "inbound": "socks-in",
+                  "outbound": "trojan-out"
+                }
+              ]
+            }
+          }
+          EOF
+
+      - name: Start trojan proxy
+        run: |
+          nohup sing-box run -c config.json > sing-box.log 2>&1 &
+          sleep 5
+
+          # 动态注入环境变量，对后续所有 step 生效
+          echo "ALL_PROXY=socks5h://127.0.0.1:1080" >> $GITHUB_ENV
+          echo "HTTP_PROXY=socks5h://127.0.0.1:1080" >> $GITHUB_ENV
+          echo "HTTPS_PROXY=socks5h://127.0.0.1:1080" >> $GITHUB_ENV
+          
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            echo "GITEE_REPO=RemotePro/RemotePro-windows" >> $GITHUB_ENV
+          else
+            echo "GITEE_REPO=RemotePro/RemotePro-macos" >> $GITHUB_ENV
+          fi
+
+      - name: Checkout Gitee Repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.GITEE_REPO }}
+          github-server-url: 'https://gitee.com'
+          token: ${{ secrets.GITEE_TOKEN }}
+          path: gitee_repo
+
+      - name: Commit and Push to Gitee
+        shell: bash
+        run: |
+          cd gitee_repo
+
+          unzip -o ../build/RemotePro.zip -d .
+
+          git add .
+
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -m "${{ github.event.head_commit.message }}"
+            git push https://RemotePro:${{ secrets.GITEE_TOKEN }}@gitee.com/$GITEE_REPO.git
+          else
+            echo "No changes to commit."
+          fi
+
+      - name: Create Gitee Release
+        shell: python
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          COMMIT_SHA: ${{ github.sha }}
+          PYTHONIOENCODING: utf-8
+        run: |
+          import os
+          import requests
+          import glob
+          import sys
+
+          token = os.environ.get('GITEE_TOKEN')
+          repo = os.environ.get('GITEE_REPO')
+          release_name = os.environ.get('COMMIT_MESSAGE')
+          tag_name = os.environ.get('COMMIT_SHA')[:7]
+          
+          files_pattern = "dist/TrollRestore*"
+          
+          body = f"发布版描述"
+
+          create_url = f"https://gitee.com/api/v5/repos/{repo}/releases"
+          payload = {
+              "access_token": token,
+              "tag_name": tag_name,
+              "name": release_name,
+              "body": body,
+              "target_commitish": "master"
+          }
+
+          release_id = None
+
+          try:
+              print(f"Creating release for tag: {tag_name}...")
+              resp = requests.post(create_url, data=payload)
+              
+              if resp.status_code == 201:
+                  release_id = resp.json()['id']
+                  print(f"Release created successfully. ID: {release_id}")
+              else:
+                  print(f"Create returned status {resp.status_code}. Response: {resp.text}")
+                  
+                  get_rel_url = f"https://gitee.com/api/v5/repos/{owner}/{repo}/releases/tags/{tag_name}"
+                  get_resp = requests.get(get_rel_url, params={"access_token": token})
+                  
+                  if get_resp.status_code == 200:
+                      release_id = get_resp.json()['id']
+                      print(f"Found existing release ID: {release_id}")
+                  else:
+                      print(f"Failed to get existing release: {get_resp.text}")
+                      # 如果既创建失败，又获取不到，那就是真出错了，抛出原始创建错误
+                      resp.raise_for_status()
+
+          except Exception as e:
+              print(f"Critical error handling release: {e}")
+              sys.exit(1)
+
+          if not release_id:
+              print("Failed to obtain Release ID.")
+              sys.exit(1)

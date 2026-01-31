@@ -1,52 +1,81 @@
-name: Trojan Proxy Workflow
+name: Trojan Proxy Test
 
-on: [push, workflow_dispatch]
+on:
+  # push:
+  workflow_dispatch:
 
 jobs:
-  use-proxy:
+  proxy-test:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure and Start Trojan
+      - name: Install sing-box
         run: |
-          sudo apt update
-          sudo apt install -y trojan
+          set -e
+          VERSION=1.8.6
+          curl -L -o sing-box.tar.gz \
+            https://github.com/SagerNet/sing-box/releases/download/v${VERSION}/sing-box-${VERSION}-linux-amd64.tar.gz
+          tar -xzf sing-box.tar.gz
+          sudo mv sing-box-${VERSION}-linux-amd64/sing-box /usr/local/bin/sing-box
+          sing-box version
 
-          cat <<EOF > config.json
+      - name: Generate sing-box config
+        run: |
+          cat > config.json << 'EOF'
           {
-              "run_type": "client",
-              "local_addr": "127.0.0.1",
-              "local_port": 1080,
-              "remote_addr": "${{ secrets.TROJAN_HOST }}",
-              "remote_port": ${{ secrets.TROJAN_PORT }},
-              "password": ["${{ secrets.TROJAN_PASSWORD }}"],
-              "log_level": 1,
-              "ssl": {
-                  "verify": true,
-                  "verify_hostname": true,
-                  "cert": "",
-                  "sni": "${{ secrets.TROJAN_HOST }}"
+            "log": {
+              "level": "info"
+            },
+            "inbounds": [
+              {
+                "type": "socks",
+                "tag": "socks-in",
+                "listen": "127.0.0.1",
+                "listen_port": 1080
               }
+            ],
+            "outbounds": [
+              {
+                "type": "trojan",
+                "tag": "trojan-out",
+                "server": "f533f9b2-c69a-4dd0-bc63-f2ab94dd5f53.f1eb10ae-1d82-4c6a-b4dd-bd9525520956.com",
+                "server_port": 10101,
+                "password": "${{ secrets.TROJAN_PASSWORD }}",
+                "tls": {
+                  "enabled": true,
+                  "server_name": "sni.eos-suzhou-4.cmecloud.cn"
+                }
+              }
+            ],
+            "route": {
+              "rules": [
+                {
+                  "inbound": "socks-in",
+                  "outbound": "trojan-out"
+                }
+              ]
+            }
           }
           EOF
-          
-          sudo trojan -c config.json > trojan.log 2>&1 &
-          
-          # 等待几秒钟确保服务启动成功
-          sleep 5
-          
-          sudo netstat -tunlp | grep 1080 || echo "Trojan 启动失败"
 
-      - run: |
-          curl -s https://api.ipify.org
-
-      - name: Set Global Proxy Vars
+      - name: Start trojan proxy
         run: |
-          echo "http_proxy=http://127.0.0.1:1080" >> $GITHUB_ENV
-          echo "https_proxy=http://127.0.0.1:1080" >> $GITHUB_ENV
-          echo "all_proxy=socks5h://127.0.0.1:1080" >> $GITHUB_ENV
+          nohup sing-box run -c config.json > sing-box.log 2>&1 &
+          sleep 5
 
-      - run: |
-          curl -s https://api.ipify.org
+      - name: Test with curl
+        run: |
+          echo "IP info:"
+          curl https://ifconfig.me
+
+      - name: Set proxy env and test with curl
+        env:
+          ALL_PROXY: socks5h://127.0.0.1:1080
+          HTTP_PROXY: socks5h://127.0.0.1:1080
+          HTTPS_PROXY: socks5h://127.0.0.1:1080
+        run: |
+          echo "Proxy IP info:"
+          curl https://ifconfig.me
