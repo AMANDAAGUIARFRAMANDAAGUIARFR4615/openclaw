@@ -144,8 +144,6 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
         new ToastWidget("此类型暂不支持", this);
     });
 
-    addContextMenuActions();
-
     connect(AppSettingsDialog::getInstance(), &AppSettingsDialog::configurationChanged, this, [this](const QString &key) {
         if (key == "windowMenu")
         {
@@ -282,22 +280,17 @@ void DeviceView::addContextMenuActions()
             action->setChecked(deviceInfo->controller);
         }
         else if (labelPart == "被控") {
-            auto action = addAction(text, [this]() {
-                auto deviceWidget = qobject_cast<DeviceWidget*>(this);
-                if (!deviceWidget)
-                    deviceWidget = qobject_cast<DeviceWindow*>(this)->deviceWidget;
-            
+            auto deviceWidget = qobject_cast<DeviceWidget*>(this);
+            if (!deviceWidget)
+                deviceWidget = qobject_cast<DeviceWindow*>(this)->deviceWidget;
+
+            auto action = addAction(text, [=]() {
                 deviceWidget->checkBox->setChecked(!deviceWidget->checkBox->isChecked());
 
                 setWindowTitle(QString("%1%2%3").arg(deviceInfo->deviceName, deviceInfo->controller ? " 🏹主控" : "", deviceWidget->checkBox->isChecked() ? " 🎯被控" : ""));
             });
             action->setCheckable(true);
-
-            auto deviceWidget = qobject_cast<DeviceWidget*>(this);
-            auto deviceWindow = qobject_cast<DeviceWindow*>(this);
-            if (!deviceWidget && deviceWindow)
-                deviceWidget = deviceWindow->deviceWidget;
-            action->setChecked(deviceWidget ? deviceWidget->checkBox->isChecked() : false);
+            action->setChecked(deviceWidget->checkBox->isChecked());
         }
         else if (labelPart == "置顶") {
             auto action = addAction(text, [this]() {

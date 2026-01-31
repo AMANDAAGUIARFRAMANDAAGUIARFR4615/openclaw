@@ -36,6 +36,8 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     layout->addWidget(overlay);
     setLayout(layout);
 
+    addContextMenuActions();
+
     EventHub::on(this, "lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;

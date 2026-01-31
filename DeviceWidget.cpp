@@ -90,6 +90,8 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     layout->addLayout(bottomLayout);
     setLayout(layout);
 
+    addContextMenuActions();
+
     EventHub::on(this, "lockedStatus", [=](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
