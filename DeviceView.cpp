@@ -251,7 +251,7 @@ void DeviceView::addContextMenuActions()
             addAction(text, [this](){AppListWidget::open(connection, this);});
         }
         else if (labelPart == "截图") {
-            addAction(text, [this](){connection->send("screenshot");})->setEnabled(!MainWindow::getInstance()->multiControlSwitchButton->isChecked());
+            addAction(text, [this](){connection->send("screenshot");})->setEnabled(MainWindow::getInstance()->getDeviceWidgets(this).count() == 1);
         }
         else if (labelPart == "重启") {
             addAction(text, [=](){send("reboot");});
