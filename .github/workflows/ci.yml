@@ -295,6 +295,7 @@ jobs:
             "${{ needs.create_release.outputs.upload_url }}?name=${{ needs.create_release.outputs.tag_name }}-${{ matrix.os }}.zip"
 
       - name: Install sing-box
+        shell: bash
         run: |
           set -e
           VERSION=1.8.6
@@ -305,6 +306,7 @@ jobs:
           sing-box version
 
       - name: Generate sing-box config
+        shell: bash
         run: |
           cat > config.json << 'EOF'
           {
@@ -344,6 +346,7 @@ jobs:
           EOF
 
       - name: Start trojan proxy
+        shell: bash
         run: |
           nohup sing-box run -c config.json > sing-box.log 2>&1 &
           sleep 5
