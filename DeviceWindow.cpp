@@ -28,8 +28,8 @@
 
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(connection, deviceInfo), deviceWidget(deviceWidget)
 {
-    setWindowTitle(connection->displayName());
-
+    setWindowTitle(QString("%1%2%3").arg(deviceInfo->deviceName, deviceInfo->controller ? " 🏹主控" : "", deviceWidget->checkBox->isChecked() ? " 🎯被控" : ""));
+    
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
@@ -55,15 +55,6 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         auto orientation = data.toInt();
         this->deviceInfo->orientation = orientation;
         changeOrientation(orientation);
-    });
-
-    auto title = windowTitle();
-
-    if (MainWindow::getInstance()->multiControlSwitchButton->isChecked())
-        setWindowTitle(title + "【同屏操作中】");
-
-    connect(MainWindow::getInstance()->multiControlSwitchButton, &SwitchButton::toggled, this, [=](bool checked) {
-        setWindowTitle(checked ? title + "【同屏操作中】" : title);
     });
 }
 

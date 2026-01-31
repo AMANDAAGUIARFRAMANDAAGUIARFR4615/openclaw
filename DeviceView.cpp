@@ -271,20 +271,31 @@ void DeviceView::addContextMenuActions()
             auto action = addAction(text, [this]() {
                 deviceInfo->controller = !deviceInfo->controller;
                 settings->setValue(deviceInfo->deviceId + "/controller", deviceInfo->controller);
+
+                auto deviceWidget = qobject_cast<DeviceWidget*>(this);
+                if (!deviceWidget)
+                    deviceWidget = qobject_cast<DeviceWindow*>(this)->deviceWidget;
+                setWindowTitle(QString("%1%2%3").arg(deviceInfo->deviceName, deviceInfo->controller ? " 🏹主控" : "", deviceWidget->checkBox->isChecked() ? " 🎯被控" : ""));
             });
             action->setCheckable(true);
             action->setChecked(deviceInfo->controller);
         }
         else if (labelPart == "被控") {
+            auto action = addAction(text, [this]() {
+                auto deviceWidget = qobject_cast<DeviceWidget*>(this);
+                if (!deviceWidget)
+                    deviceWidget = qobject_cast<DeviceWindow*>(this)->deviceWidget;
+            
+                deviceWidget->checkBox->setChecked(!deviceWidget->checkBox->isChecked());
+
+                setWindowTitle(QString("%1%2%3").arg(deviceInfo->deviceName, deviceInfo->controller ? " 🏹主控" : "", deviceWidget->checkBox->isChecked() ? " 🎯被控" : ""));
+            });
+            action->setCheckable(true);
+
             auto deviceWidget = qobject_cast<DeviceWidget*>(this);
             auto deviceWindow = qobject_cast<DeviceWindow*>(this);
             if (!deviceWidget && deviceWindow)
                 deviceWidget = deviceWindow->deviceWidget;
-
-            auto action = addAction(text, [=]() {
-                deviceWidget->checkBox->setChecked(!deviceWidget->checkBox->isChecked());
-            });
-            action->setCheckable(true);
             action->setChecked(deviceWidget ? deviceWidget->checkBox->isChecked() : false);
         }
         else if (labelPart == "置顶") {
