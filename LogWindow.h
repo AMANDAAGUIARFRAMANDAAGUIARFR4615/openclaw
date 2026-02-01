@@ -14,6 +14,8 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QLineEdit>
+#include <QEvent>
+#include <QLayout>
 #include <magic_enum/magic_enum.hpp>
 
 class LogWindow : public QTextBrowser
@@ -90,6 +92,23 @@ public:
     }
 
 protected:
+    bool event(QEvent *e) override {
+        if (e->type() == QEvent::ParentChange) {
+            if (QWidget *p = parentWidget()) {
+                QLayout *layout = p->layout();
+                if (!layout) {
+                    QVBoxLayout *vbox = new QVBoxLayout(p);
+                    vbox->setContentsMargins(0, 0, 0, 0);
+                    vbox->setSpacing(0);
+                    layout = vbox;
+                }
+                
+                layout->addWidget(this); 
+            }
+        }
+        return QTextBrowser::event(e);
+    }
+
     void resizeEvent(QResizeEvent *event) override {
         QTextBrowser::resizeEvent(event);
         searchEdit->setGeometry(0, 0, width(), 40);
