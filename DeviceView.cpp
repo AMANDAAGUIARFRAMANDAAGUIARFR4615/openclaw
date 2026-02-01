@@ -257,6 +257,9 @@ void DeviceView::addContextMenuActions()
         else if (labelPart == "锁屏") {
             addAction(text, [=](){send("changeScreenLockedStatus", deviceInfo->lockedStatus ? 0 : 1);});
         }
+        else if (labelPart == "获取剪切板") {
+            addAction(text, [=](){send("getClipboard");});
+        }
         else if (labelPart == "清空相册") {
             addAction(text, [=](){send("deleteAllPhotos");});
         }
