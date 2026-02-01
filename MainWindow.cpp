@@ -361,7 +361,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         if (title == "日志") {
             auto logWindow = LogWindow::getInstance();
             logWindow->setParent(deviceListWidget);
-            logWindow->resize(deviceListWidget->size());
             logWindow->toggleVisibility();
             return;
         }
