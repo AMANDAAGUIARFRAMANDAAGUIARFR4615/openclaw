@@ -4,7 +4,7 @@
 #include "EventHub.h"
 #include "UsbDeviceManager.h"
 #include "LoginWidget.h"
-#include "LogWindow.h"
+#include "LogTextBrowser.h"
 #include "Account.h"
 #include "DeviceWindow.h"
 #include <QApplication>
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     if (!dir.exists())
         dir.mkpath(".");
 
-    new LogWindow();
+    new LogTextBrowser();
 
     qDebug() << QStyleFactory::keys(); 
 

@@ -18,11 +18,11 @@
 #include <QLayout>
 #include <magic_enum/magic_enum.hpp>
 
-class LogWindow : public QTextBrowser
+class LogTextBrowser : public QTextBrowser
 {
     Q_OBJECT
 public:
-    explicit LogWindow(QWidget *parent = nullptr) : QTextBrowser(parent)
+    explicit LogTextBrowser(QWidget *parent = nullptr) : QTextBrowser(parent)
     {
         instance = this;
 
@@ -84,7 +84,7 @@ public:
         });
     }
 
-    static LogWindow* getInstance() {return instance;}
+    static LogTextBrowser* getInstance() {return instance;}
 
     void toggleVisibility()
     {
@@ -157,7 +157,7 @@ protected:
         menu->deleteLater();
     }
 
-    inline static LogWindow* instance;
+    inline static LogTextBrowser* instance;
     QFile logFile;
     bool showOnlyErrors = false;
     QStringList allLogs;

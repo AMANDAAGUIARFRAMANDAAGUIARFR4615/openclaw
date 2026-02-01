@@ -77,7 +77,7 @@ add_executable(${PROJECT_NAME}
     main.cpp Safe.h SafeObject.h SwitchButton.h ExplicitSelectionListWidget.h NaturalSortListWidgetItem.h
     global.h global.cpp AesCrypto.h KeyMapping.h VideoVisibilityManager.h
     EmojiIconProvider.h Tools.h SettingsViewer.h JailbreakAssistantDialog.h AccountListDialog.h SwapExpirationDialog.h
-    Logger.h LogWindow.h EventHub.h
+    Logger.h LogTextBrowser.h EventHub.h
     BitMaskEditorDialog.h LiveStreamDevice.h
     LoginWidget.h Account.h
     MainWindow.h MainWindow.cpp

@@ -1,5 +1,5 @@
 #include "MainWindow.h"
-#include "LogWindow.h"
+#include "LogTextBrowser.h"
 #include "Tools.h"
 #include "EmojiIconProvider.h"
 #include "EventHub.h"
@@ -359,9 +359,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (title == "日志") {
-            auto logWindow = LogWindow::getInstance();
-            logWindow->setParent(deviceListWidget);
-            logWindow->toggleVisibility();
+            LogTextBrowser::getInstance()->setParent(deviceListWidget);
+            LogTextBrowser::getInstance()->toggleVisibility();
             return;
         }
 
