@@ -45,6 +45,27 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
     layout->addStretch();
     overlay->setLayout(layout);
 
+    if (!clipboardTimer) {
+        clipboardTimer = new QTimer;
+        clipboardTimer->setSingleShot(true);
+        clipboardTimer->setInterval(3000);
+        connect(clipboardTimer, &QTimer::timeout, []() {
+            clipboardTotal = 0;
+
+            QStringList lines;
+            for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()) {
+                if (!deviceWidget->deviceInfo->clipboardText.isEmpty())
+                    lines.append(deviceWidget->deviceInfo->clipboardText);
+            }
+
+            if (lines.count() == 0)
+                return;
+
+            qApp->clipboard()->setText(lines.join('\n'));
+            new ToastWidget("部分文本已复制到剪切板");
+        });
+    }
+
     EventHub::on(this, "clipboard", [this](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
@@ -805,27 +826,6 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
     }
 
     if (event->matches(QKeySequence::Copy)) {
-        if (!clipboardTimer) {
-            clipboardTimer = new QTimer;
-            clipboardTimer->setSingleShot(true);
-            clipboardTimer->setInterval(3000);
-            connect(clipboardTimer, &QTimer::timeout, []() {
-                clipboardTotal = 0;
-
-                QStringList lines;
-                for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()) {
-                    if (!deviceWidget->deviceInfo->clipboardText.isEmpty())
-                        lines.append(deviceWidget->deviceInfo->clipboardText);
-                }
-
-                if (lines.count() == 0)
-                    return;
-
-                qApp->clipboard()->setText(lines.join('\n'));
-                new ToastWidget("部分文本已复制到剪切板");
-            });
-        }
-
         if (hasFocus()) {
             const auto& deviceWidgets = MainWindow::getInstance()->getDeviceWidgets(this);
             for (const auto& deviceWidget : deviceWidgets) {
