@@ -51,8 +51,8 @@ public:
 
         connect(searchEdit, &QLineEdit::textChanged, this, [this](const QString &text) {
             clear();
-            for (const QString &msg : allLogs) {
-                appendIfMatch(msg);
+            for (const QString &text : allLogs) {
+                appendIfMatch(text);
             }
         });
 
@@ -146,8 +146,8 @@ protected:
             showOnlyErrors = checked;
             
             clear();
-            for (const QString &msg : allLogs) {
-                appendIfMatch(msg);
+            for (const QString &text : allLogs) {
+                appendIfMatch(text);
             }
         });
         filterAction->setCheckable(true);
@@ -163,12 +163,12 @@ protected:
     QStringList allLogs;
     QLineEdit *searchEdit;
 
-    void appendIfMatch(const QString& message)
+    void appendIfMatch(const QString& text)
     {
-        bool matchError = !showOnlyErrors || message.contains("color:red");
-        bool matchSearch = searchEdit->text().isEmpty() || message.contains(searchEdit->text(), Qt::CaseInsensitive);
+        bool matchError = !showOnlyErrors || text.contains("color:red");
+        bool matchSearch = searchEdit->text().isEmpty() || text.contains(searchEdit->text(), Qt::CaseInsensitive);
 
         if (matchError && matchSearch)
-            append(message);
+            append(text);
     }
 };
