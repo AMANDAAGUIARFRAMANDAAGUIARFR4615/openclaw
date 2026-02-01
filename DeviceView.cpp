@@ -258,18 +258,20 @@ void DeviceView::addContextMenuActions()
             addAction(text, [=](){send("changeScreenLockedStatus", deviceInfo->lockedStatus ? 0 : 1);});
         }
         else if (labelPart == "获取剪切板") {
-            const auto& deviceWidgets = MainWindow::getInstance()->getDeviceWidgets(this);
-            for (const auto& deviceWidget : deviceWidgets) {
-                deviceWidget->deviceInfo->clipboardText = "";
-            }
+            addAction(text, [=](){
+                const auto& deviceWidgets = MainWindow::getInstance()->getDeviceWidgets(this);
+                for (const auto& deviceWidget : deviceWidgets) {
+                    deviceWidget->deviceInfo->clipboardText = "";
+                }
 
-            clipboardTotal = deviceWidgets.count();
-            clipboardCount = 0;
+                clipboardTotal = deviceWidgets.count();
+                clipboardCount = 0;
 
-            if (clipboardTotal > 1)
-                clipboardTimer->start();
-                
-            addAction(text, [=](){send("getClipboard");});
+                if (clipboardTotal > 1)
+                    clipboardTimer->start();
+
+                send("getClipboard");
+            });
         }
         else if (labelPart == "清空相册") {
             addAction(text, [=](){send("deleteAllPhotos");});
