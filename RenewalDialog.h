@@ -48,8 +48,11 @@ public:
             filterComboBox->addItem(item.name, item.bit);
         }
 
+        expiredFilterCheckBox = new QCheckBox("只显示已到期");
+
         filterLayout->addWidget(filterLabel);
         filterLayout->addWidget(filterComboBox);
+        filterLayout->addWidget(expiredFilterCheckBox);
         filterLayout->addStretch();
 
         auto selectionLayout = new QHBoxLayout();
@@ -261,6 +264,15 @@ public:
             loadDeviceTable(bit); 
         });
 
+        connect(expiredFilterCheckBox, &QCheckBox::stateChanged, [this](int) {
+             // 触发当前选中的分组刷新
+             int index = filterComboBox->currentIndex();
+             if (index >= 0) {
+                 auto bit = filterComboBox->itemData(index).toUInt();
+                 loadDeviceTable(bit);
+             }
+        });
+
         connect(tableWidget, &QTableWidget::itemChanged, [this](QTableWidgetItem *item){
             if (item->column() == 0) {
                 updateTotalPrice();
@@ -306,6 +318,19 @@ protected:
     void loadDeviceTable(int bit)
     {
         auto devices = DeviceInfo::getDevices(1U << bit);
+        
+        qint64 currentTimestamp = Account::getInstance()->loginTime.get() + elapsedTimer->elapsed();
+
+        if (expiredFilterCheckBox->isChecked()) {
+            QList<DeviceInfo*> filteredDevices;
+
+            for (const auto& device : devices) {
+                if (device->expireAt.get() < currentTimestamp)
+                    filteredDevices.append(device);
+            }
+
+            devices = filteredDevices;
+        }
 
         tableWidget->blockSignals(true);
 
@@ -328,7 +353,7 @@ protected:
             auto expireItem = new QTableWidgetItem(expireAt);
             tableWidget->setItem(i, 3, expireItem);
 
-            if (deviceInfo->expireAt.get() < Account::getInstance()->loginTime.get() + elapsedTimer->elapsed())
+            if (deviceInfo->expireAt.get() < currentTimestamp)
                 expireItem->setForeground(QBrush(alertColor));
         }
 
@@ -410,7 +435,8 @@ protected:
     }
 
     QTableWidget *tableWidget;
-    QComboBox *filterComboBox; 
+    QComboBox *filterComboBox;
+    QCheckBox *expiredFilterCheckBox;
     QCheckBox *selectAllCheckBox;
     QRadioButton *monthRadioButton;
     QRadioButton *yearRadioButton;
