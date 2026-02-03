@@ -353,6 +353,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
         }
 
+        if (title == "软件更新") {
+            new ToastWidget("此功能暂未开放");
+            return;
+        }
+
         if (title == "客服") {
             showSupportDialog();
             return;
