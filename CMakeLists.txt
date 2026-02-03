@@ -4,7 +4,7 @@ project(RemotePro LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Network Concurrent Multimedia MultimediaWidgets WebSockets)
+find_package(Qt6 REQUIRED COMPONENTS CorePrivate Widgets Network Concurrent Multimedia MultimediaWidgets WebSockets)
 
 qt_standard_project_setup()
 
@@ -89,7 +89,7 @@ add_executable(${PROJECT_NAME}
     DeviceWidget.h DeviceWidget.cpp
     DeviceWindow.h DeviceWindow.cpp
     TcpServer.h UdpTransport.h WebSocketClient.h
-    ToastWidget.h
+    ToastWidget.h ZipUtils.h
     NetworkUtils.h
     AppSettingsDialog.h
     RemoteFileExplorer.h RemoteFileExplorer.cpp FileTransfer.h
@@ -175,8 +175,8 @@ endif()
 
 # 链接 Qt 和第三方库
 target_link_libraries(${PROJECT_NAME} PRIVATE 
-    Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network 
-    Qt6::Concurrent Qt6::Multimedia Qt6::MultimediaWidgets Qt6::WebSockets 
+    Qt6::Core Qt6::CorePrivate Qt6::Gui Qt6::Widgets Qt6::Network 
+    Qt6::Concurrent Qt6::Multimedia Qt6::MultimediaWidgets Qt6::WebSockets
     QtNodes
     ${THIRD_PARTY_LIBS}
 )
