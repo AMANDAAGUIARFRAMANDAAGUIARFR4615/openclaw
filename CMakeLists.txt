@@ -95,6 +95,11 @@ add_executable(${PROJECT_NAME}
     RemoteFileExplorer.h RemoteFileExplorer.cpp FileTransfer.h
     AppListWidget.h FileViewer.h Recorder.h
     qrcodegen.hpp qrcodegen.cpp
+
+    Definitions.hpp
+    PureDataModels.hpp
+    FlowModels.hpp
+
     ${RESOURCE_SOURCES}
 )
 
