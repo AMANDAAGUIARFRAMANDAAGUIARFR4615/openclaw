@@ -93,7 +93,7 @@ add_executable(${PROJECT_NAME}
     NetworkUtils.h
     AppSettingsDialog.h
     RemoteFileExplorer.h RemoteFileExplorer.cpp FileTransfer.h
-    AppListWidget.h FileViewer.h Recorder.h
+    AppListWidget.h FileViewer.h Recorder.h VersionManagerDialog.h
     qrcodegen.hpp qrcodegen.cpp
 
     Definitions.hpp
