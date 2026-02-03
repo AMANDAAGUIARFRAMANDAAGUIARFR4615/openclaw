@@ -19,6 +19,7 @@
 #include "ExplicitSelectionListWidget.h"
 #include "NaturalSortListWidgetItem.h"
 #include "Safe.h"
+#include "VersionManagerDialog.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -354,7 +355,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (title == "软件更新") {
-            new ToastWidget("此功能暂未开放");
+            VersionManagerDialog dialog(this);
+            dialog.exec();
             return;
         }
 

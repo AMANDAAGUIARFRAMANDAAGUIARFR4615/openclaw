@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ZipUtils.h"
 #include <QApplication>
 #include <QDialog>
 #include <QVBoxLayout>
@@ -44,7 +45,6 @@ public:
     }
 
 signals:
-    // 信号：请求下载
     void startDownload(const QString &url, const QString &tagName);
 
 private:
@@ -413,9 +413,6 @@ private:
         m_loadingWidget->hide();
     }
 
-    // ==========================================
-    // 下载逻辑 (保持不变)
-    // ==========================================
     void downloadFile(const QString &url, const QString &tagName) {
         QUrl qurl(url);
         QString fileName = qurl.fileName();
@@ -472,22 +469,9 @@ private:
             QMessageBox::warning(this, "下载失败", m_currentReply->errorString());
             QFile::remove(filePath);
         } else {
-            handleDownloadedFile(filePath);
+            ZipUtils::extractSmart(filePath, ".");
+            QFile::remove(filePath);
         }
         m_currentReply->deleteLater(); m_currentReply = nullptr;
-    }
-
-    void handleDownloadedFile(const QString &filePath) {
-        QMessageBox msgBox(this);
-        msgBox.setWindowTitle("下载完成");
-        msgBox.setText(QString("文件已保存至：\n%1").arg(filePath));
-        msgBox.setInformativeText("是否打开文件所在目录？");
-        msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-        msgBox.setDefaultButton(QMessageBox::Yes);
-
-        if (msgBox.exec() == QMessageBox::Yes) {
-            QFileInfo fileInfo(filePath);
-            QDesktopServices::openUrl(QUrl::fromLocalFile(fileInfo.absolutePath()));
-        }
     }
 };
