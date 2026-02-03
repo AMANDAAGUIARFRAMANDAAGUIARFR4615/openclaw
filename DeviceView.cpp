@@ -433,9 +433,11 @@ void DeviceView::addContextMenuActions()
 
                         auto action = dynamicSubMenu->addAction(pkgVer);
 
-                        connect(action, &QAction::triggered, [=](){
+                        connect(action, &QAction::triggered, [=]() {
                             QNetworkRequest request(Config::SITE_URL + "/" + pkgFile);
                             QNetworkReply *reply = networkAccessManager->get(request);
+
+                            new ToastWidget("正在下载中，请稍等");
 
                             connect(reply, &QNetworkReply::finished, this, [=]() {
                                 reply->deleteLater();
