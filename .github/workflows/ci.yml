@@ -235,10 +235,13 @@ jobs:
           cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-w" -DCMAKE_CXX_FLAGS="-w" -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR
           cmake --build build --config Release --parallel
 
-          cd build
-
           if [[ "$RUNNER_OS" == 'Windows' ]]; then
-            $QT_ROOT_DIR/bin/windeployqt RemotePro.exe
+            mkdir -p dist
+            cp build/RemotePro.exe dist/
+            cd dist
+            $QT_ROOT_DIR/bin/windeployqt --release --no-translations RemotePro.exe
+            echo "Package created successfully."
+
             cp C:/Windows/System32/msvcp140_1.dll .
             cp C:/Windows/System32/msvcp140_2.dll .
             cp C:/mingw64/opt/bin/libcrypto-3-x64.dll .
@@ -247,8 +250,10 @@ jobs:
             cp ../mingw64/libplist/bin/libplist-2.0.dll .
             cp ../mingw64/libusbmuxd/bin/libusbmuxd-2.0.dll .
             cp ../mingw64/libimobiledevice-glue/bin/libimobiledevice-glue-1.0.dll .
-            7z a RemotePro.zip . -x!.* -x!CMakeFiles -x!*_autogen -x!build.ninja -x!cmake_install.cmake -x!CMakeCache.txt
+            
+            7z a RemotePro.zip *
           else
+            cd build
             $QT_ROOT_DIR/bin/macdeployqt RemotePro.app
             
             APP=RemotePro.app
