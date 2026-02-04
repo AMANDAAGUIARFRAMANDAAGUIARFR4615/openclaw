@@ -47,13 +47,13 @@ int main(int argc, char *argv[])
 
     QLockFile lockFile(QDir::temp().absoluteFilePath("RemotePro.lock"));
 
-    // 尝试加锁，设置超时时间为 2000 毫秒（防止之前的僵死进程导致的短暂锁定）
-    if (!lockFile.tryLock(2000)) {
+    // 尝试加锁，设置超时时间为 100 毫秒（防止之前的僵死进程导致的短暂锁定）
+    if (!lockFile.tryLock(100)) {
         QMessageBox::warning(nullptr, "警告", "应用程序已经在运行中！");
         return 0;
     }
 
-    if (QProcess::startDetached(qApp->applicationFilePath() + ".old"))
+    if (QFile::exists(qApp->applicationFilePath() + ".old"))
         Tools::removeFilesRecursively(QCoreApplication::applicationDirPath(), {".old"});
 
     // app.styleHints()->setColorScheme(Qt::ColorScheme::Light);
@@ -148,9 +148,7 @@ int main(int argc, char *argv[])
 
     webSocketClient->on("force_logout", [](const QJsonValue &data) {
         settings->setValue("force_logout", data.toString());
-
-        QProcess::startDetached(qApp->applicationFilePath());
-        qApp->quit();
+        qApp->exit(100);
     });
 
     QObject::connect(loginWidget, &LoginWidget::authorized, [=](const QJsonValue &account) {
@@ -185,7 +183,15 @@ int main(int argc, char *argv[])
         MainWindow::getInstance()->show();
     });
 
-    return app.exec();
+    int code = app.exec();
+
+    if (code == 100) {
+        lockFile.unlock(); 
+        QProcess::startDetached(qApp->applicationFilePath());
+        return 0; 
+    }
+
+    return code;
 }
 
 #ifdef _WIN32

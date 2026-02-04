@@ -468,8 +468,7 @@ private:
             ZipUtils::extractSmart(filePath, ".");
             QFile::remove(filePath);
 
-            QProcess::startDetached(qApp->applicationFilePath());
-            qApp->quit();
+            qApp->exit(100);
         }
         m_currentReply->deleteLater(); m_currentReply = nullptr;
     }
