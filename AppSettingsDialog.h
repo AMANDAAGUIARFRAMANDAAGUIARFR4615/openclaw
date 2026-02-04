@@ -116,7 +116,7 @@ private:
         mainLayout->setSpacing(15);
         mainLayout->setContentsMargins(25, 20, 25, 20);
 
-        QGroupBox *defaultBox = new QGroupBox("全局默认配置 (分组单独设置优先)", this);
+        QGroupBox *defaultBox = new QGroupBox("投屏设置 (分组单独设置优先)", this);
         defaultBox->setStyleSheet(R"(
             QGroupBox {
                 border: 2px solid palette(mid);
