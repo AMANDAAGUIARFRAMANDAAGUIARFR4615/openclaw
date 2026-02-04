@@ -48,5 +48,7 @@ private:
     QHash<DeviceConnection*, UsbDeviceContext*> connToContext;
     QHash<QString, bool> devices;
 
-    QFutureWatcher<QSet<QString>>* watcher = nullptr;
+    QFutureWatcher<QSet<QString>>* watcher;
+    QTimer* pollTimer;
+    QTimer* connectTimer;
 };

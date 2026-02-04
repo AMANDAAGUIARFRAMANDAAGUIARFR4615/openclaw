@@ -6,33 +6,45 @@
 
 UsbDeviceManager::UsbDeviceManager(QObject* parent) : QObject(parent)
 {
-    
+    // 在构造函数中初始化，保证生命周期内 watcher 和 timer 永不为空
+    watcher = new QFutureWatcher<QSet<QString>>(this);
+    connect(watcher, &QFutureWatcher<QSet<QString>>::finished, this, &UsbDeviceManager::handlePollFinished);
+
+    pollTimer = new QTimer(this);
+    connect(pollTimer, &QTimer::timeout, this, &UsbDeviceManager::pollDevices);
+
+    connectTimer = new QTimer(this);
+    connect(connectTimer, &QTimer::timeout, this, &UsbDeviceManager::connectPendingDevices);
 }
 
 void UsbDeviceManager::start() {
     qInfoEx() << "🚀 启动设备管理器...";
 
-    watcher = new QFutureWatcher<QSet<QString>>(this);
-    connect(watcher, &QFutureWatcher<QSet<QString>>::finished, this, &UsbDeviceManager::handlePollFinished);
-    
     pollDevices();
 
-    auto timer = new QTimer(this);
-    timer->callOnTimeout(this, &UsbDeviceManager::pollDevices);
-    timer->start(2000);
-
-    auto connectTimer = new QTimer(this);
-    connectTimer->callOnTimeout(this, &UsbDeviceManager::connectPendingDevices);
+    pollTimer->start(2000);
     connectTimer->start(2000);
 }
 
 void UsbDeviceManager::stop() {
     qInfoEx() << "🛑 停止设备管理器...";
 
+    pollTimer->stop();
+    connectTimer->stop();
+    watcher->disconnect();
+    
+    // 如果后台线程正在运行，必须等待其结束，否则程序退出时可能会崩溃
+    if (watcher->isRunning())
+        watcher->waitForFinished();
+
     const auto connections = connToContext.keys();
     for (auto conn : connections) {
         disconnectDevice(conn);
     }
+
+    devices.clear();
+    previousDevices.clear();
+    deviceBuffers.clear();
 }
 
 void UsbDeviceManager::connectPendingDevices() {
