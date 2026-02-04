@@ -116,6 +116,10 @@ private:
         mainLayout->setSpacing(15);
         mainLayout->setContentsMargins(25, 20, 25, 20);
 
+        QVBoxLayout *layout = new QVBoxLayout(this);
+        addSettingGroup(layout, "autoSyncClipboard", "手机剪切板自动同步到电脑", {"关闭", "开启"}, 0);
+        mainLayout->addLayout(layout);
+
         QGroupBox *defaultBox = new QGroupBox("投屏设置 (分组单独设置优先)", this);
         defaultBox->setStyleSheet(R"(
             QGroupBox {

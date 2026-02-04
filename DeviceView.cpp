@@ -80,41 +80,43 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
         {
             if (clipboardTotal == 0) {
                 // 手机上触发的复制
-                // if (MainWindow::getInstance()->getDeviceWidgets().count() > 1) {
-                //     this->deviceInfo->clipboardText = content;
+                if (settings->value("autoSyncClipboard").toBool()) {
+                    if (MainWindow::getInstance()->getDeviceWidgets().count() > 1) {
+                        this->deviceInfo->clipboardText = content;
 
-                //     static QTimer timer;
-                //     static bool isInitialized = false;
-                //     if (!isInitialized) {
-                //         timer.setSingleShot(true);
-                //         timer.setInterval(1000);
-                //         connect(&timer, &QTimer::timeout, []() {
-                //             QStringList lines;
-                //             for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()) {
-                //                 if (!deviceWidget->deviceInfo->clipboardText.isEmpty()) {
-                //                     lines.append(deviceWidget->deviceInfo->clipboardText);
-                //                     deviceWidget->deviceInfo->clipboardText = "";
-                //                 }
-                //             }
+                        static QTimer timer;
+                        static bool isInitialized = false;
+                        if (!isInitialized) {
+                            timer.setSingleShot(true);
+                            timer.setInterval(1000);
+                            connect(&timer, &QTimer::timeout, []() {
+                                QStringList lines;
+                                for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWidgets()) {
+                                    if (!deviceWidget->deviceInfo->clipboardText.isEmpty()) {
+                                        lines.append(deviceWidget->deviceInfo->clipboardText);
+                                        deviceWidget->deviceInfo->clipboardText = "";
+                                    }
+                                }
 
-                //             if (lines.count() == 0) {
-                //                 new ToastWidget("复制失败");
-                //                 return;
-                //             }
+                                if (lines.count() == 0) {
+                                    new ToastWidget("复制失败");
+                                    return;
+                                }
 
-                //             qApp->clipboard()->setText(lines.join('\n'));
-                //             new ToastWidget("手机剪切板内容已同步");
-                //         });
+                                qApp->clipboard()->setText(lines.join('\n'));
+                                new ToastWidget("手机剪切板内容已同步");
+                            });
 
-                //         isInitialized = true;
-                //     }
+                            isInitialized = true;
+                        }
 
-                //     timer.start();
-                // }
-                // else {
-                //     qApp->clipboard()->setText(content);
-                //     new ToastWidget("文本已复制到剪切板", this);
-                // }
+                        timer.start();
+                    }
+                    else {
+                        qApp->clipboard()->setText(content);
+                        new ToastWidget("文本已复制到剪切板", this);
+                    }
+                }
                 return;
             }
 
