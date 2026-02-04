@@ -47,11 +47,14 @@ int main(int argc, char *argv[])
 
     QLockFile lockFile(QDir::temp().absoluteFilePath("RemotePro.lock"));
 
-    // 尝试加锁，设置超时时间为 100 毫秒（防止之前的僵死进程导致的短暂锁定）
-    if (!lockFile.tryLock(100)) {
+    // 尝试加锁，设置超时时间为 2000 毫秒（防止之前的僵死进程导致的短暂锁定）
+    if (!lockFile.tryLock(2000)) {
         QMessageBox::warning(nullptr, "警告", "应用程序已经在运行中！");
         return 0;
     }
+
+    if (QProcess::startDetached(qApp->applicationFilePath() + ".old"))
+        Tools::removeFilesRecursively(QCoreApplication::applicationDirPath(), {".old"});
 
     // app.styleHints()->setColorScheme(Qt::ColorScheme::Light);
     QStyle *fusionStyle = QStyleFactory::create("Fusion");

@@ -15,6 +15,7 @@
 #include <QToolTip>
 #include <QOperatingSystemVersion>
 #include <QSettings>
+#include <QDirIterator>
 
 using namespace qrcodegen;
 
@@ -202,5 +203,24 @@ public:
 #else
         return true;
 #endif
+    }
+
+    /**
+     * @brief 递归删除指定目录下符合过滤条件的所有文件
+     * @param targetPath 要扫描的根目录
+     * @param nameFilters 文件名过滤器列表 (例如: {"*.old", "*.tmp"})
+     */
+    static void removeFilesRecursively(const QString &targetPath, const QStringList &nameFilters)
+    {
+        QDirIterator it(targetPath, nameFilters, QDir::Files, QDirIterator::Subdirectories);
+
+        while (it.hasNext()) {
+            QString filePath = it.next();
+            
+            if (QFile::remove(filePath))
+                qDebugEx() << "成功删除:" << filePath;
+            else
+                qInfoEx() << "删除失败 (可能被占用或无权限):" << filePath;
+        }
     }
 };
