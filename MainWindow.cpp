@@ -653,6 +653,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
             if (deviceWidget->connection == connection) {
                 delete deviceListWidget->takeItem(i);
+                relayoutDevices();
                 break;
             }
         }
