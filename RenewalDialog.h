@@ -31,7 +31,6 @@ public:
 
     explicit RenewalDialog(QWidget *parent) : QDialog(parent)
     {
-        setModal(true);
         setWindowTitle("续费");
         setMinimumSize(480, 720);
 

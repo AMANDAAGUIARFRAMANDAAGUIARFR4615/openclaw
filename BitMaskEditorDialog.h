@@ -117,7 +117,6 @@ public:
         , m_maskRef(maskRef)
     {
         setWindowTitle("位掩码编辑器");
-        setModal(true);
         setupUi();
     }
 

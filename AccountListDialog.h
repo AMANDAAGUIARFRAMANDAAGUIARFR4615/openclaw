@@ -15,7 +15,6 @@
 class AccountListDialog : public QDialog {
 public:
     AccountListDialog(const QStringList &numbers, QWidget *parent) : QDialog(parent) {
-        setModal(true);
         setWindowTitle("在线账号列表");
         setMinimumWidth(600);
         

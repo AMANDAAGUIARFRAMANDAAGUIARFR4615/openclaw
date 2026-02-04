@@ -256,7 +256,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 helpDialog->resize(helpDialog->width(), docHeight + 30);
             });
 
-            helpDialog->setModal(true);
             helpDialog->exec();
             return;
         }

@@ -111,7 +111,6 @@ private:
     explicit AppSettingsDialog(QWidget *parent = nullptr) : QDialog(parent)
     {
         setWindowTitle("设置");
-        setModal(true);
 
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
         mainLayout->setSpacing(15);
