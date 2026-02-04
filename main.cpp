@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
         MainWindow::getInstance()->show();
     });
 
-    return app.exec();
+    std::exit(app.exec());
 }
 
 #ifdef _WIN32
