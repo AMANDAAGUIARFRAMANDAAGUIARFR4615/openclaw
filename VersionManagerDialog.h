@@ -1,5 +1,6 @@
 #pragma once
 
+#include "global.h"
 #include "ZipUtils.h"
 #include <QApplication>
 #include <QDialog>
@@ -132,12 +133,6 @@ private:
             connect(btnDownload, &QPushButton::clicked, this, [this](){
                 emit startDownload(m_downloadUrl, m_tagName);
             });
-        } else {
-            btnDownload->setText("查看详情");
-            btnDownload->setObjectName("BtnLink");
-            connect(btnDownload, &QPushButton::clicked, this, [this](){
-                QDesktopServices::openUrl(QUrl(m_releaseUrl));
-            });
         }
 
         layout->addLayout(leftLayout, 2); // 调整权重
@@ -163,22 +158,15 @@ public:
         setWindowTitle(QString("版本更新"));
         resize(800, 720);
 
-        m_manager = new QNetworkAccessManager(this);
-
         setupUI();
         fetchVersions();
     }
 
 private:
-    QNetworkAccessManager *m_manager;
     QVBoxLayout *m_listLayout;
-    QWidget *m_scrollContent; // 保存引用以便添加 Label
+    QWidget *m_scrollContent;
     QWidget *m_loadingWidget;
     QLabel *m_statusLabel;
-
-    QNetworkReply *m_currentReply = nullptr;
-    QFile *m_file = nullptr;
-    QProgressDialog *m_progressDialog = nullptr;
 
     void setupUI() {
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -347,7 +335,7 @@ private:
 
         QNetworkRequest request(url);
 
-        QNetworkReply *reply = m_manager->get(request);
+        auto reply = networkAccessManager->get(request);
         connect(reply, &QNetworkReply::finished, this, [this, reply](){
             handleResponse(reply);
         });
@@ -420,56 +408,56 @@ private:
         QString downloadPath = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
         QString filePath = QDir(downloadPath).filePath(fileName);
 
-        m_file = new QFile(filePath);
-        if (!m_file->open(QIODevice::WriteOnly)) {
+        auto file = new QFile(filePath);
+        if (!file->open(QIODevice::WriteOnly | QIODevice::Truncate)) {
             QMessageBox::critical(this, "错误", "无法写入文件: " + filePath);
-            delete m_file; m_file = nullptr;
+            delete file;;
             return;
         }
 
-        m_progressDialog = new QProgressDialog("正在下载 " + tagName + " ... ", "取消", 0, 100, this);
-        m_progressDialog->setWindowTitle("下载中");
-        m_progressDialog->setWindowModality(Qt::WindowModal);
-        m_progressDialog->setMinimumDuration(0);
+        auto progressDialog = new QProgressDialog("正在下载 " + tagName + " ... ", "取消", 0, 100, this);
+        progressDialog->setWindowTitle("下载中");
+        progressDialog->setWindowModality(Qt::WindowModal);
+        progressDialog->setMinimumDuration(0);
 
         QNetworkRequest request(qurl);
 
-        m_currentReply = m_manager->get(request);
+        auto reply = networkAccessManager->get(request);
 
-        connect(m_progressDialog, &QProgressDialog::canceled, m_currentReply, [this](){
-            m_currentReply->abort();
+        connect(progressDialog, &QProgressDialog::canceled, reply, [=](){
+            reply->abort();
         });
 
-        connect(m_currentReply, &QNetworkReply::downloadProgress, m_progressDialog,
-                [this](qint64 bytesReceived, qint64 bytesTotal) {
+        connect(reply, &QNetworkReply::downloadProgress, progressDialog,
+                [=](qint64 bytesReceived, qint64 bytesTotal) {
                     if (bytesTotal > 0)
-                        m_progressDialog->setValue((int)(bytesReceived * 100 / bytesTotal));
+                        progressDialog->setValue((int)(bytesReceived * 100 / bytesTotal));
                 });
 
-        connect(m_currentReply, &QNetworkReply::readyRead, this, [this](){
-            m_file->write(m_currentReply->readAll());
+        connect(reply, &QNetworkReply::readyRead, this, [=](){
+            file->write(reply->readAll());
         });
 
-        connect(m_currentReply, &QNetworkReply::finished, this, [this, filePath](){
-            onDownloadFinished(filePath);
+        connect(reply, &QNetworkReply::finished, this, [=](){
+            delete file;
+            progressDialog->deleteLater();
+            
+            if (reply->error() == QNetworkReply::OperationCanceledError) {
+                QFile::remove(filePath);
+            } else if (reply->error() != QNetworkReply::NoError) {
+                QMessageBox::warning(this, "下载失败", reply->errorString());
+                QFile::remove(filePath);
+            } else {
+                if (!ZipUtils::extractSmart(filePath, ".")) {
+                    new ToastWidget("解压失败，请重试");
+                }
+                else {
+                    QFile::remove(filePath);
+                    qApp->exit(100);
+                }
+            }
+
+            reply->deleteLater();
         });
-    }
-
-    void onDownloadFinished(const QString &filePath) {
-        if (m_file) { m_file->close(); delete m_file; m_file = nullptr; }
-        if (m_progressDialog) { m_progressDialog->deleteLater(); m_progressDialog = nullptr; }
-
-        if (m_currentReply->error() == QNetworkReply::OperationCanceledError) {
-            QFile::remove(filePath);
-        } else if (m_currentReply->error() != QNetworkReply::NoError) {
-            QMessageBox::warning(this, "下载失败", m_currentReply->errorString());
-            QFile::remove(filePath);
-        } else {
-            ZipUtils::extractSmart(filePath, ".");
-            QFile::remove(filePath);
-
-            qApp->exit(100);
-        }
-        m_currentReply->deleteLater(); m_currentReply = nullptr;
     }
 };
