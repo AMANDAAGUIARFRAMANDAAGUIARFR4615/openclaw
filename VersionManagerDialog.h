@@ -155,7 +155,7 @@ class VersionManagerDialog : public QDialog {
     Q_OBJECT
 public:
     VersionManagerDialog(QWidget *parent = nullptr) : QDialog(parent) {
-        setWindowTitle(QString("版本更新"));
+        setWindowTitle(QString("软件更新"));
         resize(800, 720);
 
         setupUI();
