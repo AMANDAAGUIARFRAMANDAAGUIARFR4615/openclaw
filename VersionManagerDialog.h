@@ -343,10 +343,9 @@ private:
     }
 
     void fetchVersions() {
-        QUrl url = QString("https://gitee.com/api/v5/repos/RemotePro/%2/releases?direction=desc&page=1&per_page=10").arg("RemotePro");
+        QUrl url = QString("https://gitee.com/api/v5/repos/RemotePro/%2/releases?direction=desc&page=1&per_page=10").arg(QSysInfo::productType() == "windows" ? "RemotePro-windows" : "RemotePro-macos");
 
         QNetworkRequest request(url);
-        request.setHeader(QNetworkRequest::UserAgentHeader, "QtApp/1.0");
 
         QNetworkReply *reply = m_manager->get(request);
         connect(reply, &QNetworkReply::finished, this, [this, reply](){
@@ -428,30 +427,27 @@ private:
             return;
         }
 
-        m_progressDialog = new QProgressDialog("正在下载 " + tagName + "...", "取消", 0, 100, this);
+        m_progressDialog = new QProgressDialog("正在下载 " + tagName + " ... ", "取消", 0, 100, this);
         m_progressDialog->setWindowTitle("下载中");
         m_progressDialog->setWindowModality(Qt::WindowModal);
         m_progressDialog->setMinimumDuration(0);
-        m_progressDialog->setValue(0);
 
         QNetworkRequest request(qurl);
 
         m_currentReply = m_manager->get(request);
 
-        connect(m_currentReply, &QNetworkReply::downloadProgress, this,
+        connect(m_progressDialog, &QProgressDialog::canceled, m_currentReply, [this](){
+            m_currentReply->abort();
+        });
+
+        connect(m_currentReply, &QNetworkReply::downloadProgress, m_progressDialog,
                 [this](qint64 bytesReceived, qint64 bytesTotal) {
-                    if (bytesTotal > 0 && m_progressDialog) {
-                        m_progressDialog->setMaximum(100);
+                    if (bytesTotal > 0)
                         m_progressDialog->setValue((int)(bytesReceived * 100 / bytesTotal));
-                    }
                 });
 
         connect(m_currentReply, &QNetworkReply::readyRead, this, [this](){
-            if (m_file && m_currentReply) m_file->write(m_currentReply->readAll());
-        });
-
-        connect(m_progressDialog, &QProgressDialog::canceled, this, [this](){
-            if (m_currentReply) m_currentReply->abort();
+            m_file->write(m_currentReply->readAll());
         });
 
         connect(m_currentReply, &QNetworkReply::finished, this, [this, filePath](){
@@ -471,6 +467,9 @@ private:
         } else {
             ZipUtils::extractSmart(filePath, ".");
             QFile::remove(filePath);
+
+            QProcess::startDetached(qApp->applicationFilePath());
+            qApp->quit();
         }
         m_currentReply->deleteLater(); m_currentReply = nullptr;
     }
