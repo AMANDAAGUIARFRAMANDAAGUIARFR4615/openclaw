@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     }
 
     if (QFile::exists(qApp->applicationFilePath() + ".old"))
-        Tools::removeFilesRecursively(QCoreApplication::applicationDirPath(), {".old"});
+        Tools::removeFilesRecursively(QCoreApplication::applicationDirPath(), {"*.old"});
 
     // app.styleHints()->setColorScheme(Qt::ColorScheme::Light);
     QStyle *fusionStyle = QStyleFactory::create("Fusion");
