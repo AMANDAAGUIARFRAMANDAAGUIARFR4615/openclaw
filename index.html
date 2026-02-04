@@ -491,9 +491,10 @@
             }
         });
 
-        // --- Gitee Releases 自动获取逻辑 ---
+        const platform = window.navigator.userAgent.toLowerCase();
+        
         const GITEE_OWNER = 'RemotePro';
-        const GITEE_REPO = 'RemotePro';
+        const GITEE_REPO = platform.indexOf('mac') == -1 ? 'RemotePro-windows' : 'RemotePro-macos';
 
         // 获取 DOM 元素
         const heroBtnWin = document.getElementById('hero-btn-win');
@@ -509,7 +510,7 @@
         async function fetchGiteeReleases() {
             try {
                 // 调用 Gitee API (每页20条)
-                const apiUrl = `https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases?direction=desc&page=1&per_page=20`;
+                const apiUrl = `https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases?direction=desc&page=1&per_page=10`;
                 const response = await fetch(apiUrl);
                 
                 if (!response.ok) throw new Error('Network response was not ok');
