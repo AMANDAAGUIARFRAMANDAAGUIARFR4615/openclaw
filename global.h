@@ -23,5 +23,5 @@ namespace Config {
     const int SERVER_PORT = 9000;
 
     const QString SITE_URL = "https://remotepro.cn";
-    const QString VERSION = "1.9.2";
+    const QString VERSION = "1.9.4";
 }

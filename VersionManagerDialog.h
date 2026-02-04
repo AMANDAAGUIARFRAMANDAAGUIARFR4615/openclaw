@@ -453,7 +453,8 @@ private:
                 }
                 else {
                     QFile::remove(filePath);
-                    qApp->exit(100);
+                    qApp->quit();
+                    QProcess::startDetached(qApp->applicationFilePath());
                 }
             }
 

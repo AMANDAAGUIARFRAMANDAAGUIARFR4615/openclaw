@@ -45,10 +45,10 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    QLockFile lockFile(QDir::temp().absoluteFilePath("RemotePro.lock"));
+    auto lockFile = new QLockFile(QDir::temp().absoluteFilePath("RemotePro.lock"));
 
     // 尝试加锁，设置超时时间为 100 毫秒（防止之前的僵死进程导致的短暂锁定）
-    if (!lockFile.tryLock(100)) {
+    if (!lockFile->tryLock(100)) {
         QMessageBox::warning(nullptr, "警告", "应用程序已经在运行中！");
         return 0;
     }
@@ -148,7 +148,8 @@ int main(int argc, char *argv[])
 
     webSocketClient->on("force_logout", [](const QJsonValue &data) {
         settings->setValue("force_logout", data.toString());
-        qApp->exit(100);
+        qApp->quit();
+        QProcess::startDetached(qApp->applicationFilePath());
     });
 
     QObject::connect(loginWidget, &LoginWidget::authorized, [=](const QJsonValue &account) {
@@ -176,6 +177,7 @@ int main(int argc, char *argv[])
         UsbDeviceManager::getInstance()->start();
 
         QObject::connect(qApp, &QApplication::aboutToQuit, [=]() {
+            lockFile->unlock();
             UsbDeviceManager::getInstance()->stop();
             std::exit(0);
         });
@@ -183,15 +185,7 @@ int main(int argc, char *argv[])
         MainWindow::getInstance()->show();
     });
 
-    int code = app.exec();
-
-    if (code == 100) {
-        lockFile.unlock(); 
-        QProcess::startDetached(qApp->applicationFilePath());
-        return 0; 
-    }
-
-    return code;
+    return app.exec();
 }
 
 #ifdef _WIN32
