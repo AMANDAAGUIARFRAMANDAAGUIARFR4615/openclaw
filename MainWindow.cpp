@@ -354,6 +354,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (title == "软件更新") {
+            if (QSysInfo::productType() != "windows") {
+                new ToastWidget("苹果版本暂不支持此功能");
+                return;
+            }
+
             VersionManagerDialog dialog(this);
             dialog.exec();
             return;
