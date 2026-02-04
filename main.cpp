@@ -179,7 +179,6 @@ int main(int argc, char *argv[])
         QObject::connect(qApp, &QApplication::aboutToQuit, [=]() {
             lockFile->unlock();
             UsbDeviceManager::getInstance()->stop();
-            std::exit(0);
         });
 
         MainWindow::getInstance()->show();
