@@ -18,6 +18,7 @@
 #include <QDialogButtonBox>
 #include <QPushButton>
 #include <QKeyEvent>
+#include <QTabWidget>
 
 class SingleKeySequenceEdit : public QKeySequenceEdit {
 public:
@@ -111,14 +112,21 @@ private:
     explicit AppSettingsDialog(QWidget *parent = nullptr) : QDialog(parent)
     {
         setWindowTitle("设置");
+        resize(650, 500);
 
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
-        mainLayout->setSpacing(15);
-        mainLayout->setContentsMargins(25, 20, 25, 20);
+        mainLayout->setContentsMargins(10, 10, 10, 10);
+        
+        QTabWidget *tabWidget = new QTabWidget(this);
+        mainLayout->addWidget(tabWidget);
 
-        QVBoxLayout *layout = new QVBoxLayout(this);
-        addSettingGroup(layout, "autoSyncClipboard", "手机剪切板自动同步到电脑", {"关闭", "开启"}, 0);
-        mainLayout->addLayout(layout);
+        // --- Tab 1: 常规与投屏设置 ---
+        QWidget *generalTab = new QWidget();
+        QVBoxLayout *generalLayout = new QVBoxLayout(generalTab);
+        generalLayout->setSpacing(15);
+        generalLayout->setContentsMargins(20, 20, 20, 20);
+
+        addSettingGroup(generalLayout, "autoSyncClipboard", "手机剪切板自动同步到电脑", {"关闭", "开启"}, 0);
 
         QGroupBox *defaultBox = new QGroupBox("投屏设置 (分组单独设置优先)", this);
         defaultBox->setStyleSheet(R"(
@@ -137,6 +145,7 @@ private:
 
         QVBoxLayout *boxLayout = new QVBoxLayout(defaultBox);
         boxLayout->setSpacing(5);
+        boxLayout->setContentsMargins(15, 25, 15, 15);
 
         addSettingGroup(boxLayout, "isLandscape", "投屏显示", {"竖屏显示", "横屏显示"}, 0);
         addSettingGroup(boxLayout, "videoFps", "视频帧率", {"", "5秒1帧", "1秒1帧", "1秒15帧", "1秒30帧"}, 4);
@@ -145,13 +154,24 @@ private:
         addSettingGroup(boxLayout, "autoScanLANDevices", "自动连接局域网设备", {"关闭", "开启"}, 1);
         addSettingGroup(boxLayout, "autoConnectUSBDevices", "自动连接USB设备", {"关闭", "开启"}, 1);
 
-        mainLayout->addWidget(defaultBox);
+        generalLayout->addWidget(defaultBox);
+        generalLayout->addStretch();
+        tabWidget->addTab(generalTab, "常规与投屏");
+
+
+        // --- Tab 2: 菜单排序与快捷键 ---
+        QWidget *menuTab = new QWidget();
+        QVBoxLayout *menuLayout = new QVBoxLayout(menuTab);
+        menuLayout->setSpacing(15);
+        menuLayout->setContentsMargins(20, 15, 20, 15);
+
+        // 第一排：左侧栏 和 分组菜单 并排显示，节省垂直空间
+        QHBoxLayout *topMenusLayout = new QHBoxLayout();
+        topMenusLayout->setSpacing(20);
 
         QStringList sideBarMenu{"🔗设备连接", "⚙️设置", "💡帮助", "📲越狱助手", "📱手机软件源", "💿USB驱动", "⏳续费", "🤝换绑", "🌐软件更新"};
-
         if (Tools::isAppleMobileDeviceSupportInstalled())
             sideBarMenu.removeOne("💿USB驱动");
-
         if (QFile::exists(qApp->applicationDirPath() + "/imageformats/qpng.dll"))
             sideBarMenu.append("💬客服");
 
@@ -162,8 +182,16 @@ private:
         if (qEnvironmentVariableIsSet("FROM_QT_CREATOR"))
             sideBarMenu.append("🛠️开发者");
 
-        addSortableGroup(mainLayout, "sideBarMenu", "左侧栏 (拖拽调整顺序)", sideBarMenu);
+        // 左侧：Sidebar
+        addSortableGroup(topMenusLayout, "sideBarMenu", "左侧栏 (拖拽调整顺序)", sideBarMenu);
 
+        // 右侧：TabBar Menu
+        addSortableGroup(topMenusLayout, "tabBarMenu", "分组标签页右键菜单 (拖拽调整顺序)", 
+            {"重命名分组", "添加分组", "删除分组", "投屏显示", "视频清晰度", "连接方式", "自动连接局域网设备", "自动连接USB设备"});
+
+        menuLayout->addLayout(topMenusLayout);
+
+        // 第二排：窗口右键菜单（因为比较长且有快捷键，单独占一行）
         QStringList windowMenuItems = {
             "🏠主屏幕", "🎛️控制中心", "↕️应用切换", "🧹清理应用", "📁文件管理", 
             "⏺️录制+回放", "🧩应用管理", "📸截图", "🔄重启", "🔒锁屏", 
@@ -178,11 +206,10 @@ private:
         windowShortcuts["🔈音量-"] = "Ctrl+Down";
         windowShortcuts["📌置顶"] = "Ctrl+T";
 
-        addSortableGroup(mainLayout, "windowMenu", "投屏窗口右键菜单 (拖拽调整顺序 / 双击设置快捷键)", 
+        addSortableGroup(menuLayout, "windowMenu", "投屏窗口右键菜单 (拖拽调整顺序 / 双击设置快捷键)", 
             windowMenuItems, windowShortcuts);
 
-        addSortableGroup(mainLayout, "tabBarMenu", "分组标签页右键菜单 (拖拽调整顺序)", 
-            {"重命名分组", "添加分组", "删除分组", "投屏显示", "视频清晰度", "连接方式", "自动连接局域网设备", "自动连接USB设备"});
+        tabWidget->addTab(menuTab, "菜单与快捷键");
     }
 
     ~AppSettingsDialog() = default;
@@ -191,7 +218,7 @@ signals:
     void configurationChanged(const QString &key);
 
 private:
-    void addSortableGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, 
+    void addSortableGroup(QBoxLayout *parentLayout, const QString &key, const QString &title, 
                           const QStringList &defaults, const QHash<QString, QString> &defaultShortcuts = {}, bool checkable = true)
     {
         m_listDefaults.insert(key, defaults);
@@ -347,7 +374,7 @@ private:
         });
     }
 
-    void addSettingGroup(QVBoxLayout *parentLayout, const QString &key, const QString &title, const QStringList &options, int defaultIndex)
+    void addSettingGroup(QBoxLayout *parentLayout, const QString &key, const QString &title, const QStringList &options, int defaultIndex)
     {
         m_intDefaults.insert(key, defaultIndex);
 
