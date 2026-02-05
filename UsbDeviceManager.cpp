@@ -51,29 +51,29 @@ void UsbDeviceManager::connectPendingDevices() {
     bool isUsbSetting = MainWindow::getInstance()->getTab().getConnectionMethod() == 0;
 
     for (auto it = devices.keyValueBegin(); it != devices.keyValueEnd(); ++it) {
-        // 如果握手未完成(it->second为false)
-        if (!it->second) {
-            QString udid = it->first;
+        if (it->second)
+            continue;
 
-            // 检查是否已经有对应的 Context 正在连接中或已连接
-            // 避免定时器和热插拔事件同时触发导致重复连接
-            bool contextExists = false;
-            for (auto ctx : connToContext) {
-                if (ctx->udid == udid && ctx->port == 32839) {
-                    contextExists = true;
-                    break;
-                }
+        QString udid = it->first;
+
+        // 检查是否已经有对应的 Context 正在连接中或已连接
+        // 避免定时器和热插拔事件同时触发导致重复连接
+        bool contextExists = false;
+        for (auto ctx : connToContext) {
+            if (ctx->udid == udid && ctx->port == 32839) {
+                contextExists = true;
+                break;
             }
-            if (contextExists) continue;
-
-            if (DeviceInfo::isLockByOther(udid))
-                continue;
-
-            auto deviceInfo = DeviceInfo::getDevice(udid);
-
-            if (!deviceInfo || deviceInfo->connection->type != DeviceConnection::Usb && isUsbSetting)
-                connectDevice(udid, 32839, false);
         }
+        if (contextExists) continue;
+
+        if (DeviceInfo::isLockByOther(udid))
+            continue;
+
+        auto deviceInfo = DeviceInfo::getDevice(udid);
+
+        if (!deviceInfo || deviceInfo->connection->type != DeviceConnection::Usb && isUsbSetting)
+            connectDevice(udid, 32839, false);
     }
 }
 
@@ -159,7 +159,9 @@ void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
 
     if (ctx->port == 32839)
     {
-        devices[ctx->udid] = false;
+        if (devices.contains(ctx->udid))
+            devices[ctx->udid] = false;
+
         emit deviceDisconnected(conn);
     }
 
