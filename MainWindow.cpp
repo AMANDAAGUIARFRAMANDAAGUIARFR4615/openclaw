@@ -1025,10 +1025,16 @@ void MainWindow::addItem(DeviceConnection* connection)
             if (sender != videoConnection)
                 return;
 
-            if (deviceInfo->expireAt.get() > Account::getInstance()->loginTime.get() + elapsedTimer->elapsed())
+            qint64 expireTime = deviceInfo->expireAt.get();
+            qint64 currentTime = Account::getInstance()->loginTime.get() + elapsedTimer->elapsed();
+            if (expireTime > currentTime)
             {
                 device->appendData(data);
-                ipLabel->setText(deviceInfo->localIp);
+
+                if (expireTime - currentTime < 86400 * 1000)
+                    ipLabel->setText(deviceInfo->localIp + HIDE_STR("<font color='orange'>[即将过期]</font>"));
+                else
+                    ipLabel->setText(deviceInfo->localIp);
             }
             else
             {
@@ -1047,10 +1053,16 @@ void MainWindow::addItem(DeviceConnection* connection)
             connect(socket, &QTcpSocket::readyRead, [=]() {
                 const auto& data = socket->readAll();
 
-                if (deviceInfo->expireAt.get() > Account::getInstance()->loginTime.get() + elapsedTimer->elapsed())
+                qint64 expireTime = deviceInfo->expireAt.get();
+                qint64 currentTime = Account::getInstance()->loginTime.get() + elapsedTimer->elapsed();
+                if (expireTime > currentTime)
                 {
                     device->appendData(data);
-                    ipLabel->setText(deviceInfo->localIp);
+
+                    if (expireTime - currentTime < 86400 * 1000)
+                        ipLabel->setText(deviceInfo->localIp + HIDE_STR("<font color='orange'>[即将过期]</font>"));
+                    else
+                        ipLabel->setText(deviceInfo->localIp);
                 }
                 else
                 {
