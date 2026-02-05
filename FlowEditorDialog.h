@@ -28,7 +28,7 @@ class FlowEditorDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit FlowEditorDialog(QWidget *parent = nullptr) : QDialog(parent)
+    explicit FlowEditorDialog(QWidget *parent) : QDialog(parent)
     {
         setWindowTitle("可视化编程");
         resize(1200, 800);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Definitions.hpp"
+#include "FileViewer.h"
 #include <QtNodes/NodeDelegateModel>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QTextEdit>
@@ -26,13 +27,15 @@ public:
             // 递归传播
             Q_EMIT dataUpdated(0);
 
-            // 显示结果
-            QTextEdit* v = new QTextEdit();
-            v->setReadOnly(true);
-            v->setPlainText(*buffer);
-            v->setWindowTitle("Generated Lua Code");
-            v->resize(400, 600);
-            v->show();
+            QDialog dialog(QApplication::activeWindow());
+            dialog.setWindowTitle("生成的lua代码");
+            dialog.resize(400, 600);
+            QVBoxLayout* layout = new QVBoxLayout(&dialog);
+            auto editor = new CodeEditor();
+            editor->setPlainText(*buffer);
+            editor->document()->setModified(false);
+            layout->addWidget(editor);
+            dialog.exec();
         });
     }
     QString caption() const override { return "开始"; }
