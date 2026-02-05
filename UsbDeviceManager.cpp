@@ -113,7 +113,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
             idevice_error_t err = idevice_connection_receive(ctx->connection, buffer, sizeof(buffer), &bytes);
             if (err == IDEVICE_E_SUCCESS && bytes > 0) {
                 QByteArray data(buffer, bytes);
-                // qDebugEx() << "接收到数据字节数" << bytes;
+                // qDebugEx() << "接收到字节数据" << bytes;
 
                 if (rawMode)
                 {
@@ -121,7 +121,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
                     return;
                 }
 
-                qDebugEx() << "接收到字节数据" << data.count();
+                qDebugEx() << "接收到字节数据" << data.size();
                 deviceBuffers[ctx].append(data);
                 processBufferedData(ctx);
             } else if (err != IDEVICE_E_SUCCESS) {

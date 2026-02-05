@@ -127,7 +127,7 @@ private slots:
             return;
         }
 
-        qDebugEx() << "接收到字节数据" << data.count();
+        qDebugEx() << "接收到字节数据" << data.size();
 
         clientBuffers[socket].append(data);
         processBufferedData(socket);

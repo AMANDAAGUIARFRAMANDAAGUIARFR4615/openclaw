@@ -18,7 +18,7 @@ void onDataReceived(DeviceConnection *connection, const QJsonObject &jsonObject)
     auto event = jsonObject["event"].toString();
     auto data = jsonObject["data"];
 
-    qDebugEx() << event << data;
+    qDebugEx() << connection << event << data;
 
     EventHub::trigger(event, data, connection);
 }
