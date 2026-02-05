@@ -20,6 +20,7 @@
 #include "NaturalSortListWidgetItem.h"
 #include "Safe.h"
 #include "VersionManagerDialog.h"
+#include "FlowEditorDialog.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -379,6 +380,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             QMenu menu;
             menu.addAction("数据查看", [=]() {
                 SettingsViewer dialog(settings, this);
+                dialog.exec();
+            });
+            menu.addAction("可视化编程", [=]() {
+                FlowEditorDialog dialog(this);
                 dialog.exec();
             });
             menu.addAction("兑换码生成", [this]() {

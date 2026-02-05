@@ -99,6 +99,7 @@ add_executable(${PROJECT_NAME}
     Definitions.hpp
     PureDataModels.hpp
     FlowModels.hpp
+    FlowEditorDialog.h
 
     ${RESOURCE_SOURCES}
 )
