@@ -723,7 +723,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     });
 
     webSocketClient->on("setDeviceLocker", [this](const QJsonValue &data) {
-        const auto& udid = data[HIDE("udid")].toString();
+        const auto& udid = data[HIDE_STR("udid")].toString();
         const auto& locker = data["locker"].toString();
 
         const auto& deviceInfo = DeviceInfo::getDevice(udid);
@@ -1032,7 +1032,7 @@ void MainWindow::addItem(DeviceConnection* connection)
             }
             else
             {
-                ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : HIDE("<font color='red'>[已过期]</font>")));
+                ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : HIDE_STR("<font color='red'>[已过期]</font>")));
             }
         });
 
@@ -1054,7 +1054,7 @@ void MainWindow::addItem(DeviceConnection* connection)
                 }
                 else
                 {
-                    ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : HIDE("<font color='red'>[已过期]</font>")));
+                    ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : HIDE_STR("<font color='red'>[已过期]</font>")));
                 }
             });
         });

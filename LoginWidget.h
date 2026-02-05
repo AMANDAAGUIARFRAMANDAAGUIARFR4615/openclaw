@@ -291,9 +291,9 @@ protected:
 
                 if (res["msg"].isUndefined()) {
                     saveCredentials(phone, password);
-                    for (const QJsonValue& device: res[HIDE("devices")].toArray()) {
-                        const auto& udid = device[HIDE("udid")].toString();
-                        DeviceInfo::expirations[udid] = device[HIDE("expireAt")].toInteger();
+                    for (const QJsonValue& device: res[HIDE_STR("devices")].toArray()) {
+                        const auto& udid = device[HIDE_STR("udid")].toString();
+                        DeviceInfo::expirations[udid] = device[HIDE_STR("expireAt")].toInteger();
                         DeviceInfo::setLocker(udid, device["locker"].toString());
                     }
                     emit authorized(res["account"]);

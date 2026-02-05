@@ -115,7 +115,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
         this->deviceInfo->orientation = data.toInt();
     });
 
-    EventHub::on(this, HIDE("deviceExpired"), [=](const QJsonValue &data, DeviceConnection* connection) {
+    EventHub::on(this, HIDE_STR("deviceExpired"), [=](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 

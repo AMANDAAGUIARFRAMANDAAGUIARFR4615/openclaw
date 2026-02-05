@@ -248,7 +248,7 @@ void UsbDeviceManager::processBufferedData(UsbDeviceContext* ctx) {
 
         auto identifier = *reinterpret_cast<const quint64*>(buffer.constData());
         if (identifier != 0xb7c2e0f542a39a3e) {
-            qCriticalEx() << HIDE("识别码不匹配，清空缓冲区");
+            qCriticalEx() << HIDE_STR("识别码不匹配，清空缓冲区");
             buffer.clear();
             return;
         }
@@ -265,7 +265,7 @@ void UsbDeviceManager::processBufferedData(UsbDeviceContext* ctx) {
 
         const auto& jsonData = AesCrypto::decrypt(data);
         if (jsonData.size() == 0) {
-            qDebugEx() << HIDE("解密失败");
+            qDebugEx() << HIDE_STR("解密失败");
             return;
         }
 
@@ -274,6 +274,6 @@ void UsbDeviceManager::processBufferedData(UsbDeviceContext* ctx) {
         if (!doc.isNull())
             emit dataReceived(ctx->handler, doc.object());
         else
-            qCriticalEx() << HIDE("JSON 解析失败，丢弃数据");
+            qCriticalEx() << HIDE_STR("JSON 解析失败，丢弃数据");
     }
 }

@@ -527,7 +527,7 @@ void DeviceView::contextMenuEvent(QContextMenuEvent *event)
         return;
 
     if (deviceInfo->expireAt.get() < Account::getInstance()->loginTime.get() + elapsedTimer->elapsed()) {
-        new ToastWidget(HIDE("设备已过期"), this);
+        new ToastWidget(HIDE_STR("设备已过期"), this);
         return;
     }
 
@@ -748,7 +748,7 @@ bool DeviceView::event(QEvent *event)
         return QWidget::event(event);
 
     if (deviceInfo->expireAt.get() < Account::getInstance()->loginTime.get() + elapsedTimer->elapsed()) {
-        new ToastWidget(HIDE("设备已过期"), this);
+        new ToastWidget(HIDE_STR("设备已过期"), this);
         return true;
     }
 

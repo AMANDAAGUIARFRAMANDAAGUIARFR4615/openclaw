@@ -77,7 +77,7 @@ public:
             rowLayout->addWidget(getLogButton);
             
             connect(screenshotButton, &QPushButton::clicked, [=]() {
-                webSocketClient->emitEvent("screenshot", QJsonObject{{"phone", phone}, {HIDE("udid"), deviceComboBox->currentData().toString()}}, [=](const QJsonValue &res) {
+                webSocketClient->emitEvent("screenshot", QJsonObject{{"phone", phone}, {HIDE_STR("udid"), deviceComboBox->currentData().toString()}}, [=](const QJsonValue &res) {
                     if (res.isString()) {
                         new ToastWidget(res.toString(), this);
                         return;

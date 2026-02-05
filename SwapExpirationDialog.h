@@ -251,7 +251,7 @@ private:
             tableWidget->setItem(i, 2, new QTableWidgetItem(device->model));
 
             // Expiration Column
-            auto timeString = QDateTime::fromMSecsSinceEpoch(device->expireAt.get()).toString(HIDE("yyyy-MM-dd HH:mm:ss"));
+            auto timeString = QDateTime::fromMSecsSinceEpoch(device->expireAt.get()).toString(HIDE_STR("yyyy-MM-dd HH:mm:ss"));
             auto itemTime = new QTableWidgetItem(timeString);
             bool isExpired = device->expireAt.get() < QDateTime::currentMSecsSinceEpoch();
             itemTime->setData(Qt::UserRole, isExpired); 
@@ -328,8 +328,8 @@ private:
             }
 
             for (const QJsonValue &jsonValue : response.toArray()) {
-                auto deviceInfo = DeviceInfo::getDevice(jsonValue[HIDE("udid")].toString());
-                deviceInfo->expireAt = jsonValue[HIDE("expireAt")].toInteger();
+                auto deviceInfo = DeviceInfo::getDevice(jsonValue[HIDE_STR("udid")].toString());
+                deviceInfo->expireAt = jsonValue[HIDE_STR("expireAt")].toInteger();
                 DeviceInfo::expirations[deviceInfo->deviceId] = deviceInfo->expireAt;
             }
             accept();
