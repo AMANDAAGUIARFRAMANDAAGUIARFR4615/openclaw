@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Logger.h"
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -31,14 +32,14 @@ public:
         // 确保目标根目录存在
         QDir rootDir(destDir);
         if (!rootDir.exists() && !rootDir.mkpath(".")) {
-            qCritical() << "ZipUtils: 无法创建目标根目录 ->" << destDir;
+            qCriticalEx() << "ZipUtils: 无法创建目标根目录 ->" << destDir;
             return false;
         }
 
         bool allSuccess = true;
         const auto fileInfos = reader.fileInfoList();
 
-        qInfo() << "ZipUtils: 开始智能解压 [" << zipPath << "] 到 [" << destDir << "]";
+        qInfoEx() << "ZipUtils: 开始智能解压 [" << zipPath << "] 到 [" << destDir << "]";
 
         for (const auto &info : fileInfos) {
             QString destFilePath = rootDir.filePath(info.filePath);
@@ -67,7 +68,7 @@ public:
             // 策略 1: 目标文件不存在 -> 直接写入
             if (!localFile.exists()) {
                 if (writeToFile(destFilePath, zipData)) {
-                    qDebug() << "[新增] " << info.filePath;
+                    qDebugEx() << "[新增] " << info.filePath;
                 } else {
                     allSuccess = false;
                 }
@@ -76,7 +77,7 @@ public:
 
             // 策略 2: 目标文件存在 -> 对比内容
             if (isContentSame(localFile, zipData)) {
-                qDebug() << "[跳过] " << info.filePath << "(内容一致)";
+                qDebugEx() << "[跳过] " << info.filePath << "(内容一致)";
                 continue;
             }
 
@@ -90,14 +91,14 @@ public:
 
             if (localFile.rename(backupPath)) {
                 if (writeToFile(destFilePath, zipData)) {
-                    qDebug() << "[更新] " << info.filePath << "(已备份为 .old)";
+                    qDebugEx() << "[更新] " << info.filePath << "(已备份为 .old)";
                 } else {
-                    qCritical() << "ZipUtils: 写入新文件失败，尝试恢复备份 ->" << destFilePath;
+                    qCriticalEx() << "ZipUtils: 写入新文件失败，尝试恢复备份 ->" << destFilePath;
                     QFile::rename(backupPath, destFilePath); 
                     allSuccess = false;
                 }
             } else {
-                qCritical() << "ZipUtils: 无法备份文件 (可能被占用) ->" << destFilePath;
+                qCriticalEx() << "ZipUtils: 无法备份文件 (可能被占用) ->" << destFilePath;
                 allSuccess = false;
             }
         }
@@ -172,7 +173,7 @@ private:
             file.close();
             return true;
         }
-        qCritical() << "ZipUtils: 写入失败 ->" << filePath << file.errorString();
+        qCriticalEx() << "ZipUtils: 写入失败 ->" << filePath << file.errorString();
         return false;
     }
 

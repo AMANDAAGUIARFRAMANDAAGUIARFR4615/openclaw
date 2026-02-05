@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 
     new LogTextBrowser();
 
-    qDebug() << QStyleFactory::keys(); 
+    qDebugEx() << QStyleFactory::keys();
 
 #if defined(Q_OS_WIN) && !defined(QT_DEBUG)
     QTimer* timer = new QTimer();
