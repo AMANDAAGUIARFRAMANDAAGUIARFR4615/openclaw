@@ -64,10 +64,7 @@ private:
         QString rawDate = data["created_at"].toString();
         QDateTime dt = QDateTime::fromString(rawDate, Qt::ISODate);
         m_dateStr = dt.isValid() ? dt.toString("yyyy-MM-dd HH:mm") : rawDate;
-
-        // 简略说明 (截取前100个字符)
-        m_body = data["body"].toString().simplified();
-        if (m_body.length() > 80) m_body = m_body.left(80) + "...";
+        m_body = data["body"].toString();
 
         // 尝试获取第一个资源文件的下载链接
         QJsonArray assets = data["assets"].toArray();
