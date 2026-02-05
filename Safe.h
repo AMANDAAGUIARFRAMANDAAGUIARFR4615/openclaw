@@ -48,9 +48,7 @@ namespace DataGuard {
             return m_buffer;
         }
 
-        operator const char*() const {
-            return decrypt();
-        }
+        operator const char*() const { return decrypt(); }
     };
 
     // --- 数值混淆 ---
