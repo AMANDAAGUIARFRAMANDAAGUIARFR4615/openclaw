@@ -15,6 +15,7 @@ public:
     DeviceWidget* const deviceWidget;
 
 protected:
+    void keyPressEvent(QKeyEvent *event);
     void changeOrientation(int orientation);
     void showEvent(QShowEvent *event) override;
     bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;

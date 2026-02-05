@@ -75,6 +75,14 @@ DeviceWindow::~DeviceWindow()
     }
 }
 
+void DeviceWindow::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Escape)
+        close();
+    else
+        DeviceView::keyPressEvent(event);
+}
+
 void DeviceWindow::showEvent(QShowEvent *event)
 {
     DeviceView::showEvent(event);

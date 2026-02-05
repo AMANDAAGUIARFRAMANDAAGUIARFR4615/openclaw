@@ -798,12 +798,6 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
 {
     QWidget::keyPressEvent(event);
 
-    if (event->key() == Qt::Key_Escape)
-    {
-        close();
-        return;
-    }
-
     if (event->matches(QKeySequence::SelectAll))
         event->accept();
     
