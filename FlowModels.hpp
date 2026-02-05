@@ -29,7 +29,7 @@ public:
 
             QDialog dialog(QApplication::activeWindow());
             dialog.setWindowTitle("生成的lua代码");
-            dialog.resize(400, 600);
+            dialog.resize(800, 600);
             QVBoxLayout* layout = new QVBoxLayout(&dialog);
             auto editor = new CodeEditor();
             editor->setPlainText(*buffer);
