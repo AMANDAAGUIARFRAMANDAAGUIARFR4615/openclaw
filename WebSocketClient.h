@@ -28,7 +28,7 @@ public:
     }
 
     template <typename Func>
-    void on(const StringGuard::Obfuscator<>& event, Func handler) {
+    void on(const DataGuard::StrObfuscator<>& event, Func handler) {
         if constexpr (std::is_invocable_v<Func, QJsonValue, AckCallback>) {
             m_handlers[event.decrypt()] = handler;
         } else {
@@ -38,11 +38,11 @@ public:
         }
     }
 
-    void emitEvent(const StringGuard::Obfuscator<>& event, const QJsonValue &data) {
+    void emitEvent(const DataGuard::StrObfuscator<>& event, const QJsonValue &data) {
         sendJson({{"type", "event"}, {"event", event.decrypt()}, {"data", data}});
     }
 
-    void emitEvent(const StringGuard::Obfuscator<>& event, const QJsonValue &data, AckCallback cb) {
+    void emitEvent(const DataGuard::StrObfuscator<>& event, const QJsonValue &data, AckCallback cb) {
         int id = ++m_nextId;
         m_pendingAcks[id] = cb;
         sendJson({{"type", "event"}, {"event", event.decrypt()}, {"data", data}, {"id", id}});

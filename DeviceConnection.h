@@ -23,7 +23,7 @@ public:
     explicit DeviceConnection(QTcpSocket *socket) : type(Tcp), tcpSocket(socket), usbConnection(nullptr), QObject(socket) {}
     explicit DeviceConnection(idevice_connection_t connection) : type(Usb), tcpSocket(nullptr), usbConnection(connection), QObject(nullptr) {}
 
-    void send(const StringGuard::Obfuscator<>& event, const QJsonValue &jsonValue = QJsonValue()) {
+    void send(const DataGuard::StrObfuscator<>& event, const QJsonValue &jsonValue = QJsonValue()) {
         QJsonObject jsonObject;
         jsonObject["event"] = event.decrypt();
 

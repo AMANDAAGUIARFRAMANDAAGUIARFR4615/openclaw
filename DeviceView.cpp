@@ -235,10 +235,10 @@ void DeviceView::addContextMenuActions()
 
     auto windowMenu = AppSettingsDialog::getInstance()->getEnabledList("windowMenu");
     
-    auto send = [=](const StringGuard::Obfuscator<>& event, const QJsonValue &jsonValue = QJsonValue()) {
+    auto send = [=](const DataGuard::StrObfuscator<>& event, const QJsonValue &jsonValue = QJsonValue()) {
         const auto& connections = MainWindow::getInstance()->getDeviceConnections(this);
         for (const auto& connection : connections) {
-            connection->send(StringGuard::Obfuscator<>(event), jsonValue);
+            connection->send(DataGuard::StrObfuscator<>(event), jsonValue);
         }
     };
 
