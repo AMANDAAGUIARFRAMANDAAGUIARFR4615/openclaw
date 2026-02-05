@@ -1031,7 +1031,7 @@ void MainWindow::addItem(DeviceConnection* connection)
             {
                 device->appendData(data);
 
-                if (expireTime - currentTime < 86400 * 1000)
+                if (expireTime - currentTime < HIDE_NUM(86400000))
                     ipLabel->setText(deviceInfo->localIp + HIDE_STR("<font color='orange'>[即将过期]</font>"));
                 else
                     ipLabel->setText(deviceInfo->localIp);
@@ -1059,7 +1059,7 @@ void MainWindow::addItem(DeviceConnection* connection)
                 {
                     device->appendData(data);
 
-                    if (expireTime - currentTime < 86400 * 1000)
+                    if (expireTime - currentTime < HIDE_NUM(86400000))
                         ipLabel->setText(deviceInfo->localIp + HIDE_STR("<font color='orange'>[即将过期]</font>"));
                     else
                         ipLabel->setText(deviceInfo->localIp);
