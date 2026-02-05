@@ -121,6 +121,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
                     return;
                 }
 
+                qDebugEx() << "接收到字节数据" << data.count();
                 deviceBuffers[ctx].append(data);
                 processBufferedData(ctx);
             } else if (err != IDEVICE_E_SUCCESS) {

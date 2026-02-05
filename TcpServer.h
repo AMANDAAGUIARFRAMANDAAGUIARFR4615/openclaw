@@ -111,12 +111,23 @@ private slots:
 
     void onReadyRead() {
         auto socket = qobject_cast<QTcpSocket*>(sender());
-        if (!socket) return;
+        if (!socket) {
+            qCriticalEx() << "socket对象错误";
+            return;
+        }
 
-        if (!clientBuffers.contains(socket)) return;
+        if (!clientBuffers.contains(socket)) {
+            qCriticalEx() << "缓存错误";
+            return;
+        }
 
         auto data = socket->readAll();
-        if (data.isEmpty()) return;
+        if (data.isEmpty()) {
+            qCriticalEx() << "数据为空";
+            return;
+        }
+
+        qDebugEx() << "接收到字节数据" << data.count();
 
         clientBuffers[socket].append(data);
         processBufferedData(socket);
