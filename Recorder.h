@@ -19,7 +19,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QSpinBox>
-#include <QWidget>
+#include <QDialog>
 #include <QStandardPaths>
 #include <QCheckBox>
 #include <QHash>
@@ -53,33 +53,14 @@ public:
     }
 };
 
-class Recorder : public QWidget {
+class Recorder : public QDialog {
     Q_OBJECT
 
 public:
-    static Recorder* open(DeviceConnection* connection, DeviceView* deviceView) {
-        auto existing = instanceMap.value(connection);
-        if (existing) {
-            existing->setWindowState(existing->windowState() & ~Qt::WindowMinimized);
-            existing->raise();
-            existing->activateWindow();
-            return existing;
-        }
-
-        auto recorder = new Recorder(connection, deviceView);
-        recorder->setWindowTitle(connection->displayName());
-        recorder->resize(920, 400);
-        recorder->show();
-        return recorder;
-    }
-
-private:
-    Recorder(DeviceConnection* connection, DeviceView* deviceView) : connection(connection), deviceView(deviceView), QWidget() {
-        instanceMap.insert(connection, this);
-
-        setAttribute(Qt::WA_DeleteOnClose);
-
-        connect(deviceView, &QObject::destroyed, this, &QWidget::close);
+    explicit Recorder(DeviceConnection* connection, DeviceView* parent) : connection(connection), QDialog(parent) {
+        setWindowModality(Qt::WindowModal);
+        setWindowTitle(connection->deviceInfo->deviceName + "[录制+回放]");
+        resize(1080, 720);
 
         recorderPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/recorder";
 
@@ -232,8 +213,6 @@ private:
         EventHub::off(this, "recorderReport");
         EventHub::off(this, "playbackStatus");
 
-        instanceMap.remove(connection);
-
         delete ((QSortFilterProxyModel*)treeView->model())->sourceModel();
         delete treeView->model();
     }
@@ -243,7 +222,7 @@ protected:
         if (event->key() == Qt::Key_Escape)
             close();
         else
-            QWidget::keyPressEvent(event);
+            QDialog::keyPressEvent(event);
     }
 
     void showContextMenu(const QPoint &pos) {
@@ -321,7 +300,7 @@ protected:
         dataObject["script"] = QString::fromUtf8(file.readAll());
         dataObject["repeat"] = infiniteCheckBox->isChecked() ? -1 : playbackTimesSpinBox->value();
 
-        for (const auto& connection : MainWindow::getInstance()->getDeviceConnections(deviceView)) {
+        for (const auto& connection : MainWindow::getInstance()->getDeviceConnections((DeviceView*)parent())) {
             connection->send("playback", dataObject);
         }
 
@@ -345,7 +324,6 @@ protected:
     }
 
     DeviceConnection* const connection;
-    DeviceView* const deviceView;
     QString recorderPath;
 
     QPushButton *startButton;
