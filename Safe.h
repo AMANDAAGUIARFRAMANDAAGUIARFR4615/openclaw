@@ -52,8 +52,11 @@ namespace DataGuard {
         const char* decrypt() const {
             if (m_decrypted) return m_buffer;
 
+            volatile char* v_buffer = m_buffer;
+            volatile uint32_t v_key = m_key;
+
             for (uint32_t i = 0; i < N; ++i) {
-                m_buffer[i] ^= static_cast<char>((m_key + i) * 71u);
+                v_buffer[i] ^= static_cast<char>((v_key + i) * 71u);
             }
             m_decrypted = true;
             return m_buffer;
@@ -65,7 +68,7 @@ namespace DataGuard {
     // --- 数值混淆 ---
     template <typename T>
     struct NumObfuscator {
-        std::array<uint8_t, sizeof(T)> m_buffer;
+        mutable std::array<uint8_t, sizeof(T)> m_buffer;
         uint32_t m_key;
 
         consteval NumObfuscator(T val, uint32_t key) : m_key(key) {
@@ -83,8 +86,11 @@ namespace DataGuard {
         T decrypt() const {
             std::array<uint8_t, sizeof(T)> bytes;
             
+            volatile uint8_t* v_buffer = m_buffer.data();
+            volatile uint32_t v_key = m_key;
+
             for (size_t i = 0; i < sizeof(T); ++i) {
-                bytes[i] = m_buffer[i] ^ static_cast<uint8_t>((m_key + i) * 71u);
+                bytes[i] = v_buffer[i] ^ static_cast<uint8_t>((v_key + i) * 71u);
             }
             
             return std::bit_cast<T>(bytes);
