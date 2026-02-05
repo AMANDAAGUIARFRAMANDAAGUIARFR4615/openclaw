@@ -238,7 +238,7 @@ void DeviceView::addContextMenuActions()
     auto send = [=](const DataGuard::StrObfuscator<>& event, const QJsonValue &jsonValue = QJsonValue()) {
         const auto& connections = MainWindow::getInstance()->getDeviceConnections(this);
         for (const auto& connection : connections) {
-            connection->send(DataGuard::StrObfuscator<>(event), jsonValue);
+            connection->send(event, jsonValue);
         }
     };
 

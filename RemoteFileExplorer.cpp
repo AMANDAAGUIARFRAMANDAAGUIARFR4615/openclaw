@@ -661,7 +661,7 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
 
     auto send = [=](const DataGuard::StrObfuscator<>& event, const QJsonValue &jsonValue = QJsonValue()) {
         for (const auto& connection : MainWindow::getInstance()->getDeviceConnections((DeviceView*)parent())) {
-            connection->send(DataGuard::StrObfuscator<>(event), jsonValue);
+            connection->send(event, jsonValue);
         }
     };
 
