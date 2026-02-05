@@ -873,16 +873,21 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     QMainWindow::keyPressEvent(event);
 
-    if (event->matches(QKeySequence::FullScreen))
-    {
+    if (event->matches(QKeySequence::FullScreen)) {
         isFullScreen() ? showNormal() : showFullScreen();
         return;
     }
 
     if (event->key() == Qt::Key_Escape) {
-        if (isFullScreen())
+        if (isFullScreen()) {
             showNormal();
-        else
+            return;
+        }
+        
+        auto reply = QMessageBox::question(this, "确认退出", "你确定要关闭吗？",
+                                  QMessageBox::Yes | QMessageBox::No);
+
+        if (reply == QMessageBox::Yes)
             close();
     }
 }
