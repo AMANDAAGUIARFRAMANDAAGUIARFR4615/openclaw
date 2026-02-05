@@ -14,14 +14,15 @@ def search_specific_exe_recursive():
         ("Int64 (标准 86400000)",         "00 5C 26 05 00 00 00 00"),
         ("Double (双精度 8.64e7)",        "00 00 00 00 70 99 94 41"),
         ("Float (单精度 8.64e7)",         "80 CB A4 4C"),
+        ("Int32 (原始值 86400)",       "00 51 01 00") 
     ]
 
     # 2. 定义字符串特征码 (新增功能)
     # 格式: (标签, 要搜索的文本内容, 编码格式)
     # 提示: Windows 程序内部常用 'utf-16-le' (宽字符) 或 'ascii'/'utf-8'
     str_definitions = [
-        ("示例: 注册成功 (ASCII)",    "expireAt", "utf-8"),
-        ("示例: 注册成功 (宽字符)",   "Registration Success", "utf-16-le"),
+        ("示例: 过期 (ASCII)",    "expireAt", "utf-8"),
+        ("示例: 过期 (宽字符)",   "expireAt", "utf-16-le"),
         ("示例: 错误提示",            "Error 404",            "utf-8"),
         ("示例: localhost",           "127.0.0.1",            "ascii")
     ]
