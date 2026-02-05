@@ -8,8 +8,6 @@ find_package(Qt6 REQUIRED COMPONENTS CorePrivate Widgets Network Concurrent Mult
 
 qt_standard_project_setup()
 
-add_subdirectory(nodeeditor)
-
 # =========================================================
 #  将 __FILE__ 映射为相对路径
 # =========================================================
@@ -38,6 +36,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         message(WARNING "IPO is not supported: ${output}")
     endif()
 endif()
+
+add_subdirectory(nodeeditor)
 
 # =========================================================
 # 2. 头文件与库路径配置
