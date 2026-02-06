@@ -13,6 +13,7 @@ public:
     QString id;
     QString phone;
     int balance = 0;
+    bool hasRedeemCode = false;
     SafeObject<qint64> loginTime;
 
 private:

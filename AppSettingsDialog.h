@@ -170,8 +170,13 @@ private:
         topMenusLayout->setSpacing(20);
 
         QStringList sideBarMenu{"🔗设备连接", "⚙️设置", "💡帮助", "📲越狱助手", "📱手机软件源", "💿USB驱动", "⏳续费", "🤝换绑", "🌐软件更新"};
+        
         if (Tools::isAppleMobileDeviceSupportInstalled())
             sideBarMenu.removeOne("💿USB驱动");
+        
+        if (Account::getInstance()->hasRedeemCode)
+            sideBarMenu.append("🎫兑换码");
+        
         if (QFile::exists(qApp->applicationDirPath() + "/imageformats/qpng.dll"))
             sideBarMenu.append("💬客服");
 
