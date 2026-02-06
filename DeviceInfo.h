@@ -32,7 +32,8 @@ public:
         screenWidth(json["screenWidth"].toInt()),
         screenHeight(json["screenHeight"].toInt()),
         lockedStatus(json["lockedStatus"].toBool()),
-        version(json["version"].toString()) {
+        version(json["version"].toString()),
+        scanType(json["scanType"].toBool()) {
 
         groupMask = settings->value(deviceId + "/groupMask", 1u).toUInt();
         geometry = settings->value(deviceId + "/geometry").toRect();
@@ -177,6 +178,7 @@ public:
     const int screenWidth;
     const int screenHeight;
     const QString version;
+    const int scanType;
 
     int orientation;
     bool lockedStatus;

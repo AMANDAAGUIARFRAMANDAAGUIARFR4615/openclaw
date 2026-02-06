@@ -637,7 +637,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
         if (deviceInfo) {
             if (deviceInfo->connection->type == connection->type) {
-                connection->send("reject", "已存在相同连接");
+                if (deviceInfo->scanType)
+                    connection->send("reject", "已存在相同连接");
+
                 connection->close();
                 return;
             }
@@ -647,7 +649,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
             if (isUsbDevice == isUsbSetting)
             {
-                connection->send("reject", "已存在相同连接");
+                if (deviceInfo->scanType)
+                    connection->send("reject", "已存在相同连接");
+                
                 connection->close();
                 return;
             }
@@ -659,7 +663,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
         deviceInfo = new DeviceInfo(connection, data.toObject());
         if (deviceInfo->isLockByOther()) {
-            // connection->send("reject", QString("此设备被【%1】独占，需要该账号退出独占模式您才能连接").arg(deviceInfo->getLocker()));
+            connection->send("reject", QString("此设备被【%1】独占，需要该账号退出独占模式您才能连接").arg(deviceInfo->getLocker()));
+            
             connection->close();
             delete deviceInfo;
             return;
@@ -1026,9 +1031,15 @@ void MainWindow::addItem(DeviceConnection* connection)
                 return;
             }
 
-            webSocketClient->emitEvent("deviceExpireAt", deviceInfo->deviceId, [=](const QJsonValue &res) {
-                deviceInfo->expireAt = res.toInteger();
+            webSocketClient->emitEvent("deviceInfo", QJsonObject{{HIDE_STR("udid"), deviceInfo->deviceId}, {"isUsb", connection->type == DeviceConnection::Usb}}, [=](const QJsonValue &res) {
+                deviceInfo->expireAt = res[HIDE_STR("expireAt")].toInteger();
                 DeviceInfo::expirations[deviceInfo->deviceId] = deviceInfo->expireAt;
+
+                deviceInfo->setLocker(res["locker"].toString());
+                if (deviceInfo->isLockByOther()) {
+                    connection->send("reject", QString("此设备被【%1】独占，需要该账号退出独占模式您才能连接").arg(deviceInfo->getLocker()));
+                    EventHub::trigger("disconnected", QJsonValue(), connection);
+                }
             });
         });
 
