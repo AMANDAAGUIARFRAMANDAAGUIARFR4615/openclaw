@@ -1,6 +1,5 @@
 #pragma once
 
-#include "DeviceInfo.h"
 #include "AesCrypto.h"
 #include "UsbDeviceManager.h"
 #include <magic_enum/magic_enum.hpp>
@@ -9,6 +8,8 @@
 #include <QTcpSocket>
 #include <libimobiledevice/libimobiledevice.h>
 #include <QHash>
+
+class DeviceInfo;
 
 class DeviceConnection : public QObject
 {
@@ -84,23 +85,6 @@ public:
     const Type type;
 
     DeviceInfo* deviceInfo = nullptr;
-
-    QString displayName(bool richText = false) {
-        const auto& palette = qApp->palette();
-
-        const auto& accentColor = palette.color(QPalette::WindowText).name();
-
-        auto shadowQColor = palette.color(QPalette::WindowText);
-        shadowQColor.setAlpha(150);
-        const auto& shadowColor = shadowQColor.name(QColor::HexArgb);
-
-        const auto& connType = type == DeviceConnection::Usb ? "USB" : "WiFi";
-        
-        if (richText)
-            return QString("<a href='#' style='text-decoration:none; color:%1;'><b>%2</b>✏️</a> <font color='%3'>[%4]</font>").arg(accentColor, deviceInfo->deviceName, shadowColor, connType);
-    
-        return QString("%1 [%2]").arg(deviceInfo->deviceName, connType);
-    }
 
 protected:
     QTcpSocket *tcpSocket;

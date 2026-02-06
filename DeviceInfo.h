@@ -3,6 +3,8 @@
 #include "global.h"
 #include "SafeObject.h"
 #include "Account.h"
+#include "EventHub.h"
+#include "DeviceConnection.h"
 #include <QJsonObject>
 #include <QString>
 #include <QApplication>
@@ -65,6 +67,23 @@ public:
             devices.remove(localIp);
     }
 
+    QString displayName(bool richText = false) {
+        const auto& palette = qApp->palette();
+
+        const auto& accentColor = palette.color(QPalette::WindowText).name();
+
+        auto shadowQColor = palette.color(QPalette::WindowText);
+        shadowQColor.setAlpha(150);
+        const auto& shadowColor = shadowQColor.name(QColor::HexArgb);
+
+        const auto& connType = connection->type == DeviceConnection::Usb ? "USB" : "WiFi";
+        
+        if (richText)
+            return QString("<a href='#' style='text-decoration:none; color:%1;'><b>%2</b>✏️</a> <font color='%3'>[%4]</font>").arg(accentColor, deviceName, shadowColor, connType);
+    
+        return QString("%1 [%2]").arg(deviceName, connType);
+    }
+
     bool hasLocker()
     {
         return !locker.isEmpty();
@@ -81,10 +100,21 @@ public:
 
         lockers.insert(deviceId, value);
         lockers.insert(localIp, value);
+
+        if (isLockByOther()) {
+            connection->send("reject", QString("此设备被【%1】独占，需要该账号退出独占模式您才能连接").arg(locker));
+            EventHub::trigger("disconnected", QJsonValue(), connection);
+        }
     }
 
     static void setLocker(const QString& udid, const QString& value)
     {
+        const auto& deviceInfo = getDevice(udid);
+        if (deviceInfo) {
+            deviceInfo->setLocker(udid, value);
+            return;
+        }
+
         lockers.insert(udid, value);
 
         const auto& ip = ips.value(udid);

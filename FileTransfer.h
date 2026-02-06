@@ -4,6 +4,7 @@
 #include "Tools.h"
 #include "EventHub.h"
 #include "DeviceConnection.h"
+#include "DeviceInfo.h"
 #include "UsbDeviceManager.h"
 #include <QTcpServer>
 #include <QFile>

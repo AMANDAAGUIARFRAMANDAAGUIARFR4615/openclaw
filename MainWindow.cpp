@@ -1036,10 +1036,6 @@ void MainWindow::addItem(DeviceConnection* connection)
                 DeviceInfo::expirations[deviceInfo->deviceId] = deviceInfo->expireAt;
 
                 deviceInfo->setLocker(res["locker"].toString());
-                if (deviceInfo->isLockByOther()) {
-                    connection->send("reject", QString("此设备被【%1】独占，需要该账号退出独占模式您才能连接").arg(deviceInfo->getLocker()));
-                    EventHub::trigger("disconnected", QJsonValue(), connection);
-                }
             });
         });
 

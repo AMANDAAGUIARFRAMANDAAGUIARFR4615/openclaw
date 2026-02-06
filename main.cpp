@@ -142,8 +142,21 @@ int main(int argc, char *argv[])
     }
 
     QObject::connect(webSocketClient, &QWebSocket::connected, []() {
-        if (!Account::getInstance()->id.isEmpty())
-            webSocketClient->emitEvent("reconnect", Account::getInstance()->id);
+        if (Account::getInstance()->id.isEmpty())
+            return;
+
+        webSocketClient->emitEvent("reconnect", Account::getInstance()->id, [=](const QJsonValue &res) {
+            for (const QJsonValue& device: res[HIDE_STR("devices")].toArray()) {
+                const auto& udid = device[HIDE_STR("udid")].toString();
+                const auto& expireAt = jsonValue[HIDE_STR("expireAt")].toInteger();
+                DeviceInfo::expirations[udid] = expireAt;
+                DeviceInfo::setLocker(udid, device["locker"].toString());
+
+                auto deviceInfo = DeviceInfo::getDevice(udid);
+                if (deviceInfo)
+                    deviceInfo->expireAt = jsonValue[HIDE_STR("expireAt")].toInteger();
+            }
+        });
     });
 
     webSocketClient->on("force_logout", [](const QJsonValue &data) {

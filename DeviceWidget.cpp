@@ -22,7 +22,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     topLayout->setContentsMargins(5, 0, 5, 0);
     topLayout->setSpacing(0);
 
-    auto deviceInfoLabel = new QLabel(connection->displayName(true), this);
+    auto deviceInfoLabel = new QLabel(deviceInfo->displayName(true), this);
     deviceInfoLabel->setAlignment(Qt::AlignCenter);
     deviceInfoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     deviceInfoLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
@@ -37,7 +37,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
         if (ok) {
             connection->send("deviceName", newName);
             deviceInfo->deviceName = newName;
-            deviceInfoLabel->setText(connection->displayName(true));
+            deviceInfoLabel->setText(deviceInfo->displayName(true));
             const auto item = property("listWidgetItem").value<QListWidgetItem*>();
             item->setText(deviceInfo->deviceName);
         }
@@ -48,7 +48,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
             return;
 
         deviceInfo->deviceName = data.toString();
-        deviceInfoLabel->setText(connection->displayName(true));
+        deviceInfoLabel->setText(deviceInfo->displayName(true));
         const auto item = property("listWidgetItem").value<QListWidgetItem*>();
         item->setText(deviceInfo->deviceName);
     });
