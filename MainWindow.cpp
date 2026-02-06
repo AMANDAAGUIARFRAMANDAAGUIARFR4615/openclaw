@@ -262,8 +262,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (title == "越狱助手") {
-            JailbreakAssistantDialog dialog(this);
-            dialog.exec();
+            JailbreakAssistantDialog(this).exec();
             return;
         }
 
@@ -341,16 +340,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             
             return;
         }
+
+        if (title == "兑换码") {
+            
+            
+            return;
+        }
         
         if (title == "续费") {
-            RenewalDialog dialog(this);
-            dialog.exec();
+            RenewalDialog(this).exec();
             return;
         }
 
         if (title == "换绑") {
-            SwapExpirationDialog dialog(this);
-            dialog.exec();
+            SwapExpirationDialog(this).exec();
             return;
         }
 
@@ -360,8 +363,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 return;
             }
 
-            VersionManagerDialog dialog(this);
-            dialog.exec();
+            VersionManagerDialog(this).exec();
             return;
         }
 
@@ -383,8 +385,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 dialog.exec();
             });
             menu.addAction("可视化编程", [=]() {
-                FlowEditorDialog dialog(this);
-                dialog.exec();
+                FlowEditorDialog(this).exec();
             });
             menu.addAction("兑换码生成", [this]() {
                 QDialog dialog(this);
