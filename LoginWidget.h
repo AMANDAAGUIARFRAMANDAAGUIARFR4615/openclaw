@@ -232,14 +232,6 @@ protected:
             return;
         }
 
-        const auto& phone = phoneLineEdit->text().trimmed();
-        const auto& password = passwordLineEdit->text();
-
-        if (phone.isEmpty() || password.isEmpty()) {
-            setStatus("手机号和密码不能为空");
-            return;
-        }
-
         if (!phoneLineEdit->hasAcceptableInput()) {
             setStatus("请输入正确的11位手机号", this);
             return;
@@ -258,14 +250,11 @@ protected:
         setStatus("处理中...");
         actionButton->setEnabled(false);
 
+        const auto& phone = phoneLineEdit->text().trimmed();
+        const auto& password = passwordLineEdit->text();
+
         if (isRegisterMode) {
             const auto& confirm = confirmLineEdit->text();
-
-            if (confirm.isEmpty()) {
-                setStatus("请确认密码");
-                actionButton->setEnabled(true);
-                return;
-            }
 
             if (password != confirm) {
                 setStatus("两次密码不一致");
