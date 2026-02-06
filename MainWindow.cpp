@@ -47,6 +47,7 @@
 #include <QActionGroup>
 #include <QToolTip>
 #include <QDesktopServices>
+#include <QCalendarWidget>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
@@ -342,8 +343,102 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (title == "兑换码") {
+            QDialog dialog(this);
+            dialog.setWindowTitle("兑换记录查询");
+            dialog.resize(600, 500);
             
+            auto *mainLayout = new QVBoxLayout(&dialog);
+            auto *topLayout = new QHBoxLayout();
             
+            auto *dateButton = new QPushButton("点击选择日期 (查询未兑换)", &dialog);
+            auto *clearButton = new QPushButton("清除", &dialog);
+            auto *queryButton = new QPushButton("查询", &dialog);
+            clearButton->setFixedWidth(60);
+
+            topLayout->addWidget(new QLabel("日期筛选:", &dialog));
+            topLayout->addWidget(dateButton, 1);
+            topLayout->addWidget(clearButton);
+            topLayout->addWidget(queryButton);
+            mainLayout->addLayout(topLayout);
+
+            auto *tableWidget = new QTableWidget(&dialog);
+            tableWidget->setColumnCount(3);
+            tableWidget->setHorizontalHeaderLabels({"兑换码", "兑换人", "兑换时间"});
+            tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+            tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+            tableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+            mainLayout->addWidget(tableWidget);
+
+            // 使用 QPointer 防止网络回调时窗口已关闭导致的崩溃
+            QPointer<QDialog> dialogPointer(&dialog);
+
+            // 复制功能
+            connect(tableWidget, &QTableWidget::cellClicked, [tableWidget](int row, int column) {
+                if (column > 1 || !tableWidget->item(row, column)) return;
+                if (tableWidget->item(row, column)->text().isEmpty()) return;
+
+                qApp->clipboard()->setText(tableWidget->item(row, column)->text());
+                QToolTip::showText(QCursor::pos(), "已复制到剪切板");
+            });
+
+            // 日期选择：直接将日期存在按钮的 property 中，无需外部变量
+            connect(dateButton, &QPushButton::clicked, [dateButton]() {
+                QDialog calendarDialog(dateButton);
+                calendarDialog.setWindowTitle("选择日期");
+                auto *calendarLayout = new QVBoxLayout(&calendarDialog);
+                auto *calendarWidget = new QCalendarWidget(&calendarDialog);
+                
+                // 读取当前存储的日期，若无则默认今天
+                QDate currentDate = dateButton->property("date").toDate();
+                calendarWidget->setSelectedDate(currentDate.isValid() ? currentDate : QDate::currentDate());
+                
+                calendarLayout->addWidget(calendarWidget);
+                connect(calendarWidget, &QCalendarWidget::activated, &calendarDialog, &QDialog::accept);
+                
+                if (calendarDialog.exec() == QDialog::Accepted) {
+                    dateButton->setProperty("date", calendarWidget->selectedDate());
+                    dateButton->setText(calendarWidget->selectedDate().toString("yyyy-MM-dd"));
+                }
+            });
+
+            // 清除逻辑
+            connect(clearButton, &QPushButton::clicked, [dateButton]() {
+                dateButton->setProperty("date", QVariant()); // 清空 property
+                dateButton->setText("兑换日期");
+            });
+
+            // 查询逻辑
+            auto doQuery = [=]() {
+                tableWidget->setRowCount(0); // 清空表格
+
+                QJsonObject params;
+                QDate date = dateButton->property("date").toDate();
+                if (date.isValid()) params["date"] = date.toString("yyyy-MM-dd");
+
+                webSocketClient->emitEvent("get_redeem_codes", params, [=](const QJsonValue &res) {
+                    if (!dialogPointer) return;
+                    QJsonArray jsonArray = res.toArray();
+                    tableWidget->setRowCount(jsonArray.size());
+
+                    if (jsonArray.isEmpty()) {
+                        QToolTip::showText(QCursor::pos(), "未找到记录");
+                        return;
+                    }
+                    
+                    for (int i = 0; i < jsonArray.size(); ++i) {
+                        const auto& item = jsonArray[i].toObject();
+                        tableWidget->setItem(i, 0, new QTableWidgetItem(item["code"].toString()));
+                        tableWidget->setItem(i, 1, new QTableWidgetItem(item["phone"].toString()));
+                        QDateTime dateTime = QDateTime::fromString(item["redeemAt"].toString(), Qt::ISODate);
+                        tableWidget->setItem(i, 2, new QTableWidgetItem(dateTime.toLocalTime().toString("yyyy-MM-dd HH:mm:ss")));
+                    }
+                });
+            };
+
+            connect(queryButton, &QPushButton::clicked, doQuery);
+            
+            doQuery();
+            dialog.exec();
             return;
         }
         
