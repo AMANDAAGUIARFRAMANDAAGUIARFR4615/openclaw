@@ -147,10 +147,10 @@ int main(int argc, char *argv[])
 
         webSocketClient->emitEvent("reconnect", Account::getInstance()->id, [=](const QJsonValue &res) {
             for (const QJsonValue& device: res[HIDE_STR("devices")].toArray()) {
-                const auto& udid = device[HIDE_STR("udid")].toString();
-                const auto& expireAt = device[HIDE_STR("expireAt")].toInteger();
+                const auto udid = device[HIDE_STR("udid")].toString();
+                const auto expireAt = device[HIDE_STR("expireAt")].toInteger();
                 DeviceInfo::expirations[udid] = expireAt;
-                DeviceInfo::setLocker(udid, device["locker"].toString());
+                // DeviceInfo::setLocker(udid, device["locker"].toString());
 
                 auto deviceInfo = DeviceInfo::getDevice(udid);
                 if (deviceInfo)
