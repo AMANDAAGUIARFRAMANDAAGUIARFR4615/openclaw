@@ -387,27 +387,48 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 dialog.exec();
             });
             menu.addAction("兑换码生成", [this]() {
-                bool ok;
-                int count = QInputDialog::getInt(this, "生成兑换码", "请输入生成的个数:", 1, 1, 1000, 1, &ok);
-                
-                if (!ok)
+                QDialog dialog(this);
+                dialog.setWindowTitle("生成兑换码");
+                dialog.setMinimumWidth(300);
+
+                QFormLayout *formLayout = new QFormLayout(&dialog);
+
+                QLineEdit *phoneEdit = new QLineEdit(&dialog);
+                phoneEdit->setPlaceholderText("请输入目标手机号");
+
+                QSpinBox *countSpin = new QSpinBox(&dialog);
+                countSpin->setRange(1, 1000);
+                countSpin->setValue(1);
+
+                formLayout->addRow("手机号:", phoneEdit);
+                formLayout->addRow("生成数量:", countSpin);
+
+                QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+                connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+                connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+                formLayout->addRow(buttonBox);
+
+                if (dialog.exec() != QDialog::Accepted)
                     return;
 
-                webSocketClient->emitEvent("generate_codes", count, [=](const QJsonValue &res) {
+                QString inputPhone = phoneEdit->text().trimmed();
+                int inputCount = countSpin->value();
+
+                webSocketClient->emitEvent("generate_codes", QJsonObject{{"phone", inputPhone}, {"count", inputCount}}, [=](const QJsonValue &res) {
                     if (res.isString()) {
                         QToolTip::showText(QCursor::pos(), res.toString());
                         return;
                     }
 
                     QStringList codes;
-
-                    for (const QJsonValue &item : res.toArray()) {
-                        codes << item.toString(); 
+                    if (res.isArray()) {
+                        for (const QJsonValue &item : res.toArray()) {
+                            codes << item.toString(); 
+                        }
                     }
 
                     qApp->clipboard()->setText(codes.join("\n"));
-
-                    QToolTip::showText(QCursor::pos(), "兑换码已复制到剪切板");
+                    QToolTip::showText(QCursor::pos(), QString("成功生成 %1 个兑换码并复制").arg(codes.size()));
                 });
             });
             menu.addAction("在线用户", [this]() {
