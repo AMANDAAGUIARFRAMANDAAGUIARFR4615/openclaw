@@ -17,7 +17,7 @@ namespace Config {
     const QString SERVER_IP = "192.168.0.111";
 #else
     // const QString SERVER_IP = "43.167.226.242";
-    const QString SERVER_IP = "ws.remotepro.cn";
+    const QString SERVER_IP = "47.107.154.171";
 #endif
 
     const int SERVER_PORT = 9000;
