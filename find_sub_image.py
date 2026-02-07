@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import time
+import os
 
 def resize_image_with_ratio(image, max_dimension=1000):
     """
@@ -22,15 +23,13 @@ def resize_image_with_ratio(image, max_dimension=1000):
     resized_img = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_AREA)
     return resized_img, scale
 
-def find_image_sift_optimized(source_path, template_path, min_match_count=10, max_process_size=960):
+def find_image_sift_affine(source_path, template_path, min_match_count=4, max_process_size=960):
     """
-    优化版 SIFT 匹配：
-    1. 使用降采样加速特征提取
-    2. 限制特征点数量
-    3. 坐标映射回原图
+    优化版 SIFT 匹配 (仿射变换版)：
+    解决红框扭曲问题，强制保持矩形形状。
     """
     
-    # 1. 读取原始图片 (保持原图用于最终展示)
+    # 1. 读取原始图片
     img_template_orig = cv2.imread(template_path)
     img_source_orig = cv2.imread(source_path)
 
@@ -42,28 +41,24 @@ def find_image_sift_optimized(source_path, template_path, min_match_count=10, ma
     img1_gray = cv2.cvtColor(img_template_orig, cv2.COLOR_BGR2GRAY)
     img2_gray = cv2.cvtColor(img_source_orig, cv2.COLOR_BGR2GRAY)
 
+    # 针对极小图的优化：强行放大
+    if min(img1_gray.shape) < 100:
+        print("提示：模板图过小，正在进行放大预处理...")
+        img1_gray = cv2.resize(img1_gray, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
+
     print(f"原图尺寸: {img2_gray.shape[::-1]}, 模板尺寸: {img1_gray.shape[::-1]}")
 
-    # 开始计时
     start_time = time.time()
 
-    # 2. 【核心优化】降采样处理
-    # 大图通常很大，缩小处理能极大提升速度
-    # 模板图如果也很巨大，也可以缩放，通常模板较小，这里主要缩放大图
+    # 2. 降采样大图
     img2_small, scale_ratio = resize_image_with_ratio(img2_gray, max_dimension=max_process_size)
-    
-    # 模板图如果过大也建议缩小，否则特征尺度差异过大影响匹配
-    # 这里为了逻辑简单，假设模板图尺寸适中，或者通过 max_process_size 控制
-    # 实际工程中，建议也对 img1 进行适当缩放以匹配 img2_small 的分辨率层级
-    # 但为了保证模板细节，这里只缩放大图作为搜索背景
-    
     print(f"处理尺寸: {img2_small.shape[::-1]} (缩放比例: {scale_ratio:.4f})")
 
-    # 3. 初始化 SIFT (限制特征点数量)
-    # nfeatures=2000: 仅保留最强的2000个特征点，防止过多噪点拖慢速度
-    sift = cv2.SIFT_create(nfeatures=2000)
+    # 3. 初始化 SIFT
+    # 增加 edgeThreshold 以适应文字/UI
+    sift = cv2.SIFT_create(nfeatures=2000, edgeThreshold=20)
 
-    # 4. 检测并计算 (在小图上进行)
+    # 4. 检测并计算
     kp1, des1 = sift.detectAndCompute(img1_gray, None)
     kp2, des2 = sift.detectAndCompute(img2_small, None)
 
@@ -72,92 +67,88 @@ def find_image_sift_optimized(source_path, template_path, min_match_count=10, ma
         return
 
     # 5. FLANN 匹配
-    FLANN_INDEX_KDTREE = 1
-    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-    # checks=30: 减少搜索次数，略微牺牲精度换取速度 (原默认50)
-    search_params = dict(checks=30) 
+    index_params = dict(algorithm=1, trees=5)
+    search_params = dict(checks=50) # 稍微增加 checks 提高精度
     
     flann = cv2.FlannBasedMatcher(index_params, search_params)
     matches = flann.knnMatch(des1, des2, k=2)
 
-    # 6. 筛选优质匹配 (Ratio Test)
+    # 6. 筛选优质匹配
     good = []
     for m, n in matches:
-        if m.distance < 0.75 * n.distance: # 0.7 -> 0.75 放宽一点条件，增加通过率
+        if m.distance < 0.75 * n.distance:
             good.append(m)
 
     match_time = time.time() - start_time
     print(f"算法耗时: {match_time:.4f} 秒, 匹配点数: {len(good)}")
 
-    # 7. 计算位置并还原坐标
+    # 7. 计算位置 (改用仿射变换)
     if len(good) >= min_match_count:
         src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
         dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
 
-        # 计算单应性矩阵 (基于小图坐标)
-        M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+        # 【核心修改点】
+        # 使用 estimateAffinePartial2D 代替 findHomography
+        # 作用：限制变换只能是 "旋转 + 缩放 + 平移"，绝对禁止 3D 透视扭曲
+        M, inliers = cv2.estimateAffinePartial2D(src_pts, dst_pts)
 
         if M is not None:
             # 获取模板图尺寸
             h, w = img1_gray.shape
+            # 定义四个角点
             pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
             
-            # 变换坐标 (得到在小图上的位置)
-            dst_in_small = cv2.perspectiveTransform(pts, M)
+            # 【核心修改点】
+            # 仿射矩阵是 2x3 的，必须使用 cv2.transform (perspectiveTransform 只能用于 3x3)
+            dst_in_small = cv2.transform(pts, M)
             
-            # 【核心优化】将坐标映射回原图尺寸
-            # 坐标 / 缩放比例
+            # 坐标映射回原图
             dst_in_original = dst_in_small / scale_ratio
             
-            # 8. 绘图 (在原图上绘制)
-            # 绘制边框
-            img_result = cv2.polylines(img_source_orig, [np.int32(dst_in_original)], True, (0, 0, 255), 5, cv2.LINE_AA)
+            # 8. 绘图
+            img_result = img_source_orig.copy()
+            cv2.polylines(img_result, [np.int32(dst_in_original)], True, (0, 0, 255), 5, cv2.LINE_AA)
             
             # 显示结果
-            # 为了方便在屏幕显示，最终结果再缩放一下用于 imshow，否则 4K 图屏幕放不下
             display_h = 800
             display_scale = display_h / img_result.shape[0]
             display_w = int(img_result.shape[1] * display_scale)
             img_display = cv2.resize(img_result, (display_w, display_h))
             
-            cv2.imshow("Optimized Result", img_display)
-            
-            # 同时也显示匹配连线 (可选，用于调试，需要映射关键点，较麻烦，这里略去以保持代码整洁)
+            cv2.imshow("Affine Corrected Result", img_display)
             print(f"成功定位！中心点坐标约: {np.mean(dst_in_original, axis=0).flatten()}")
             
             cv2.waitKey(0)
             cv2.destroyAllWindows()
             return True
         else:
-            print("计算 Homography 失败。")
+            print("计算仿射矩阵失败 (匹配点分布可能过于集中)。")
             return False
     else:
         print(f"匹配失败 (只有 {len(good)}/{min_match_count} 个匹配点)。")
         return False
 
 if __name__ == "__main__":
-    # 请替换为实际图片路径
-    # 建议使用高分辨率图片进行测试，效果差异明显
+    # 测试文件路径
     large_image = 'large_image.png' 
-    sub_image = 'sub_image.png'
+    sub_image = 'sub_image4.png'
     
-    # 如果没有图片，生成假图片用于测试代码运行
-    import os
+    # 自动生成测试图片 (如果不存在)
     if not os.path.exists(large_image):
-        print("未检测到测试图片，正在生成随机测试图...")
-        # 生成一个黑底图片
-        img_l = np.zeros((2000, 2000, 3), dtype=np.uint8)
-        # 画一些随机内容作为特征
-        for i in range(100):
-            cv2.circle(img_l, (np.random.randint(0,2000), np.random.randint(0,2000)), np.random.randint(10,50), (200,200,200), -1)
-        # 从中切一块作为子图
-        img_s = img_l[500:800, 500:800].copy()
-        # 稍微旋转或缩放子图模拟真实场景
-        M = cv2.getRotationMatrix2D((150, 150), 10, 1.0)
-        img_s = cv2.warpAffine(img_s, M, (300, 300))
+        print("生成测试图片中...")
+        img_l = np.zeros((1000, 1000, 3), dtype=np.uint8)
+        # 绘制背景噪点
+        for i in range(200):
+            cv2.circle(img_l, (np.random.randint(0,1000), np.random.randint(0,1000)), np.random.randint(5,20), (200,200,200), -1)
+        
+        # 绘制一个矩形目标
+        cv2.rectangle(img_l, (400, 400), (600, 600), (0, 255, 0), -1)
+        cv2.putText(img_l, "Target", (420, 500), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,0,0), 3)
+        
+        # 截取模板
+        img_s = img_l[400:600, 400:600].copy()
         
         cv2.imwrite(large_image, img_l)
         cv2.imwrite(sub_image, img_s)
-        print("测试图片已生成。")
 
-    find_image_sift_optimized(large_image, sub_image)
+    find_image_sift_affine(large_image, sub_image)
