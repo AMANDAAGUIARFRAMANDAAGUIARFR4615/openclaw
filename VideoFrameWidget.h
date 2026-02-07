@@ -146,7 +146,7 @@ private:
         connection->send("videoSettings", QJsonObject({
             {"width", qMin(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
             {"height", qMax(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
-            {"fps", QList<float>{ 1, 0.2f, 1, 15, 30 }[videoFps]},
+            {"fps", qobject_cast<DeviceWindow*>(parentWidget()) ? 30 : QList<float>{ 1, 0.2f, 1, 15, 30 }[videoFps]},
             {"quality", videoQuality}
         }));
 
