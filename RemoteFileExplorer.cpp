@@ -61,9 +61,7 @@ protected:
 
 RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& openPath, QWidget* parent) : connection(connection), openPath(openPath), QDialog(parent)
 {
-    setAttribute(Qt::WA_DeleteOnClose);
     setWindowModality(Qt::WindowModal);
-    open();
 
     if (openPath == "/")
         setWindowTitle(connection->deviceInfo->deviceName + "[应用管理]");

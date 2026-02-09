@@ -58,10 +58,7 @@ class Recorder : public QDialog {
 
 public:
     explicit Recorder(DeviceConnection* connection, DeviceView* parent) : connection(connection), QDialog(parent) {
-        setAttribute(Qt::WA_DeleteOnClose);
         setWindowModality(Qt::WindowModal);
-        open();
-
         setWindowTitle(connection->deviceInfo->deviceName + "[录制+回放]");
         resize(1080, 720);
 

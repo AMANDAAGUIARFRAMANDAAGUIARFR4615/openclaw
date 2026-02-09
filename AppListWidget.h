@@ -29,10 +29,7 @@ class AppListWidget : public QDialog
 
 public:
     explicit AppListWidget(DeviceConnection* connection, DeviceView *parent) : connection(connection), QDialog(parent) {
-        setAttribute(Qt::WA_DeleteOnClose);
         setWindowModality(Qt::WindowModal);
-        open();
-
         setWindowTitle(connection->deviceInfo->deviceName + "[应用管理]");
         resize(1080, 720);
         connection->send("appList");
@@ -156,7 +153,9 @@ public:
                 return;
             }
 
-            new RemoteFileExplorer(connection, path, parent);
+            QMetaObject::invokeMethod(this, [=]() {
+                RemoteFileExplorer(connection, path, parent).exec();
+            });
         });
     }
 
