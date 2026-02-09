@@ -2,11 +2,11 @@
 
 #include "Definitions.hpp"
 #include <QtNodes/NodeDelegateModel>
-#include <QtWidgets/QLineEdit>
-#include <QtWidgets/QVBoxLayout>
-#include <QtWidgets/QLabel>
-#include <QtCore/QJsonObject>
-#include <QtCore/QJsonValue>
+#include <QLineEdit>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <QJsonObject>
+#include <QJsonValue>
 
 using namespace QtNodes;
 

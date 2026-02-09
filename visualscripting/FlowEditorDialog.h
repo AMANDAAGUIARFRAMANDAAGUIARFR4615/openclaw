@@ -99,6 +99,8 @@ private:
         ret->registerModel<LoopModel>("控制流");
         ret->registerModel<PrintModel>("控制流");
         ret->registerModel<LuaStatementModel>("控制流");
+        ret->registerModel<RectModel>("控制流");
+        ret->registerModel<FindImageModel>("控制流");
         return ret;
     }
 
