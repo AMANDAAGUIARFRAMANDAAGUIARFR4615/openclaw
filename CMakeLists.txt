@@ -44,6 +44,7 @@ add_subdirectory(nodeeditor)
 # =========================================================
 
 include_directories(include)
+include_directories(visualscripting)
 
 if(APPLE)
     set(PLATFORM_DIR "macOS") 
@@ -96,10 +97,10 @@ add_executable(${PROJECT_NAME}
     AppListWidget.h FileViewer.h Recorder.h VersionManagerDialog.h
     qrcodegen.hpp qrcodegen.cpp
 
-    Definitions.hpp
-    PureDataModels.hpp
-    FlowModels.hpp
-    FlowEditorDialog.h
+    visualscripting/Definitions.hpp
+    visualscripting/PureDataModels.hpp
+    visualscripting/FlowModels.hpp
+    visualscripting/FlowEditorDialog.h
 
     ${RESOURCE_SOURCES}
 )

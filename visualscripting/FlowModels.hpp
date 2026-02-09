@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Definitions.hpp"
-#include "FileViewer.h"
+#include "../FileViewer.h"
 #include <QtNodes/NodeDelegateModel>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QTextEdit>
