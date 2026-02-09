@@ -40,7 +40,7 @@ public:
         connection->send("appList");
 
         auto appList = new AppListWidget(connection, deviceView);
-        appList->setWindowTitle(connection->displayName() + " - 应用管理");
+        appList->setWindowTitle(connection->deviceInfo->deviceName + "[应用管理]");
         appList->resize(1080, 720);
         appList->show();
         return appList;

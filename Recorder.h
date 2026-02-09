@@ -67,7 +67,7 @@ public:
         }
 
         auto recorder = new Recorder(connection, deviceView);
-        recorder->setWindowTitle(connection->displayName());
+        recorder->setWindowTitle(connection->deviceInfo->deviceName + "[录制+回放]");
         recorder->resize(920, 400);
         recorder->show();
         return recorder;

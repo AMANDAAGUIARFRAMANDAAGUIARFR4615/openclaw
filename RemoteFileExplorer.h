@@ -52,7 +52,7 @@ public:
         }
 
         auto explorer = new RemoteFileExplorer(connection, openPath, deviceView);
-        explorer->setWindowTitle(connection->displayName() + " - 文件管理");
+        explorer->setWindowTitle(connection->deviceInfo->deviceName + "[文件管理]");
         QSize screenSize = qApp->primaryScreen()->availableSize();
         explorer->resize(screenSize.width() * 0.7, screenSize.height() * 0.7);
         explorer->show();
