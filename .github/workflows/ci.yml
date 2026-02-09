@@ -238,6 +238,7 @@ jobs:
           if [[ "$RUNNER_OS" == 'Windows' ]]; then
             mkdir -p dist
             cp build/RemotePro.exe dist/
+            cp build/translations/qt_zh_CN.qm dist/translations/qt_zh_CN.qm
             cd dist
             $QT_ROOT_DIR/bin/windeployqt --release --no-translations RemotePro.exe
             echo "Package created successfully."
