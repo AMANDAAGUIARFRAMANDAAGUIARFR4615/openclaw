@@ -15,6 +15,7 @@
 #include "DeviceWidget.h"
 #include "DeviceWindow.h"
 #include "Safe.h"
+#include "VideoFrameWidget.h"
 #include <QLayout>
 #include <QLabel>
 #include <QMimeData>

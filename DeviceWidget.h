@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceView.h"
+#include <QCheckBox>
 
 class DeviceWindow;
 
@@ -25,16 +26,16 @@ protected:
         // static int count = 0;
         // count++;
         // qCriticalEx() << "播放" << count << this;
-        if (videoFrameWidget)
-            videoFrameWidget->mediaPlayer->play();
+        // if (videoFrameWidget)
+        //     videoFrameWidget->mediaPlayer->play();
     }
 
     Q_INVOKABLE void pause() {
         // static int count = 0;
         // count++;
         // qCriticalEx() << "暂停" << count << this;
-        if (videoFrameWidget)
-            videoFrameWidget->mediaPlayer->pause();
+        // if (videoFrameWidget)
+        //     videoFrameWidget->mediaPlayer->pause();
     }
 
     DeviceWindow* deviceWindow = nullptr;

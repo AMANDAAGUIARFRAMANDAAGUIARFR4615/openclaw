@@ -1,13 +1,9 @@
 #include "DeviceWindow.h"
 #include "DeviceWidget.h"
-#include "Logger.h"
 #include "EventHub.h"
-#include "ToastWidget.h"
-#include "Tools.h"
-#include "LiveStreamDevice.h"
 #include "UsbDeviceManager.h"
 #include "MainWindow.h"
-#include "SwitchButton.h"
+#include "VideoFrameWidget.h"
 #include <QElapsedTimer>
 #include <QVBoxLayout>
 #include <QMimeData>

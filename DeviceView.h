@@ -2,12 +2,12 @@
 
 #include "DeviceInfo.h"
 #include "DeviceConnection.h"
-#include "VideoFrameWidget.h"
 #include <QWidget>
 #include <QUrl>
 #include <QMenu>
 
 class QMediaPlayer;
+class VideoFrameWidget;
 
 class DeviceView : public QWidget
 {

@@ -5,6 +5,7 @@
 #include "EventHub.h"
 #include "FileViewer.h"
 #include "DeviceView.h"
+#include "MainWindow.h"
 #include <QTreeView>
 #include <QFileSystemModel>
 #include <QSortFilterProxyModel>

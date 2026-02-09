@@ -21,6 +21,7 @@
 #include "Safe.h"
 #include "VersionManagerDialog.h"
 #include "FlowEditorDialog.h"
+#include "VideoFrameWidget.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>

@@ -4,6 +4,7 @@
 #include "MainWindow.h"
 #include "Safe.h"
 #include "Account.h"
+#include "VideoFrameWidget.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
