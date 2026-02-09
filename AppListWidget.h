@@ -6,7 +6,7 @@
 #include "ToastWidget.h"
 #include "MainWindow.h"
 #include "DeviceView.h"
-#include <QDialog>
+#include <QWidget>
 #include <QTableWidget>
 #include <QPushButton>
 #include <QHBoxLayout>
@@ -23,16 +23,36 @@
 #include <QRadioButton>
 #include <QButtonGroup>
 
-class AppListWidget : public QDialog
+class AppListWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit AppListWidget(DeviceConnection* connection, DeviceView *parent) : connection(connection), QDialog(parent) {
-        setWindowModality(Qt::WindowModal);
-        setWindowTitle(connection->deviceInfo->deviceName + "[应用管理]");
-        resize(1080, 720);
+    static AppListWidget* open(DeviceConnection* connection, DeviceView* deviceView) {
+        auto existing = instanceMap.value(connection);
+        if (existing) {
+            existing->setWindowState(existing->windowState() & ~Qt::WindowMinimized);
+            existing->raise();
+            existing->activateWindow();
+            return existing;
+        }
+
         connection->send("appList");
+
+        auto appList = new AppListWidget(connection, deviceView);
+        appList->setWindowTitle(connection->displayName() + " - 应用管理");
+        appList->resize(1080, 720);
+        appList->show();
+        return appList;
+    }
+
+private:
+    explicit AppListWidget(DeviceConnection* connection, DeviceView* deviceView) : connection(connection), deviceView(deviceView), QWidget() {
+        instanceMap.insert(connection, this);
+
+        setAttribute(Qt::WA_DeleteOnClose);
+
+        connect(deviceView, &QObject::destroyed, this, &QWidget::close);
         
         QLineEdit *searchEdit = new QLineEdit(this);
         searchEdit->setPlaceholderText("🔍 搜索应用名或包名...");
@@ -153,16 +173,15 @@ public:
                 return;
             }
 
-            RemoteFileExplorer::open(connection, path, parent);
+            RemoteFileExplorer::open(connection, path, deviceView);
         });
     }
 
     ~AppListWidget() {
         EventHub::off(this, "appList");
         EventHub::off(this, "appOperation");
+        instanceMap.remove(connection);
     }
-
-protected:
 
     void addApp(const QJsonObject &jsonObject) {
         const auto& iconBase64 = jsonObject["icon"].toString();
@@ -314,7 +333,7 @@ protected:
                 dataObject["name"] = name;
                 dataObject["type"] = i + 1;
 
-                const auto& connections = !name.endsWith("路径") ? MainWindow::getInstance()->getDeviceConnections((DeviceView*)parent()) : (QList<DeviceConnection*>() << connection);
+                const auto& connections = !name.endsWith("路径") ? MainWindow::getInstance()->getDeviceConnections(deviceView) : (QList<DeviceConnection*>() << connection);
                 for (const auto& connection : connections) {
                     connection->send("appOperation", dataObject);
                 }
@@ -334,13 +353,15 @@ protected:
         table->setCellWidget(row, 3, actionWidget);
     }
 
+protected:
     void keyPressEvent(QKeyEvent *event) override {
         if (event->key() == Qt::Key_Escape)
             close();
         else
-            QDialog::keyPressEvent(event);
+            QWidget::keyPressEvent(event);
     }
 
+private:
     void setupTable() {
         table->setColumnCount(4);
         table->setHorizontalHeaderLabels(QStringList() << "图标" << "应用名称" << "包名" << "操作");
@@ -369,5 +390,8 @@ protected:
     }
 
     DeviceConnection* const connection;
+    DeviceView* const deviceView;
     QTableWidget *table;
+
+    inline static QHash<DeviceConnection*, AppListWidget*> instanceMap;
 };
