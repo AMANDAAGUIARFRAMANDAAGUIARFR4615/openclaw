@@ -263,7 +263,7 @@ void DeviceView::addContextMenuActions()
             addAction(text, [=](){send("killAllApp");});
         }
         else if (labelPart == "文件管理") {
-            addAction(text, [this](){RemoteFileExplorer(connection, "/", this).exec();});
+            addAction(text, [this](){RemoteFileExplorer::open(connection, "/", this);});
         }
         else if (labelPart == "录制+回放") {
             addAction(text, [this](){Recorder(connection, this).exec();});

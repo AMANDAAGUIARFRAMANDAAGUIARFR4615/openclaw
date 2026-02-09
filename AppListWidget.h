@@ -153,9 +153,7 @@ public:
                 return;
             }
 
-            QMetaObject::invokeMethod(this, [=]() {
-                RemoteFileExplorer(connection, path, parent).exec();
-            });
+            RemoteFileExplorer::open(connection, path, parent);
         });
     }
 

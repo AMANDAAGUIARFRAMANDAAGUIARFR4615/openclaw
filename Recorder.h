@@ -340,4 +340,6 @@ protected:
     FileFilterProxyModel *filterModel;
     QTreeView *treeView;
     QStatusBar *statusBar;
+
+    inline static QHash<DeviceConnection*, Recorder*> instanceMap;
 };

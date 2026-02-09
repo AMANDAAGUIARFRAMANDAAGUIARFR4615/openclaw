@@ -59,20 +59,17 @@ protected:
     }
 };
 
-RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& openPath, QWidget* parent) : connection(connection), openPath(openPath), QDialog(parent)
+RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QString& openPath, DeviceView* deviceView) : connection(connection), openPath(openPath), deviceView(deviceView), QWidget()
 {
-    setWindowModality(Qt::WindowModal);
-
-    if (openPath == "/")
-        setWindowTitle(connection->deviceInfo->deviceName + "[应用管理]");
-    else
-        setWindowTitle(connection->deviceInfo->deviceName + QString("[%1]").arg(openPath));
-
-    resize(1080, 720);
+    QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(openPath);
+    instanceMap.insert(key, this);
 
     rootPath = openPath;
     
+    setAttribute(Qt::WA_DeleteOnClose);
     setAcceptDrops(true);
+
+    connect(deviceView, &QObject::destroyed, this, &QWidget::close);
 
     QHBoxLayout* headerLayout = new QHBoxLayout();
     headerLayout->setContentsMargins(0, 0, 0, 0); // 可选：根据需要调整边距
@@ -332,6 +329,9 @@ RemoteFileExplorer::~RemoteFileExplorer()
     EventHub::off(this, "createDirectoryStatus");
     EventHub::off(this, "renameItemStatus");
     EventHub::off(this, "removeItemStatus");
+
+    QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(openPath);
+    instanceMap.remove(key);
 
     delete ((QSortFilterProxyModel*)treeView->model())->sourceModel();
     delete treeView->model();

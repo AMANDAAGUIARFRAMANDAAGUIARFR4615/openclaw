@@ -1,7 +1,8 @@
 #pragma once
 
 #include "DeviceConnection.h"
-#include <QDialog>
+#include "DeviceView.h"
+#include <QWidget>
 #include <QNetworkAccessManager>
 #include <QTreeView>
 #include <QStandardItemModel>
@@ -35,12 +36,31 @@ public:
     }
 };
 
-class RemoteFileExplorer : public QDialog
+class RemoteFileExplorer : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit RemoteFileExplorer(DeviceConnection* connection, const QString& openPath, QWidget* parent);
+    static RemoteFileExplorer* open(DeviceConnection* connection, const QString& openPath, DeviceView* deviceView) {
+        QString key = QString("%1:%2").arg(reinterpret_cast<quintptr>(connection), 0, 16).arg(openPath);
+        auto existing = instanceMap.value(key);
+        if (existing) {
+            existing->setWindowState(existing->windowState() & ~Qt::WindowMinimized);
+            existing->raise();
+            existing->activateWindow();
+            return existing;
+        }
+
+        auto explorer = new RemoteFileExplorer(connection, openPath, deviceView);
+        explorer->setWindowTitle(connection->displayName() + " - 文件管理");
+        QSize screenSize = qApp->primaryScreen()->availableSize();
+        explorer->resize(screenSize.width() * 0.7, screenSize.height() * 0.7);
+        explorer->show();
+        return explorer;
+    }
+
+private:
+    explicit RemoteFileExplorer(DeviceConnection* connection, const QString& openPath, DeviceView* deviceView);
     ~RemoteFileExplorer();
 
 protected:
@@ -60,6 +80,7 @@ protected:
     void dropEvent(QDropEvent *event) override;
 
     DeviceConnection* const connection;
+    DeviceView* const deviceView;
     const QString openPath;
     QString rootPath;
     
@@ -79,4 +100,6 @@ protected:
     void removeFromFavorites(const QString& path);
 
     QTableWidget* transferTable = nullptr;
+
+    inline static QHash<QString, RemoteFileExplorer*> instanceMap;
 };
