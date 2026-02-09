@@ -1,17 +1,14 @@
 #pragma once
 
 #include "Definitions.hpp"
-#include <QtNodes/NodeDelegateModel>
 #include <QLineEdit>
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QJsonObject>
 #include <QJsonValue>
 
-using namespace QtNodes;
-
 // 1. 数值常量节点：仅提供数字
-class NumberSourceModel : public NodeDelegateModel
+class NumberSourceModel : public FlowDelegateModel
 {
     Q_OBJECT
 public:
@@ -52,7 +49,7 @@ private:
 };
 
 // 2. 变量读取节点：输入变量名，输出该变量名供下游使用
-class VariableGetModel : public NodeDelegateModel
+class VariableGetModel : public FlowDelegateModel
 {
     Q_OBJECT
 public:
@@ -90,7 +87,7 @@ private:
 
 // 3. 加法节点 (A + B)
 // 加法节点没有内部控件状态，不需要重写 save/load
-class AdditionModel : public NodeDelegateModel
+class AdditionModel : public FlowDelegateModel
 {
     Q_OBJECT
 public:

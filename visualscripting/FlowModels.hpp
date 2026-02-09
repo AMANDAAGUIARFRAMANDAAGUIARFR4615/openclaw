@@ -2,7 +2,6 @@
 
 #include "Definitions.hpp"
 #include "../FileViewer.h"
-#include <QtNodes/NodeDelegateModel>
 #include <QPushButton>
 #include <QTextEdit>
 #include <QLineEdit>
@@ -23,8 +22,6 @@
 #include <QJsonValue>
 #include <QCryptographicHash>
 #include <QBuffer>
-
-using namespace QtNodes;
 
 /// 点数据：{x, y}
 class PointData : public NodeData {
@@ -49,7 +46,7 @@ private:
 };
 
 // 开始节点
-class StartFlowModel : public NodeDelegateModel {
+class StartFlowModel : public FlowDelegateModel {
     Q_OBJECT
 public:
     StartFlowModel() {
@@ -85,7 +82,7 @@ private:
 };
 
 // 通用 Lua 代码块节点
-class LuaStatementModel : public NodeDelegateModel {
+class LuaStatementModel : public FlowDelegateModel {
     Q_OBJECT
 public:
     LuaStatementModel() {
@@ -141,7 +138,7 @@ private:
 };
 
 // 赋值节点
-class AssignmentModel : public NodeDelegateModel {
+class AssignmentModel : public FlowDelegateModel {
     Q_OBJECT
 public:
     AssignmentModel() { _edit = new QLineEdit("var_name"); }
@@ -178,7 +175,7 @@ private:
 };
 
 // For 循环节点
-class LoopModel : public NodeDelegateModel {
+class LoopModel : public FlowDelegateModel {
     Q_OBJECT
 public:
     QString caption() const override { return "For循环"; }
@@ -225,7 +222,7 @@ private:
 };
 
 // 打印节点
-class PrintModel : public NodeDelegateModel {
+class PrintModel : public FlowDelegateModel {
     Q_OBJECT
 public:
     QString caption() const override { return "打印"; }
@@ -257,7 +254,7 @@ private:
     std::shared_ptr<ExecData> _outData;
 };
 
-class RectModel : public NodeDelegateModel {
+class RectModel : public FlowDelegateModel {
     Q_OBJECT
 public:
     RectModel() {
@@ -331,7 +328,7 @@ private:
     QString _inputs[4]; // 缓存端口输入
 };
 
-class FindImageModel : public NodeDelegateModel {
+class FindImageModel : public FlowDelegateModel {
     Q_OBJECT
 public:
     FindImageModel() {

@@ -1,20 +1,20 @@
 #pragma once
 
 #include <QtNodes/NodeData>
+#include <QtNodes/NodeDelegateModel>
 #include <QString>
-#include <memory> // 需要包含 memory
+#include <memory>
 
-using QtNodes::NodeData;
-using QtNodes::NodeDataType;
+using namespace QtNodes;
+
+// --- 基础数据类型定义 ---
 
 /// 执行流数据：携带共享的脚本缓冲区和缩进深度
 class ExecData : public NodeData
 {
 public:
-    // 默认构造
     ExecData() : _scriptBuffer(std::make_shared<QString>()), _indentLevel(0) {}
 
-    // 构造函数：接收共享缓冲区
     ExecData(std::shared_ptr<QString> buffer, int level = 0)
         : _scriptBuffer(buffer), _indentLevel(level) {}
 
@@ -30,9 +30,7 @@ public:
 
     // 向共享缓冲区追加代码
     void append(const QString &text) {
-        if (_scriptBuffer) {
-            *_scriptBuffer += text;
-        }
+        if (_scriptBuffer) *_scriptBuffer += text;
     }
 
     // 格式化辅助函数
@@ -41,11 +39,11 @@ public:
     }
 
 private:
-    std::shared_ptr<QString> _scriptBuffer; // 核心修改：使用指针共享同一份字符串
+    std::shared_ptr<QString> _scriptBuffer;
     int _indentLevel;
 };
 
-/// 数值数据：保持不变
+/// 数值数据
 class DecimalData : public NodeData
 {
 public:
@@ -57,4 +55,37 @@ public:
 
 private:
     QString _expression;
+};
+
+
+// --- 自定义模型基类 ---
+
+/// 所有流节点的基类，统一管理连接策略
+class FlowDelegateModel : public NodeDelegateModel
+{
+public:
+    ConnectionPolicy portConnectionPolicy(PortType portType, PortIndex portIndex) const override {
+        // 获取该端口的数据类型
+        auto type = dataType(portType, portIndex);
+
+        if (type.id == "exec") {
+            // --- 执行流端口策略 ---
+            if (portType == PortType::In) {
+                // 输入 Exec: 允许多个上游汇入 (Merge)
+                return ConnectionPolicy::Many;
+            } else {
+                // 输出 Exec: 强制单线执行
+                return ConnectionPolicy::One;
+            }
+        } else {
+            // --- 数据端口策略 (decimal, point, rect 等) ---
+            if (portType == PortType::In) {
+                // 输入 Data: 只能有一个数据源
+                return ConnectionPolicy::One;
+            } else {
+                // 输出 Data: 可以被多次引用
+                return ConnectionPolicy::Many;
+            }
+        }
+    }
 };
