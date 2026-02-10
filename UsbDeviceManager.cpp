@@ -212,13 +212,18 @@ void UsbDeviceManager::pollDevices() {
 
 void UsbDeviceManager::handlePollFinished() {
     QSet<QString> currentDevices = watcher->result();
+    bool needConnect = false;
 
     for (const QString& udid : currentDevices) {
         if (!previousDevices.contains(udid)) {
             qInfoEx() << "📱检测到新设备:" << udid;
             devices[udid] = false;
+            needConnect = true;
         }
     }
+
+    if (needConnect)
+        connectPendingDevices();
 
     QList<UsbDeviceContext*> list;
     
@@ -235,8 +240,6 @@ void UsbDeviceManager::handlePollFinished() {
     }
 
     previousDevices = currentDevices;
-
-    connectPendingDevices();
 }
 
 void UsbDeviceManager::processBufferedData(UsbDeviceContext* ctx) {
