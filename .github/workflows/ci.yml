@@ -14,33 +14,7 @@ env:
   VERSION: 6.10.1
 
 jobs:
-  create_release:
-    runs-on: ubuntu-latest
-    outputs:
-      tag_name: ${{ steps.create.outputs.tag_name }}
-      upload_url: ${{ steps.create.outputs.upload_url }}
-      build_time: ${{ steps.create.outputs.build_time }}
-    steps:
-      - name: Create Release
-        id: create
-        run: |
-          NOW=$(date "+%Y-%m-%d %H:%M:%S")
-          TAG_NAME="v$(date +%Y%m%d%H%M%S)"
-
-          USERNAME=$(curl -H "Authorization: token $ACCESS_TOKEN" https://api.github.com/user | jq -r '.login')
-          repository="$USERNAME/FFmpeg"
-          
-          response=$(curl -X POST \
-            -H "Authorization: token ${{ env.ACCESS_TOKEN }}" \
-            -d "{\"tag_name\": \"$TAG_NAME\", \"name\": \"${{ github.event.head_commit.message }}\", \"body\": \"$NOW\"}" \
-            "https://api.github.com/repos/$repository/releases")
-          
-          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "upload_url=$(echo $response | jq -r '.upload_url' | sed -e "s/{?name,label}//")" >> $GITHUB_OUTPUT
-          echo "build_time=$NOW" >> $GITHUB_OUTPUT
-
   build:
-    needs: create_release
     strategy:
       fail-fast: false
       matrix:
@@ -53,23 +27,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
-          fetch-depth: 0
-
-      - name: Replace App Name
-        if: false
+       
+      - name: Get Release Version
         shell: bash
         run: |
-          RAW_MSG="${{ github.event.head_commit.message }}"
-          
-          # 只取第一行
-          COMMIT_MSG=$(echo "$RAW_MSG" | head -n 1)
-          
-          # 转义双引号
-          SAFE_MSG=${COMMIT_MSG//\"/\\\"}
+          VERSION=$(perl -nle 'print $1 if /const QString VERSION = "([^"]+)"/' global.h)
 
-          BUILD_TIME="${{ needs.create_release.outputs.build_time }}"
-          
-          perl -pi -e "s|setApplicationDisplayName\(\"远控Pro\"\)|setApplicationDisplayName\(\"$SAFE_MSG $BUILD_TIME\"\)|g" main.cpp
+          if [ -z "$VERSION" ]; then
+            echo "❌ 错误: 无法在 Release 配置中找到 MARKETING_VERSION"
+            exit 1
+          fi
+
+          echo "✅ 成功获取 Release 版本号: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Set Env
         shell: bash
@@ -254,7 +224,7 @@ jobs:
             cp ../mingw64/libusbmuxd/bin/libusbmuxd-2.0.dll .
             cp ../mingw64/libimobiledevice-glue/bin/libimobiledevice-glue-1.0.dll .
             
-            7z a RemotePro.zip *
+            7z a ../build/RemotePro-${{ matrix.os }}.zip *
           else
             cd build
             $QT_ROOT_DIR/bin/macdeployqt RemotePro.app
@@ -264,7 +234,7 @@ jobs:
             APP=RemotePro.app
             FRAMEWORKS=$APP/Contents/Frameworks
 
-            cp ../translations $APP/MacOS/
+            cp ../translations $APP/Contents/MacOS/
 
             # 1️⃣ 拷贝所有相关库
             cp /usr/local/opt/openssl/lib/libcrypto.3.dylib $FRAMEWORKS/
@@ -297,11 +267,16 @@ jobs:
             install_name_tool -change /usr/local/lib/libusbmuxd-2.0.7.dylib @rpath/libusbmuxd-2.0.7.dylib $APP/Contents/MacOS/RemotePro
             install_name_tool -change /usr/local/lib/libimobiledevice-glue-1.0.0.dylib @rpath/libimobiledevice-glue-1.0.0.dylib $APP/Contents/MacOS/RemotePro
 
-            zip -r RemotePro.zip RemotePro.app
+            zip -r RemotePro-${{ matrix.os }}.zip RemotePro.app
           fi
 
-          curl -X POST \
-            -H "Authorization: token ${{ env.ACCESS_TOKEN }}" \
-            -H "Content-Type: application/octet-stream" \
-            --data-binary @RemotePro.zip \
-            "${{ needs.create_release.outputs.upload_url }}?name=${{ needs.create_release.outputs.tag_name }}-${{ matrix.os }}.zip"
+      - name: 发布 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          files: build/RemotePro-${{ matrix.os }}.zip
+          body: |
+            ${{ github.event.head_commit.message }}
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ env.ACCESS_TOKEN }}
