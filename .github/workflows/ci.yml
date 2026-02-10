@@ -243,7 +243,7 @@ jobs:
             $QT_ROOT_DIR/bin/windeployqt --release --translations zh_CN RemotePro.exe
             echo "Package created successfully."
 
-            ls .
+            ls
 
             cp C:/Windows/System32/msvcp140_1.dll .
             cp C:/Windows/System32/msvcp140_2.dll .
@@ -258,9 +258,13 @@ jobs:
           else
             cd build
             $QT_ROOT_DIR/bin/macdeployqt RemotePro.app
-            
+
+            ls
+
             APP=RemotePro.app
             FRAMEWORKS=$APP/Contents/Frameworks
+
+            cp ../translations $APP/MacOS/
 
             # 1️⃣ 拷贝所有相关库
             cp /usr/local/opt/openssl/lib/libcrypto.3.dylib $FRAMEWORKS/

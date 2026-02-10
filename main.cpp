@@ -63,16 +63,6 @@ int main(int argc, char *argv[])
 
     app.installEventFilter(new CursorFilter(&app));
 
-    QTranslator qtTranslator;
-    if (qtTranslator.load("qt_zh_CN", QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
-        app.installTranslator(&qtTranslator);
-
-#ifdef QT_DEBUG
-    app.setApplicationDisplayName("远控Pro测试版");
-#else
-    app.setApplicationDisplayName(QString("远控Pro[%1]").arg(Config::VERSION));
-#endif
-
     QString dataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
 
     QDir dir(dataPath);
@@ -81,7 +71,16 @@ int main(int argc, char *argv[])
 
     new LogTextBrowser();
 
-    qDebugEx() << QStyleFactory::keys();
+    QTranslator qtTranslator;
+    QString translationsPath = qApp->applicationDirPath() + "/translations";
+    if (qtTranslator.load("qt_zh_CN", translationsPath))
+        app.installTranslator(&qtTranslator);
+
+#ifdef QT_DEBUG
+    app.setApplicationDisplayName("远控Pro测试版");
+#else
+    app.setApplicationDisplayName(QString("远控Pro[%1]").arg(Config::VERSION));
+#endif
 
 #if defined(Q_OS_WIN) && !defined(QT_DEBUG)
     QTimer* timer = new QTimer();
