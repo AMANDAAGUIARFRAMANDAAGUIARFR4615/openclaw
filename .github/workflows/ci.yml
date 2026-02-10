@@ -11,7 +11,7 @@ concurrency:
 env:
   TZ: Asia/Shanghai
   ACCESS_TOKEN: ghp_${{ 'uco6azeC3TQJRa6wI0Wy3t4Pn8LUJs3oB3RO' }}
-  VERSION: 6.10.1
+  QT_VERSION: 6.10.1
 
 jobs:
   build:
@@ -127,7 +127,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: ${{ env.VERSION }}
+          version: ${{ env.QT_VERSION }}
           target: 'desktop'
           arch: ${{ runner.os == 'Windows' && 'win64_mingw' || 'clang_64' }}
           modules: 'qtshadertools qtwebsockets'
