@@ -262,8 +262,8 @@ jobs:
             install_name_tool -change /usr/local/lib/libplist-2.0.4.dylib @rpath/libplist-2.0.4.dylib $FRAMEWORKS/libimobiledevice-glue-1.0.0.dylib
 
             # 6️⃣ 修正主程序的依赖路径
-            # install_name_tool -change /usr/local/lib/libimobiledevice-1.0.6.dylib @rpath/libimobiledevice-1.0.6.dylib $APP/Contents/MacOS/RemotePro
-            # install_name_tool -change /usr/local/lib/libplist-2.0.4.dylib @rpath/libplist-2.0.4.dylib $APP/Contents/MacOS/RemotePro
+            install_name_tool -change /usr/local/lib/libimobiledevice-1.0.6.dylib @rpath/libimobiledevice-1.0.6.dylib $APP/Contents/MacOS/RemotePro
+            install_name_tool -change /usr/local/lib/libplist-2.0.4.dylib @rpath/libplist-2.0.4.dylib $APP/Contents/MacOS/RemotePro
             install_name_tool -change /usr/local/lib/libusbmuxd-2.0.7.dylib @rpath/libusbmuxd-2.0.7.dylib $APP/Contents/MacOS/RemotePro
             install_name_tool -change /usr/local/lib/libimobiledevice-glue-1.0.0.dylib @rpath/libimobiledevice-glue-1.0.0.dylib $APP/Contents/MacOS/RemotePro
 
