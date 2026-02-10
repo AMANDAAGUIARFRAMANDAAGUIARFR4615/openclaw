@@ -72,7 +72,11 @@ int main(int argc, char *argv[])
     new LogTextBrowser();
 
     QTranslator qtTranslator;
+#ifdef QT_DEBUG
+    QString translationsPath = QLibraryInfo::location(QLibraryInfo::TranslationsPath);
+#else
     QString translationsPath = qApp->applicationDirPath() + "/translations";
+#endif
     if (qtTranslator.load("qt_zh_CN", translationsPath))
         app.installTranslator(&qtTranslator);
 

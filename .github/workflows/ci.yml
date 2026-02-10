@@ -277,6 +277,7 @@ jobs:
           tag_name: ${{ env.VERSION }}
           files: build/RemotePro-${{ matrix.os }}.zip
           body: |
+            ${{ github.event.head_commit.timestamp }}
             ${{ github.event.head_commit.message }}
           generate_release_notes: false
         env:
