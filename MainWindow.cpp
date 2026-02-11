@@ -127,7 +127,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (key == "colorScheme") {
-            new ToastWidget("颜色主题重启才能生效", this);
+            new ToastWidget("修改颜色主题需要重启软件才能生效");
             return;
         }
 
