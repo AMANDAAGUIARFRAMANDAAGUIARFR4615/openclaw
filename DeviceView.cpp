@@ -168,7 +168,10 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
             }
 
             if (screenshotTo != 0) {
-                QString dirPath = "screenshots";
+                QString dirPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/screenshots";
+                if (QSysInfo::productType() == "windows")
+                    dirPath = "screenshots";
+                
                 QDir dir(dirPath);
                 if (!dir.exists())
                     dir.mkpath(".");
