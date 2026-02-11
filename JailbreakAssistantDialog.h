@@ -492,7 +492,7 @@ public:
         QString greenHover = isDark ? "#48e08d" : "#218838";
 
         btnFinish->setStyleSheet(QString("QPushButton { background-color: %1; color: white; border-radius: 4px; padding: 8px; font-weight: bold; }"
-                                 "QPushButton:hover { background-color: %2; }").arg(green, greenHover));
+                                         "QPushButton:hover { background-color: %2; }").arg(green, greenHover));
 
         btnLayout->addWidget(btnFinish);
         btnLayout->addStretch();
@@ -515,6 +515,7 @@ private:
 
         QLabel *nameLabel = new QLabel(name);
         nameLabel->setAlignment(Qt::AlignCenter);
+        nameLabel->setStyleSheet("font-weight: bold;"); 
 
         int qrSize = 200;
         QImage img = Tools::generateQrImage(url);
@@ -528,8 +529,14 @@ private:
         qrLabel->setPixmap(pixmap);
         qrLabel->setAlignment(Qt::AlignCenter);
 
+        QLabel *urlLabel = new QLabel(url);
+        urlLabel->setAlignment(Qt::AlignCenter);
+        urlLabel->setTextInteractionFlags(Qt::TextSelectableByMouse); // 允许鼠标复制
+        urlLabel->setStyleSheet("color: gray; font-size: 11px;");
+
         layout->addWidget(nameLabel);
         layout->addWidget(qrLabel);
+        layout->addWidget(urlLabel);
 
         return layout;
     }
@@ -558,7 +565,7 @@ public:
         containerLayout->setContentsMargins(20, 20, 20, 20);
         containerLayout->setSpacing(0);
 
-        QString url = "https://gitee.com/RemotePro/RemotePro/releases/download/v3/TrollRestore";
+        QString url = "https://remotepro.cn/TrollRestore";
 
 #ifdef Q_OS_WIN
         url.append(".exe");
@@ -567,7 +574,7 @@ public:
         auto step1 = new StepDownload("下载TrollRestore", "给手机装上“巨魔商店”，用于安装App且永不掉签。\n系統要求：iOS 15.2 - 16.7 RC (20H18) and 17.0", url);
         auto step2 = new StepSelectApp("选择一个将被替换的系统应用", "请选择一个已安装在手机上的系统应用进行注入：");
         auto step3 = new StepExecute("开始注入", "运行程序并将安装器注入目标应用。（请确保仅有一台手机连接并已信任此电脑）");
-        auto step4 = new StepScan("使用相机app扫码下载Dopamine", "无根是不修改系统分区以实现越狱，而隐根是在无根的基础上彻底隐藏越狱文件，让App检测不到越狱状态。\n系統要求：iOS 15.0 - 16.5.1 (arm64e) and iOS 15.0 - 16.6.1 (arm64)", "https://gitee.com/RemotePro/RemotePro/releases/download/v3/Dopamine.tipa", "https://gitee.com/RemotePro/RemotePro/releases/download/v3/Dopamine2.tipa");
+        auto step4 = new StepScan("使用相机app扫码下载Dopamine", "无根是不修改系统分区以实现越狱，而隐根是在无根的基础上彻底隐藏越狱文件，让App检测不到越狱状态。\n系統要求：iOS 15.0 - 16.5.1 (arm64e) and iOS 15.0 - 16.6.1 (arm64)", "https://remotepro.cn/rootless", "https://remotepro.cn/roothide");
         auto step5 = new StepFinal("最后一步", "在手机上打开巨魔商店（TrollStore）\n点击右上角加号\n选择Install IPA File就可以安装Dopamine\n安装后打开Dopamine点击越狱等待完成即可。");
 
         QList<StepBase*> steps;
