@@ -273,7 +273,7 @@ void DeviceView::addContextMenuActions()
             addAction(text, [this](){AppListWidget::open(connection, this);});
         }
         else if (labelPart == "截图") {
-            addAction(text, [this](){connection->send("screenshot");})->setEnabled(MainWindow::getInstance()->getDeviceWidgets(this).count() == 1);
+            addAction(text, [this](){connection->send("screenshot");});
         }
         else if (labelPart == "重启") {
             addAction(text, [=](){send("reboot");});
