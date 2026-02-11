@@ -705,6 +705,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 player->checkBox->setChecked(false);
             }
         }
+
+        deviceListWidget->sortItems(Qt::AscendingOrder);
     });
 
     videoVisibilityManager = new VideoVisibilityManager(deviceListWidget, this);
@@ -1213,6 +1215,8 @@ void MainWindow::addItem(DeviceConnection* connection)
     connect(player->checkBox, &QCheckBox::stateChanged, [=](int state) {
         const QSignalBlocker blocker(deviceListWidget);
         item->setSelected(state == Qt::Checked);
+        deviceListWidget->sortItems(Qt::AscendingOrder);
+
         bool isUserAction = player->checkBox->hasFocus() || player->checkBox->isDown();
         if (!isUserAction)
             return;
