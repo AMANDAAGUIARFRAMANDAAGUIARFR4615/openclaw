@@ -160,12 +160,14 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                 return;
             }
 
-            if (settings->value("screenshotTo").toInt() != 1) {
+            const auto& screenshotTo = settings->value("screenshotTo").toInt();
+            
+            if (screenshotTo != 1) {
                 qApp->clipboard()->setPixmap(QPixmap::fromImage(image));
                 new ToastWidget("图片已复制到剪切板", this);
             }
 
-            if (settings->value("screenshotTo").toInt() != 0) {
+            if (screenshotTo != 0) {
                 QString dirPath = "screenshots";
                 QDir dir(dirPath);
                 if (!dir.exists())
