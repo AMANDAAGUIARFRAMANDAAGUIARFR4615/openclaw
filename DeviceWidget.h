@@ -20,6 +20,7 @@ public:
 
 protected:
     bool event(QEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
     void launchDeviceWindow();
 
     Q_INVOKABLE void play() {

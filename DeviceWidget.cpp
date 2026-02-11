@@ -58,7 +58,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     launchButton->setIcon(style()->standardIcon(QStyle::SP_TitleBarMaxButton));
     launchButton->setFlat(true);
     launchButton->setToolTip("在独立窗口中打开");
-    
+
     connect(launchButton, &QPushButton::clicked, this, &DeviceWidget::launchDeviceWindow);
 
     topLayout->addWidget(checkBox);
@@ -86,7 +86,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     bottomLayout->addStretch();
     bottomLayout->addWidget(versionLabel);
 
-    layout->addLayout(topLayout); 
+    layout->addLayout(topLayout);
     layout->addWidget(overlay);
     layout->addLayout(bottomLayout);
     setLayout(layout);
@@ -149,6 +149,18 @@ bool DeviceWidget::event(QEvent *event)
         return qApp->sendEvent(deviceWindow, event);
 
     return DeviceView::event(event);
+}
+
+void DeviceWidget::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) {
+        if (AppSettingsDialog::getInstance()->getValue("doubleClickOpenStandalone")) {
+            launchDeviceWindow();
+            return;
+        }
+    }
+
+    DeviceView::mouseDoubleClickEvent(event);
 }
 
 void DeviceWidget::launchDeviceWindow() {
