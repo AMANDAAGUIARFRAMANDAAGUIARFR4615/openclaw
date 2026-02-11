@@ -126,6 +126,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
         }
 
+        if (key == "sortSelectedToTop") {
+            deviceListWidget->sortItems(Qt::AscendingOrder);
+            return;
+        }
+
         if (key == "isLandscape") {
             relayoutDevices();
             return;
@@ -706,7 +711,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             }
         }
 
-        deviceListWidget->sortItems(Qt::AscendingOrder);
+        if (settings->value("sortSelectedToTop").toBool())
+            deviceListWidget->sortItems(Qt::AscendingOrder);
     });
 
     videoVisibilityManager = new VideoVisibilityManager(deviceListWidget, this);
@@ -1215,7 +1221,9 @@ void MainWindow::addItem(DeviceConnection* connection)
     connect(player->checkBox, &QCheckBox::stateChanged, [=](int state) {
         const QSignalBlocker blocker(deviceListWidget);
         item->setSelected(state == Qt::Checked);
-        deviceListWidget->sortItems(Qt::AscendingOrder);
+
+        if (settings->value("sortSelectedToTop").toBool())
+            deviceListWidget->sortItems(Qt::AscendingOrder);
 
         bool isUserAction = player->checkBox->hasFocus() || player->checkBox->isDown();
         if (!isUserAction)

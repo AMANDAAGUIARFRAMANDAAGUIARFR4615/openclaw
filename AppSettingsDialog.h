@@ -127,6 +127,7 @@ private:
         generalLayout->setContentsMargins(20, 20, 20, 20);
 
         addSettingGroup(generalLayout, "autoSyncClipboard", "手机剪切板自动同步到电脑", {"关闭", "开启"}, 0);
+        addSettingGroup(generalLayout, "sortSelectedToTop", "选中的设备排列在前", {"关闭", "开启"}, 0);
 
         QGroupBox *defaultBox = new QGroupBox("投屏设置 (分组单独设置优先)", this);
         defaultBox->setStyleSheet(R"(
