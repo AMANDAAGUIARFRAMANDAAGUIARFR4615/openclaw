@@ -126,6 +126,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
         }
 
+        if (key == "colorScheme") {
+            new ToastWidget("颜色主题重启才能生效", this);
+            return;
+        }
+
         if (key == "sortSelectedToTop") {
             deviceListWidget->sortItems(Qt::AscendingOrder);
             return;
