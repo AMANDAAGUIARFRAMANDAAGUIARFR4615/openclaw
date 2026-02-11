@@ -129,6 +129,7 @@ private:
         addSettingGroup(generalLayout, "colorScheme", "颜色主题", {"默认", "浅色", "深色"}, 0);
         addSettingGroup(generalLayout, "autoSyncClipboard", "手机剪切板自动同步到电脑", {"关闭", "开启"}, 0);
         addSettingGroup(generalLayout, "sortSelectedToTop", "选中的设备排列在前", {"关闭", "开启"}, 0);
+        addSettingGroup(generalLayout, "screenshotTo", "截图保存", {"剪切板", "文件", "剪切板+文件"}, 0);
 
         QGroupBox *defaultBox = new QGroupBox("投屏设置 (分组单独设置优先)", this);
         defaultBox->setStyleSheet(R"(

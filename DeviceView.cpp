@@ -160,8 +160,26 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                 return;
             }
 
-            qApp->clipboard()->setPixmap(QPixmap::fromImage(image));
-            new ToastWidget("图片已复制到剪切板", this);
+            if (settings->value("screenshotTo").toInt() != 1) {
+                qApp->clipboard()->setPixmap(QPixmap::fromImage(image));
+                new ToastWidget("图片已复制到剪切板", this);
+            }
+
+            if (settings->value("screenshotTo").toInt() != 0) {
+                QString dirPath = "screenshots";
+                QDir dir(dirPath);
+                if (!dir.exists())
+                    dir.mkpath(".");
+
+                static int screenshotIndex = settings->value("screenshotIndex", 1).toInt();
+
+                const auto& fileName = QString("%1/%2.jpg").arg(dirPath).arg(screenshotIndex);
+
+                if (image.save(fileName))
+                    settings->setValue("screenshotIndex", ++screenshotIndex);
+                else
+                    new ToastWidget("图片保存失败", this);
+            }
             return;
         }
 
