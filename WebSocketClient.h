@@ -54,6 +54,11 @@ private:
     int m_nextId = 0;
 
     void sendJson(const QJsonObject &obj) {
+        if (state() != QAbstractSocket::ConnectedState) {
+            qCriticalEx() << "不是连接状态，无法发送数据";
+            return;
+        }
+
         qDebugEx() << this << obj;
         const auto& jsonData = QJsonDocument(obj).toJson(QJsonDocument::Compact);
         sendBinaryMessage(AesCrypto::encrypt(jsonData));
