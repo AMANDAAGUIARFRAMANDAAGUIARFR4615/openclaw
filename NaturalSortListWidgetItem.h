@@ -8,6 +8,9 @@ public:
     using QListWidgetItem::QListWidgetItem;
 
     bool operator<(const QListWidgetItem &other) const override {
+        if (!listWidget()->isEnabled())
+            return false;
+
         if (settings->value("sortSelectedToTop").toBool()) {
             bool mySelected = isSelected();
             bool otherSelected = other.isSelected();

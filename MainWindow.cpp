@@ -793,7 +793,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             const auto& item = deviceListWidget->item(i);
             const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
             if (deviceWidget->connection == connection) {
-                delete deviceListWidget->takeItem(i);
+                deviceListWidget->setEnabled(false);
+                delete item;
+                deviceListWidget->setEnabled(true);
                 relayoutDevices();
                 break;
             }
