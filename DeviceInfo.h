@@ -111,7 +111,7 @@ public:
     {
         const auto& deviceInfo = getDevice(udid);
         if (deviceInfo) {
-            deviceInfo->setLocker(udid, value);
+            deviceInfo->setLocker(value);
             return;
         }
 
