@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
                 const auto udid = device[HIDE_STR("udid")].toString();
                 const auto expireAt = device[HIDE_STR("expireAt")].toInteger();
                 DeviceInfo::expirations[udid] = expireAt;
-                // DeviceInfo::setLocker(udid, device["locker"].toString());
+                DeviceInfo::setLocker(udid, device["locker"].toString());
 
                 auto deviceInfo = DeviceInfo::getDevice(udid);
                 if (deviceInfo)
