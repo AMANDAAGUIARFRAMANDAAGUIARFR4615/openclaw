@@ -24,6 +24,7 @@
 
 DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo, DeviceWidget* deviceWidget) : DeviceView(connection, deviceInfo), deviceWidget(deviceWidget)
 {
+    setAttribute(Qt::WA_DeleteOnClose);
     setWindowTitle(QString("%1%2%3").arg(deviceInfo->deviceName, deviceInfo->controller ? " 🏹主控" : "", deviceWidget->checkBox->isChecked() ? " 🎯被控" : ""));
     
     QHBoxLayout *layout = new QHBoxLayout(this);
