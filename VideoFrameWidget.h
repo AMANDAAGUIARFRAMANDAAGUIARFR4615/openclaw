@@ -107,7 +107,7 @@ protected:
 private:
     void applyVideoSettings()
     {
-        if (width() <= 0 || height() <= 0)
+        if (!isVisible() || width() <= 0 || height() <= 0)
             return;
 
         bool isPortrait = connection->deviceInfo->orientation == 1 || connection->deviceInfo->orientation == 2;
