@@ -167,11 +167,12 @@ private:
         QWidget *menuTab = new QWidget();
         QVBoxLayout *menuLayout = new QVBoxLayout(menuTab);
         menuLayout->setSpacing(15);
-        menuLayout->setContentsMargins(20, 15, 20, 15);
+        menuLayout->setContentsMargins(10, 10, 10, 10);
 
-        // 第一排：左侧栏 和 分组菜单 并排显示，节省垂直空间
+        // 第一排：左侧栏 和 分组菜单 并排显示
         QHBoxLayout *topMenusLayout = new QHBoxLayout();
         topMenusLayout->setSpacing(20);
+        topMenusLayout->setAlignment(Qt::AlignTop);
 
         QStringList sideBarMenu{"🔗设备连接", "⚙️设置", "💡帮助", "📲越狱助手", "📱手机软件源", "💿USB驱动", "⏳续费", "🤝换绑", "🌐软件更新"};
         
@@ -200,7 +201,7 @@ private:
 
         menuLayout->addLayout(topMenusLayout);
 
-        // 第二排：窗口右键菜单（因为比较长且有快捷键，单独占一行）
+        // 第二排：窗口右键菜单
         QStringList windowMenuItems = {
             "🏠主屏幕", "🎛️控制中心", "↕️应用切换", "🧹清理应用", "📁文件管理", 
             "⏺️录制+回放", "🧩应用管理", "📸截图", "🔄重启", "🔒锁屏", 
@@ -217,6 +218,9 @@ private:
 
         addSortableGroup(menuLayout, "windowMenu", "投屏窗口右键菜单 (拖拽调整顺序 / 双击设置快捷键)", 
             windowMenuItems, windowShortcuts);
+
+        // 底部弹簧，确保第二排菜单也不会跑到底部去
+        menuLayout->addStretch();
 
         tabWidget->addTab(menuTab, "菜单与快捷键");
     }
@@ -248,7 +252,7 @@ private:
         listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
         
         if (!defaultShortcuts.isEmpty()) {
-            listWidget->setToolTip("双击项目即可修改快捷键");
+            listWidget->setToolTip("双击即可修改快捷键");
             connect(listWidget, &QListWidget::itemDoubleClicked, this, [=](QListWidgetItem *item) {
                 QString name = item->data(Qt::UserRole).toString();
                 QString shortcut = item->data(Qt::UserRole + 1).toString();
@@ -347,6 +351,8 @@ private:
 
         groupLayout->addWidget(titleLabel);
         groupLayout->addWidget(listWidget);
+        groupLayout->addStretch();
+
         parentLayout->addLayout(groupLayout);
 
         auto saveFunc = [=]() {
