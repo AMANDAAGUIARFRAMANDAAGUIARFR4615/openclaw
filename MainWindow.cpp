@@ -743,11 +743,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     EventHub::on(this, "deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         if (!data["springBoardMsg"].toString().isEmpty()) {
-            qCriticalEx() << data["springBoardMsg"];
+            qCriticalEx() << connection << data["springBoardMsg"];
             connection->close();
             return;
         }
-        
+
         auto deviceInfo = DeviceInfo::getDevice(data["deviceId"].toString());
 
         if (deviceInfo) {
