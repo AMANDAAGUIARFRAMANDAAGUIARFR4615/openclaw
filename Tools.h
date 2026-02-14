@@ -16,6 +16,7 @@
 #include <QOperatingSystemVersion>
 #include <QSettings>
 #include <QDirIterator>
+#include <QDesktopServices>
 
 using namespace qrcodegen;
 

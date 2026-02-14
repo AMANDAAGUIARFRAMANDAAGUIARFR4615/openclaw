@@ -29,7 +29,6 @@
 #include <QTextEdit>
 #include <QClipboard>
 #include <QPushButton>
-#include <QDesktopServices>
 #include <QSortFilterProxyModel>
 
 class FileSystemSortProxyModel : public QSortFilterProxyModel
