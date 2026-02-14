@@ -99,23 +99,6 @@ public:
             actionButton->setEnabled(false);
         });
 
-        connect(webSocketClient, &QWebSocket::sslErrors, this, [&](const QList<QSslError> &errors) {
-            qDebugEx() << "====== 捕获到 SSL 错误 ======";
-
-            for (const auto &error : errors) {
-                qDebugEx() << "错误描述:" << error.errorString();
-
-                // 如果是主机名不匹配，打印证书里的名字看看
-                if (error.error() == QSslError::HostNameMismatch) {
-                    qDebugEx() << "证书内的 Common Name:"
-                             << error.certificate().subjectInfo(QSslCertificate::CommonName);
-                }
-            }
-
-            qDebugEx() << "正在执行 ignoreSslErrors() 以忽略上述错误...";
-            webSocketClient->ignoreSslErrors();
-        });
-
         webSocketClient->open(QUrl("ws://" + Config::SERVER_IP + ":" + QString::number(Config::SERVER_PORT)));
 
         auto server = new QTcpServer(this);

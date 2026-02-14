@@ -1,3 +1,5 @@
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+
 #include "Tools.h"
 #include <QApplication>
 #include <QWidget>
@@ -603,3 +605,5 @@ public:
         QTimer::singleShot(100, step1, &StepBase::activate);
     }
 };
+
+#endif

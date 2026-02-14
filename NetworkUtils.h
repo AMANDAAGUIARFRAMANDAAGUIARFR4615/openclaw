@@ -76,6 +76,7 @@ public:
     static QStringList getPhysicalIPs() {
         QStringList ips;
 
+#ifndef Q_OS_WASM
         for (const QNetworkInterface &networkInterface : QNetworkInterface::allInterfaces()) {
             if (!(networkInterface.flags() & QNetworkInterface::IsUp) || !(networkInterface.flags() & QNetworkInterface::IsRunning))
                 continue;
@@ -130,7 +131,7 @@ public:
 
             return a < b;
         });
-
+#endif
         return ips;
     }
 

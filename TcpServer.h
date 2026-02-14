@@ -69,10 +69,12 @@ private slots:
             auto socket = this->nextPendingConnection();
             if (!socket) continue;
 
+#ifndef Q_OS_WASM
             qintptr fd = socket->socketDescriptor();
 
             int opt = 1;
             setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (const char*)&opt, sizeof(opt));
+#endif
 
 #ifdef _WIN32
             struct tcp_keepalive alive;

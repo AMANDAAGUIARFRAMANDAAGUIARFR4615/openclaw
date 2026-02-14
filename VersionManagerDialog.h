@@ -294,7 +294,9 @@ private:
                 if (ZipUtils::extractSmart(filePath, ".")) {
                     QFile::remove(filePath);
                     qApp->quit();
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
                     QProcess::startDetached(qApp->applicationFilePath());
+#endif
                 } else {
                     new ToastWidget("解压失败"); // 假设 ToastWidget 定义在 global.h
                 }

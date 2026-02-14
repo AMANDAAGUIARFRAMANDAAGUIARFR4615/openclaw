@@ -118,7 +118,7 @@ public:
                    << QString("tell application \"Finder\" to reveal POSIX file \"%1\"").arg(escapedFilePath);
         QProcess::execute("/usr/bin/osascript", scriptArgs);
         QProcess::execute("/usr/bin/osascript", QStringList() << "-e" << "tell application \"Finder\" to activate");
-#else
+#elif !defined(Q_OS_WASM)
         QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 #endif
     }
