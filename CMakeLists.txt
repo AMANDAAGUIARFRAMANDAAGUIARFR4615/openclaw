@@ -46,23 +46,25 @@ add_subdirectory(nodeeditor)
 include_directories(include)
 include_directories(visualscripting)
 
-if(APPLE)
-    set(PLATFORM_DIR "macOS") 
-else()
+if(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(PLATFORM_DIR "macOS")
+elseif(WIN32)
     set(PLATFORM_DIR "mingw64")
 endif()
 
-# 包含路径
-include_directories(${PLATFORM_DIR}/libimobiledevice/include)
-include_directories(${PLATFORM_DIR}/libplist/include)
-include_directories(${PLATFORM_DIR}/libusbmuxd/include)
-include_directories(${PLATFORM_DIR}/libimobiledevice-glue/include)
+if(DEFINED PLATFORM_DIR)
+    # 包含路径
+    include_directories(${PLATFORM_DIR}/libimobiledevice/include)
+    include_directories(${PLATFORM_DIR}/libplist/include)
+    include_directories(${PLATFORM_DIR}/libusbmuxd/include)
+    include_directories(${PLATFORM_DIR}/libimobiledevice-glue/include)
 
-# 库路径
-link_directories(${PLATFORM_DIR}/libimobiledevice/lib)
-link_directories(${PLATFORM_DIR}/libplist/lib)
-link_directories(${PLATFORM_DIR}/libusbmuxd/lib)
-link_directories(${PLATFORM_DIR}/libimobiledevice-glue/lib)
+    # 库路径
+    link_directories(${PLATFORM_DIR}/libimobiledevice/lib)
+    link_directories(${PLATFORM_DIR}/libplist/lib)
+    link_directories(${PLATFORM_DIR}/libusbmuxd/lib)
+    link_directories(${PLATFORM_DIR}/libimobiledevice-glue/lib)
+endif()
 
 qt_add_resources(RESOURCE_SOURCES icons.qrc)
 
@@ -163,12 +165,12 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER "com.qt6.remotepro"
 )
 
-if(APPLE)
+if(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(THIRD_PARTY_LIBS
         libimobiledevice-1.0.dylib
         libplist-2.0.dylib
     )
-else()
+elseif(WIN32)
     set(THIRD_PARTY_LIBS
         libimobiledevice-1.0
         libplist-2.0

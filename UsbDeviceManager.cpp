@@ -78,6 +78,7 @@ void UsbDeviceManager::connectPendingDevices() {
 }
 
 DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t port, bool rawMode) {
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
     UsbDeviceContext* ctx = new UsbDeviceContext();
     ctx->udid = udid;
     ctx->port = port;
@@ -142,9 +143,13 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
     qDebugEx() << "✅连接设备:" << ctx->udid + ":" + QString::number(ctx->port);
     
     return ctx->handler;
+#else
+    return nullptr;
+#endif
 }
 
 void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
     if (!conn) return;
 
     UsbDeviceContext* ctx = connToContext.value(conn, nullptr);
@@ -179,9 +184,11 @@ void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
 
     deviceBuffers.remove(ctx);
     delete ctx;
+#endif
 }
 
 void UsbDeviceManager::pollDevices() {
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
     if (MainWindow::getInstance()->getTab().getAutoConnectUSBDevices() == 0)
         return;
 
@@ -208,6 +215,7 @@ void UsbDeviceManager::pollDevices() {
     });
 
     watcher->setFuture(future);
+#endif
 }
 
 void UsbDeviceManager::handlePollFinished() {

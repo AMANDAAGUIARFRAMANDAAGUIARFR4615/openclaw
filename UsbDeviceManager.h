@@ -7,9 +7,12 @@
 #include <QTimer>
 #include <QHostInfo>
 #include <QJsonObject>
-#include <libimobiledevice/libimobiledevice.h>
 #include <QtConcurrent>
 #include <QFutureWatcher>
+
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#include <libimobiledevice/libimobiledevice.h>
+#endif
 
 class UsbDeviceManager : public QObject {
     Q_OBJECT

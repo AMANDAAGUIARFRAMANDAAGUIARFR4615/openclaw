@@ -6,8 +6,11 @@
 #include <QByteArray>
 #include <QJsonObject>
 #include <QTcpSocket>
-#include <libimobiledevice/libimobiledevice.h>
 #include <QHash>
+
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#include <libimobiledevice/libimobiledevice.h>
+#endif
 
 class DeviceInfo;
 
@@ -21,8 +24,10 @@ public:
         Tcp
     };
 
-    explicit DeviceConnection(QTcpSocket *socket) : type(Tcp), tcpSocket(socket), usbConnection(nullptr), QObject(socket) {}
-    explicit DeviceConnection(idevice_connection_t connection) : type(Usb), tcpSocket(nullptr), usbConnection(connection), QObject(nullptr) {}
+    explicit DeviceConnection(QTcpSocket *socket) : type(Tcp), tcpSocket(socket), QObject(socket) {}
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+    explicit DeviceConnection(idevice_connection_t connection) : type(Usb), usbConnection(connection), QObject(nullptr) {}
+#endif
 
     void send(const DataGuard::StrObfuscator<>& event, const QJsonValue &jsonValue = QJsonValue()) {
         QJsonObject jsonObject;
@@ -61,6 +66,7 @@ public:
         }
         else
         {
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
             if (!usbConnection)
                 return;
 
@@ -70,6 +76,7 @@ public:
                 qCriticalEx() << "发送失败" << magic_enum::enum_name(error) << byteArray.size() << sent;
                 usbConnection = nullptr;
             }
+#endif
         }
     }
 
@@ -87,6 +94,8 @@ public:
     DeviceInfo* deviceInfo = nullptr;
 
 protected:
-    QTcpSocket *tcpSocket;
-    idevice_connection_t usbConnection;
+    QTcpSocket *tcpSocket = nullptr;
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+    idevice_connection_t usbConnection = nullptr;
+#endif
 };

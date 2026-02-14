@@ -1,5 +1,6 @@
 #if defined(Q_OS_WIN) || defined(Q_OS_MAC)
 
+#pragma once
 #include "Tools.h"
 #include <QApplication>
 #include <QWidget>
