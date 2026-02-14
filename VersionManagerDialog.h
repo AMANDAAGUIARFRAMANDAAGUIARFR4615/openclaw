@@ -294,7 +294,7 @@ private:
                 if (ZipUtils::extractSmart(filePath, ".")) {
                     QFile::remove(filePath);
                     qApp->quit();
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
                     QProcess::startDetached(qApp->applicationFilePath());
 #endif
                 } else {

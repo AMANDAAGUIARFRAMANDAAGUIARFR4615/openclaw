@@ -110,7 +110,7 @@ public:
         QStringList args;
         args << "/select," << QDir::toNativeSeparators(path);
         QProcess::startDetached("explorer.exe", args);
-#elif defined(Q_OS_MAC)
+#elif defined(Q_OS_MACOS)
         QString escapedFilePath = path;
         escapedFilePath.replace(" ", "\\ ");  // Escape spaces in path
         

@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
     });
 
     webSocketClient->on("force_logout", [](const QJsonValue &data) {
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
         settings->setValue("force_logout", data.toString());
         qApp->quit();
         QProcess::startDetached(qApp->applicationFilePath());

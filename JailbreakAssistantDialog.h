@@ -1,5 +1,5 @@
 #include <QtGlobal>
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
 
 #pragma once
 #include "Tools.h"
@@ -422,7 +422,7 @@ private slots:
 
         QString program = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/TrollRestore";
 
-        #ifdef Q_OS_MAC
+        #ifdef Q_OS_MACOS
         QFile localFile(program);
         if (!localFile.setPermissions(localFile.permissions() | 
                                       QFileDevice::ExeOwner | 

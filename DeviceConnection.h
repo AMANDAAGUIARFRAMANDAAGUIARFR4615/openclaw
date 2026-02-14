@@ -8,7 +8,7 @@
 #include <QTcpSocket>
 #include <QHash>
 
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
 #include <libimobiledevice/libimobiledevice.h>
 #endif
 
@@ -25,7 +25,7 @@ public:
     };
 
     explicit DeviceConnection(QTcpSocket *socket) : type(Tcp), tcpSocket(socket), QObject(socket) {}
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     explicit DeviceConnection(idevice_connection_t connection) : type(Usb), usbConnection(connection), QObject(nullptr) {}
 #endif
 
@@ -66,7 +66,7 @@ public:
         }
         else
         {
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
             if (!usbConnection)
                 return;
 
@@ -95,7 +95,7 @@ public:
 
 protected:
     QTcpSocket *tcpSocket = nullptr;
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     idevice_connection_t usbConnection = nullptr;
 #endif
 };

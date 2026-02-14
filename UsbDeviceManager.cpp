@@ -78,7 +78,7 @@ void UsbDeviceManager::connectPendingDevices() {
 }
 
 DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t port, bool rawMode) {
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     UsbDeviceContext* ctx = new UsbDeviceContext();
     ctx->udid = udid;
     ctx->port = port;
@@ -149,7 +149,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
 }
 
 void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     if (!conn) return;
 
     UsbDeviceContext* ctx = connToContext.value(conn, nullptr);
@@ -188,7 +188,7 @@ void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
 }
 
 void UsbDeviceManager::pollDevices() {
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     if (MainWindow::getInstance()->getTab().getAutoConnectUSBDevices() == 0)
         return;
 

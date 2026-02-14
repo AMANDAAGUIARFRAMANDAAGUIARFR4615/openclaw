@@ -1,14 +1,14 @@
 #pragma once
 
 #include <QSocketNotifier>
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
 #include <libimobiledevice/libimobiledevice.h>
 #endif
 
 class DeviceConnection;
 
 struct UsbDeviceContext {
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     idevice_t device = nullptr;
     idevice_connection_t connection = nullptr;
 #endif
