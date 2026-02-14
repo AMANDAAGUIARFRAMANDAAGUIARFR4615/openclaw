@@ -1,3 +1,4 @@
+#include <QtGlobal>
 #if defined(Q_OS_WIN) || defined(Q_OS_MAC)
 
 #pragma once
@@ -18,6 +19,8 @@
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QStandardPaths>
+#include <QDialog>
 #include <QFile>
 #include <QProcess>
 #include <QStyleHints>
