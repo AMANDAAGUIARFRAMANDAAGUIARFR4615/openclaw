@@ -51,8 +51,10 @@ private:
 
         static QLibrary lib;
 
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN)
         lib.setFileName(HIDE_STR("libcrypto-3-x64.dll"));
+#elif defined(Q_OS_ANDROID)
+        lib.setFileName(HIDE_STR("libcrypto_3.so"));
 #else
         QString libName = HIDE_STR("libcrypto.3.dylib");
         QString frameworksDir = qApp->applicationDirPath() + "/../Frameworks/";
@@ -64,7 +66,12 @@ private:
 
         lib.load();
 
-        if (!lib.isLoaded()) return false;
+        if (!lib.isLoaded()) {
+            qCriticalEx() << HIDE_STR("libcrypto加载失败");
+            return false;
+        }
+
+        qInfoEx() << HIDE_STR("libcrypto加载成功");
 
         // qDebugEx() << "libcrypto加载成功" << lib.fileName();
 
