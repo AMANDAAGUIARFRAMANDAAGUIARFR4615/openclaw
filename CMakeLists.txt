@@ -234,17 +234,31 @@ if(IOS)
             COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/Frameworks"
             COMMENT "Creating Frameworks directory for Ninja generator..."
         )
-        foreach(XCFRAMEWORK IN LISTS ALL_XCFRAMEWORKS)
-            get_filename_component(XCF_NAME ${XCFRAMEWORK} NAME)
-            # 提取去掉后缀的 framework 名称 (例如 libavcodec.xcframework -> libavcodec.framework)
-            string(REPLACE ".xcframework" ".framework" FRAMEWORK_DIR_NAME ${XCF_NAME})
-            # 复制 iOS 真机版 (.framework) 到 app bundle 的 Frameworks 文件夹中
-            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    "${XCFRAMEWORK}/ios-arm64/${FRAMEWORK_DIR_NAME}"
-                    "$<TARGET_FILE_DIR:${PROJECT_NAME}>/Frameworks/${FRAMEWORK_DIR_NAME}"
-                COMMENT "Copying ${FRAMEWORK_DIR_NAME} into app bundle..."
-            )
+        
+        # FRAMEWORK_PATH 可能是 xcframework 也可能是 framework
+        foreach(FRAMEWORK_PATH IN LISTS ALL_XCFRAMEWORKS)
+            get_filename_component(FRAMEWORK_NAME "${FRAMEWORK_PATH}" NAME)
+            
+            if(FRAMEWORK_PATH MATCHES "\\.xcframework$")
+                # 使用正则安全地将结尾的 .xcframework 替换为 .framework
+                string(REGEX REPLACE "\\.xcframework$" ".framework" TARGET_FRAMEWORK_NAME "${FRAMEWORK_NAME}")
+                
+                # 复制 iOS 真机版 (.framework) 到 app bundle 的 Frameworks 文件夹中
+                add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                        "${FRAMEWORK_PATH}/ios-arm64/${TARGET_FRAMEWORK_NAME}"
+                        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/Frameworks/${TARGET_FRAMEWORK_NAME}"
+                    COMMENT "Copying ${TARGET_FRAMEWORK_NAME} into app bundle..."
+                )
+            else()
+                # 直接复制普通的 .framework 到 app bundle 的 Frameworks 文件夹中
+                add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                        "${FRAMEWORK_PATH}"
+                        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/Frameworks/${FRAMEWORK_NAME}"
+                    COMMENT "Copying ${FRAMEWORK_NAME} into app bundle..."
+                )
+            endif()
         endforeach()
     endif()
 endif()
