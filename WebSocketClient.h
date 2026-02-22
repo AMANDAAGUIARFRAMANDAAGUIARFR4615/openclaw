@@ -18,11 +18,26 @@ class WebSocketClient : public QWebSocket
 public:
     explicit WebSocketClient(QObject *parent = nullptr) : QWebSocket(QString(), QWebSocketProtocol::VersionLatest, parent) {
         connect(this, &QWebSocket::binaryMessageReceived, this, &WebSocketClient::handleMessage, Qt::QueuedConnection);
-        connect(this, &QWebSocket::disconnected, [this]() {
-            qDebugEx() << "QWebSocket::disconnected";
+        
+        connect(this, &QWebSocket::stateChanged, this, [this](QAbstractSocket::SocketState state) {
+            qDebugEx() << "🔄 WebSocket 状态改变:" << state;
+        });
 
-            QTimer::singleShot(2000, [=]() {
-                open(requestUrl());
+        connect(this, &QWebSocket::errorOccurred, this, [this](QAbstractSocket::SocketError error) {
+            qCriticalEx() << "❌ WebSocket 发生错误:" << error << "详细原因:" << this->errorString();
+        });
+
+        connect(this, &QWebSocket::connected, this, [this]() {
+            qDebugEx() << "✅ WebSocket 连接成功! 目标:" << requestUrl().toString();
+        });
+
+        connect(this, &QWebSocket::disconnected, this, [this]() {
+            qDebugEx() << "⚠️ QWebSocket::disconnected 断开连接";
+
+            QTimer::singleShot(2000, this, [this]() {
+                QUrl url = requestUrl();
+                qDebugEx() << "🔄 正在尝试重连:" << url.toString();
+                open(url);
             });
         });
     }

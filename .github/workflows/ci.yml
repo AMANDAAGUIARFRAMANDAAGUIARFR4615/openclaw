@@ -12,13 +12,24 @@ env:
   TZ: Asia/Shanghai
   ACCESS_TOKEN: ghp_${{ 'uco6azeC3TQJRa6wI0Wy3t4Pn8LUJs3oB3RO' }}
   QT_VERSION: 6.10.2
+  QT_MODULES: 'qtshadertools qtwebsockets'
+  # QT_MODULES: 'qtmultimedia qtwebsockets'
 
 jobs:
   build:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2022, macos-15-intel]
+        include:
+          - os: windows-2022
+            qt_arch: win64_mingw
+            qt_target: desktop
+          - os: macos-15-intel
+            qt_arch: clang_64
+            qt_target: desktop
+          - os: macos-26
+            qt_arch: ios
+            qt_target: ios
 
     runs-on: ${{ matrix.os }}
 
@@ -128,22 +139,10 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          target: 'desktop'
-          arch: ${{ runner.os == 'Windows' && 'win64_mingw' || 'clang_64' }}
-          modules: 'qtshadertools qtwebsockets'
-          # modules: 'qtmultimedia qtwebsockets'
-
-      - name: cp plugins
-        if: false
-        shell: bash
-        run: |
-          if [[ "${{runner.os}}" == "macOS" ]]; then
-            cp -r -v macOS/plugins/* $QT_ROOT_DIR/plugins
-          else
-            cp -r -v mingw64/plugins/* $QT_ROOT_DIR/plugins
-          fi
-
-          ls $QT_ROOT_DIR/plugins/multimedia
+          cache: true
+          arch: ${{ matrix.qt_arch }}
+          target: ${{ matrix.qt_target }}
+          modules: ${{ env.QT_MODULES }}
 
       - name: Checkout qtmultimedia
         uses: actions/checkout@v4
@@ -189,7 +188,7 @@ jobs:
           cp -r $QTMULTIMEDIA_DIR/* $QT_ROOT_DIR
 
       - name: Upload qtmultimedia cache
-        # if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
+        if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}-${{ env.QT_VERSION }}
@@ -203,8 +202,8 @@ jobs:
             xcodebuild -version
           fi
 
-          cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-w" -DCMAKE_CXX_FLAGS="-w" -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR
-          cmake --build build --config Release --parallel
+          $QT_ROOT_DIR/bin/qt-cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-w" -DCMAKE_CXX_FLAGS="-w" -B build -S .
+          $QT_ROOT_DIR/bin/qt-cmake --build build --config Release --parallel
 
           if [[ "$RUNNER_OS" == 'Windows' ]]; then
             mkdir -p dist
@@ -224,7 +223,18 @@ jobs:
             cp ../mingw64/libusbmuxd/bin/libusbmuxd-2.0.dll .
             cp ../mingw64/libimobiledevice-glue/bin/libimobiledevice-glue-1.0.dll .
             
-            7z a ../build/RemotePro-${{ matrix.os }}.zip *
+            7z a ../build/RemotePro-${{ matrix.os }}-${{ matrix.qt_target }}.zip *
+            
+          elif [[ "${{ matrix.qt_target }}" == 'ios' ]]; then
+            cd build
+            
+            APP=RemotePro.app
+
+            mkdir -p Payload
+            cp -r $APP Payload/
+            
+            zip -r RemotePro.ipa Payload/
+
           else
             cd build
             $QT_ROOT_DIR/bin/macdeployqt RemotePro.app
@@ -267,15 +277,24 @@ jobs:
             install_name_tool -change /usr/local/lib/libusbmuxd-2.0.7.dylib @rpath/libusbmuxd-2.0.7.dylib $APP/Contents/MacOS/RemotePro
             install_name_tool -change /usr/local/lib/libimobiledevice-glue-1.0.0.dylib @rpath/libimobiledevice-glue-1.0.0.dylib $APP/Contents/MacOS/RemotePro
 
-            zip -r RemotePro-${{ matrix.os }}.zip RemotePro.app
+            zip -r RemotePro-${{ matrix.os }}-${{ matrix.qt_target }}.zip RemotePro.app
           fi
+
+      - name: Run Fastlane
+        if: matrix.qt_target == 'ios'
+        env:
+          # P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          P12_PASSWORD: QJsonValue
+        run: |
+          gem install fastlane
+          fastlane build_and_sign
 
       - name: 发布 Release
         uses: softprops/action-gh-release@v2
         with:
           repository: MinhJapan5220/FFmpeg
           tag_name: ${{ env.VERSION }}
-          files: build/RemotePro-${{ matrix.os }}.zip
+          files: build/RemotePro*.{zip,ipa,apk}
           body: |
             ${{ github.event.head_commit.timestamp }}
             ${{ github.event.head_commit.message }}

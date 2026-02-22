@@ -78,7 +78,7 @@ endif()
 # =========================================================
 qt_add_executable(${PROJECT_NAME}
     main.cpp Safe.h SafeObject.h SwitchButton.h ExplicitSelectionListWidget.h NaturalSortListWidgetItem.h
-    global.h global.cpp AesCrypto.h KeyMapping.h VideoVisibilityManager.h
+    global.h AesCrypto.h KeyMapping.h VideoVisibilityManager.h
     EmojiIconProvider.h Tools.h SettingsViewer.h JailbreakAssistantDialog.h AccountListDialog.h SwapExpirationDialog.h
     Logger.h LogTextBrowser.h EventHub.h
     BitMaskEditorDialog.h LiveStreamDevice.h
@@ -162,7 +162,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE TRUE
 
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
-    MACOSX_BUNDLE_GUI_IDENTIFIER "com.qt6.remotepro"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "org.qtproject.remotepro"
 
     QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
 )
@@ -186,6 +186,62 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     QtNodes
     ${THIRD_PARTY_LIBS}
 )
+
+if(IOS)
+    # 自动配置 RPATH，这样无需在 Github Actions 中手动执行 install_name_tool
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        BUILD_RPATH "@executable_path/Frameworks"
+        INSTALL_RPATH "@executable_path/Frameworks"
+    )
+
+    # 定位 FFmpeg 路径
+    get_filename_component(QT_LIB_DIR "${Qt6_DIR}/../.." ABSOLUTE)
+
+    # 获取所有的 .xcframework
+    file(GLOB FFMPEG_XCFRAMEWORKS "${QT_LIB_DIR}/ffmpeg/*.xcframework")
+
+    # 针对本地 Xcode IDE (XCODE 生成器) 的配置
+    # 必须加上 KNOWN_LOCATION 才能让 XCODE_EMBED_FRAMEWORKS 接受绝对路径
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        XCODE_LINK_BUILD_PHASE_MODE "KNOWN_LOCATION"
+        XCODE_EMBED_FRAMEWORKS "${FFMPEG_XCFRAMEWORKS}"
+        XCODE_EMBED_FRAMEWORKS_CODE_SIGN_ON_COPY ON
+        XCODE_EMBED_FRAMEWORKS_REMOVE_HEADERS_ON_COPY ON
+    )
+
+    # 链接 XCFramework
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        ${FFMPEG_XCFRAMEWORKS}
+        bz2 z iconv
+        "-framework VideoToolbox"
+        "-framework AudioToolbox"
+        "-framework CoreMedia"
+        "-framework AVFoundation"
+        "-framework CoreVideo"
+        "-framework CoreAudio"
+    )
+
+    # 针对 GitHub Actions (Ninja 等非 Xcode 生成器) 的兜底自动化脚本
+    # Ninja 不支持自动 Embed，所以在这里自动帮它把 framework 复制到 App 目录内
+    if(NOT CMAKE_GENERATOR STREQUAL "Xcode")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/Frameworks"
+            COMMENT "Creating Frameworks directory for Ninja generator..."
+        )
+        foreach(XCFRAMEWORK IN LISTS FFMPEG_XCFRAMEWORKS)
+            get_filename_component(XCF_NAME ${XCFRAMEWORK} NAME)
+            # 提取去掉后缀的 framework 名称 (例如 libavcodec.xcframework -> libavcodec.framework)
+            string(REPLACE ".xcframework" ".framework" FRAMEWORK_DIR_NAME ${XCF_NAME})
+            # 复制 iOS 真机版 (.framework) 到 app bundle 的 Frameworks 文件夹中
+            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_directory 
+                    "${XCFRAMEWORK}/ios-arm64/${FRAMEWORK_DIR_NAME}" 
+                    "$<TARGET_FILE_DIR:${PROJECT_NAME}>/Frameworks/${FRAMEWORK_DIR_NAME}"
+                COMMENT "Copying ${FRAMEWORK_DIR_NAME} into app bundle..."
+            )
+        endforeach()
+    endif()
+endif()
 
 # Debug 辅助目标
 file(GLOB_RECURSE DEBUG_SOURCES

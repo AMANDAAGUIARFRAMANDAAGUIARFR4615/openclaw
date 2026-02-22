@@ -1,3 +1,5 @@
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
+
 #pragma once
 
 #include "Logger.h"
@@ -188,3 +190,5 @@ private:
         return localData == zipData;
     }
 };
+
+#endif

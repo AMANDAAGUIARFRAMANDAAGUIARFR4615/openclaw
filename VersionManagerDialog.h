@@ -291,6 +291,7 @@ private:
                     QMessageBox::warning(this, "失败", reply->errorString());
                 QFile::remove(filePath);
             } else {
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
                 if (ZipUtils::extractSmart(filePath, ".")) {
                     QFile::remove(filePath);
                     qApp->quit();
@@ -298,8 +299,9 @@ private:
                     QProcess::startDetached(qApp->applicationFilePath());
 #endif
                 } else {
-                    new ToastWidget("解压失败"); // 假设 ToastWidget 定义在 global.h
+                    new ToastWidget("解压失败");
                 }
+#endif
             }
         });
     }

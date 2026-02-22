@@ -41,9 +41,24 @@ protected:
     }
 };
 
+QSettings* settings;
+WebSocketClient *webSocketClient;
+QElapsedTimer* elapsedTimer;
+QNetworkAccessManager* networkAccessManager;
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+
+    settings = new QSettings("deepseek", "RemotePro");
+    webSocketClient = new WebSocketClient();
+    elapsedTimer = new QElapsedTimer();
+    networkAccessManager = new QNetworkAccessManager();
+
+#if defined(Q_OS_IOS)
+    QNetworkRequest request(QUrl("http://captive.apple.com"));
+    networkAccessManager->get(request);
+#endif
 
     auto lockFile = new QLockFile(QDir::temp().absoluteFilePath("RemotePro.lock"));
 

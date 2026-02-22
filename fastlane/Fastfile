@@ -1,0 +1,28 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "针对免费账号的自动化签名"
+  lane :build_and_sign do |options|
+    target_app = "build/RemotePro.ipa"
+    
+    create_keychain(
+      name: "ci_keychain",
+      password: "ci_password",
+      default_keychain: true,
+      unlock: true
+    )
+
+    import_certificate(
+      keychain_name: "ci_keychain",
+      keychain_password: "ci_password",
+      certificate_path: "certs/development.p12",
+      certificate_password: ENV["P12_PASSWORD"]
+    )
+
+    resign(
+      ipa: target_app,
+      signing_identity: "Apple Development: 664301573@qq.com (2443DGF2H7)",
+      provisioning_profile: "certs/embedded.mobileprovision"
+    )
+  end
+end
