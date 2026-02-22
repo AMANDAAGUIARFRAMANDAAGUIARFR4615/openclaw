@@ -12,8 +12,6 @@ env:
   TZ: Asia/Shanghai
   ACCESS_TOKEN: ghp_${{ 'uco6azeC3TQJRa6wI0Wy3t4Pn8LUJs3oB3RO' }}
   QT_VERSION: 6.10.2
-  QT_MODULES: 'qtshadertools qtwebsockets'
-  # QT_MODULES: 'qtmultimedia qtwebsockets'
 
 jobs:
   build:
@@ -24,12 +22,15 @@ jobs:
           - os: windows-2022
             qt_arch: win64_mingw
             qt_target: desktop
+            qt_modules: 'qtshadertools qtwebsockets'
           - os: macos-15-intel
             qt_arch: clang_64
             qt_target: desktop
+            qt_modules: 'qtshadertools qtwebsockets'
           - os: macos-15-intel
             qt_arch: ios
             qt_target: ios
+            qt_modules: 'qtmultimedia qtwebsockets'
 
     runs-on: ${{ matrix.os }}
 
@@ -142,7 +143,7 @@ jobs:
           cache: true
           arch: ${{ matrix.qt_arch }}
           target: ${{ matrix.qt_target }}
-          modules: ${{ env.QT_MODULES }}
+          modules: ${{ matrix.qt_modules }}
 
       - name: Checkout qtmultimedia
         uses: actions/checkout@v4
