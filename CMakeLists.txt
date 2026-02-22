@@ -199,24 +199,25 @@ if(IOS)
         INSTALL_RPATH "@executable_path/Frameworks"
     )
 
-    # 定位 FFmpeg 路径
-    get_filename_component(QT_LIB_DIR "${Qt6_DIR}/../.." ABSOLUTE)
+    set(ALL_XCFRAMEWORKS "")
 
-    # 获取所有的 .xcframework
+    get_filename_component(QT_LIB_DIR "${Qt6_DIR}/../.." ABSOLUTE)
     file(GLOB FFMPEG_XCFRAMEWORKS "${QT_LIB_DIR}/ffmpeg/*.xcframework")
+    file(GLOB EXTERNAL_FRAMEWORKS "${CMAKE_CURRENT_SOURCE_DIR}/external/*.framework")
+    list(APPEND ALL_XCFRAMEWORKS ${FFMPEG_XCFRAMEWORKS} ${EXTERNAL_FRAMEWORKS})
 
     # 针对本地 Xcode IDE (XCODE 生成器) 的配置
     # 必须加上 KNOWN_LOCATION 才能让 XCODE_EMBED_FRAMEWORKS 接受绝对路径
     set_target_properties(${PROJECT_NAME} PROPERTIES
         XCODE_LINK_BUILD_PHASE_MODE "KNOWN_LOCATION"
-        XCODE_EMBED_FRAMEWORKS "${FFMPEG_XCFRAMEWORKS}"
+        XCODE_EMBED_FRAMEWORKS "${ALL_XCFRAMEWORKS}"
         XCODE_EMBED_FRAMEWORKS_CODE_SIGN_ON_COPY ON
         XCODE_EMBED_FRAMEWORKS_REMOVE_HEADERS_ON_COPY ON
     )
 
     # 链接 XCFramework
     target_link_libraries(${PROJECT_NAME} PRIVATE
-        ${FFMPEG_XCFRAMEWORKS}
+        ${ALL_XCFRAMEWORKS}
         bz2 z iconv
         "-framework VideoToolbox"
         "-framework AudioToolbox"
@@ -233,14 +234,14 @@ if(IOS)
             COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/Frameworks"
             COMMENT "Creating Frameworks directory for Ninja generator..."
         )
-        foreach(XCFRAMEWORK IN LISTS FFMPEG_XCFRAMEWORKS)
+        foreach(XCFRAMEWORK IN LISTS ALL_XCFRAMEWORKS)
             get_filename_component(XCF_NAME ${XCFRAMEWORK} NAME)
             # 提取去掉后缀的 framework 名称 (例如 libavcodec.xcframework -> libavcodec.framework)
             string(REPLACE ".xcframework" ".framework" FRAMEWORK_DIR_NAME ${XCF_NAME})
             # 复制 iOS 真机版 (.framework) 到 app bundle 的 Frameworks 文件夹中
             add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_directory 
-                    "${XCFRAMEWORK}/ios-arm64/${FRAMEWORK_DIR_NAME}" 
+                COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    "${XCFRAMEWORK}/ios-arm64/${FRAMEWORK_DIR_NAME}"
                     "$<TARGET_FILE_DIR:${PROJECT_NAME}>/Frameworks/${FRAMEWORK_DIR_NAME}"
                 COMMENT "Copying ${FRAMEWORK_DIR_NAME} into app bundle..."
             )

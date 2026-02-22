@@ -11,11 +11,17 @@
 #include <QDir>
 #include <QApplication>
 
+#if defined(Q_OS_IOS)
+#include <openssl/evp.h>
+#endif
+
 class AesCrypto {
 private:
+#if !defined(Q_OS_IOS)
     static const int EVP_CTRL_GCM_SET_IVLEN = 0x9;
     static const int EVP_CTRL_GCM_GET_TAG   = 0x10;
     static const int EVP_CTRL_GCM_SET_TAG   = 0x11;
+#endif
 
     typedef void* (*Func_EVP_CIPHER_CTX_new)();
     typedef void (*Func_EVP_CIPHER_CTX_free)(void*);
@@ -49,6 +55,21 @@ private:
     static bool initOpenSSL() {
         if (m_loaded) return true;
 
+#if defined(Q_OS_IOS)
+        ctx_new = reinterpret_cast<Func_EVP_CIPHER_CTX_new>(::EVP_CIPHER_CTX_new);
+        ctx_free = reinterpret_cast<Func_EVP_CIPHER_CTX_free>(::EVP_CIPHER_CTX_free);
+        aes_128_gcm = reinterpret_cast<Func_EVP_aes_128_gcm>(::EVP_aes_128_gcm);
+        ctx_ctrl = reinterpret_cast<Func_EVP_CIPHER_CTX_ctrl>(::EVP_CIPHER_CTX_ctrl);
+        encrypt_init = reinterpret_cast<Func_EVP_EncryptInit_ex>(::EVP_EncryptInit_ex);
+        encrypt_update = reinterpret_cast<Func_EVP_EncryptUpdate>(::EVP_EncryptUpdate);
+        encrypt_final = reinterpret_cast<Func_EVP_EncryptFinal_ex>(::EVP_EncryptFinal_ex);
+        decrypt_init = reinterpret_cast<Func_EVP_DecryptInit_ex>(::EVP_DecryptInit_ex);
+        decrypt_update = reinterpret_cast<Func_EVP_DecryptUpdate>(::EVP_DecryptUpdate);
+        decrypt_final = reinterpret_cast<Func_EVP_DecryptFinal_ex>(::EVP_DecryptFinal_ex);
+
+        m_loaded = true;
+        qInfoEx() << HIDE_STR("iOS: 静态链接 OpenSSL 函数映射成功");
+#else
         static QLibrary lib;
 
 #if defined(Q_OS_WIN)
@@ -91,6 +112,7 @@ private:
             decrypt_init && decrypt_update && decrypt_final) {
             m_loaded = true;
         }
+#endif
         return m_loaded;
     }
 
