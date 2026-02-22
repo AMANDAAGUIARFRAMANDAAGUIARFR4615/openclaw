@@ -67,12 +67,14 @@ jobs:
           echo "QTMULTIMEDIA_DIR=$USER_DIR/qtmultimedia" >> $GITHUB_ENV
 
       - name: Checkout FFmpeg
+        if: matrix.qt_target == 'desktop'
         uses: actions/checkout@v4
         with:
           repository: wowkids1914/FFmpeg
           path: FFmpeg
 
       - name: Get FFmpeg Commit SHA
+        if: matrix.qt_target == 'desktop'
         shell: bash
         run: |
           SHA=$(git -C FFmpeg rev-parse HEAD)
@@ -80,6 +82,7 @@ jobs:
           echo "FFmpeg SHA: $SHA"
 
       - name: Restore FFmpeg cache
+        if: matrix.qt_target == 'desktop'
         id: cache-ffmpeg
         uses: actions/cache/restore@v4
         with:
@@ -87,7 +90,7 @@ jobs:
           path: ${{ env.FFMPEG_DIR }}
 
       - name: Build FFmpeg
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true' && matrix.qt_target == 'desktop'
         shell: bash
         run: |
           cd FFmpeg
@@ -123,14 +126,14 @@ jobs:
           fi
 
       - name: Save FFmpeg cache
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true' && matrix.qt_target == 'desktop'
         uses: actions/cache/save@v4
         with:
           key: ${{ matrix.os }}-ffmpeg-build-${{ env.FFMPEG_SHA }}
           path: ${{ env.FFMPEG_DIR }}
 
       - name: Upload FFmpeg cache
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true' && matrix.qt_target == 'desktop'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-ffmpeg-build-${{ env.FFMPEG_SHA }}
@@ -146,12 +149,14 @@ jobs:
           modules: ${{ matrix.qt_modules }}
 
       - name: Checkout qtmultimedia
+        if: matrix.qt_target == 'desktop'
         uses: actions/checkout@v4
         with:
           repository: wowkids1914/qtmultimedia
           path: qtmultimedia
 
       - name: Get qtmultimedia Commit SHA
+        if: matrix.qt_target == 'desktop'
         shell: bash
         run: |
           SHA=$(git -C qtmultimedia rev-parse HEAD)
@@ -159,6 +164,7 @@ jobs:
           echo "QTMULTIMEDIA SHA: $SHA"
 
       - name: Restore qtmultimedia cache
+        if: matrix.qt_target == 'desktop'
         id: cache-qtmultimedia
         uses: actions/cache/restore@v4
         with:
@@ -166,7 +172,7 @@ jobs:
           path: ${{ env.QTMULTIMEDIA_DIR }}
 
       - name: Build qtmultimedia
-        if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
+        if: steps.cache-qtmultimedia.outputs.cache-hit != 'true' && matrix.qt_target == 'desktop'
         shell: bash
         run: |
           cd qtmultimedia
@@ -176,20 +182,21 @@ jobs:
           cmake --build build --config Release --target install --parallel
 
       - name: Save qtmultimedia cache
-        if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
+        if: steps.cache-qtmultimedia.outputs.cache-hit != 'true' && matrix.qt_target == 'desktop'
         uses: actions/cache/save@v4
         with:
           key: ${{ matrix.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}-${{ env.QT_VERSION }}
           path: ${{ env.QTMULTIMEDIA_DIR }}
 
       - name: cp qtmultimedia
+        if: matrix.qt_target == 'desktop'
         shell: bash
         run: |
           # 先安装到临时目录再复制是为了缓存
           cp -r $QTMULTIMEDIA_DIR/* $QT_ROOT_DIR
 
       - name: Upload qtmultimedia cache
-        if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
+        if: steps.cache-qtmultimedia.outputs.cache-hit != 'true' && matrix.qt_target == 'desktop'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}-${{ env.QT_VERSION }}
