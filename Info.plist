@@ -11,7 +11,7 @@
 	<key>CFBundleGetInfoString</key>
 	<string></string>
 	<key>CFBundleIconFile</key>
-	<string></string>
+	<string>logo.icns</string>
 	<key>CFBundleIdentifier</key>
 	<string>org.qtproject.remotepro</string>
 	<key>CFBundleInfoDictionaryVersion</key>

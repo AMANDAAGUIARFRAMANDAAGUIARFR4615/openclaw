@@ -71,6 +71,11 @@ qt_add_resources(RESOURCE_SOURCES icons.qrc)
 if(WIN32)
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/logo.rc" "IDI_ICON1 ICON \"${CMAKE_CURRENT_SOURCE_DIR}/icons/logo.ico\"")
     list(APPEND RESOURCE_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/logo.rc")
+elseif(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    # 告诉 CMake 把这个图标拷贝到 .app 包内的 Contents/Resources 目录下
+    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/icons/logo.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+
+    list(APPEND RESOURCE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/icons/logo.icns")
 endif()
 
 # =========================================================
