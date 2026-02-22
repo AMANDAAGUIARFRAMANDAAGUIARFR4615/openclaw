@@ -30,7 +30,7 @@ public:
         
         titleLabel = new QLabel("用户登录");
         titleLabel->setAlignment(Qt::AlignCenter);
-        titleLabel->setStyleSheet("font: bold 26px; margin: 20px; color: palette(text);");
+        titleLabel->setStyleSheet("font-weight: bold; font-size: 22pt; padding: 10px 0px; min-height: 40px; color: palette(text);");
 
         auto phoneValidator = new QRegularExpressionValidator(QRegularExpression("^1[3-9]\\d{9}$"), this);
         // ^(?=.*[A-Za-z])   : 必须包含至少一个字母
