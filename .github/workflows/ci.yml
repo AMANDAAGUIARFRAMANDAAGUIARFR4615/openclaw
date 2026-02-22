@@ -27,7 +27,7 @@ jobs:
           - os: macos-15-intel
             qt_arch: clang_64
             qt_target: desktop
-          - os: macos-26
+          - os: macos-15-intel
             qt_arch: ios
             qt_target: ios
 
@@ -200,10 +200,14 @@ jobs:
           if [[ "${{runner.os}}" == "macOS" ]]; then
             xcode-select -print-path
             xcodebuild -version
+
+            CMAKE_EXE="$QT_ROOT_DIR/bin/qt-cmake"
+          else
+            CMAKE_EXE="cmake"
           fi
 
-          $QT_ROOT_DIR/bin/qt-cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-w" -DCMAKE_CXX_FLAGS="-w" -B build -S .
-          $QT_ROOT_DIR/bin/qt-cmake --build build --config Release --parallel
+          $CMAKE_EXE -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-w" -DCMAKE_CXX_FLAGS="-w" -B build -S .
+          $CMAKE_EXE --build build --config Release --parallel
 
           if [[ "$RUNNER_OS" == 'Windows' ]]; then
             mkdir -p dist
