@@ -156,8 +156,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             qrDialog->setAttribute(Qt::WA_DeleteOnClose);
             qrDialog->setWindowTitle("用手机APP扫码连接");
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+            qrDialog->setWindowState(Qt::WindowMaximized);
+            auto mainLayout = new QVBoxLayout(qrDialog);
+            mainLayout->setAlignment(Qt::AlignCenter);
+#else
             auto mainLayout = new QHBoxLayout(qrDialog);
             mainLayout->setSizeConstraint(QLayout::SetFixedSize); 
+#endif
 
             auto localIPs = NetworkUtils::getPhysicalIPs();
             qInfoEx() << "本机内网IP:" << localIPs;
@@ -166,7 +172,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 const auto& hostInfo = TcpServer::getInstance()->getHostInfo(localIP);
                 const auto& data = QJsonDocument(hostInfo).toJson(QJsonDocument::Compact).toBase64();
                 
-                int qrSize = qMax(200, 500 - (localIPs.size() * 100));
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+    int screenW = qApp->primaryScreen()->availableGeometry().width();
+    int qrSize = qMin(250, screenW - 100); 
+#else
+    int qrSize = qMax(200, 500 - (localIPs.size() * 100));
+#endif
 
                 auto img = Tools::generateQrImage(data);
                 QPixmap pixmap = QPixmap::fromImage(img).scaled(
@@ -199,6 +210,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 auto errLabel = new QLabel("未检测到有效网卡", qrDialog);
                 mainLayout->addWidget(errLabel);
             }
+
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+            auto closeButton = new QPushButton("关闭", qrDialog);
+            closeButton->setMinimumHeight(50);
+            connect(closeButton, &QPushButton::clicked, qrDialog, &QDialog::accept);
+            mainLayout->addWidget(closeButton);
+#endif
 
             qrDialog->exec();
             return;
