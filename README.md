@@ -6,7 +6,8 @@ security cms -D -i certs/embedded.mobileprovision | grep -A 10 ProvisionedDevice
 xcrun devicectl device install app --device "00008150-001234D13E86401C" Payload.ipa
 
 
-QApplication 要在其他代码之前执行，否则槽函数不会生效
+https://github.com/partout-io/openssl-apple
+https://icon.wuruihong.com/#/ios
 
 
 open "x-apple.systempreferences:com.apple.preference.security"
