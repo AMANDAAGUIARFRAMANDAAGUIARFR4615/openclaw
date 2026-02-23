@@ -5,6 +5,7 @@
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QGridLayout>
 #include <QLabel>
 #include <QRadioButton>
 #include <QButtonGroup>
@@ -19,6 +20,8 @@
 #include <QPushButton>
 #include <QKeyEvent>
 #include <QTabWidget>
+#include <QScrollArea>
+#include <QScroller>
 
 class SingleKeySequenceEdit : public QKeySequenceEdit {
 public:
@@ -112,7 +115,12 @@ private:
     explicit AppSettingsDialog(QWidget *parent = nullptr) : QDialog(parent)
     {
         setWindowTitle("设置");
+
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        setWindowState(Qt::WindowMaximized);
+#else
         resize(650, 500);
+#endif
 
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
         mainLayout->setContentsMargins(10, 10, 10, 10);
@@ -120,11 +128,19 @@ private:
         QTabWidget *tabWidget = new QTabWidget(this);
         mainLayout->addWidget(tabWidget);
 
+        // ==========================================
         // --- Tab 1: 常规与投屏设置 ---
+        // ==========================================
+        QScrollArea *generalScroll = new QScrollArea(this);
+        generalScroll->setWidgetResizable(true);
+        generalScroll->setFrameShape(QFrame::NoFrame);
+        generalScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        QScroller::grabGesture(generalScroll->viewport(), QScroller::LeftMouseButtonGesture);
+
         QWidget *generalTab = new QWidget();
         QVBoxLayout *generalLayout = new QVBoxLayout(generalTab);
         generalLayout->setSpacing(15);
-        generalLayout->setContentsMargins(20, 20, 20, 20);
+        generalLayout->setContentsMargins(15, 15, 15, 15);
 
         addSettingGroup(generalLayout, "colorScheme", "颜色主题", {"默认", "浅色", "深色"}, 0);
         addSettingGroup(generalLayout, "autoSyncClipboard", "手机剪切板自动同步到电脑", {"关闭", "开启"}, 0);
@@ -132,7 +148,7 @@ private:
         addSettingGroup(generalLayout, "screenshotTo", "截图保存", {"剪切板", "文件", "剪切板+文件"}, 0);
         addSettingGroup(generalLayout, "doubleClickOpenStandalone", "双击打开独立窗口", {"关闭", "开启"}, 1);
 
-        QGroupBox *defaultBox = new QGroupBox("投屏设置 (分组单独设置优先)", this);
+        QGroupBox *defaultBox = new QGroupBox("投屏设置 (分组单独设置优先)", generalTab);
         defaultBox->setStyleSheet(R"(
             QGroupBox {
                 border: 2px solid palette(mid);
@@ -160,17 +176,30 @@ private:
 
         generalLayout->addWidget(defaultBox);
         generalLayout->addStretch();
-        tabWidget->addTab(generalTab, "常规与投屏");
+        
+        generalScroll->setWidget(generalTab);
+        tabWidget->addTab(generalScroll, "常规与投屏");
 
 
+        // ==========================================
         // --- Tab 2: 菜单排序与快捷键 ---
+        // ==========================================
+        QScrollArea *menuScroll = new QScrollArea(this);
+        menuScroll->setWidgetResizable(true);
+        menuScroll->setFrameShape(QFrame::NoFrame);
+        menuScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        QScroller::grabGesture(menuScroll->viewport(), QScroller::LeftMouseButtonGesture);
+
         QWidget *menuTab = new QWidget();
         QVBoxLayout *menuLayout = new QVBoxLayout(menuTab);
         menuLayout->setSpacing(15);
         menuLayout->setContentsMargins(10, 10, 10, 10);
 
-        // 第一排：左侧栏 和 分组菜单 并排显示
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        QVBoxLayout *topMenusLayout = new QVBoxLayout();
+#else
         QHBoxLayout *topMenusLayout = new QHBoxLayout();
+#endif
         topMenusLayout->setSpacing(20);
         topMenusLayout->setAlignment(Qt::AlignTop);
 
@@ -219,10 +248,20 @@ private:
         addSortableGroup(menuLayout, "windowMenu", "投屏窗口右键菜单 (拖拽调整顺序 / 双击设置快捷键)", 
             windowMenuItems, windowShortcuts);
 
-        // 底部弹簧，确保第二排菜单也不会跑到底部去
         menuLayout->addStretch();
 
-        tabWidget->addTab(menuTab, "菜单与快捷键");
+        menuScroll->setWidget(menuTab);
+        tabWidget->addTab(menuScroll, "菜单与快捷键");
+
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        QPushButton *closeBtn = new QPushButton("关闭设置", this);
+        closeBtn->setMinimumHeight(45); 
+        QFont btnFont = closeBtn->font();
+        btnFont.setBold(true);
+        closeBtn->setFont(btnFont);
+        connect(closeBtn, &QPushButton::clicked, this, &QDialog::accept);
+        mainLayout->addWidget(closeBtn);
+#endif
     }
 
     ~AppSettingsDialog() = default;
@@ -369,7 +408,6 @@ private:
                 obj["enable"] = checked;
                 jsonArray.append(obj);
             }
-            // 使用 Compact 模式保存为紧凑的 JSON 字符串/字节数组
             settings->setValue(key, jsonArray);
             emit configurationChanged(key);
         };
@@ -379,11 +417,9 @@ private:
             QString originalName = item->data(Qt::UserRole).toString();
             if (originalName == "⚙️设置" && item->checkState() == Qt::Unchecked) {
                 QToolTip::showText(QCursor::pos(), "[⚙️设置]不可隐藏");
-                // 🚫 立即强制改回选中
-                const QSignalBlocker blocker(listWidget); // 暂时屏蔽信号，防止递归调用
+                const QSignalBlocker blocker(listWidget); 
                 item->setCheckState(Qt::Checked);
             } else {
-                // 其他情况正常保存
                 saveFunc();
             }
         });
@@ -402,12 +438,19 @@ private:
         font.setPointSize(9);
         titleLabel->setFont(font);
 
-        QHBoxLayout *optionsLayout = new QHBoxLayout();
-        optionsLayout->setSpacing(20);
+        QGridLayout *optionsLayout = new QGridLayout();
+        optionsLayout->setSpacing(15);
 
         QButtonGroup *group = new QButtonGroup(this);
         int currentVal = settings->value(key, defaultIndex).toInt();
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        const int maxColumns = 2; 
+#else
+        const int maxColumns = 6;
+#endif
+
+        int visibleIndex = 0;
         for (int i = 0; i < options.size(); ++i) {
             if (options[i].isEmpty())
                 continue;
@@ -415,15 +458,13 @@ private:
             QRadioButton *radio = new QRadioButton(options[i], this);
             if (i == currentVal) radio->setChecked(true);
             group->addButton(radio, i);
-            optionsLayout->addWidget(radio);
+            
+            optionsLayout->addWidget(radio, visibleIndex / maxColumns, visibleIndex % maxColumns);
+            visibleIndex++;
         }
 
-        connect(group, &QButtonGroup::idClicked, [=](int id){
-            settings->setValue(key, id);
-            emit configurationChanged(key);
-        });
+        optionsLayout->setColumnStretch(maxColumns, 1);
 
-        optionsLayout->addStretch();
         groupLayout->addWidget(titleLabel);
         groupLayout->addLayout(optionsLayout);
         parentLayout->addLayout(groupLayout);
