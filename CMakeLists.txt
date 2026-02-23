@@ -203,8 +203,8 @@ if(IOS)
 
     get_filename_component(QT_LIB_DIR "${Qt6_DIR}/../.." ABSOLUTE)
     file(GLOB FFMPEG_XCFRAMEWORKS "${QT_LIB_DIR}/ffmpeg/*.xcframework")
-    file(GLOB EXTERNAL_FRAMEWORKS "${CMAKE_CURRENT_SOURCE_DIR}/external/*.framework")
-    list(APPEND ALL_XCFRAMEWORKS ${FFMPEG_XCFRAMEWORKS} ${EXTERNAL_FRAMEWORKS})
+    file(GLOB EXTERNAL_XCFRAMEWORKS "${CMAKE_CURRENT_SOURCE_DIR}/external/*.xcframework")
+    list(APPEND ALL_XCFRAMEWORKS ${FFMPEG_XCFRAMEWORKS} ${EXTERNAL_XCFRAMEWORKS})
 
     # 针对本地 Xcode IDE (XCODE 生成器) 的配置
     # 必须加上 KNOWN_LOCATION 才能让 XCODE_EMBED_FRAMEWORKS 接受绝对路径
@@ -227,38 +227,34 @@ if(IOS)
         "-framework CoreAudio"
     )
 
-    # 针对 GitHub Actions (Ninja 等非 Xcode 生成器) 的兜底自动化脚本
-    # Ninja 不支持自动 Embed，所以在这里自动帮它把 framework 复制到 App 目录内
+    # Ninja 不支持自动 Embed，所以在这里自动帮它把 xcframework 复制到 App 目录内
     if(NOT CMAKE_GENERATOR STREQUAL "Xcode")
+        # 提前建好 Frameworks 目录
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/Frameworks"
-            COMMENT "Creating Frameworks directory for Ninja generator..."
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>/Frameworks"
         )
-        
-        # FRAMEWORK_PATH 可能是 xcframework 也可能是 framework
-        foreach(FRAMEWORK_PATH IN LISTS ALL_XCFRAMEWORKS)
-            get_filename_component(FRAMEWORK_NAME "${FRAMEWORK_PATH}" NAME)
+
+        foreach(XCFRAMEWORK_PATH IN LISTS ALL_XCFRAMEWORKS)
+            # 1. 直接找出里面所有的 .framework
+            file(GLOB CANDIDATE_FRAMEWORKS "${XCFRAMEWORK_PATH}/*/*.framework")
             
-            if(FRAMEWORK_PATH MATCHES "\\.xcframework$")
-                # 使用正则安全地将结尾的 .xcframework 替换为 .framework
-                string(REGEX REPLACE "\\.xcframework$" ".framework" TARGET_FRAMEWORK_NAME "${FRAMEWORK_NAME}")
-                
-                # 复制 iOS 真机版 (.framework) 到 app bundle 的 Frameworks 文件夹中
-                add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                        "${FRAMEWORK_PATH}/ios-arm64/${TARGET_FRAMEWORK_NAME}"
-                        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/Frameworks/${TARGET_FRAMEWORK_NAME}"
-                    COMMENT "Copying ${TARGET_FRAMEWORK_NAME} into app bundle..."
-                )
+            # 2. 用极简的正则过滤匹配当前平台（区分真机/模拟器）
+            if(CMAKE_OSX_SYSROOT MATCHES "simulator")
+                list(FILTER CANDIDATE_FRAMEWORKS INCLUDE REGEX "simulator")
             else()
-                # 直接复制普通的 .framework 到 app bundle 的 Frameworks 文件夹中
-                add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_directory
-                        "${FRAMEWORK_PATH}"
-                        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/Frameworks/${FRAMEWORK_NAME}"
-                    COMMENT "Copying ${FRAMEWORK_NAME} into app bundle..."
-                )
+                list(FILTER CANDIDATE_FRAMEWORKS EXCLUDE REGEX "simulator")
             endif()
+            
+            # 拿到准确的路径和文件名
+            list(GET CANDIDATE_FRAMEWORKS 0 TARGET_FRAMEWORK_PATH)
+            get_filename_component(FW_NAME "${TARGET_FRAMEWORK_PATH}" NAME)
+            
+            # 3. 将拷贝和签名合并为一个构建动作
+            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    "${TARGET_FRAMEWORK_PATH}"
+                    "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>/Frameworks/${FW_NAME}"
+            )
         endforeach()
     endif()
 endif()
