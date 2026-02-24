@@ -19,6 +19,10 @@
 #include <QCheckBox>
 #include <QSet>
 #include <QStyleHints>
+#include <QScroller>
+#include <QScrollerProperties>
+#include <QScrollArea>
+#include <QScrollBar>
 
 class RenewalDialog : public QDialog {
     Q_OBJECT
@@ -32,7 +36,29 @@ public:
     explicit RenewalDialog(QWidget *parent) : QDialog(parent)
     {
         setWindowTitle("续费");
+        
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        setWindowState(Qt::WindowMaximized);
+        auto baseLayout = new QVBoxLayout(this);
+        baseLayout->setContentsMargins(0, 0, 0, 0);
+
+        auto mainScrollArea = new QScrollArea(this);
+        mainScrollArea->setWidgetResizable(true);
+        mainScrollArea->setFrameShape(QFrame::NoFrame);
+        QScroller::grabGesture(mainScrollArea->viewport(), QScroller::LeftMouseButtonGesture);
+        
+        QScrollerProperties mainProps = QScroller::scroller(mainScrollArea->viewport())->scrollerProperties();
+        mainProps.setScrollMetric(QScrollerProperties::MousePressEventDelay, 0.1);
+        QScroller::scroller(mainScrollArea->viewport())->setScrollerProperties(mainProps);
+
+        auto scrollContentWidget = new QWidget(mainScrollArea);
+        auto mainLayout = new QVBoxLayout(scrollContentWidget); 
+        mainScrollArea->setWidget(scrollContentWidget);
+        baseLayout->addWidget(mainScrollArea);
+#else
         setMinimumSize(480, 720);
+        auto mainLayout = new QVBoxLayout(this); 
+#endif
 
         bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
         
@@ -70,9 +96,24 @@ public:
         tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
         tableWidget->setFocusPolicy(Qt::NoFocus);
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        QScroller::grabGesture(tableWidget->viewport(), QScroller::LeftMouseButtonGesture);
+        QScrollerProperties props = QScroller::scroller(tableWidget->viewport())->scrollerProperties();
+        props.setScrollMetric(QScrollerProperties::MousePressEventDelay, 0.1);
+        QScroller::scroller(tableWidget->viewport())->setScrollerProperties(props);
+
+        tableWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        tableWidget->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+#endif
+
         auto headerView = tableWidget->horizontalHeader();
+        
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        headerView->setSectionResizeMode(QHeaderView::ResizeToContents);
+#else
         headerView->setSectionResizeMode(QHeaderView::ResizeToContents);
         headerView->setSectionResizeMode(1, QHeaderView::Stretch);
+#endif
         headerView->setSectionsClickable(false);
 
         tableWidget->setStyleSheet(R"(
@@ -89,7 +130,11 @@ public:
         optionsLayout->setSpacing(15);
 
         auto durationGroupBox = new QGroupBox("续费周期");
-        QHBoxLayout *durationLayout = new QHBoxLayout(durationGroupBox);
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        auto durationLayout = new QVBoxLayout(durationGroupBox);
+#else
+        auto durationLayout = new QHBoxLayout(durationGroupBox);
+#endif
 
         monthRadioButton = new QRadioButton(QString("月付 (¥%1/台)").arg(BASE_PRICE_PER_MONTH));
         int yearPrice = BASE_PRICE_PER_MONTH * 12 / 2; // 年付5折
@@ -127,7 +172,11 @@ public:
         balanceLayout->addWidget(balanceLabel);
         balanceLayout->addStretch();
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        auto redeemLayout = new QVBoxLayout();
+#else
         auto redeemLayout = new QHBoxLayout();
+#endif
         voucherPlainTextEdit = new QPlainTextEdit();
         voucherPlainTextEdit->setPlaceholderText("请输入兑换码，每行一个...");
         voucherPlainTextEdit->setFixedHeight(80);
@@ -144,7 +193,12 @@ public:
         auto paymentGroupBox = new QGroupBox("付款方式");
         auto paymentMainLayout = new QVBoxLayout(paymentGroupBox);
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        auto paymentRadiosLayout = new QVBoxLayout(); 
+        paymentRadiosLayout->setSpacing(8);
+#else
         auto paymentRadiosLayout = new QHBoxLayout();
+#endif
         voucherRadioButton = new QRadioButton("余额支付");
         auto wechatRadioButton = new QRadioButton("微信支付（联系客服）");
         auto alipayRadioButton = new QRadioButton("支付宝支付（联系客服）");
@@ -226,13 +280,15 @@ public:
         });
         connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
-        auto mainLayout = new QVBoxLayout(this);
         mainLayout->setContentsMargins(20, 20, 20, 20);
         mainLayout->setSpacing(15);
 
         mainLayout->addLayout(filterLayout);
         mainLayout->addLayout(selectionLayout);
-        mainLayout->addWidget(tableWidget, 1);
+        
+        mainLayout->addWidget(tableWidget);
+        mainLayout->addStretch(); 
+
         mainLayout->addLayout(optionsLayout);
         mainLayout->addWidget(buttonBox);
 
@@ -314,6 +370,21 @@ public:
     }
 
 protected:
+    
+    void adjustTableHeight() {
+        int actualRows = tableWidget->rowCount();
+        int displayRows = actualRows == 0 ? 1 : qMin(actualRows, 5);
+
+        int totalHeight = tableWidget->horizontalHeader()->height() + 2; 
+
+        for (int i = 0; i < displayRows; ++i) {
+            totalHeight += tableWidget->rowHeight(i);
+        }
+
+        totalHeight += tableWidget->horizontalScrollBar()->sizeHint().height();
+
+        tableWidget->setFixedHeight(totalHeight);
+    }
 
     void loadDeviceTable(int bit)
     {
@@ -345,7 +416,6 @@ protected:
             checkItem->setData(Qt::UserRole, deviceInfo->deviceId);
 
             tableWidget->setItem(i, 0, checkItem);
-            
             tableWidget->setItem(i, 1, new QTableWidgetItem(deviceInfo->deviceName));
             tableWidget->setItem(i, 2, new QTableWidgetItem(deviceInfo->model));
 
@@ -360,6 +430,8 @@ protected:
         tableWidget->blockSignals(false);
         updateSelectAllState();
         updateTotalPrice();
+        
+        adjustTableHeight();
     }
 
     void updateSelectAllState() {
