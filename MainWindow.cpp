@@ -768,6 +768,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
         }
 
+        if (!data["choicyMsg"].toString().isEmpty()) {
+            qCriticalEx() << connection << data["choicyMsg"];
+            connection->close();
+            return;
+        }
+
         auto deviceInfo = DeviceInfo::getDevice(data["deviceId"].toString());
 
         if (deviceInfo) {
