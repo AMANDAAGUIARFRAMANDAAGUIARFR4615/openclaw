@@ -967,7 +967,7 @@ MainWindow::~MainWindow()
 void MainWindow::showSupportDialog()
 {
     if (!QFile::exists(qApp->applicationDirPath() + "/imageformats/qpng.dll")) {
-        QToolTip::showText(QCursor::pos(), "客服图片未正确配置");
+        QToolTip::showText(QCursor::pos(), "请联系客服充值");
         return;
     }
 
