@@ -1520,28 +1520,37 @@ QList<DeviceConnection*> MainWindow::getDeviceConnections(DeviceView* mainDevice
 
 QList<DeviceWidget*> MainWindow::getDeviceWidgets(DeviceView* mainDeviceView)
 {
+    QListWidget* targetListWidget = deviceListWidget;
+
     if (mainDeviceView) {
         auto deviceWidget = qobject_cast<DeviceWidget*>(mainDeviceView);
-        if (deviceWidget)
-            mainDeviceView = deviceWidget;
-        else
-            mainDeviceView = qobject_cast<DeviceWindow*>(mainDeviceView)->deviceWidget;
+        if (!deviceWidget)
+            deviceWidget = qobject_cast<DeviceWindow*>(mainDeviceView)->deviceWidget;
 
-        if (!multiControlSwitchButton->isChecked() || !mainDeviceView->deviceInfo->controller) return { (DeviceWidget*)mainDeviceView };
+        // 如果未开启群控，或当前设备不可控，直接返回该设备
+        if (!multiControlSwitchButton->isChecked() || !deviceWidget->deviceInfo->controller) 
+            return { deviceWidget };
+
+        // 提取绑定的 QListWidgetItem，获取它当前真实所在的 QListWidget（主窗口或悬浮窗）
+        targetListWidget = deviceWidget->property("listWidgetItem").value<QListWidgetItem*>()->listWidget();
+
+        // 如果当前点击操作的设备没有勾选，说明用户只是想单独控制它，不触发同屏群控
+        // if (!deviceWidget->checkBox->isChecked())
+        //     return { deviceWidget };
     }
 
     QList<DeviceWidget*> list;
 
-    for (int i = 0; i < deviceListWidget->count(); i++) {
-        const auto& item = deviceListWidget->item(i);
+    // 只在当前设备关联的特定窗口（分组）中寻找勾选的设备
+    for (int i = 0; i < targetListWidget->count(); i++) {
+        const auto& item = targetListWidget->item(i);
         if (item->isHidden())
             continue;
 
-        const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
-        if (deviceWidget->checkBox->isChecked())
-            list.append(deviceWidget);
-        else if (deviceWidget == mainDeviceView)
-            return { deviceWidget };
+        const auto& widget = item->data(Qt::UserRole).value<DeviceWidget*>();
+        
+        if (widget->checkBox->isChecked())
+            list.append(widget);
     }
 
     return list;
