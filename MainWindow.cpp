@@ -1030,160 +1030,128 @@ MainWindow::~MainWindow()
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
+    auto tabBar = tabWidget->tabBar();
+    if (watched != tabBar) {
+        return QMainWindow::eventFilter(watched, event);
+    }
+
     static int tabDragIndex = -1;
     static QPoint tabDragStartPos;
 
-    auto tabBar = tabWidget->tabBar();
-    
-    // 只处理标签栏的事件
-    if (watched == tabBar) {
-        if (event->type() == QEvent::MouseButtonPress) {
-            auto me = static_cast<QMouseEvent*>(event);
-            if (me->button() == Qt::LeftButton) {
-                tabDragStartPos = me->pos();
-                tabDragIndex = tabBar->tabAt(tabDragStartPos);
-            }
-        } else if (event->type() == QEvent::MouseMove) {
-            auto me = static_cast<QMouseEvent*>(event);
-            if (me->buttons() & Qt::LeftButton) {
-                
-                // 动态更新拖拽的 Index，防止拖出错误的标签页
-                int currentHoverIndex = tabBar->tabAt(me->pos());
-                if (currentHoverIndex != -1) {
-                    tabDragIndex = currentHoverIndex;
+    if (event->type() == QEvent::MouseButtonPress) {
+        auto me = static_cast<QMouseEvent*>(event);
+        if (me->button() == Qt::LeftButton) {
+            tabDragStartPos = me->pos();
+            tabDragIndex = tabBar->tabAt(tabDragStartPos);
+        }
+        return false;
+    }
+
+    if (event->type() == QEvent::MouseButtonRelease) {
+        tabDragIndex = -1;
+        return false;
+    }
+
+    if (event->type() == QEvent::MouseMove) {
+        auto me = static_cast<QMouseEvent*>(event);
+        
+        if (!(me->buttons() & Qt::LeftButton) || tabDragIndex == -1) return false;
+        if ((me->pos() - tabDragStartPos).manhattanLength() <= QApplication::startDragDistance()) return false;
+        if (tabBar->rect().contains(me->pos())) return false; // 未拖出标签栏
+        if (tabWidget->count() <= 1) { tabDragIndex = -1; return false; } // 仅剩最后一个标签，禁止拖出
+
+        int indexToTear = tabDragIndex;
+        tabDragIndex = -1; // 触发后立即复位
+
+        // 释放标签栏的鼠标占用，防止原生控件卡死
+        QMouseEvent cancelEvent(QEvent::MouseButtonRelease, me->pos(), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+        QApplication::sendEvent(tabBar, &cancelEvent);
+
+        // 1. 创建悬浮窗口
+        auto tabItem = tabs.takeAt(indexToTear);
+        auto fw = new FloatingTabWindow(this, tabItem);
+
+        QSize contentSize = tabWidget->currentWidget()->size();
+        fw->resize(contentSize.isEmpty() ? tabWidget->size() : contentSize);
+        QPoint globalPos = tabBar->mapToGlobal(me->pos());
+        fw->move(globalPos.x() - 10, globalPos.y() - 10);
+
+        // ==========================================
+        // 处理设备在不同 ListWidget 间的无损转移
+        // ==========================================
+        auto moveDevices = [](QListWidget* src, QListWidget* dst, uint32_t mask) {
+            for (int i = src->count() - 1; i >= 0; --i) {
+                auto player = src->item(i)->data(Qt::UserRole).value<DeviceWidget*>();
+                if (mask == 0 || (player->deviceInfo->groupMask & mask)) {
+                    player->setParent(nullptr); 
+                    delete src->takeItem(i); 
+
+                    auto frame = new QFrame();
+                    frame->setFrameShape(QFrame::Box);
+                    auto layout = new QVBoxLayout(frame);
+                    layout->setContentsMargins(0, 0, 0, 0);
+                    layout->addWidget(player);
+
+                    auto item = new NaturalSortListWidgetItem();
+                    item->setText(player->deviceInfo->deviceName);
+                    item->setData(Qt::UserRole, QVariant::fromValue(player));
+
+                    dst->addItem(item);
+                    dst->setItemWidget(item, frame);
+                    player->setProperty("listWidgetItem", QVariant::fromValue(static_cast<QListWidgetItem*>(item)));
+                    item->setSelected(player->checkBox->isChecked());
                 }
+            }
+        };
 
-                if (tabDragIndex != -1 && (me->pos() - tabDragStartPos).manhattanLength() > QApplication::startDragDistance()) {
-                    if (!tabBar->rect().contains(me->pos())) {
-                        int indexToTear = tabDragIndex;
-                        tabDragIndex = -1; // 触发后立即复位
-                        
-                        // 释放标签栏的鼠标占用
-                        QMouseEvent cancelEvent(QEvent::MouseButtonRelease, me->pos(), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-                        QApplication::sendEvent(tabBar, &cancelEvent);
-                        
-                        // 保底限制：不能把最后一个标签也拖走
-                        if (tabWidget->count() <= 1) return true;
-                        
-                        auto tabItem = tabs.takeAt(indexToTear);
-                        auto fw = new FloatingTabWindow(this, tabItem);
-
-                        // 1. 保持原标签页尺寸
-                        QSize contentSize = tabWidget->currentWidget()->size();
-                        if (contentSize.isEmpty()) contentSize = tabWidget->size();
-                        fw->resize(contentSize);
-
-                        // 2. 获取鼠标真实的全局屏幕坐标
-                        QPoint globalMousePos = tabBar->mapToGlobal(me->pos());
-                        
-                        // 3. 【左上角对齐】把窗口移动到鼠标位置
-                        fw->move(globalMousePos.x() - 10, globalMousePos.y() - 10);
-
-                        // 转移设备画面逻辑
-                        for (int i = deviceListWidget->count() - 1; i >= 0; --i) {
-                            auto item = deviceListWidget->item(i);
-                            auto player = item->data(Qt::UserRole).value<DeviceWidget*>();
-                            if (player->deviceInfo->groupMask & (1U << tabItem.bit)) {
-                                player->setParent(nullptr); 
-                                delete deviceListWidget->takeItem(i); 
-
-                                auto newFrame = new QFrame();
-                                newFrame->setFrameShape(QFrame::Box);
-                                auto frameLayout = new QVBoxLayout(newFrame);
-                                frameLayout->setContentsMargins(0, 0, 0, 0);
-                                frameLayout->addWidget(player);
-
-                                auto newItem = new NaturalSortListWidgetItem();
-                                newItem->setText(player->deviceInfo->deviceName);
-                                newItem->setData(Qt::UserRole, QVariant::fromValue(player));
-
-                                fw->listWidget->addItem(newItem);
-                                fw->listWidget->setItemWidget(newItem, newFrame);
-                                
-                                player->setProperty("listWidgetItem", QVariant::fromValue(static_cast<QListWidgetItem*>(newItem)));
-                                newItem->setSelected(player->checkBox->isChecked());
-                            }
-                        }
-
-                        // 同步独立窗口的勾选事件控制
-                        connect(fw->listWidget, &QListWidget::itemPressed, [this, fw](QListWidgetItem *item) {
-                            auto widget = fw->listWidget->itemWidget(item);
-                            if (widget) widget->findChild<DeviceWidget*>()->setFocus();
-                        });
-                        connect(fw->listWidget->selectionModel(), &QItemSelectionModel::selectionChanged, this, [=](const QItemSelection &selected, const QItemSelection &deselected) {
-                            for (const QModelIndex &index : selected.indexes()) {
-                                auto player = index.data(Qt::UserRole).value<DeviceWidget*>();
-                                if (player && !player->checkBox->isChecked()) {
-                                    const QSignalBlocker blocker(player->checkBox);
-                                    player->checkBox->setChecked(true);
-                                }
-                            }
-                            for (const QModelIndex &index : deselected.indexes()) {
-                                auto player = index.data(Qt::UserRole).value<DeviceWidget*>();
-                                if (player && player->checkBox->isChecked()) {
-                                    const QSignalBlocker blocker(player->checkBox);
-                                    player->checkBox->setChecked(false);
-                                }
-                            }
-                            if (settings->value("sortSelectedToTop").toBool())
-                                fw->listWidget->sortItems(Qt::AscendingOrder);
-                        });
-
-                        // 独立窗口关闭：设备画面无损归还主窗口
-                        connect(fw, &FloatingTabWindow::closed, this, [=]() {
-                            for (int i = fw->listWidget->count() - 1; i >= 0; --i) {
-                                auto item = fw->listWidget->item(i);
-                                auto player = item->data(Qt::UserRole).value<DeviceWidget*>();
-                                
-                                player->setParent(nullptr);
-                                delete fw->listWidget->takeItem(i);
-
-                                auto newFrame = new QFrame();
-                                newFrame->setFrameShape(QFrame::Box);
-                                auto frameLayout = new QVBoxLayout(newFrame);
-                                frameLayout->setContentsMargins(0, 0, 0, 0);
-                                frameLayout->addWidget(player);
-
-                                auto newItem = new NaturalSortListWidgetItem();
-                                newItem->setText(player->deviceInfo->deviceName);
-                                newItem->setData(Qt::UserRole, QVariant::fromValue(player));
-
-                                deviceListWidget->addItem(newItem);
-                                deviceListWidget->setItemWidget(newItem, newFrame);
-                                player->setProperty("listWidgetItem", QVariant::fromValue(static_cast<QListWidgetItem*>(newItem)));
-                                newItem->setSelected(player->checkBox->isChecked());
-                            }
-                            tabs.append(fw->tabItem);
-                            tabWidget->addTab(new QWidget(), fw->tabItem.name);
-                            this->saveTabs();
-                            this->relayoutDevices();
-                            fw->deleteLater();
-                        });
-
-                        auto page = tabWidget->widget(indexToTear);
-                        if (deviceListWidget->parentWidget() == page) {
-                            deviceListWidget->setParent(this);
-                        }
-                        
-                        tabWidget->removeTab(indexToTear);
-                        page->deleteLater();
-                        this->saveTabs();
-                        
-                        // 4. 【系统级连续拖拽】
-                        fw->show();
-                        this->relayoutDevices();
-
-                        if (fw->windowHandle()) {
-                            fw->windowHandle()->startSystemMove();
-                        }
-
-                        return true;
+        // 2. 同步悬浮窗的信号与逻辑
+        connect(fw->listWidget, &QListWidget::itemPressed, [fw](QListWidgetItem *item) {
+            if (auto widget = fw->listWidget->itemWidget(item)) 
+                widget->findChild<DeviceWidget*>()->setFocus();
+        });
+        
+        connect(fw->listWidget->selectionModel(), &QItemSelectionModel::selectionChanged, this, [=](const QItemSelection &sel, const QItemSelection &desel) {
+            auto updateCheck = [](const QModelIndexList& list, bool checked) {
+                for (const auto& idx : list) {
+                    if (auto player = idx.data(Qt::UserRole).value<DeviceWidget*>()) {
+                        const QSignalBlocker blocker(player->checkBox);
+                        player->checkBox->setChecked(checked);
                     }
                 }
-            }
-        } else if (event->type() == QEvent::MouseButtonRelease) {
-            tabDragIndex = -1;
+            };
+            updateCheck(sel.indexes(), true);
+            updateCheck(desel.indexes(), false);
+            if (settings->value("sortSelectedToTop").toBool()) fw->listWidget->sortItems(Qt::AscendingOrder);
+        });
+
+        connect(fw, &FloatingTabWindow::closed, this, [=, this]() {
+            moveDevices(fw->listWidget, deviceListWidget, 0); // 无损归还主窗口
+            tabs.append(fw->tabItem);
+            tabWidget->addTab(new QWidget(), fw->tabItem.name);
+            saveTabs();
+            relayoutDevices();
+            fw->deleteLater();
+        });
+
+        // 3. 执行物理转移并剥离原标签
+        moveDevices(deviceListWidget, fw->listWidget, 1U << tabItem.bit);
+
+        auto page = tabWidget->widget(indexToTear);
+        if (deviceListWidget->parentWidget() == page) {
+            deviceListWidget->setParent(this);
         }
+        tabWidget->removeTab(indexToTear);
+        page->deleteLater();
+        saveTabs();
+        
+        // 4. 显示并接管系统原生拖拽
+        fw->show();
+        relayoutDevices();
+        if (fw->windowHandle()) {
+            fw->windowHandle()->startSystemMove();
+        }
+
+        return true;
     }
 
     return QMainWindow::eventFilter(watched, event); 
