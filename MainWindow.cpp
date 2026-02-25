@@ -49,6 +49,57 @@
 #include <QToolTip>
 #include <QDesktopServices>
 #include <QCalendarWidget>
+#include <QMimeData>
+#include <QDrag>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QCloseEvent>
+#include <QMouseEvent>
+#include <QWindow>
+
+// 独立屏幕悬浮窗口类
+class FloatingTabWindow : public QDialog {
+    Q_OBJECT
+public:
+    ExplicitSelectionListWidget* listWidget;
+    BitMaskEditorDialog::Item tabItem;
+    VideoVisibilityManager* visibilityMgr;
+
+    FloatingTabWindow(QWidget* parent, const BitMaskEditorDialog::Item& item) 
+        : QDialog(parent), tabItem(item) {
+        setWindowFlags(Qt::Window | Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint);
+        setWindowTitle(item.name);
+
+        auto layout = new QVBoxLayout(this);
+        layout->setContentsMargins(0, 0, 0, 0);
+
+        // 为该独立窗口创建专属的设备列表承载区
+        listWidget = new ExplicitSelectionListWidget(this);
+        listWidget->setViewMode(QListWidget::IconMode);
+        listWidget->setResizeMode(QListWidget::Adjust);
+        listWidget->setDragDropMode(QListWidget::NoDragDrop);
+        listWidget->setSpacing(10);
+        listWidget->setSortingEnabled(true);
+        listWidget->sortItems(Qt::AscendingOrder);
+        listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        layout->addWidget(listWidget);
+
+        // 独立的视频能见度管理器，确保悬浮窗上的设备正常渲染
+        visibilityMgr = new VideoVisibilityManager(listWidget, this);
+    }
+
+    void reject() override {
+        close(); 
+    }
+
+    void closeEvent(QCloseEvent* event) override {
+        emit closed();
+        event->accept();
+    }
+
+signals:
+    void closed();
+};
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
@@ -132,7 +183,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (key == "sortSelectedToTop") {
-            deviceListWidget->sortItems(Qt::AscendingOrder);
+            for (auto list : findChildren<ExplicitSelectionListWidget*>())
+                list->sortItems(Qt::AscendingOrder);
             return;
         }
 
@@ -657,6 +709,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     font.setPixelSize(16);
     tabWidget->setFont(font);
 
+    tabBar->installEventFilter(this);
+
     connect(tabBar, &QTabBar::tabMoved, this, &MainWindow::onTabMoved);
     connect(tabBar, &QWidget::customContextMenuRequested, this, &MainWindow::showTabBarContextMenu);
 
@@ -821,15 +875,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         if (!connection)
             return;
 
-        for (int i = 0; i < deviceListWidget->count(); i++) {
-            const auto& item = deviceListWidget->item(i);
-            const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
-            if (deviceWidget->connection == connection) {
-                deviceListWidget->setEnabled(false);
-                delete item;
-                deviceListWidget->setEnabled(true);
-                relayoutDevices();
-                break;
+        for (auto listWidget : findChildren<ExplicitSelectionListWidget*>()) {
+            for (int i = 0; i < listWidget->count(); i++) {
+                const auto& item = listWidget->item(i);
+                const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
+                if (deviceWidget->connection == connection) {
+                    listWidget->setEnabled(false);
+                    delete listWidget->takeItem(i);
+                    listWidget->setEnabled(true);
+                    relayoutDevices();
+                    return;
+                }
             }
         }
     });
@@ -871,13 +927,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         const auto& udid = data.isString() ? data.toString() : nullptr;
         if (udid != nullptr && !udid.isEmpty())
         {
-            for (int i = 0; i < deviceListWidget->count(); i++) {
-                const auto& item = deviceListWidget->item(i);
-                const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
-                if (deviceWidget->deviceInfo->deviceId == udid) {
-                    const auto& byteArray = deviceWidget->grabFrame();
-                    callback(QJsonValue::fromVariant(byteArray.toBase64()));
-                    break;
+            for (auto listWidget : findChildren<ExplicitSelectionListWidget*>()) {
+                for (int i = 0; i < listWidget->count(); i++) {
+                    const auto& item = listWidget->item(i);
+                    const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
+                    if (deviceWidget->deviceInfo->deviceId == udid) {
+                        const auto& byteArray = deviceWidget->grabFrame();
+                        callback(QJsonValue::fromVariant(byteArray.toBase64()));
+                        return;
+                    }
                 }
             }
         }
@@ -968,6 +1026,167 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 MainWindow::~MainWindow()
 {
     EventHub::off(this, "deviceInfo");
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    static int tabDragIndex = -1;
+    static QPoint tabDragStartPos;
+
+    auto tabBar = tabWidget->tabBar();
+    
+    // 只处理标签栏的事件
+    if (watched == tabBar) {
+        if (event->type() == QEvent::MouseButtonPress) {
+            auto me = static_cast<QMouseEvent*>(event);
+            if (me->button() == Qt::LeftButton) {
+                tabDragStartPos = me->pos();
+                tabDragIndex = tabBar->tabAt(tabDragStartPos);
+            }
+        } else if (event->type() == QEvent::MouseMove) {
+            auto me = static_cast<QMouseEvent*>(event);
+            if (me->buttons() & Qt::LeftButton) {
+                
+                // 动态更新拖拽的 Index，防止拖出错误的标签页
+                int currentHoverIndex = tabBar->tabAt(me->pos());
+                if (currentHoverIndex != -1) {
+                    tabDragIndex = currentHoverIndex;
+                }
+
+                if (tabDragIndex != -1 && (me->pos() - tabDragStartPos).manhattanLength() > QApplication::startDragDistance()) {
+                    if (!tabBar->rect().contains(me->pos())) {
+                        int indexToTear = tabDragIndex;
+                        tabDragIndex = -1; // 触发后立即复位
+                        
+                        // 释放标签栏的鼠标占用
+                        QMouseEvent cancelEvent(QEvent::MouseButtonRelease, me->pos(), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+                        QApplication::sendEvent(tabBar, &cancelEvent);
+                        
+                        // 保底限制：不能把最后一个标签也拖走
+                        if (tabWidget->count() <= 1) return true;
+                        
+                        auto tabItem = tabs.takeAt(indexToTear);
+                        auto fw = new FloatingTabWindow(this, tabItem);
+
+                        // 1. 保持原标签页尺寸
+                        QSize contentSize = tabWidget->currentWidget()->size();
+                        if (contentSize.isEmpty()) contentSize = tabWidget->size();
+                        fw->resize(contentSize);
+
+                        // 2. 获取鼠标真实的全局屏幕坐标
+                        QPoint globalMousePos = tabBar->mapToGlobal(me->pos());
+                        
+                        // 3. 【左上角对齐】把窗口移动到鼠标位置
+                        fw->move(globalMousePos.x() - 10, globalMousePos.y() - 10);
+
+                        // 转移设备画面逻辑
+                        for (int i = deviceListWidget->count() - 1; i >= 0; --i) {
+                            auto item = deviceListWidget->item(i);
+                            auto player = item->data(Qt::UserRole).value<DeviceWidget*>();
+                            if (player->deviceInfo->groupMask & (1U << tabItem.bit)) {
+                                player->setParent(nullptr); 
+                                delete deviceListWidget->takeItem(i); 
+
+                                auto newFrame = new QFrame();
+                                newFrame->setFrameShape(QFrame::Box);
+                                auto frameLayout = new QVBoxLayout(newFrame);
+                                frameLayout->setContentsMargins(0, 0, 0, 0);
+                                frameLayout->addWidget(player);
+
+                                auto newItem = new NaturalSortListWidgetItem();
+                                newItem->setText(player->deviceInfo->deviceName);
+                                newItem->setData(Qt::UserRole, QVariant::fromValue(player));
+
+                                fw->listWidget->addItem(newItem);
+                                fw->listWidget->setItemWidget(newItem, newFrame);
+                                
+                                player->setProperty("listWidgetItem", QVariant::fromValue(static_cast<QListWidgetItem*>(newItem)));
+                                newItem->setSelected(player->checkBox->isChecked());
+                            }
+                        }
+
+                        // 同步独立窗口的勾选事件控制
+                        connect(fw->listWidget, &QListWidget::itemPressed, [this, fw](QListWidgetItem *item) {
+                            auto widget = fw->listWidget->itemWidget(item);
+                            if (widget) widget->findChild<DeviceWidget*>()->setFocus();
+                        });
+                        connect(fw->listWidget->selectionModel(), &QItemSelectionModel::selectionChanged, this, [=](const QItemSelection &selected, const QItemSelection &deselected) {
+                            for (const QModelIndex &index : selected.indexes()) {
+                                auto player = index.data(Qt::UserRole).value<DeviceWidget*>();
+                                if (player && !player->checkBox->isChecked()) {
+                                    const QSignalBlocker blocker(player->checkBox);
+                                    player->checkBox->setChecked(true);
+                                }
+                            }
+                            for (const QModelIndex &index : deselected.indexes()) {
+                                auto player = index.data(Qt::UserRole).value<DeviceWidget*>();
+                                if (player && player->checkBox->isChecked()) {
+                                    const QSignalBlocker blocker(player->checkBox);
+                                    player->checkBox->setChecked(false);
+                                }
+                            }
+                            if (settings->value("sortSelectedToTop").toBool())
+                                fw->listWidget->sortItems(Qt::AscendingOrder);
+                        });
+
+                        // 独立窗口关闭：设备画面无损归还主窗口
+                        connect(fw, &FloatingTabWindow::closed, this, [=]() {
+                            for (int i = fw->listWidget->count() - 1; i >= 0; --i) {
+                                auto item = fw->listWidget->item(i);
+                                auto player = item->data(Qt::UserRole).value<DeviceWidget*>();
+                                
+                                player->setParent(nullptr);
+                                delete fw->listWidget->takeItem(i);
+
+                                auto newFrame = new QFrame();
+                                newFrame->setFrameShape(QFrame::Box);
+                                auto frameLayout = new QVBoxLayout(newFrame);
+                                frameLayout->setContentsMargins(0, 0, 0, 0);
+                                frameLayout->addWidget(player);
+
+                                auto newItem = new NaturalSortListWidgetItem();
+                                newItem->setText(player->deviceInfo->deviceName);
+                                newItem->setData(Qt::UserRole, QVariant::fromValue(player));
+
+                                deviceListWidget->addItem(newItem);
+                                deviceListWidget->setItemWidget(newItem, newFrame);
+                                player->setProperty("listWidgetItem", QVariant::fromValue(static_cast<QListWidgetItem*>(newItem)));
+                                newItem->setSelected(player->checkBox->isChecked());
+                            }
+                            tabs.append(fw->tabItem);
+                            tabWidget->addTab(new QWidget(), fw->tabItem.name);
+                            this->saveTabs();
+                            this->relayoutDevices();
+                            fw->deleteLater();
+                        });
+
+                        auto page = tabWidget->widget(indexToTear);
+                        if (deviceListWidget->parentWidget() == page) {
+                            deviceListWidget->setParent(this);
+                        }
+                        
+                        tabWidget->removeTab(indexToTear);
+                        page->deleteLater();
+                        this->saveTabs();
+                        
+                        // 4. 【系统级连续拖拽】
+                        fw->show();
+                        this->relayoutDevices();
+
+                        if (fw->windowHandle()) {
+                            fw->windowHandle()->startSystemMove();
+                        }
+
+                        return true;
+                    }
+                }
+            }
+        } else if (event->type() == QEvent::MouseButtonRelease) {
+            tabDragIndex = -1;
+        }
+    }
+
+    return QMainWindow::eventFilter(watched, event); 
 }
 
 void MainWindow::showSupportDialog()
@@ -1113,41 +1332,52 @@ void MainWindow::syncVideoSettingsToDevices()
 
 void MainWindow::relayoutDevices()
 {
-    auto& tab = getTab();
-    const auto bit = tab.bit;
-    const auto scale = tab.scale == 0 ? 1 : tab.scale / 100.0f;
-    const auto isLandscape = tab.getIsLandscape();
-    
-    const auto& devicesInGroup = DeviceInfo::getDevices(1U << bit);
-    
-    auto frameItemHeight = frameItemWidth * DeviceInfo::getOptimalAspectRatio(devicesInGroup);
-    int targetW = (isLandscape ? frameItemHeight : frameItemWidth) * scale;
-    int targetH = (isLandscape ? frameItemWidth : frameItemHeight) * scale;
-    QSize targetSize(targetW, targetH);
-
-    QVector<int> tabDeviceCounts(tabs.size(), 0);
-
-    for (int i = 0; i < deviceListWidget->count(); ++i) {
-        const auto& item = deviceListWidget->item(i);
+    // 计算目标尺寸并应用到指定的 QListWidget 中，同时返回该分组内的设备总数
+    auto applyLayout = [&](BitMaskEditorDialog::Item tabItem, QListWidget* listWidget) -> int {
+        const auto scale = tabItem.scale == 0 ? 1 : tabItem.scale / 100.0f;
+        const auto isLandscape = tabItem.getIsLandscape();
         
-        const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
+        const auto& devicesInGroup = DeviceInfo::getDevices(1U << tabItem.bit);
+        
+        auto frameItemHeight = frameItemWidth * DeviceInfo::getOptimalAspectRatio(devicesInGroup);
+        int targetW = (isLandscape ? frameItemHeight : frameItemWidth) * scale;
+        int targetH = (isLandscape ? frameItemWidth : frameItemHeight) * scale;
+        QSize targetSize(targetW, targetH);
 
-        item->setHidden(!deviceWidget || !devicesInGroup.contains(deviceWidget->deviceInfo));
+        for (int i = 0; i < listWidget->count(); ++i) {
+            const auto& item = listWidget->item(i);
+            const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
 
-        if (!item->isHidden()) {
-            item->setSizeHint(targetSize + QSize(0, 46));
-            deviceWidget->setFixedSize(targetSize + QSize(0, 46));
+            item->setHidden(!deviceWidget || !devicesInGroup.contains(deviceWidget->deviceInfo));
+
+            if (!item->isHidden()) {
+                item->setSizeHint(targetSize + QSize(0, 46));
+                deviceWidget->setFixedSize(targetSize + QSize(0, 46));
+            }
         }
+        return devicesInGroup.size();
+    };
 
-        for (int i = 0; i < tabs.size(); ++i) {
-            if (deviceWidget->deviceInfo->groupMask & (1U << tabs[i].bit))
-                tabDeviceCounts[i]++;
+    // ==========================================
+    // 1. 处理主窗口的设备布局和标签栏状态
+    // ==========================================
+    if (tabWidget->count() > 0 && !tabs.isEmpty()) {
+        applyLayout(getTab(), deviceListWidget);
+
+        // 使用全局设备信息进行计数，刷新所有 Tab 的角标
+        for (int i = 0; i < tabWidget->count(); ++i) {
+            const auto& t = tabs[i];
+            int count = DeviceInfo::getDevices(1U << t.bit).size();
+            tabWidget->setTabText(i, QString("%1 [%2]").arg(t.name).arg(count));
         }
     }
 
-    for (int i = 0; i < tabWidget->count(); ++i) {
-        const auto& tab = tabs[i];
-        tabWidget->setTabText(i, QString("%1 [%2]").arg(tab.name).arg(tabDeviceCounts[i]));
+    // ==========================================
+    // 2. 处理所有独立悬浮窗口的设备布局和标题状态
+    // ==========================================
+    for (auto fw : this->findChildren<FloatingTabWindow*>()) {
+        int count = applyLayout(fw->tabItem, fw->listWidget);
+        fw->setWindowTitle(QString("%1 [%2]").arg(fw->tabItem.name).arg(count));
     }
 
     // videoVisibilityManager->refresh();
@@ -1253,16 +1483,28 @@ void MainWindow::addItem(DeviceConnection* connection)
     frameLayout->setContentsMargins(0, 0, 0, 0);
     frameLayout->addWidget(player);
 
-    auto item = new NaturalSortListWidgetItem(deviceListWidget);
+    auto item = new NaturalSortListWidgetItem();
     item->setText(deviceInfo->deviceName);
     item->setData(Qt::UserRole, QVariant::fromValue(player));
 
-    connect(player->checkBox, &QCheckBox::stateChanged, [=](int state) {
-        const QSignalBlocker blocker(deviceListWidget);
-        item->setSelected(state == Qt::Checked);
+    // 根据所属组动态分配到对应的 ListWidget（解决刚连接的设备自动掉进悬浮窗）
+    auto targetList = deviceListWidget;
+    for (auto fw : this->findChildren<FloatingTabWindow*>()) {
+        if (deviceInfo->groupMask & (1U << fw->tabItem.bit)) {
+            targetList = fw->listWidget;
+            break;
+        }
+    }
 
-        if (settings->value("sortSelectedToTop").toBool())
-            deviceListWidget->sortItems(Qt::AscendingOrder);
+    connect(player->checkBox, &QCheckBox::stateChanged, [=](int state) {
+        auto currentList = item->listWidget();
+        if (currentList) {
+            const QSignalBlocker blocker(currentList);
+            item->setSelected(state == Qt::Checked);
+
+            if (settings->value("sortSelectedToTop").toBool())
+                currentList->sortItems(Qt::AscendingOrder);
+        }
 
         bool isUserAction = player->checkBox->hasFocus() || player->checkBox->isDown();
         if (!isUserAction)
@@ -1280,10 +1522,9 @@ void MainWindow::addItem(DeviceConnection* connection)
         )");
     });
 
+    targetList->addItem(item);
+    targetList->setItemWidget(item, frame);
     item->setSelected(true);
-    
-    deviceListWidget->addItem(item);
-    deviceListWidget->setItemWidget(item, frame);
 
     player->setProperty("listWidgetItem", QVariant::fromValue(static_cast<QListWidgetItem*>(item)));
 
@@ -1532,3 +1773,5 @@ int MainWindow::findAvailableTabId()
 
     return -1;
 }
+
+#include "MainWindow.moc"
