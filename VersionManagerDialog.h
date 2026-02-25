@@ -296,7 +296,7 @@ private:
                     QFile::remove(filePath);
                     qApp->quit();
 #if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
-                    QProcess::startDetached(qApp->applicationFilePath());
+                    QProcess::startDetached(QString(qApp->applicationFilePath()).remove(".old"));
 #endif
                 } else {
                     new ToastWidget("解压失败");
