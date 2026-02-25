@@ -1079,12 +1079,19 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
         // ==========================================
         // 处理设备在不同 ListWidget 间的无损转移
         // ==========================================
-        auto moveDevices = [](QListWidget* src, QListWidget* dst, uint32_t mask) {
+        auto moveDevices = [this](QListWidget* src, QListWidget* dst, uint32_t mask) {
+            // 屏蔽两个列表的 selectionModel 信号，防止转移过程中误触列表的“取消选中”逻辑
+            const QSignalBlocker srcBlocker(src->selectionModel());
+            const QSignalBlocker dstBlocker(dst->selectionModel());
+
             for (int i = src->count() - 1; i >= 0; --i) {
                 auto player = src->item(i)->data(Qt::UserRole).value<DeviceWidget*>();
                 if (mask == 0 || (player->deviceInfo->groupMask & mask)) {
+                    bool wasChecked = player->checkBox->isChecked();
+
                     player->setParent(nullptr); 
-                    delete src->takeItem(i); 
+                    
+                    auto item = src->takeItem(i); 
 
                     auto frame = new QFrame();
                     frame->setFrameShape(QFrame::Box);
@@ -1092,15 +1099,16 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                     layout->setContentsMargins(0, 0, 0, 0);
                     layout->addWidget(player);
 
-                    auto item = new NaturalSortListWidgetItem();
-                    item->setText(player->deviceInfo->deviceName);
-                    item->setData(Qt::UserRole, QVariant::fromValue(player));
-
                     dst->addItem(item);
                     dst->setItemWidget(item, frame);
-                    player->setProperty("listWidgetItem", QVariant::fromValue(static_cast<QListWidgetItem*>(item)));
-                    item->setSelected(player->checkBox->isChecked());
+                    
+                    item->setSelected(wasChecked);
                 }
+            }
+            
+            // 转移完成后根据设置项重新排序
+            if (settings->value("sortSelectedToTop").toBool()) {
+                dst->sortItems(Qt::AscendingOrder);
             }
         };
 
