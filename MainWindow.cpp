@@ -1320,6 +1320,8 @@ void MainWindow::relayoutDevices()
         int targetH = (isLandscape ? frameItemWidth : frameItemHeight) * scale;
         QSize targetSize(targetW, targetH);
 
+        int actualVisibleCount = 0;
+
         for (int i = 0; i < listWidget->count(); ++i) {
             const auto& item = listWidget->item(i);
             const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
@@ -1329,9 +1331,10 @@ void MainWindow::relayoutDevices()
             if (!item->isHidden()) {
                 item->setSizeHint(targetSize + QSize(0, 46));
                 deviceWidget->setFixedSize(targetSize + QSize(0, 46));
+                actualVisibleCount++; // 只有未隐藏且物理存在于该容器的才计数
             }
         }
-        return devicesInGroup.size();
+        return actualVisibleCount;
     };
 
     // ==========================================
@@ -1340,10 +1343,18 @@ void MainWindow::relayoutDevices()
     if (tabWidget->count() > 0 && !tabs.isEmpty()) {
         applyLayout(getTab(), deviceListWidget);
 
-        // 使用全局设备信息进行计数，刷新所有 Tab 的角标
+        // 刷新所有 Tab 的角标，只统计当前物理上还在deviceListWidget的设备，排除已拖走的
         for (int i = 0; i < tabWidget->count(); ++i) {
             const auto& t = tabs[i];
-            int count = DeviceInfo::getDevices(1U << t.bit).size();
+            int count = 0;
+            for (int j = 0; j < deviceListWidget->count(); ++j) {
+                const auto& item = deviceListWidget->item(j);
+                const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
+                // 判断此卡片是否属于这个分组
+                if (deviceWidget && (deviceWidget->deviceInfo->groupMask & (1U << t.bit))) {
+                    count++;
+                }
+            }
             tabWidget->setTabText(i, QString("%1 [%2]").arg(t.name).arg(count));
         }
     }
