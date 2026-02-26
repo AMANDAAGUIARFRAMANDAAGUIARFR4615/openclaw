@@ -243,7 +243,7 @@ private:
                 else if (i == 1) 
                     addSectionTitle("历史版本");
 
-                auto *card = new VersionCard(obj, isLatest);
+                auto card = new VersionCard(obj, isLatest);
                 connect(card, &VersionCard::startDownload, this, &VersionManagerDialog::downloadFile);
                 m_listLayout->addWidget(card);
             }
