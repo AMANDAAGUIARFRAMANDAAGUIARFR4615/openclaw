@@ -18,7 +18,6 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QDateEdit>
-#include <QStringList>
 
 class RedeemRecordDialog : public QDialog {
 public:
@@ -43,7 +42,6 @@ public:
         dateEdit->setEnabled(false);
 
         auto queryButton = new QPushButton("查询", this);
-        auto batchCopyButton = new QPushButton("批量复制", this); 
 
         topLayout->addWidget(new QLabel("状态:", this));
         topLayout->addWidget(statusComboBox);
@@ -51,7 +49,6 @@ public:
         topLayout->addWidget(dateFilterCheck);
         topLayout->addWidget(dateEdit, 1);
         topLayout->addWidget(queryButton);
-        topLayout->addWidget(batchCopyButton);
         mainLayout->addLayout(topLayout);
 
         auto tableWidget = new QTableWidget(0, 3, this); // 直接指定 0行3列
@@ -75,25 +72,6 @@ public:
                 qApp->clipboard()->setText(item->text());
                 QToolTip::showText(QCursor::pos(), "已复制到剪切板");
             }
-        });
-
-        connect(batchCopyButton, &QPushButton::clicked, [tableWidget]() {
-            QStringList codes;
-            // 遍历表格所有行，提取第0列（兑换码）
-            for (int i = 0; i < tableWidget->rowCount(); ++i) {
-                auto item = tableWidget->item(i, 0);
-                if (!item->text().isEmpty())
-                    codes << item->text();
-            }
-            
-            if (codes.isEmpty()) {
-                QToolTip::showText(QCursor::pos(), "当前没有可复制的兑换码");
-                return;
-            }
-            
-            // 用换行符拼接所有兑换码并写入剪贴板
-            qApp->clipboard()->setText(codes.join("\n"));
-            QToolTip::showText(QCursor::pos(), QString("已批量复制 %1 个兑换码").arg(codes.size()));
         });
 
         QPointer<RedeemRecordDialog> safeThis(this); // 防止异步回调时窗口已销毁导致崩溃
