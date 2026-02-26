@@ -44,6 +44,8 @@ add_subdirectory(nodeeditor)
 # =========================================================
 
 include_directories(include)
+include_directories(".")
+include_directories(dialogs)
 include_directories(visualscripting)
 
 if(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -78,37 +80,18 @@ elseif(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND RESOURCE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/icons/logo.icns")
 endif()
 
+file(GLOB ALL_SOURCES 
+    CONFIGURE_DEPENDS
+    "*.cpp" "*.h" "*.hpp"
+    "dialogs/*.cpp" "dialogs/*.h"
+    "visualscripting/*.cpp" "visualscripting/*.h" "visualscripting/*.hpp"
+)
+
 # =========================================================
 # 3. 定义可执行文件
 # =========================================================
 qt_add_executable(${PROJECT_NAME}
-    main.cpp Safe.h SafeObject.h SwitchButton.h ExplicitSelectionListWidget.h NaturalSortListWidgetItem.h
-    global.h AesCrypto.h KeyMapping.h VideoVisibilityManager.h
-    EmojiIconProvider.h Tools.h SettingsViewer.h JailbreakAssistantDialog.h AccountListDialog.h SwapExpirationDialog.h
-    Logger.h LogTextBrowser.h EventHub.h
-    BitMaskEditorDialog.h LiveStreamDevice.h
-    LoginWidget.h Account.h
-    MainWindow.h MainWindow.cpp
-    VideoFrameWidget.h
-    DeviceInfo.h RenewalDialog.h
-    UsbDeviceManager.h UsbDeviceManager.cpp
-    DeviceConnection.h
-    DeviceView.h DeviceView.cpp
-    DeviceWidget.h DeviceWidget.cpp
-    DeviceWindow.h DeviceWindow.cpp
-    TcpServer.h UdpTransport.h WebSocketClient.h
-    ToastWidget.h ZipUtils.h
-    NetworkUtils.h
-    AppSettingsDialog.h
-    RemoteFileExplorer.h RemoteFileExplorer.cpp FileTransfer.h
-    AppListWidget.h FileViewer.h Recorder.h VersionManagerDialog.h
-    qrcodegen.hpp qrcodegen.cpp
-
-    visualscripting/Definitions.hpp
-    visualscripting/PureDataModels.hpp
-    visualscripting/FlowModels.hpp
-    visualscripting/FlowEditorDialog.h
-
+    ${ALL_SOURCES}
     ${RESOURCE_SOURCES}
 )
 
