@@ -2,9 +2,7 @@
 
 #include "global.h"
 #include "Tools.h"
-#include <QDialog>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
+#include "BaseDialog.h"
 #include <QLabel>
 #include <QRadioButton>
 #include <QButtonGroup>
@@ -42,7 +40,7 @@ protected:
     }
 };
 
-class AppSettingsDialog : public QDialog
+class AppSettingsDialog : public BaseDialog
 {
     Q_OBJECT
 
@@ -111,18 +109,9 @@ private:
     QHash<QString, int> m_intDefaults;
     QHash<QString, QHash<QString, QString>> m_shortcutDefaults;
 
-    explicit AppSettingsDialog(QWidget *parent = nullptr) : QDialog(parent)
+    explicit AppSettingsDialog(QWidget *parent = nullptr) : BaseDialog("设置", parent)
     {
-        setWindowTitle("设置");
-
-#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        setWindowState(Qt::WindowMaximized);
-#else
-        resize(650, 500);
-#endif
-
-        QVBoxLayout *mainLayout = new QVBoxLayout(this);
-        mainLayout->setContentsMargins(10, 10, 10, 10);
+        auto mainLayout = contentLayout();
         
         QTabWidget *tabWidget = new QTabWidget(this);
         mainLayout->addWidget(tabWidget);
@@ -251,16 +240,6 @@ private:
 
         menuScroll->setWidget(menuTab);
         tabWidget->addTab(menuScroll, "菜单与快捷键");
-
-#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        QPushButton *closeBtn = new QPushButton("关闭设置", this);
-        closeBtn->setMinimumHeight(45); 
-        QFont btnFont = closeBtn->font();
-        btnFont.setBold(true);
-        closeBtn->setFont(btnFont);
-        connect(closeBtn, &QPushButton::clicked, this, &QDialog::accept);
-        mainLayout->addWidget(closeBtn);
-#endif
     }
 
     ~AppSettingsDialog() = default;

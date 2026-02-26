@@ -3,12 +3,10 @@
 #include "MainWindow.h"
 #include "Account.h"
 #include "Safe.h"
-#include <QDialog>
+#include "BaseDialog.h"
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QDialogButtonBox>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
 #include <QDateTime>
 #include <QRadioButton>
 #include <QLabel>
@@ -24,7 +22,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 
-class RenewalDialog : public QDialog {
+class RenewalDialog : public BaseDialog {
     Q_OBJECT
 
 public:
@@ -33,32 +31,9 @@ public:
 
     const int BASE_PRICE_PER_MONTH = 10;
 
-    explicit RenewalDialog(QWidget *parent) : QDialog(parent)
+    explicit RenewalDialog(QWidget *parent) : BaseDialog("续费", parent)
     {
-        setWindowTitle("续费");
-        
-#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        setWindowState(Qt::WindowMaximized);
-        auto baseLayout = new QVBoxLayout(this);
-        baseLayout->setContentsMargins(0, 0, 0, 0);
-
-        auto mainScrollArea = new QScrollArea(this);
-        mainScrollArea->setWidgetResizable(true);
-        mainScrollArea->setFrameShape(QFrame::NoFrame);
-        QScroller::grabGesture(mainScrollArea->viewport(), QScroller::LeftMouseButtonGesture);
-        
-        QScrollerProperties mainProps = QScroller::scroller(mainScrollArea->viewport())->scrollerProperties();
-        mainProps.setScrollMetric(QScrollerProperties::MousePressEventDelay, 0.1);
-        QScroller::scroller(mainScrollArea->viewport())->setScrollerProperties(mainProps);
-
-        auto scrollContentWidget = new QWidget(mainScrollArea);
-        auto mainLayout = new QVBoxLayout(scrollContentWidget); 
-        mainScrollArea->setWidget(scrollContentWidget);
-        baseLayout->addWidget(mainScrollArea);
-#else
-        setMinimumSize(480, 720);
-        auto mainLayout = new QVBoxLayout(this); 
-#endif
+        auto mainLayout = contentLayout();
 
         bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
         
