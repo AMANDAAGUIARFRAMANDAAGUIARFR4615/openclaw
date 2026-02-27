@@ -1,14 +1,12 @@
 #pragma once
 
 #include "WebSocketClient.h"
-#include <QDialog>
+#include "BaseDialog.h"
+#include <QGridLayout>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QGridLayout>
 #include <QPushButton>
 #include <QLabel>
-#include <QTableWidget>
-#include <QHeaderView>
 #include <QClipboard>
 #include <QToolTip>
 #include <QDateTime>
@@ -16,166 +14,406 @@
 #include <QJsonArray>
 #include <QPointer>
 #include <QApplication>
-#include <QComboBox>
+#include <QRadioButton>
+#include <QButtonGroup>
 #include <QCheckBox>
 #include <QDateEdit>
+#include <QStringList>
+#include <QFrame>
+#include <QTimer>
+#include <QTableWidget>
+#include <QHeaderView>
 #include <QShortcut>
 #include <QKeySequence>
-#include <QStringList>
+#include <QStyleHints>
 #include <algorithm>
 
-class RedeemRecordDialog : public QDialog {
+class RedeemRecordDialog : public BaseDialog {
 public:
-    explicit RedeemRecordDialog(QWidget *parent = nullptr) : QDialog(parent) {
-        setWindowTitle("兑换记录查询");
+    explicit RedeemRecordDialog(QWidget *parent = nullptr) : BaseDialog("兑换码记录", parent) {
+        setupUI();
+        setupStyle();
+        setupConnections();
+        
+        // 初始化完毕自动查一次
+        doQuery();
+    }
 
+private:
+    QButtonGroup *statusButtonGroup;
+    QRadioButton *unredeemedRadio;
+    QRadioButton *redeemedRadio;
+    
+    QCheckBox *dateFilterCheck;
+    QDateEdit *dateEdit;
+    QPushButton *queryButton;
+    
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        setWindowState(Qt::WindowMaximized);
+    QWidget *cardContainer;
+    QVBoxLayout *cardLayout;
 #else
-        resize(600, 500);
+    QTableWidget *tableWidget;
 #endif
+
+    void setupUI() {
+        auto mainLayout = contentLayout();
+
+        auto topWidget = new QWidget(this);
+        topWidget->setObjectName("TopWidget");
         
-        auto mainLayout = new QVBoxLayout(this);
+        statusButtonGroup = new QButtonGroup(topWidget);
+        unredeemedRadio = new QRadioButton("未兑换", topWidget);
+        redeemedRadio = new QRadioButton("已兑换", topWidget);
+        statusButtonGroup->addButton(unredeemedRadio, 0);
+        statusButtonGroup->addButton(redeemedRadio, 1);
+        unredeemedRadio->setChecked(true);
         
-        auto statusComboBox = new QComboBox(this);
-        statusComboBox->addItem("未兑换", 0);
-        statusComboBox->addItem("已兑换", 1);
-        
-        auto dateFilterCheck = new QCheckBox("指定日期:", this);
-        auto dateEdit = new QDateEdit(QDate::currentDate(), this);
-        dateEdit->setCalendarPopup(true); // 开启下拉日历弹窗
+        dateFilterCheck = new QCheckBox("指定日期:", topWidget);
+        dateEdit = new QDateEdit(QDate::currentDate(), topWidget);
+        dateEdit->setCalendarPopup(true);
         dateEdit->setDisplayFormat("yyyy-MM-dd");
         
         dateFilterCheck->setEnabled(false);
         dateEdit->setEnabled(false);
 
-        auto queryButton = new QPushButton("查询", this);
+        queryButton = new QPushButton("查询", topWidget);
+        queryButton->setObjectName("QueryButton");
 
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        // 移动端：为了防止横向空间不足，使用网格布局分两行
-        statusComboBox->setMinimumHeight(40);
+        // --- 移动端顶部布局 ---
         dateEdit->setMinimumHeight(40);
         queryButton->setMinimumHeight(40);
+        queryButton->setMinimumWidth(80);
         dateFilterCheck->setMinimumHeight(40);
-
-        auto topLayout = new QGridLayout();
-        topLayout->addWidget(new QLabel("状态:", this), 0, 0);
-        topLayout->addWidget(statusComboBox, 0, 1);
-        topLayout->addWidget(queryButton, 0, 2);
-        topLayout->addWidget(dateFilterCheck, 1, 0);
-        topLayout->addWidget(dateEdit, 1, 1, 1, 2);
-        mainLayout->addLayout(topLayout);
-#else
-        // 桌面端：水平一字排开
-        statusComboBox->setFixedWidth(100);
-        auto topLayout = new QHBoxLayout();
-        topLayout->addWidget(new QLabel("状态:", this));
-        topLayout->addWidget(statusComboBox);
-        topLayout->addSpacing(15);
-        topLayout->addWidget(dateFilterCheck);
-        topLayout->addWidget(dateEdit, 1);
-        topLayout->addWidget(queryButton);
-        mainLayout->addLayout(topLayout);
-#endif
-
-        auto tableWidget = new QTableWidget(0, 3, this); // 直接指定 0行3列
-        tableWidget->setHorizontalHeaderLabels({"兑换码", "兑换人", "兑换时间"});
-        tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-        tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
         
-        // 支持多选，并且是以单元格为基础的选择模式
+        auto topLayout = new QVBoxLayout(topWidget);
+        topLayout->setContentsMargins(15, 15, 15, 15);
+        topLayout->setSpacing(12);
+
+        auto row1Layout = new QHBoxLayout();
+        row1Layout->setContentsMargins(0, 0, 0, 0);
+        row1Layout->addWidget(unredeemedRadio);
+        row1Layout->addSpacing(15);
+        row1Layout->addWidget(redeemedRadio);
+        row1Layout->addStretch();
+        row1Layout->addWidget(queryButton);
+
+        auto row2Layout = new QHBoxLayout();
+        row2Layout->setContentsMargins(0, 0, 0, 0);
+        row2Layout->addWidget(dateFilterCheck);
+        row2Layout->addWidget(dateEdit);
+        row2Layout->setStretchFactor(dateEdit, 1);
+
+        topLayout->addLayout(row1Layout);
+        topLayout->addLayout(row2Layout);
+#else
+        // --- PC端顶部布局 ---
+        dateEdit->setFixedWidth(130);
+        queryButton->setFixedWidth(80);
+        queryButton->setMinimumHeight(32);
+        
+        auto topLayout = new QHBoxLayout(topWidget);
+        topLayout->setContentsMargins(20, 15, 20, 15);
+        
+        topLayout->addWidget(unredeemedRadio);
+        topLayout->addSpacing(10);
+        topLayout->addWidget(redeemedRadio);
+        topLayout->addSpacing(30);
+        topLayout->addWidget(dateFilterCheck);
+        topLayout->addWidget(dateEdit);
+        topLayout->addStretch();
+        topLayout->addWidget(queryButton);
+#endif
+        mainLayout->addWidget(topWidget);
+
+        // ================= 数据展示区域 (根据平台差异化) =================
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        // --- 移动端：普通卡片列表容器 ---
+        cardContainer = new QWidget(this);
+        cardContainer->setObjectName("CardContainer");
+        
+        cardLayout = new QVBoxLayout(cardContainer);
+        cardLayout->setContentsMargins(15, 15, 15, 15);
+        cardLayout->setSpacing(12);
+        cardLayout->addStretch(); // 底部弹簧，防止卡片分散
+
+        mainLayout->addWidget(cardContainer);
+#else
+        // --- PC端：现代化表格 ---
+        tableWidget = new QTableWidget(0, 3, this);
+        tableWidget->setHorizontalHeaderLabels({"兑换码", "兑换人", "兑换时间"});
+        tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); 
+        tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers); 
+        tableWidget->verticalHeader()->setVisible(false); 
+        tableWidget->setShowGrid(false); 
+        tableWidget->setFrameShape(QFrame::NoFrame); 
+        tableWidget->verticalHeader()->setDefaultSectionSize(45); 
         tableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection); 
-        tableWidget->setSelectionBehavior(QAbstractItemView::SelectItems);
-        mainLayout->addWidget(tableWidget);
+        tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+        
+        // 加入边距防止表格贴边
+        auto tableMargins = new QHBoxLayout();
+        tableMargins->setContentsMargins(15, 15, 15, 15);
+        tableMargins->addWidget(tableWidget);
+        mainLayout->addLayout(tableMargins);
 
-        // 状态切换逻辑
-        connect(statusComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
-            bool isRedeemed = index == 1;
-            dateFilterCheck->setEnabled(isRedeemed);
-            if (!isRedeemed) dateFilterCheck->setChecked(false); // 切回"未兑换"强制取消勾选
-        });
-
-        connect(dateFilterCheck, &QCheckBox::toggled, dateEdit, &QWidget::setEnabled);
-
+        // PC端快捷键：批量复制
         auto copyShortcut = new QShortcut(QKeySequence::Copy, tableWidget);
         copyShortcut->setContext(Qt::WidgetShortcut); 
-        connect(copyShortcut, &QShortcut::activated, [tableWidget]() {
+        connect(copyShortcut, &QShortcut::activated, [this]() {
             QList<QTableWidgetItem *> selectedItems = tableWidget->selectedItems();
             if (selectedItems.isEmpty()) return;
 
-            // 按照行号排序，保证复制的顺序是从上到下的
-            std::sort(selectedItems.begin(), selectedItems.end(), [](QTableWidgetItem *a, QTableWidgetItem *b) {
-                return a->row() < b->row();
-            });
-
             QStringList codes;
-            // 因为限制了只能选中第一列，所以直接遍历取出文字即可
+            QList<int> rows;
             for (auto item : selectedItems) {
-                codes << item->text();
+                if (!rows.contains(item->row())) {
+                    rows.append(item->row());
+                    codes << tableWidget->item(item->row(), 0)->text();
+                }
             }
 
             qApp->clipboard()->setText(codes.join("\n"));
             QToolTip::showText(QCursor::pos(), QString("已复制 %1 个兑换码").arg(codes.size()));
         });
+#endif
+    }
+
+    void setupStyle() {
+        bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+        QString qss;
+
+        if (isDarkMode) {
+            qss = R"(
+                RedeemRecordDialog { background-color: #121212; }
+                #TopWidget { background-color: #1E1E1E; border-bottom: 1px solid #2D2D30; }
+                #CardContainer { background-color: #121212; }
+
+                QDateEdit {
+                    border: 1px solid #3E3E42; border-radius: 4px; padding: 4px 10px;
+                    background-color: #252526; font-size: 13px; color: #D4D4D4;
+                }
+                QDateEdit:disabled { background-color: #1E1E1E; color: #666666; }
+                QCheckBox { color: #CCCCCC; }
+                QRadioButton { color: #E0E0E0; font-size: 14px; spacing: 8px; }
+                QRadioButton::indicator { width: 18px; height: 18px; }
+
+                #QueryButton {
+                    background-color: #0E639C; color: #FFFFFF; border: none;
+                    border-radius: 4px; font-size: 14px; font-weight: bold; padding: 0 15px; 
+                }
+                #QueryButton:pressed { background-color: #1177BB; }
+
+                /* --- 移动端卡片样式 --- */
+                #CardFrame { background-color: #1E1E1E; border-radius: 8px; border: 1px solid #2D2D30; }
+                .CodeLabel { font-size: 16px; font-weight: bold; color: #E0E0E0; font-family: monospace; }
+                .InfoLabel { font-size: 13px; color: #888888; }
+                .CopyButton {
+                    background-color: #252526; color: #4DAAF1; border: 1px solid #3E3E42;
+                    border-radius: 12px; padding: 4px 12px; font-size: 12px; font-weight: bold;
+                }
+                .CopyButton:pressed { background-color: #333333; }
+
+                /* --- PC端表格现代化样式 --- */
+                QTableWidget {
+                    background-color: #1E1E1E; border-radius: 6px;
+                    border: 1px solid #2D2D30; outline: none;
+                }
+                QTableWidget::item {
+                    border-bottom: 1px solid #2D2D30; padding: 0px 10px; color: #CCCCCC; font-size: 13px;
+                }
+                QTableWidget::item:selected { background-color: #094771; color: #FFFFFF; }
+                QHeaderView::section {
+                    background-color: #252526; color: #AAAAAA; font-weight: bold; font-size: 13px;
+                    border: none; border-bottom: 2px solid #2D2D30; padding: 8px 10px; text-align: left;
+                }
+            )";
+        } else {
+            qss = R"(
+                RedeemRecordDialog { background-color: #F4F5F7; }
+                #TopWidget { background-color: #FFFFFF; border-bottom: 1px solid #E4E7ED; }
+                #CardContainer { background-color: #F4F5F7; }
+
+                QDateEdit {
+                    border: 1px solid #DCDFE6; border-radius: 4px; padding: 4px 10px;
+                    background-color: #FFFFFF; font-size: 13px; color: #303133;
+                }
+                QDateEdit:disabled { background-color: #F2F6FC; color: #C0C4CC; }
+                QCheckBox { color: #606266; }
+                QRadioButton { color: #303133; font-size: 14px; spacing: 8px; }
+                QRadioButton::indicator { width: 18px; height: 18px; }
+
+                #QueryButton {
+                    background-color: #409EFF; color: white; border: none;
+                    border-radius: 4px; font-size: 14px; font-weight: bold; padding: 0 15px; 
+                }
+                #QueryButton:pressed { background-color: #3a8ee6; }
+
+                /* --- 移动端卡片样式 --- */
+                #CardFrame { background-color: #FFFFFF; border-radius: 8px; border: 1px solid #EBEEF5; }
+                .CodeLabel { font-size: 16px; font-weight: bold; color: #303133; font-family: monospace; }
+                .InfoLabel { font-size: 13px; color: #909399; }
+                .CopyButton {
+                    background-color: #F2F6FC; color: #409EFF; border: 1px solid #DCDFE6;
+                    border-radius: 12px; padding: 4px 12px; font-size: 12px; font-weight: bold;
+                }
+                .CopyButton:pressed { background-color: #E4E7ED; }
+
+                /* --- PC端表格现代化样式 --- */
+                QTableWidget {
+                    background-color: #FFFFFF; border-radius: 6px;
+                    border: 1px solid #E4E7ED; outline: none;
+                }
+                QTableWidget::item {
+                    border-bottom: 1px solid #EBEEF5; padding: 0px 10px; color: #606266; font-size: 13px;
+                }
+                QTableWidget::item:selected { background-color: #F0F7FF; color: #409EFF; }
+                QHeaderView::section {
+                    background-color: #FAFAFA; color: #909399; font-weight: bold; font-size: 13px;
+                    border: none; border-bottom: 2px solid #EBEEF5; padding: 8px 10px; text-align: left;
+                }
+            )";
+        }
+        
+        this->setStyleSheet(qss);
+    }
+
+    void setupConnections() {
+        connect(redeemedRadio, &QRadioButton::toggled, [=](bool isRedeemed) {
+            dateFilterCheck->setEnabled(isRedeemed);
+            if (!isRedeemed) dateFilterCheck->setChecked(false);
+            
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
+            tableWidget->setColumnHidden(1, !isRedeemed);
+            tableWidget->setColumnHidden(2, !isRedeemed);
+#endif
+        });
+
+        connect(dateFilterCheck, &QCheckBox::toggled, dateEdit, &QWidget::setEnabled);
+        connect(queryButton, &QPushButton::clicked, this, &RedeemRecordDialog::doQuery);
+    }
+
+    void doQuery() {
+        QJsonObject params;
+        int status = statusButtonGroup->checkedId();
+        params["status"] = status; 
+
+        if (status == 1 && dateFilterCheck->isChecked()) {
+            params["date"] = dateEdit->date().toString("yyyy-MM-dd");
+        }
 
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        auto closeButton = new QPushButton("关闭", this);
-        closeButton->setMinimumHeight(50);
-        connect(closeButton, &QPushButton::clicked, this, &QDialog::accept);
-        mainLayout->addWidget(closeButton);
+        QLayoutItem *child;
+        while ((child = cardLayout->takeAt(0)) != nullptr) {
+            if (child->widget()) child->widget()->deleteLater();
+            delete child;
+        }
+        cardLayout->addStretch();
+#else
+        tableWidget->setRowCount(0);
 #endif
 
-        QPointer<RedeemRecordDialog> safeThis(this); // 防止异步回调时窗口已销毁导致崩溃
-
-        auto doQuery = [=]() {
-            tableWidget->setRowCount(0); // 清空表格
+        QPointer<RedeemRecordDialog> safeThis(this);
+        webSocketClient->emitEvent("get_redeem_codes", params, [=](const QJsonValue &res) {
+            if (!safeThis) return; 
             
-            QJsonObject params;
-            int status = statusComboBox->currentData().toInt();
-            params["status"] = status; 
-
-            if (status == 1 && dateFilterCheck->isChecked())
-                params["date"] = dateEdit->date().toString("yyyy-MM-dd");
-
-            webSocketClient->emitEvent("get_redeem_codes", params, [=](const QJsonValue &res) {
-                if (!safeThis) return; 
+            QJsonArray jsonArray = res.toArray();
+            
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+            if (jsonArray.isEmpty()) {
+                auto emptyLabel = new QLabel("暂无兑换码记录", cardContainer);
+                emptyLabel->setAlignment(Qt::AlignCenter);
+                bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+                QString emptyColor = isDark ? "#666666" : "#C0C4CC";
+                emptyLabel->setStyleSheet(QString("color: %1; font-size: 14px; margin-top: 50px;").arg(emptyColor));
                 
-                QJsonArray jsonArray = res.toArray();
-                if (jsonArray.isEmpty()) {
-                    QToolTip::showText(QCursor::pos(), "未找到记录");
-                    return;
-                }
+                cardLayout->insertWidget(cardLayout->count() - 1, emptyLabel);
+                return;
+            }
+            
+            for (int i = 0; i < jsonArray.size(); ++i) {
+                QJsonObject item = jsonArray[i].toObject();
+                QString codeStr = item["code"].toString();
                 
-                tableWidget->setRowCount(jsonArray.size());
-                for (int i = 0; i < jsonArray.size(); ++i) {
-                    QJsonObject item = jsonArray[i].toObject();
+                QFrame *card = new QFrame(cardContainer);
+                card->setObjectName("CardFrame");
+                auto cardInnerLayout = new QVBoxLayout(card);
+                cardInnerLayout->setContentsMargins(15, 15, 15, 15);
+                cardInnerLayout->setSpacing(8);
+
+                auto topLayout = new QHBoxLayout();
+                auto codeLabel = new QLabel(codeStr, card);
+                codeLabel->setProperty("class", "CodeLabel");
+                codeLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+                
+                auto copyBtn = new QPushButton("复制", card);
+                copyBtn->setProperty("class", "CopyButton");
+                copyBtn->setCursor(Qt::PointingHandCursor);
+                connect(copyBtn, &QPushButton::clicked, [=]() {
+                    qApp->clipboard()->setText(codeStr);
+                    copyBtn->setText("已复制 ✔");
                     
-                    // 第1列：兑换码 (可以正常选中)
-                    auto codeItem = new QTableWidgetItem(item["code"].toString());
-                    tableWidget->setItem(i, 0, codeItem);
-                    
-                    // 第2列：兑换人 (去除可选中标志)
-                    auto phoneItem = new QTableWidgetItem(item["phone"].toString());
-                    phoneItem->setFlags(phoneItem->flags() & ~Qt::ItemIsSelectable);
-                    tableWidget->setItem(i, 1, phoneItem);
-                    
-                    // 第3列：兑换时间 (去除可选中标志)
-                    QString timeStr;
+                    bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+                    if (isDark) {
+                        copyBtn->setStyleSheet("background-color: #1A3315; color: #67C23A; border-color: #67C23A;");
+                    } else {
+                        copyBtn->setStyleSheet("background-color: #E1F3D8; color: #67C23A; border-color: #67C23A;");
+                    }
+
+                    QTimer::singleShot(1500, copyBtn, [=](){
+                        copyBtn->setText("复制");
+                        copyBtn->setStyleSheet("");
+                    });
+                });
+
+                topLayout->addWidget(codeLabel);
+                topLayout->addStretch();
+                topLayout->addWidget(copyBtn);
+                cardInnerLayout->addLayout(topLayout);
+
+                if (status == 1) { 
+                    QString phoneStr = item["phone"].toString();
+                    if(!phoneStr.isEmpty()) {
+                        auto phoneLabel = new QLabel(QString("兑换人: %1").arg(phoneStr), card);
+                        phoneLabel->setProperty("class", "InfoLabel");
+                        cardInnerLayout->addWidget(phoneLabel);
+                    }
                     QString rawTime = item["redeemAt"].toString();
                     if (!rawTime.isEmpty()) {
                         QDateTime dt = QDateTime::fromString(rawTime, Qt::ISODate);
-                        if (dt.isValid()) timeStr = dt.toLocalTime().toString("yyyy-MM-dd HH:mm:ss");
+                        if (dt.isValid()) {
+                            auto timeLabel = new QLabel(QString("时  间: %1").arg(dt.toLocalTime().toString("yyyy-MM-dd HH:mm:ss")), card);
+                            timeLabel->setProperty("class", "InfoLabel");
+                            cardInnerLayout->addWidget(timeLabel);
+                        }
                     }
-                    auto timeItem = new QTableWidgetItem(timeStr);
-                    timeItem->setFlags(timeItem->flags() & ~Qt::ItemIsSelectable);
-                    tableWidget->setItem(i, 2, timeItem);
                 }
-            });
-        };
-
-        connect(queryButton, &QPushButton::clicked, doQuery);
-        
-        // 初始化完毕自动查一次
-        doQuery();
+                cardLayout->insertWidget(cardLayout->count() - 1, card);
+            }
+#else
+            if (jsonArray.isEmpty()) return;
+            tableWidget->setRowCount(jsonArray.size());
+            
+            for (int i = 0; i < jsonArray.size(); ++i) {
+                QJsonObject item = jsonArray[i].toObject();
+                
+                auto codeItem = new QTableWidgetItem(item["code"].toString());
+                QFont f = codeItem->font(); f.setFamily("Consolas"); codeItem->setFont(f);
+                tableWidget->setItem(i, 0, codeItem);
+                
+                auto phoneItem = new QTableWidgetItem(item["phone"].toString());
+                tableWidget->setItem(i, 1, phoneItem);
+                
+                QString timeStr;
+                QString rawTime = item["redeemAt"].toString();
+                if (!rawTime.isEmpty()) {
+                    QDateTime dt = QDateTime::fromString(rawTime, Qt::ISODate);
+                    if (dt.isValid()) timeStr = dt.toLocalTime().toString("yyyy-MM-dd HH:mm:ss");
+                }
+                auto timeItem = new QTableWidgetItem(timeStr);
+                tableWidget->setItem(i, 2, timeItem);
+            }
+#endif
+        });
     }
 };
