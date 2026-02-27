@@ -15,23 +15,33 @@
 #include <QScrollArea>
 #include <QScroller>
 
+class AdaptiveScrollArea : public QScrollArea {
+public:
+    using QScrollArea::QScrollArea;
+
+    // 强制让 ScrollArea 的推荐大小等于其内部部件的大小
+    QSize sizeHint() const override {
+        if (widget())
+            return widget()->sizeHint() + QSize(2, 2); // 加上边框微调
+        
+        return QScrollArea::sizeHint();
+    }
+};
+
 class BaseDialog : public QDialog {
     Q_OBJECT
 public:
-    explicit BaseDialog(const QString& title, QWidget *parent = nullptr) : QDialog(parent) 
+    explicit BaseDialog(const QString& title, QWidget *parent = nullptr) : QDialog(parent)
     {
         setWindowTitle(title);
 
         bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
 
-        if (isDarkMode)
-            this->setStyleSheet("QDialog { background-color: #121212; }");
-        else
-            this->setStyleSheet("QDialog { background-color: #F4F5F7; }");
+        QString bgColor = isDarkMode ? "#121212" : "#F4F5F7";
+        this->setStyleSheet(QString("QDialog { background-color: %1; }").arg(bgColor));
 
-        // 主布局：移动端取消外边距，让导航栏置顶
         m_mainLayout = new QVBoxLayout(this);
-        
+
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
         m_mainLayout->setContentsMargins(0, 0, 0, 0);
         m_mainLayout->setSpacing(0);
@@ -104,7 +114,7 @@ public:
         m_mainLayout->setContentsMargins(10, 10, 10, 10);
 #endif
 
-        auto mainScrollArea = new QScrollArea(this);
+        auto mainScrollArea = new AdaptiveScrollArea(this);
         mainScrollArea->setWidgetResizable(true);
         mainScrollArea->setFrameShape(QFrame::NoFrame);
         mainScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
