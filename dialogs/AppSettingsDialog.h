@@ -17,8 +17,6 @@
 #include <QPushButton>
 #include <QKeyEvent>
 #include <QTabWidget>
-#include <QScrollArea>
-#include <QScroller>
 
 class SingleKeySequenceEdit : public QKeySequenceEdit {
 public:
@@ -119,11 +117,6 @@ private:
         // ==========================================
         // --- Tab 1: 常规与投屏设置 ---
         // ==========================================
-        QScrollArea *generalScroll = new QScrollArea(this);
-        generalScroll->setWidgetResizable(true);
-        generalScroll->setFrameShape(QFrame::NoFrame);
-        generalScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        QScroller::grabGesture(generalScroll->viewport(), QScroller::LeftMouseButtonGesture);
 
         QWidget *generalTab = new QWidget();
         QVBoxLayout *generalLayout = new QVBoxLayout(generalTab);
@@ -164,19 +157,13 @@ private:
 
         generalLayout->addWidget(defaultBox);
         generalLayout->addStretch();
-        
-        generalScroll->setWidget(generalTab);
-        tabWidget->addTab(generalScroll, "常规与投屏");
+
+        tabWidget->addTab(generalTab, "常规与投屏");
 
 
         // ==========================================
         // --- Tab 2: 菜单排序与快捷键 ---
         // ==========================================
-        QScrollArea *menuScroll = new QScrollArea(this);
-        menuScroll->setWidgetResizable(true);
-        menuScroll->setFrameShape(QFrame::NoFrame);
-        menuScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        QScroller::grabGesture(menuScroll->viewport(), QScroller::LeftMouseButtonGesture);
 
         QWidget *menuTab = new QWidget();
         QVBoxLayout *menuLayout = new QVBoxLayout(menuTab);
@@ -238,8 +225,7 @@ private:
 
         menuLayout->addStretch();
 
-        menuScroll->setWidget(menuTab);
-        tabWidget->addTab(menuScroll, "菜单与快捷键");
+        tabWidget->addTab(menuTab, "菜单与快捷键");
     }
 
     ~AppSettingsDialog() = default;
@@ -267,7 +253,9 @@ private:
         listWidget->setDragDropMode(QAbstractItemView::InternalMove);
         listWidget->setDefaultDropAction(Qt::MoveAction);
         listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
-        
+        listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        listWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
         if (!defaultShortcuts.isEmpty()) {
             listWidget->setToolTip("双击即可修改快捷键");
             connect(listWidget, &QListWidget::itemDoubleClicked, this, [=](QListWidgetItem *item) {
