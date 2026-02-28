@@ -32,6 +32,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
     : connection(connection), deviceInfo(deviceInfo), QWidget(parent)
 {
     setAcceptDrops(true);
+    setAttribute(Qt::WA_InputMethodEnabled, true);
 
     overlay = new QWidget(this);
     overlay->setStyleSheet("background-color: black;");
@@ -951,6 +952,18 @@ void DeviceView::keyReleaseEvent(QKeyEvent *event)
     qDebugEx() << "放开" << QKeySequence(event->key()).toString();
 
     QWidget::keyReleaseEvent(event);
+}
+
+void DeviceView::inputMethodEvent(QInputMethodEvent *event)
+{
+    QString commitText = event->commitString();
+    if (!commitText.isEmpty())
+    {
+        qDebugEx() << "输入内容:" << commitText;
+        connection->send("inputText", commitText);
+    }
+
+    QWidget::inputMethodEvent(event);
 }
 
 void DeviceView::mouseDoubleClickEvent(QMouseEvent *event)
