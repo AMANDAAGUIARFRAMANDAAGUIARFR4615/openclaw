@@ -78,6 +78,9 @@ elseif(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/icons/logo.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 
     list(APPEND RESOURCE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/icons/logo.icns")
+elseif(IOS)
+    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/ios/Assets.xcassets" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    list(APPEND RESOURCE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ios/Assets.xcassets")
 endif()
 
 file(GLOB ALL_SOURCES 
@@ -180,6 +183,8 @@ if(IOS)
     set_target_properties(${PROJECT_NAME} PROPERTIES
         BUILD_RPATH "@executable_path/Frameworks"
         INSTALL_RPATH "@executable_path/Frameworks"
+
+        XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
     )
 
     set(ALL_XCFRAMEWORKS "")
