@@ -152,13 +152,20 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE TRUE
     MACOSX_BUNDLE TRUE
 
-    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
     MACOSX_BUNDLE_GUI_IDENTIFIER "org.qtproject.remotepro"
 
     QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
 )
 
-if(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if(IOS)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/ios/Info.plist"
+    )
+elseif(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/macos/Info.plist"
+    )
+
     set(THIRD_PARTY_LIBS
         libimobiledevice-1.0.dylib
         libplist-2.0.dylib
@@ -248,8 +255,8 @@ if(IOS)
 endif()
 
 # Debug 辅助目标
-file(GLOB_RECURSE DEBUG_SOURCES
-    "${CMAKE_SOURCE_DIR}/../qtmultimedia/*.cpp"
-    "${CMAKE_SOURCE_DIR}/../qtmultimedia/*.h"
-)
-add_custom_target(DebugSources SOURCES ${DEBUG_SOURCES})
+# file(GLOB_RECURSE DEBUG_SOURCES
+#     "${CMAKE_SOURCE_DIR}/../qtmultimedia/*.cpp"
+#     "${CMAKE_SOURCE_DIR}/../qtmultimedia/*.h"
+# )
+# add_custom_target(DebugSources SOURCES ${DEBUG_SOURCES})
