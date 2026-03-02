@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>{PRODUCT_NAME}</string>
+	<string>远控Pro</string>
 	<key>CFBundleExecutable</key>
 	<string>RemotePro</string>
 	<key>CFBundleIconFile</key>
