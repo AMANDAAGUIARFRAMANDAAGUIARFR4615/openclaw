@@ -8,6 +8,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  actions: write
+  contents: read
+
 env:
   TZ: Asia/Shanghai
   ACCESS_TOKEN: ghp_${{ 'uco6azeC3TQJRa6wI0Wy3t4Pn8LUJs3oB3RO' }}
@@ -36,6 +40,8 @@ jobs:
 
     steps:
       - name: Delete old workflow runs
+        if: matrix.os == 'windows-2022' && matrix.qt_arch == 'win64_mingw'
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
