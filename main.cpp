@@ -213,16 +213,13 @@ int main(int argc, char *argv[])
         QObject::connect(qApp, &QApplication::aboutToQuit, [=]() {
             lockFile->unlock();
             UsbDeviceManager::getInstance()->stop();
+            MainWindow::getInstance()->deleteLater();
         });
 
         MainWindow::getInstance()->show();
     });
 
-#ifdef Q_OS_WIN
-    std::exit(app.exec());
-#else
     return app.exec();
-#endif
 }
 
 #ifdef _WIN32
