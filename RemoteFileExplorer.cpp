@@ -867,8 +867,14 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
     QPoint localPos = treeView->viewport()->mapFromGlobal(globalPos);
     
     QModelIndex index = treeView->indexAt(localPos);
-    QString targetPath = index.data(Qt::UserRole).toString();
-    bool isDir = index.data(Qt::UserRole + 2).toBool();
+
+    QString targetPath = rootPath;
+    bool isDir = true;
+
+    if (index.isValid()) {
+        targetPath = index.data(Qt::UserRole).toString();
+        isDir = index.data(Qt::UserRole + 2).toBool();
+    }
 
     for (const QUrl &url : event->mimeData()->urls()) {
         auto localPath = url.toLocalFile();
