@@ -36,7 +36,7 @@ public:
         qInfoEx() << "服务已启动，监听端口:" << serverPort();
     }
 
-    static TcpServer* getInstance() { static TcpServer* instance = new TcpServer; qAddPostRoutine([]() { delete instance; }); return instance; }
+    static TcpServer* getInstance() { static TcpServer* instance = new TcpServer; return instance; }
 
     QSet<QString> getConnectedIps() const {
         QSet<QString> ips;

@@ -21,7 +21,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    static MainWindow* getInstance() { static MainWindow* instance = new MainWindow; qAddPostRoutine([]() { delete instance; }); return instance; }
+    static MainWindow* getInstance() { static MainWindow* instance = new MainWindow; return instance; }
 
     void addItem(DeviceConnection* connection);
     QList<DeviceConnection*> getDeviceConnections(DeviceView* mainDeviceView = nullptr);
