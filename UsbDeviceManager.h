@@ -18,7 +18,7 @@ class UsbDeviceManager : public QObject {
     Q_OBJECT
 
 public:
-    static UsbDeviceManager* getInstance() { static UsbDeviceManager instance; return &instance; }
+    static UsbDeviceManager* getInstance() { static UsbDeviceManager* instance = new UsbDeviceManager; qAddPostRoutine([]() { delete instance; }); return instance; }
 
     void start();
     void stop();

@@ -43,7 +43,7 @@ class AppSettingsDialog : public BaseDialog
     Q_OBJECT
 
 public:
-    static AppSettingsDialog* getInstance() { static AppSettingsDialog instance; return &instance; }
+    static AppSettingsDialog* getInstance() { static AppSettingsDialog* instance = new AppSettingsDialog; qAddPostRoutine([]() { delete instance; }); return instance; }
 
     int getValue(const QString &key) {
         return settings->value(key, m_intDefaults.value(key)).toInt();

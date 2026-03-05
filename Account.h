@@ -8,7 +8,7 @@ class Account : public QObject {
     Q_OBJECT
 
 public:
-    static Account* getInstance() { static Account instance; return &instance; }
+    static Account* getInstance() { static Account* instance = new Account; qAddPostRoutine([]() { delete instance; }); return instance; }
 
     QString id;
     QString phone;
