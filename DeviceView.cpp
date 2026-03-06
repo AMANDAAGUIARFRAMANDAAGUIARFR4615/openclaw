@@ -14,7 +14,6 @@
 #include "Account.h"
 #include "DeviceWidget.h"
 #include "DeviceWindow.h"
-#include "Safe.h"
 #include "VideoFrameWidget.h"
 #include <QLayout>
 #include <QLabel>
@@ -253,18 +252,18 @@ void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
         hideOverlay();
 }
 
+void DeviceView::send(const DataGuard::StrObfuscator<>& event, const QJsonValue &jsonValue) {
+    const auto& connections = MainWindow::getInstance()->getDeviceConnections(this);
+    for (const auto& connection : connections) {
+        connection->send(event, jsonValue);
+    }
+}
+
 void DeviceView::addContextMenuActions()
 {
     qDeleteAll(actions());
 
     auto windowMenu = AppSettingsDialog::getInstance()->getEnabledList("windowMenu");
-    
-    auto send = [=](const DataGuard::StrObfuscator<>& event, const QJsonValue &jsonValue = QJsonValue()) {
-        const auto& connections = MainWindow::getInstance()->getDeviceConnections(this);
-        for (const auto& connection : connections) {
-            connection->send(event, jsonValue);
-        }
-    };
 
     for (int i = 0; i < windowMenu.count(); i++) {
         auto text = windowMenu[i];
@@ -960,7 +959,7 @@ void DeviceView::inputMethodEvent(QInputMethodEvent *event)
     if (!commitText.isEmpty())
     {
         qDebugEx() << "输入内容:" << commitText;
-        connection->send("inputText", commitText);
+        send("inputText", commitText);
     }
 
     QWidget::inputMethodEvent(event);

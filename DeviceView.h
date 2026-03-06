@@ -27,6 +27,7 @@ public:
 protected:
     void showOverlay(const QString &text);
     void hideOverlay();
+    void send(const DataGuard::StrObfuscator<>& event, const QJsonValue &jsonValue = QJsonValue());
     void addContextMenuActions();
     void contextMenuEvent(QContextMenuEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
