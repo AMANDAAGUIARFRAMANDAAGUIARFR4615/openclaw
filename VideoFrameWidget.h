@@ -146,8 +146,8 @@ private:
         auto isWindow = qobject_cast<DeviceWindow*>(parentWidget());
 
         connection->send("videoSettings", QJsonObject({
-            {"width", isWindow ? qMin(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight) : qMin(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
-            {"height", isWindow ? qMax(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight) : qMax(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
+            {"width", false ? qMin(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight) : qMin(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
+            {"height", false ? qMax(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight) : qMax(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
             {"fps", isWindow ? 30 : QList<float>{ 1, 0.2f, 1, 15, 30 }[videoFps]},
             {"quality", videoQuality}
         }));
