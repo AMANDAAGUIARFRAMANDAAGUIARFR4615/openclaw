@@ -295,10 +295,10 @@ private:
 
     void doQuery() {
         QJsonObject params;
-        int status = statusButtonGroup->checkedId();
-        params["status"] = status; 
+        bool isRedeemed = statusButtonGroup->checkedId() == 1;
+        params["isRedeemed"] = isRedeemed; 
 
-        if (status == 1 && dateFilterCheck->isChecked()) {
+        if (isRedeemed && dateFilterCheck->isChecked()) {
             params["date"] = dateEdit->date().toString("yyyy-MM-dd");
         }
 
@@ -371,7 +371,7 @@ private:
                 topLayout->addWidget(copyBtn);
                 cardInnerLayout->addLayout(topLayout);
 
-                if (status == 1) { 
+                if (isRedeemed) {
                     QString phoneStr = item["phone"].toString();
                     if(!phoneStr.isEmpty()) {
                         auto phoneLabel = new QLabel(QString("兑换人: %1").arg(phoneStr), card);
