@@ -127,6 +127,7 @@ private:
         addSettingGroup(generalLayout, "autoSyncClipboard", "手机剪切板自动同步到电脑", {"关闭", "开启"}, 0);
         addSettingGroup(generalLayout, "sortSelectedToTop", "选中的设备排列在前", {"关闭", "开启"}, 0);
         addSettingGroup(generalLayout, "screenshotTo", "截图保存", {"剪切板", "文件", "剪切板+文件"}, 0);
+        addSettingGroup(generalLayout, "standaloneAlwaysUltraHD", "独立窗口始终超高清", {"关闭", "开启"}, 0);
         addSettingGroup(generalLayout, "doubleClickOpenStandalone", "双击打开独立窗口", {"关闭", "开启"}, 1);
 
         QGroupBox *defaultBox = new QGroupBox("投屏设置 (分组单独设置优先)", generalTab);

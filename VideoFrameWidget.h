@@ -143,11 +143,12 @@ private:
 
         videoQuality = qBound(minAllowed, videoQuality, maxAllowed);
 
+        auto standaloneAlwaysUltraHD = AppSettingsDialog::getInstance()->getValue("doubleClickOpenStandalone");
         auto isWindow = qobject_cast<DeviceWindow*>(parentWidget());
 
         connection->send("videoSettings", QJsonObject({
-            {"width", false ? qMin(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight) : qMin(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
-            {"height", false ? qMax(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight) : qMax(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
+            {"width", standaloneAlwaysUltraHD ? qMin(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight) : qMin(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
+            {"height", standaloneAlwaysUltraHD ? qMax(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight) : qMax(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
             {"fps", isWindow ? 30 : QList<float>{ 1, 0.2f, 1, 15, 30 }[videoFps]},
             {"quality", videoQuality}
         }));
