@@ -84,6 +84,9 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                     if (MainWindow::getInstance()->getDeviceWidgets().count() > 1) {
                         this->deviceInfo->clipboardText = content;
 
+                        static QString clipboardText;
+                        clipboardText = content;
+
                         static QTimer timer;
                         static bool isInitialized = false;
                         if (!isInitialized) {
@@ -98,12 +101,11 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
                                     }
                                 }
 
-                                if (lines.count() == 0) {
-                                    new ToastWidget("复制失败");
-                                    return;
-                                }
+                                if (lines.count() > 0)
+                                    qApp->clipboard()->setText(lines.join('\n'));
+                                else
+                                    qApp->clipboard()->setText(clipboardText);
 
-                                qApp->clipboard()->setText(lines.join('\n'));
                                 new ToastWidget("手机剪切板内容已同步");
                             });
 
