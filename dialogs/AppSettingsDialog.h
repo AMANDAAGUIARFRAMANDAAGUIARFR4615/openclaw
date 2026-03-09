@@ -194,7 +194,7 @@ private:
         sideBarMenu.append("📜日志");
 #endif
 
-        if (qEnvironmentVariableIsSet("FROM_QT_CREATOR"))
+        if (Tools::isStartedByQtCreator())
             sideBarMenu.append("🛠️开发者");
 
         // 左侧：Sidebar

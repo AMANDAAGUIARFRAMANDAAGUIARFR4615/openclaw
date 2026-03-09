@@ -18,6 +18,11 @@
 #include <QDirIterator>
 #include <QDesktopServices>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <tlhelp32.h>
+#endif
+
 using namespace qrcodegen;
 
 class Tools {
@@ -223,5 +228,43 @@ public:
             else
                 qInfoEx() << "删除失败 (可能被占用或无权限):" << filePath;
         }
+    }
+
+    static bool isStartedByQtCreator() {
+#ifdef Q_OS_WIN
+        HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (hSnap == INVALID_HANDLE_VALUE) return false;
+
+        PROCESSENTRY32W pe;
+        pe.dwSize = sizeof(PROCESSENTRY32W);
+        DWORD myPid = GetCurrentProcessId();
+        DWORD parentPid = 0;
+        QString parentName;
+
+        // 第一次遍历：找到当前进程，获取其父进程 PID
+        if (Process32FirstW(hSnap, &pe)) {
+            do {
+                if (pe.th32ProcessID == myPid) {
+                    parentPid = pe.th32ParentProcessID;
+                    break;
+                }
+            } while (Process32NextW(hSnap, &pe));
+        }
+
+        // 第二次遍历：根据父进程 PID 获取父进程的程序名
+        if (parentPid != 0 && Process32FirstW(hSnap, &pe)) {
+            do {
+                if (pe.th32ProcessID == parentPid) {
+                    parentName = QString::fromWCharArray(pe.szExeFile).toLower();
+                    break;
+                }
+            } while (Process32NextW(hSnap, &pe));
+        }
+        CloseHandle(hSnap);
+
+        return parentName == "qtcreator.exe" || parentName == "gdborig.exe";
+#else
+        return false;
+#endif
     }
 };
