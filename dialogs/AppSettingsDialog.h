@@ -192,6 +192,9 @@ private:
 
 #ifndef QT_NO_DEBUG_OUTPUT
         sideBarMenu.append("📜日志");
+#else
+        if (Tools::isStartedByQtCreator())
+            sideBarMenu.append("📜日志");
 #endif
 
         if (Tools::isStartedByQtCreator())
