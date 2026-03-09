@@ -27,6 +27,14 @@ using namespace qrcodegen;
 
 class Tools {
 public:
+    static constexpr bool isDebug() {
+#ifdef QT_DEBUG
+        return true;
+#else
+        return false;
+#endif
+    }
+
     // 计算文件的 MD5 值
     static QString getFileMd5(const QString &filePath) {
         QFile file(filePath);
