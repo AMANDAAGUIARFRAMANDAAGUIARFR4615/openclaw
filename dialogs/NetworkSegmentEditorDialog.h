@@ -179,7 +179,7 @@ private:
         m_ipInput = new QLineEdit(this);
         m_ipInput->setObjectName("mainIpInput");
         m_ipInput->setFixedHeight(38);
-        m_ipInput->setPlaceholderText(tr("输入基础 IP (如 192.168.1.1)，自动提取并生成网段"));
+        m_ipInput->setPlaceholderText(tr("输入要连接的手机IP (如 192.168.1.1)，自动提取并生成网段"));
 
         auto btnAdd = new QPushButton(tr("确认添加"), this);
         btnAdd->setFixedSize(90, 38);
