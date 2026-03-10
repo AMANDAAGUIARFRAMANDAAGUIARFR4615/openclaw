@@ -812,6 +812,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     loadTabs();
 
+    const auto localIP = NetworkUtils::getPhysicalIPs()[0];
+    
     auto udpTransport = new UdpTransport(0, this);
 
     auto broadcastTask = [=]() {
@@ -819,7 +821,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
 
         bool isUsbSetting = getTab().getConnectionMethod() == 0;
-        const auto localIP = NetworkUtils::getPhysicalIPs()[0];
         const auto& ips = TcpServer::getInstance()->getConnectedIps();
         for (const auto& ip : NetworkSegmentEditorDialog::getAllIPs()) {
             if (ips.contains(ip))
