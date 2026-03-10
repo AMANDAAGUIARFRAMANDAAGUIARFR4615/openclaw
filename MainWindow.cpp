@@ -812,9 +812,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     loadTabs();
 
-    auto localIPs = NetworkUtils::getPhysicalIPs();
-    qInfoEx() << "本机内网IP:" << localIPs;
-
     auto udpTransport = new UdpTransport(0, this);
 
     auto broadcastTask = [=]() {
@@ -822,20 +819,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
 
         bool isUsbSetting = getTab().getConnectionMethod() == 0;
+        const auto& localIP = NetworkUtils::getPhysicalIPs()[0];
         const auto& ips = TcpServer::getInstance()->getConnectedIps();
-        for (const auto& localIP : localIPs) {
-            const auto& subnetIPs = NetworkUtils::getSubnetIPs(localIP);
-            for (const auto& ip : std::as_const(subnetIPs)) {
-                if (ips.contains(ip))
-                    continue;
+        for (const auto& ip : NetworkSegmentEditorDialog::getAllIPs()) {
+            if (ips.contains(ip))
+                continue;
 
-                if (DeviceInfo::isLockByOther(ip))
-                    continue;
+            if (DeviceInfo::isLockByOther(ip))
+                continue;
 
-                const auto& deviceInfo = DeviceInfo::getDevice(ip);
-                if (!deviceInfo || deviceInfo->connection->type == DeviceConnection::Usb && !isUsbSetting)
-                    udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
-            }
+            const auto& deviceInfo = DeviceInfo::getDevice(ip);
+            if (!deviceInfo || deviceInfo->connection->type == DeviceConnection::Usb && !isUsbSetting)
+                udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
         }
     };
 

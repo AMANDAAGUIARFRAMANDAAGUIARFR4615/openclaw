@@ -128,14 +128,36 @@ public:
         loadData();
     }
 
-    QStringList getAllTargetIPs() const {
-        QStringList allIps;
-        for (int i = 0; i < m_listWidget->count(); ++i) {
-            if (auto widget = qobject_cast<NetworkSegmentItemWidget*>(m_listWidget->itemWidget(m_listWidget->item(i)))) {
-                allIps.append(widget->getAllIPs()); // 将每个网段展开的 IP 追加进去
+    static QStringList getAllIPs() {
+        QStringList ips;
+
+        // 1. 读取保存的配置 (格式: "192.168.1.2-192.168.1.254")
+        if (settings->contains("Network/Segments")) {
+            for (const QString& range : settings->value("Network/Segments").toStringList()) {
+                QStringList bounds = range.split('-');
+                if (bounds.size() == 2) {
+                    QString base = bounds[0].left(bounds[0].lastIndexOf('.') + 1); // "192.168.1."
+                    int start = bounds[0].mid(bounds[0].lastIndexOf('.') + 1).toInt();
+                    int end = bounds[1].mid(bounds[1].lastIndexOf('.') + 1).toInt();
+                    
+                    for (int i = qMin(start, end); i <= qMax(start, end); ++i) {
+                        ips << base + QString::number(i);
+                    }
+                }
+            }
+            return ips;
+        }
+
+        // 2. 如果没配置过，降级使用默认网卡 IP 展开
+        for (const QString& ip : NetworkUtils::getPhysicalIPs()) {
+            QString base = ip.left(ip.lastIndexOf('.') + 1);
+            if (!base.isEmpty()) {
+                for (int i = 2; i <= 254; ++i) {
+                    ips << base + QString::number(i);
+                }
             }
         }
-        return allIps;
+        return ips;
     }
 
 private:

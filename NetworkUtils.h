@@ -132,6 +132,10 @@ public:
             return a < b;
         });
 #endif
+
+        if (ips.size() == 0)
+            ips << "127.0.0.1";
+
         return ips;
     }
 
