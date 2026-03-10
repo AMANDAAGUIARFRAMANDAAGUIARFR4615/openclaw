@@ -74,6 +74,22 @@ public:
     }
 
     static QStringList getPhysicalIPs() {
+        static QStringList cachedIps;
+        static QString lastNetworkState;
+
+        QString currentState;
+        for (const QNetworkInterface &iface : QNetworkInterface::allInterfaces()) {
+            currentState += iface.name() + QString::number((int)iface.flags());
+            for (const QNetworkAddressEntry &entry : iface.addressEntries()) {
+                currentState += entry.ip().toString();
+            }
+        }
+
+        if (currentState == lastNetworkState && !cachedIps.isEmpty())
+            return cachedIps;
+
+        lastNetworkState = currentState;
+
         QStringList ips;
 
 #ifndef Q_OS_WASM
@@ -135,6 +151,8 @@ public:
 
         if (ips.size() == 0)
             ips << "127.0.0.1";
+
+        cachedIps = ips;
 
         return ips;
     }
