@@ -30,31 +30,69 @@
 #include <QClipboard>
 #include <QPushButton>
 #include <QSortFilterProxyModel>
+#include <QCollator>
 
 class FileSystemSortProxyModel : public QSortFilterProxyModel
 {
+    QCollator collator;
+    QList<int> sortHistory; // 用于记录用户点击排序的列的历史顺序
+
 public:
-    explicit FileSystemSortProxyModel(QObject *parent = nullptr) : QSortFilterProxyModel(parent) {}
+    explicit FileSystemSortProxyModel(QObject *parent = nullptr) : QSortFilterProxyModel(parent) 
+    {
+        collator.setNumericMode(true);
+        sortHistory.append(0); // 初始化把“名称列”（第0列）放入兜底
+    }
+
+    // 重写 sort 方法，每次用户点击表头排序时都会触发
+    void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override
+    {
+        // 把最新点击的列移到历史记录的最前面 (优先级最高)
+        sortHistory.removeAll(column);
+        sortHistory.prepend(column); 
+        
+        QSortFilterProxyModel::sort(column, order);
+    }
 
 protected:
+    // 单一列的比较逻辑，返回 -1(小于), 0(等于), 1(大于)
+    int compareColumn(const QModelIndex &left, const QModelIndex &right, int column) const
+    {
+        if (column == 0 || column == 2) { // 按名称或类型排序
+            return collator.compare(left.data(Qt::DisplayRole).toString(), 
+                                    right.data(Qt::DisplayRole).toString());
+        } 
+        else if (column == 3) { // 按大小排序
+            qint64 leftSize = left.data(Qt::UserRole + 1).toLongLong();
+            qint64 rightSize = right.data(Qt::UserRole + 1).toLongLong();
+            
+            if (leftSize < rightSize) return -1;
+            if (leftSize > rightSize) return 1;
+            return 0;
+        }
+        
+        // === 其他未定义的列，利用 Qt 基类的默认比较 ===
+        if (QSortFilterProxyModel::lessThan(left, right)) return -1;
+        if (QSortFilterProxyModel::lessThan(right, left)) return 1;
+        return 0;
+    }
+
     bool lessThan(const QModelIndex &leftIndex, const QModelIndex &rightIndex) const override
     {
-        if (leftIndex.column() == 0) {
-             static QCollator collator;
-        
-            if (!collator.numericMode())
-                collator.setNumericMode(true);
+        // 按照用户点击历史的优先级，依次进行比较
+        for (int column : sortHistory) {
+            // 获取对应历史列的数据节点
+            QModelIndex leftSibling = leftIndex.siblingAtColumn(column);
+            QModelIndex rightSibling = rightIndex.siblingAtColumn(column);
 
-            return collator.compare(leftIndex.data(Qt::DisplayRole).toString(), rightIndex.data(Qt::DisplayRole).toString()) < 0;
-        }
-
-        if (leftIndex.column() == 2) {
-            qint64 leftSize = leftIndex.data(Qt::UserRole + 1).toLongLong();
-            qint64 rightSize = rightIndex.data(Qt::UserRole + 1).toLongLong();
-            return leftSize < rightSize;
+            int result = compareColumn(leftSibling, rightSibling, column);
+            
+            // 只要在这一列比较出了大小，直接返回结果
+            if (result != 0)
+                return result < 0;
         }
         
-        return QSortFilterProxyModel::lessThan(leftIndex, rightIndex);
+        return false;
     }
 };
 
@@ -127,7 +165,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     setLayout(layout);
 
     model = new QStandardItemModel();
-    model->setHorizontalHeaderLabels({"名称", "修改时间", "大小"});
+    model->setHorizontalHeaderLabels({"名称", "修改时间", "类型", "大小"});
     
     auto proxyModel = new FileSystemSortProxyModel();
     proxyModel->setSourceModel(model);
@@ -225,7 +263,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
 
         auto index = item->index();
         auto date = model->index(index.row(), 1, index.parent()).data().toString();
-        auto size = model->index(index.row(), 2, index.parent()).data().toString();
+        auto size = model->index(index.row(), 3, index.parent()).data().toString();
 
         bool isDir = index.data(Qt::UserRole + 2).toBool();
 
@@ -250,6 +288,7 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
     treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
     treeView->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     treeView->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    treeView->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
     treeView->header()->setStretchLastSection(false);
     treeView->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(treeView, &QTreeView::customContextMenuRequested, this, &RemoteFileExplorer::showTreeContextMenu);
@@ -436,6 +475,13 @@ void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QStrin
 
     auto name = QFileInfo(fullPath).fileName();
     auto& item = pathToItem[fullPath];
+    auto isDirectory = type == "NSFileTypeDirectory" || type == "NSFileTypeSymbolicLink";
+
+    QString typeDescription;
+    if (isDirectory)
+        typeDescription = "文件夹";
+    else
+        typeDescription = name.lastIndexOf('.') != -1 ? name.section('.', -1).toUpper() + " 文件" : "文件";
 
     if (item) {
         item->setData(size, Qt::UserRole + 1);
@@ -443,15 +489,18 @@ void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QStrin
         int row = item->row();
         auto parent = item->index().parent();
         model->setData(model->index(row, 1, parent), date);
-        auto sizeIndex = model->index(row, 2, parent);
+
+        // 更新类型列
+        model->setData(model->index(row, 2, parent), typeDescription);
+
+        // 更新大小列
+        auto sizeIndex = model->index(row, 3, parent);
         model->setData(sizeIndex, Tools::formatByteSize(size));
         model->itemFromIndex(sizeIndex)->setData(size, Qt::UserRole + 1);
         return;
     }
     
     static QFileIconProvider iconProvider;
-
-    auto isDirectory = type == "NSFileTypeDirectory" || type == "NSFileTypeSymbolicLink";
 
     item = new QStandardItem(name);
     item->setData(fullPath, Qt::UserRole);
@@ -482,11 +531,12 @@ void RemoteFileExplorer::addItemToTreeView(const QString& fullPath, const QStrin
     if (isDirectory) item->setChild(0, nullptr);
 
     auto dateItem = new QStandardItem(date);
+    auto typeItem = new QStandardItem(typeDescription);
     auto sizeItem = new QStandardItem(Tools::formatByteSize(isDirectory ? -1 : size));
     sizeItem->setData(size, Qt::UserRole + 1);
     sizeItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
-    parentItem->appendRow({item, dateItem, sizeItem});
+    parentItem->appendRow({item, dateItem, typeItem, sizeItem});
 }
 
 void RemoteFileExplorer::onDirectoryExpanded(const QModelIndex &index)
