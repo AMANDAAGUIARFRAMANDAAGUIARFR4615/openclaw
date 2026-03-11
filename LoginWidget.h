@@ -43,6 +43,10 @@ public:
         phoneLineEdit->setValidator(phoneValidator);
         phoneLineEdit->setMaxLength(11);
 
+        udidLineEdit = new QLineEdit;
+        udidLineEdit->setPlaceholderText("请输入设备UDID");
+        udidLineEdit->setVisible(false);
+
         passwordLineEdit = new QLineEdit;
         passwordLineEdit->setPlaceholderText("密码 (6-32位，字母+数字+符号)");
         passwordLineEdit->setValidator(passwordValidator);
@@ -55,6 +59,9 @@ public:
         confirmLineEdit->setVisible(false);
 
         rememberCheckBox = new QCheckBox("记住账号和密码");
+
+        findPwdBtn = new QPushButton("忘记密码?");
+        findPwdBtn->setStyleSheet("border: none; color: palette(link); text-decoration: underline; background: transparent; padding: 0px;");
 
         actionButton = new QPushButton("登录");
         actionButton->setObjectName("mainBtn");
@@ -69,15 +76,22 @@ public:
         buttonLayout->addWidget(actionButton);
         buttonLayout->addWidget(switchButton);
 
+        // 将记住密码和找回密码放在同一行
+        auto optionsLayout = new QHBoxLayout;
+        optionsLayout->addWidget(rememberCheckBox);
+        optionsLayout->addStretch();
+        optionsLayout->addWidget(findPwdBtn);
+
         auto mainLayout = new QVBoxLayout(this);
         mainLayout->setContentsMargins(40, 30, 40, 30);
         mainLayout->setSpacing(16);
         mainLayout->addStretch();
         mainLayout->addWidget(titleLabel);
         mainLayout->addWidget(phoneLineEdit);
+        mainLayout->addWidget(udidLineEdit);
         mainLayout->addWidget(passwordLineEdit);
         mainLayout->addWidget(confirmLineEdit);
-        mainLayout->addWidget(rememberCheckBox);
+        mainLayout->addLayout(optionsLayout);
         mainLayout->addLayout(buttonLayout);
         mainLayout->addWidget(statusLabel);
         mainLayout->addStretch();
@@ -89,6 +103,13 @@ public:
 
         connect(actionButton, &QPushButton::clicked, this, &LoginWidget::onAction);
         connect(switchButton, &QPushButton::clicked, this, &LoginWidget::toggleMode);
+        
+        connect(findPwdBtn, &QPushButton::clicked, this, [this]() {
+            isFindPwdMode = true;
+            isRegisterMode = false;
+            udidLineEdit->clear();
+            updateUIState();
+        });
 
         connect(webSocketClient, &QWebSocket::connected, this, [this]() {
             setStatus("已连接服务器");
@@ -118,13 +139,17 @@ protected:
 
     QLabel *titleLabel;
     QLineEdit *phoneLineEdit;
+    QLineEdit *udidLineEdit;
     QLineEdit *passwordLineEdit;
     QLineEdit *confirmLineEdit;
     QCheckBox *rememberCheckBox;
+    QPushButton *findPwdBtn;
     QPushButton *actionButton;
     QPushButton *switchButton;
     QLabel *statusLabel;
+    
     bool isRegisterMode = false;
+    bool isFindPwdMode = false;
 
     QString encrypt(const QString &input) {
         QByteArray data = input.toUtf8();
@@ -187,25 +212,44 @@ protected:
         }
     }
 
-    void toggleMode()
+    void updateUIState() 
     {
-        isRegisterMode = !isRegisterMode;
-        confirmLineEdit->setVisible(isRegisterMode);
+        udidLineEdit->setVisible(isFindPwdMode);
+        confirmLineEdit->setVisible(isRegisterMode || isFindPwdMode);
         confirmLineEdit->clear();
         
-        // 注册模式下隐藏“记住密码”
-        rememberCheckBox->setVisible(!isRegisterMode);
+        rememberCheckBox->setVisible(!isRegisterMode && !isFindPwdMode);
+        findPwdBtn->setVisible(!isRegisterMode && !isFindPwdMode);
 
         if (isRegisterMode) {
             titleLabel->setText("创建账号");
             actionButton->setText("立即注册");
             switchButton->setText("返回登录");
+            passwordLineEdit->setPlaceholderText("密码 (6-32位，字母+数字+符号)");
+        } else if (isFindPwdMode) {
+            titleLabel->setText("找回密码");
+            actionButton->setText("重置密码");
+            switchButton->setText("返回登录");
+            passwordLineEdit->setPlaceholderText("新密码 (6-32位，字母+数字+符号)");
         } else {
             titleLabel->setText("用户登录");
             actionButton->setText("登录");
             switchButton->setText("注册新账号");
+            passwordLineEdit->setPlaceholderText("密码 (6-32位，字母+数字+符号)");
         }
         updateStyle();
+    }
+
+    void toggleMode()
+    {
+        if (isFindPwdMode) {
+            isFindPwdMode = false;
+            isRegisterMode = false;
+        } else {
+            isRegisterMode = !isRegisterMode;
+        }
+        udidLineEdit->clear();
+        updateUIState();
     }
 
     void onAction()
@@ -230,21 +274,40 @@ protected:
             return;
         }
 
+        const auto& password = passwordLineEdit->text();
+        if (isRegisterMode || isFindPwdMode) {
+            const auto& confirm = confirmLineEdit->text();
+            if (password != confirm) {
+                setStatus("两次密码不一致", true);
+                return;
+            }
+        }
+
         setStatus("处理中...");
         actionButton->setEnabled(false);
 
         const auto& phone = phoneLineEdit->text().trimmed();
-        const auto& password = passwordLineEdit->text();
 
-        if (isRegisterMode) {
-            const auto& confirm = confirmLineEdit->text();
-
-            if (password != confirm) {
-                setStatus("两次密码不一致");
+        if (isFindPwdMode) {
+            const auto& udid = udidLineEdit->text().trimmed();
+            if (udid.isEmpty()) {
+                setStatus("请输入设备UDID", true);
                 actionButton->setEnabled(true);
                 return;
             }
 
+            webSocketClient->emitEvent("findPassword", QJsonObject{{"phone", phone}, {"udid", udid}, {"password", password}}, [=](const QJsonValue &res) {
+                actionButton->setEnabled(true);
+
+                if (res["msg"].isUndefined()) {
+                    setStatus("密码重置成功，请登录");
+                    toggleMode(); // 自动返回登录界面
+                    return;
+                }
+                setStatus(res["msg"].toString(), true);
+            });
+        }
+        else if (isRegisterMode) {
             webSocketClient->emitEvent("register", QJsonObject{{"phone", phone}, {"password", password}, {"version", Config::VERSION}}, [=](const QJsonValue &res) {
                 actionButton->setEnabled(true);
 
@@ -257,7 +320,8 @@ protected:
    
                 setStatus(res["msg"].toString(), true);
             });
-        } else {
+        }
+        else {
             webSocketClient->emitEvent("login", QJsonObject{{"phone", phone}, {"password", password}, {"version", Config::VERSION}}, [=](const QJsonValue &res) {
                 actionButton->setEnabled(true);
 
@@ -296,7 +360,8 @@ protected:
         bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
         
         QString accent, normal;
-        if (isRegisterMode) {
+
+        if (isRegisterMode || isFindPwdMode) {
             accent = isDarkMode ? "#e74c3c" : "#c0392b";
             normal = "white";
         } else {
