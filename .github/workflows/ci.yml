@@ -320,7 +320,7 @@ jobs:
           fastlane build_and_sign
 
       - name: 发布 Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.4.2
         with:
           repository: MinhJapan5220/FFmpeg
           tag_name: ${{ env.VERSION }}
