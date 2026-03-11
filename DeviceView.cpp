@@ -567,7 +567,7 @@ void DeviceView::dragEnterEvent(QDragEnterEvent *event)
     qDebugEx() << "dragEnterEvent" << this;
 
     QStringList allowedSuffixes = {
-        "deb", "ipa",
+        "deb", "ipa", "tipa",
         "jpg", "jpeg", "png", "bmp", "gif", "webp",
         "mp4", "mov", "avi", "mkv", "flv", "wmv"
     };
