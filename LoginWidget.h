@@ -44,7 +44,7 @@ public:
         phoneLineEdit->setMaxLength(11);
 
         udidLineEdit = new QLineEdit;
-        udidLineEdit->setPlaceholderText("请输入设备UDID");
+        udidLineEdit->setPlaceholderText("请输入账号使用过的手机设备UDID");
         udidLineEdit->setVisible(false);
 
         passwordLineEdit = new QLineEdit;
