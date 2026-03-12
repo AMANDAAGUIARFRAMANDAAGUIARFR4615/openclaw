@@ -174,6 +174,8 @@ private:
         for (const auto& tabInfo : MainWindow::getInstance()->getTabs()) {
             comboBox->addItem(tabInfo.name, tabInfo.bit);
         }
+        // 添加未连接设备选项，以 -1 区分常规掩码
+        comboBox->addItem("未连接设备", -1);
         comboBox->setCurrentIndex(MainWindow::getInstance()->tabWidget->currentIndex());
     }
 
@@ -213,62 +215,107 @@ private:
 
     void loadTableData(QTableWidget* tableWidget, QComboBox* filterComboBox, QTableWidget* oppositeTableWidget, QCheckBox* selectAllCheckBox) {
         if (filterComboBox->currentIndex() < 0) return;
-        
-        auto bitMask = filterComboBox->currentData().toUInt();
-        auto devices = DeviceInfo::getDevices(1U << bitMask);
-        
-        // 获取对面表格已经选中的设备ID
-        QSet<QString> lockedDeviceIds;
-        for(int i = 0; i < oppositeTableWidget->rowCount(); ++i) {
-            if(oppositeTableWidget->item(i, 0)->checkState() == Qt::Checked) {
-                lockedDeviceIds.insert(oppositeTableWidget->item(i, 0)->data(Qt::UserRole).toString());
+
+        // 提取公共表格渲染逻辑，兼容本地和远程数据
+        auto renderTable = [=](const QJsonArray& remoteDevices = QJsonArray(), bool isRemote = false) {
+            auto bitMask = filterComboBox->currentData().toUInt();
+            auto devices = DeviceInfo::getDevices(1U << bitMask); // 仅本地模式使用
+            int dataSize = isRemote ? remoteDevices.size() : devices.size();
+
+            // 获取对面表格已经选中的设备ID
+            QSet<QString> lockedDeviceIds;
+            for(int i = 0; i < oppositeTableWidget->rowCount(); ++i) {
+                if(oppositeTableWidget->item(i, 0)->checkState() == Qt::Checked) {
+                    lockedDeviceIds.insert(oppositeTableWidget->item(i, 0)->data(Qt::UserRole).toString());
+                }
             }
-        }
 
-        tableWidget->blockSignals(true);
-        tableWidget->setRowCount(0);
-        tableWidget->setRowCount(devices.size());
+            tableWidget->blockSignals(true);
+            tableWidget->setRowCount(0);
+            tableWidget->setRowCount(dataSize);
 
-        for (int i = 0; i < devices.size(); ++i) {
-            const auto& device = devices[i];
-            bool isLocked = lockedDeviceIds.contains(device->deviceId);
+            for (int i = 0; i < dataSize; ++i) {
+                QString deviceId, deviceName, model;
+                qint64 expireAt;
 
-            // Checkbox Column (使用自定义的 SortTableItem，传入原始索引 i)
-            auto itemCheckbox = new SortTableItem(i);
-            itemCheckbox->setData(Qt::UserRole, device->deviceId);
-            itemCheckbox->setCheckState(Qt::Unchecked);
-            if (isLocked) {
-                itemCheckbox->setFlags(itemCheckbox->flags() & ~Qt::ItemIsEnabled);
+                // 兼容解析数据
+                if (isRemote) {
+                    QJsonObject obj = remoteDevices[i].toObject();
+                    deviceId = obj[HIDE_STR("udid")].toString();
+                    deviceName = obj["deviceName"].toString(); // 字段需对应后端
+                    model = obj["model"].toString();
+                    expireAt = obj[HIDE_STR("expireAt")].toVariant().toLongLong();
+                } else {
+                    deviceId = devices[i]->deviceId;
+                    deviceName = devices[i]->deviceName;
+                    model = devices[i]->model;
+                    expireAt = devices[i]->expireAt.get();
+                }
+
+                bool isLocked = lockedDeviceIds.contains(deviceId);
+
+                // Checkbox Column (使用自定义的 SortTableItem，传入原始索引 i)
+                auto itemCheckbox = new SortTableItem(i);
+                itemCheckbox->setData(Qt::UserRole, deviceId);
+                itemCheckbox->setCheckState(Qt::Unchecked);
+                if (isLocked) {
+                    itemCheckbox->setFlags(itemCheckbox->flags() & ~Qt::ItemIsEnabled);
+                }
+                tableWidget->setItem(i, 0, itemCheckbox);
+
+                // Name Column
+                auto itemName = new QTableWidgetItem(deviceName);
+                if (isLocked) itemName->setForeground(Qt::gray);
+                tableWidget->setItem(i, 1, itemName);
+                
+                // Model Column
+                tableWidget->setItem(i, 2, new QTableWidgetItem(model));
+
+                // Expiration Column
+                auto timeString = QDateTime::fromMSecsSinceEpoch(expireAt).toString(HIDE_STR("yyyy-MM-dd HH:mm:ss"));
+                auto itemTime = new QTableWidgetItem(timeString);
+                bool isExpired = expireAt < QDateTime::currentMSecsSinceEpoch();
+                itemTime->setData(Qt::UserRole, isExpired); 
+                
+                if (isLocked)
+                    itemTime->setForeground(Qt::gray);
+                else if (isExpired)
+                    itemTime->setForeground(QColor("#d32f2f"));
+                
+                tableWidget->setItem(i, 3, itemTime);
             }
-            tableWidget->setItem(i, 0, itemCheckbox);
+            
+            // 加载完成后进行一次排序，确保禁用的项目沉底，其余保持原始顺序
+            tableWidget->sortItems(0, Qt::AscendingOrder);
+            
+            tableWidget->blockSignals(false);
+            updateSelectAllState(tableWidget, selectAllCheckBox);
+        };
 
-            // Name Column
-            auto itemName = new QTableWidgetItem(device->deviceName);
-            if (isLocked) itemName->setForeground(Qt::gray);
-            tableWidget->setItem(i, 1, itemName);
-            
-            // Model Column
-            tableWidget->setItem(i, 2, new QTableWidgetItem(device->model));
+        // 判断是否为未连接设备（-1）
+        if (filterComboBox->currentData().toInt() == -1) {
+            tableWidget->setRowCount(0); // 清空并等待异步加载
+            int savedIndex = filterComboBox->currentIndex();
 
-            // Expiration Column
-            auto timeString = QDateTime::fromMSecsSinceEpoch(device->expireAt.get()).toString(HIDE_STR("yyyy-MM-dd HH:mm:ss"));
-            auto itemTime = new QTableWidgetItem(timeString);
-            bool isExpired = device->expireAt.get() < QDateTime::currentMSecsSinceEpoch();
-            itemTime->setData(Qt::UserRole, isExpired); 
-            
-            if (isLocked)
-                itemTime->setForeground(Qt::gray);
-            else if (isExpired)
-                itemTime->setForeground(QColor("#d32f2f"));
-            
-            tableWidget->setItem(i, 3, itemTime);
+            // 发起请求获取远程设备列表
+            webSocketClient->emitEvent("getDevices", QJsonObject(), [=](const QJsonValue &response) {
+                if (filterComboBox->currentIndex() != savedIndex) return; // 避免异步返回时用户已切换分组
+                if (!response.isArray()) return;
+
+                QJsonArray unconnectedDevices;
+                for (const QJsonValue &val : response.toArray()) {
+                    QString udid = val.toObject()[HIDE_STR("udid")].toString();
+                    // 过滤：本地找不到的设备就是未连接的设备
+                    if (DeviceInfo::getDevice(udid) == nullptr) {
+                        unconnectedDevices.append(val);
+                    }
+                }
+                renderTable(unconnectedDevices, true);
+            });
+        } else {
+            // 原有的本地设备逻辑
+            renderTable();
         }
-        
-        // 加载完成后进行一次排序，确保禁用的项目沉底，其余保持原始顺序
-        tableWidget->sortItems(0, Qt::AscendingOrder);
-        
-        tableWidget->blockSignals(false);
-        updateSelectAllState(tableWidget, selectAllCheckBox);
     }
 
     void updateSelectAllState(QTableWidget* tableWidget, QCheckBox* checkBox) {
