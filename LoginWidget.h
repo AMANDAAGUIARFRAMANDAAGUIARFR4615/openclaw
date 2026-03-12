@@ -255,7 +255,16 @@ protected:
     void onAction()
     {
         if (!NetworkUtils::isCurrentNetworkAllowed()) {
-            setStatus("防火墙阻止了连接，请在弹窗中点击允许访问\n如果已经关闭弹窗，请换到其他路径再次运行程序");
+            setStatus(QStringLiteral(R"(
+                <div style="text-align: left; line-height: 1.6; font-size: 12px; color: #555555;">
+                    <span style="font-weight: bold; color: #333333;">防火墙阻止了连接，请尝试以下操作：</span><br>
+                    1. <b>有系统弹窗：</b>直接点击“允许访问”放行。<br>
+                    2. <b>无系统弹窗：</b>在任务栏搜索并打开“防火墙”<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;<b>➔</b> 允许应用通过 Windows 防火墙 <b>➔</b> 更改设置<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;<b>➔</b> 允许其他应用 <b>➔</b> 添加RemotePro.exe路径<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;<b>➔</b> 勾选“专用与公用”并保存。
+                </div>
+            )"));
             return;
         }
 
