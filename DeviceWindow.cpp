@@ -64,6 +64,9 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         if (action->isSeparator())
             continue;
 
+        if (action->text().contains("更新手机端") || action->text().contains("独占"))
+            continue;
+
         auto btn = new QPushButton(action->text(), scrollContent);
 
         if (!action->icon().isNull())
@@ -143,6 +146,7 @@ void DeviceWindow::showEvent(QShowEvent *event)
 {
     DeviceView::showEvent(event);
     changeOrientation(deviceInfo->orientation);
+    updatePanelPosition();
 }
 
 void DeviceWindow::resizeEvent(QResizeEvent *event)
