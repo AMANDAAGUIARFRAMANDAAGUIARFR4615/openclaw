@@ -37,6 +37,8 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     layout->addWidget(overlay);
     setLayout(layout);
 
+    addContextMenuActions();
+
     buttonPanel = new QFrame(this, Qt::Tool | Qt::FramelessWindowHint);
     buttonPanel->setAttribute(Qt::WA_TranslucentBackground); 
     buttonPanel->setObjectName("FloatingPanel"); 
@@ -58,9 +60,17 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     btnLayout->setContentsMargins(8, 8, 8, 8); 
     btnLayout->setSpacing(8);                  
 
-    for(int i = 1; i <= 10; ++i) {
-        QPushButton *btn = new QPushButton(QString("功能 %1").arg(i), scrollContent);
+    for (QAction *action : this->actions()) {
+        if (action->isSeparator())
+            continue;
+
+        auto btn = new QPushButton(action->text(), scrollContent);
+
+        if (!action->icon().isNull())
+            btn->setIcon(action->icon());
+        
         btn->setFixedHeight(36); 
+        connect(btn, &QPushButton::clicked, action, &QAction::trigger);
         btnLayout->addWidget(btn);
     }
     
@@ -83,8 +93,6 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     );
 
     buttonPanel->show();
-    
-    addContextMenuActions();
 
     EventHub::on(this, "lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
@@ -156,7 +164,7 @@ void DeviceWindow::updatePanelPosition()
 
     auto mainRect = frameGeometry();
     
-    int panelWidth = 90; 
+    int panelWidth = 120; 
     
     auto scrollArea = buttonPanel->findChild<QScrollArea*>();
     int contentHeight = scrollArea->widget()->sizeHint().height();
