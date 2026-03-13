@@ -150,7 +150,7 @@ private:
         boxLayout->setContentsMargins(15, 25, 15, 15);
 
         addSettingGroup(boxLayout, "isLandscape", "投屏显示", {"竖屏显示", "横屏显示"}, 0);
-        addSettingGroup(boxLayout, "videoFps", "视频帧率", {"", "5秒1帧", "1秒1帧", "1秒15帧", "1秒30帧"}, 4);
+        addSettingGroup(boxLayout, "videoFps", "视频帧率", {"", "5秒1帧", "1秒1帧", "1秒15帧", "1秒30帧", "1秒60帧"}, 4);
         addSettingGroup(boxLayout, "videoQuality", "视频清晰度", {"", "低清", "标清", "高清", "超清"}, 2);
         addSettingGroup(boxLayout, "connectionMethod", "连接方式", {"USB优先", "WIFI优先"}, 0);
         addSettingGroup(boxLayout, "autoScanLANDevices", "自动连接局域网设备", {"关闭", "开启"}, 1);
