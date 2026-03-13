@@ -149,7 +149,7 @@ private:
         connection->send("videoSettings", QJsonObject({
             {"width", standaloneAlwaysUltraHD ? qMin(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight) : qMin(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
             {"height", standaloneAlwaysUltraHD ? qMax(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight) : qMax(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
-            {"fps", isWindow ? 30 : QList<float>{ 1, 0.2f, 1, 15, 30 }[videoFps]},
+            {"fps", isWindow ? 30 : QList<float>{ 1, 0.2f, 1, 15, 30, 60, 120, 240 }[videoFps]},
             {"quality", videoQuality}
         }));
 
