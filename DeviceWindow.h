@@ -15,11 +15,16 @@ public:
     DeviceWidget* const deviceWidget;
 
 protected:
-    void keyPressEvent(QKeyEvent *event);
+    void keyPressEvent(QKeyEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+    void moveEvent(QMoveEvent *event) override;
     void changeOrientation(int orientation);
     void showEvent(QShowEvent *event) override;
     bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 
     QMediaPlayer* audioPlayer = nullptr;
     DeviceConnection* audioDeviceConnection = nullptr;
+
+    QFrame *buttonPanel;
+    void updatePanelPosition();
 };

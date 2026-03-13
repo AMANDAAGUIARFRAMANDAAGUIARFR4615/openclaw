@@ -15,6 +15,10 @@
 #include <QImageReader>
 #include <QScreen>
 #include <QWindow>
+#include <QResizeEvent>
+#include <QMoveEvent>
+#include <QScrollArea> 
+#include <QFrame>
 
 #ifdef Q_OS_WIN
 #include <winsock2.h>
@@ -33,6 +37,53 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     layout->addWidget(overlay);
     setLayout(layout);
 
+    buttonPanel = new QFrame(this, Qt::Tool | Qt::FramelessWindowHint);
+    buttonPanel->setAttribute(Qt::WA_TranslucentBackground); 
+    buttonPanel->setObjectName("FloatingPanel"); 
+    
+    QVBoxLayout *panelLayout = new QVBoxLayout(buttonPanel);
+    panelLayout->setContentsMargins(0, 0, 0, 0);
+    panelLayout->setSpacing(0);
+
+    QScrollArea *scrollArea = new QScrollArea(buttonPanel);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff); 
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);    
+    scrollArea->setStyleSheet("QScrollArea { background: transparent; border: none; }");
+
+    QWidget *scrollContent = new QWidget();
+    scrollContent->setObjectName("ScrollContent");
+    QVBoxLayout *btnLayout = new QVBoxLayout(scrollContent);
+    btnLayout->setContentsMargins(8, 8, 8, 8); 
+    btnLayout->setSpacing(8);                  
+
+    for(int i = 1; i <= 10; ++i) {
+        QPushButton *btn = new QPushButton(QString("功能 %1").arg(i), scrollContent);
+        btn->setFixedHeight(36); 
+        btnLayout->addWidget(btn);
+    }
+    
+    btnLayout->addStretch(1);
+
+    scrollArea->setWidget(scrollContent);
+    panelLayout->addWidget(scrollArea);
+
+    // 设置全局样式
+    buttonPanel->setStyleSheet(
+        "QFrame#FloatingPanel { background-color: rgba(30, 34, 40, 220); border-radius: 8px; }"
+        "QPushButton { color: white; background-color: #0D74CE; border: none; border-radius: 5px; font-size: 14px; font-weight: bold; }"
+        "QPushButton:hover { background-color: #158AE5; }"
+        "QPushButton:pressed { background-color: #0A5A9E; }"
+        "QScrollBar:vertical { background: transparent; width: 6px; margin: 4px 0px 4px 0px; }"
+        "QScrollBar::handle:vertical { background: rgba(255, 255, 255, 80); border-radius: 3px; min-height: 20px; }"
+        "QScrollBar::handle:vertical:hover { background: rgba(255, 255, 255, 120); }"
+        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }"
+        "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }"
+    );
+
+    buttonPanel->show();
+    
     addContextMenuActions();
 
     EventHub::on(this, "lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
@@ -84,6 +135,42 @@ void DeviceWindow::showEvent(QShowEvent *event)
 {
     DeviceView::showEvent(event);
     changeOrientation(deviceInfo->orientation);
+}
+
+void DeviceWindow::resizeEvent(QResizeEvent *event)
+{
+    DeviceView::resizeEvent(event);
+    updatePanelPosition();
+}
+
+void DeviceWindow::moveEvent(QMoveEvent *event)
+{
+    DeviceView::moveEvent(event);
+    updatePanelPosition();
+}
+
+void DeviceWindow::updatePanelPosition()
+{
+    if (isMinimized() || !isVisible())
+        return;
+
+    auto mainRect = frameGeometry();
+    
+    int panelWidth = 90; 
+    
+    auto scrollArea = buttonPanel->findChild<QScrollArea*>();
+    int contentHeight = scrollArea->widget()->sizeHint().height();
+    
+    int maxPanelHeight = qMax(100, mainRect.height() - 20); 
+    int panelHeight = qMin(contentHeight, maxPanelHeight);
+    
+    buttonPanel->resize(panelWidth, panelHeight);
+    
+    int gap = 10; 
+    int x = mainRect.right() + gap;
+    int y = mainRect.center().y() - (panelHeight / 2);
+    
+    buttonPanel->move(x, y);
 }
 
 void DeviceWindow::changeOrientation(int orientation)
