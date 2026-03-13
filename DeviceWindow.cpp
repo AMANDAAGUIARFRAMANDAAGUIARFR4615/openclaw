@@ -156,9 +156,18 @@ bool DeviceWindow::nativeEvent(const QByteArray &eventType, void *message, qintp
             QScreen *screen = windowHandle() ? windowHandle()->screen() : qApp->primaryScreen();
             QRect screenRect = screen ? screen->availableGeometry() : QRect(0, 0, 1920, 1080);
 
-            // 计算允许的最大内容宽高：取 (Qt最大值) 和 (屏幕可用宽高 - 边框) 中的较小值
-            int maxClientW = qMin(this->maximumWidth(), screenRect.width() - borderW);
-            int maxClientH = qMin(this->maximumHeight(), screenRect.height() - borderH);
+            // 获取当前窗口的 DPI 缩放比例
+            qreal dpr = devicePixelRatioF();
+
+            // 将 Qt 的逻辑像素转换为 Windows 需要的物理像素
+            int maxPhysicalWidth = static_cast<int>(this->maximumWidth() * dpr);
+            int maxPhysicalHeight = static_cast<int>(this->maximumHeight() * dpr);
+            int screenPhysicalWidth = static_cast<int>(screenRect.width() * dpr);
+            int screenPhysicalHeight = static_cast<int>(screenRect.height() * dpr);
+
+            // 计算允许的最大内容宽高
+            int maxClientW = qMin(maxPhysicalWidth, screenPhysicalWidth - borderW);
+            int maxClientH = qMin(maxPhysicalHeight, screenPhysicalHeight - borderH);
 
             // 进行限制判定
             if (clientW > maxClientW) {
