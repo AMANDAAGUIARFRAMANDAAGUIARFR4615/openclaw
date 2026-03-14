@@ -751,6 +751,25 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         callback(jsonArray);
     });
 
+    webSocketClient->on("get_app_info", [this](const QJsonValue &data, AckCallback callback) {
+        const auto& udid = data["udid"].toString();
+        if (udid != nullptr && !udid.isEmpty())
+        {
+            const auto& deviceInfo = DeviceInfo::getDevice(udid);
+            EventHub::once(this, "getAppInfo", [=](const QJsonValue &data, DeviceConnection* connection) {
+                if (deviceInfo->connection != connection)
+                    return;
+
+                callback(data);
+            });
+            deviceInfo->connection->send("getAppInfo");
+        }
+        else
+        {
+            callback("只支持单设备获取");
+        }
+    });
+
     webSocketClient->on("get_log", [this](const QJsonValue &data, AckCallback callback) {
         QString logFilePath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/app_log.txt";
         

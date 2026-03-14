@@ -37,6 +37,7 @@ public:
             auto refreshDeviceButton = new QPushButton("刷新设备");
 
             auto screenshotButton = new QPushButton("截图");
+            auto getAppInfoButton = new QPushButton("应用信息");
             auto getLogButton = new QPushButton("日志");
             
             connect(refreshDeviceButton, &QPushButton::clicked, [=]() {
@@ -74,6 +75,7 @@ public:
             rowLayout->addWidget(refreshDeviceButton);
             rowLayout->addStretch();
             rowLayout->addWidget(screenshotButton);
+            rowLayout->addWidget(getAppInfoButton);
             rowLayout->addWidget(getLogButton);
             
             connect(screenshotButton, &QPushButton::clicked, [=]() {
@@ -94,6 +96,18 @@ public:
 
                     qApp->clipboard()->setPixmap(QPixmap::fromImage(image));
                     new ToastWidget("图片已复制到剪切板", this);
+                });
+            });
+
+            connect(getAppInfoButton, &QPushButton::clicked, [=]() {
+                webSocketClient->emitEvent("get_app_info", QJsonObject{{"phone", phone}, {HIDE_STR("udid"), deviceComboBox->currentData().toString()}}, [=](const QJsonValue &res) {
+                    if (res.isString()) {
+                        new ToastWidget(res.toString(), this);
+                        return;
+                    }
+
+                    qApp->clipboard()->setText(res["text"].toString());
+                    new ToastWidget("文本已复制到剪切板", this);
                 });
             });
 
