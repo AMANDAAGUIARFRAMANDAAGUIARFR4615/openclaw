@@ -196,8 +196,15 @@ jobs:
           cd qtmultimedia
 
           # QT_ROOT_DIR=/d/Qt/6.10.1/mingw_64
-          cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR -DCMAKE_INSTALL_PREFIX=$QTMULTIMEDIA_DIR
-          cmake --build build --config Release --target install --parallel
+
+          if [[ "${{runner.os}}" == "macOS" ]]; then
+            CMAKE_EXE="$QT_ROOT_DIR/bin/qt-cmake"
+          else
+            CMAKE_EXE="cmake"
+          fi
+
+          $CMAKE_EXE -G "Ninja" -DCMAKE_BUILD_TYPE=Release -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR -DCMAKE_INSTALL_PREFIX=$QTMULTIMEDIA_DIR
+          $CMAKE_EXE --build build --config Release --target install --parallel
 
       - name: Save qtmultimedia cache
         if: steps.cache-qtmultimedia.outputs.cache-hit != 'true' && matrix.qt_target == 'desktop'
@@ -224,9 +231,6 @@ jobs:
         shell: bash
         run: |
           if [[ "${{runner.os}}" == "macOS" ]]; then
-            xcode-select -print-path
-            xcodebuild -version
-
             CMAKE_EXE="$QT_ROOT_DIR/bin/qt-cmake"
           else
             CMAKE_EXE="cmake"
