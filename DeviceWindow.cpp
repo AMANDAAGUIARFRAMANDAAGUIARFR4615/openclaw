@@ -95,7 +95,8 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }"
     );
 
-    buttonPanel->show();
+    if (!AppSettingsDialog::getInstance()->getValue("hideStandaloneToolbar"))
+        buttonPanel->show();
 
     EventHub::on(this, "lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
