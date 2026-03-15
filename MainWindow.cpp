@@ -15,6 +15,7 @@
 #include "RenewalDialog.h"
 #include "Account.h"
 #include "AccountListDialog.h"
+#include "QrConnectDialog.h"
 #include "NetworkSegmentEditorDialog.h"
 #include "SwapExpirationDialog.h"
 #include "DeviceWindow.h"
@@ -199,6 +200,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             syncVideoSettingsToDevices();
             return;
         }
+
+        if (key == "hideStandaloneToolbar") {
+            new ToastWidget("重新打开独立窗口才能生效");
+            return;
+        }
     });
 
     connect(sideBarList, &QListWidget::itemClicked, [this](QListWidgetItem *item) {
@@ -206,7 +212,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         qDebugEx() << "sideBarList" << title;
 
         if (title == "设备连接") {
-            NetworkSegmentEditorDialog(this).exec();
+            QMenu menu;
+            menu.addAction("扫码连接", [=]() {
+                QrConnectDialog(this).exec();
+            });
+            menu.addAction("网段扫描配置", [=]() {
+                NetworkSegmentEditorDialog(this).exec();
+            });
+
+            QRect rect = sideBarList->visualItemRect(item);
+            QPoint globalPos = sideBarList->viewport()->mapToGlobal(rect.topRight());
+            menu.exec(globalPos);
             return;
         }
 
@@ -400,8 +416,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         if (title == "开发者") {
             QMenu menu;
             menu.addAction("数据查看", [=]() {
-                SettingsViewer dialog(settings, this);
-                dialog.exec();
+                SettingsViewer(settings, this).exec();
             });
             menu.addAction("可视化编程", [=]() {
                 FlowEditorDialog(this).exec();
@@ -468,8 +483,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                         return;
                     }
 
-                    AccountListDialog dialog(phoneNumbers, this);
-                    dialog.exec();
+                    AccountListDialog(phoneNumbers, this).exec();
                 });
             });
 
