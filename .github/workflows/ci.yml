@@ -135,7 +135,9 @@ jobs:
             --enable-demuxer=h264 \
             --enable-protocol=tcp \
             --enable-filter=scale \
-            --enable-filter=format
+            --enable-filter=format \
+            --disable-xlib \
+            --disable-libxcb
 
           if [[ "${{runner.os}}" == "macOS" ]]; then
             sudo make -j install
