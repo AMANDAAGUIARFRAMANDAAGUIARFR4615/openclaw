@@ -27,7 +27,7 @@ jobs:
             qt_arch: win64_mingw
             qt_target: desktop
             qt_modules: 'qtshadertools qtwebsockets'
-          - os: macos-15-intel
+          - os: macos-26-intel
             qt_arch: clang_64
             qt_target: desktop
             qt_modules: 'qtshadertools qtwebsockets'
