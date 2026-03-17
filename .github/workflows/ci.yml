@@ -179,7 +179,7 @@ jobs:
           cp -r $FFMPEG_DIR/* $QT_ROOT_DIR/lib/ffmpeg
           
           brew install tree
-          tree -L 2 $QT_ROOT_DIR/lib/ffmpeg
+          tree -L 3 $QT_ROOT_DIR/lib/ffmpeg
 
       - name: Checkout qtmultimedia
         uses: actions/checkout@v4
