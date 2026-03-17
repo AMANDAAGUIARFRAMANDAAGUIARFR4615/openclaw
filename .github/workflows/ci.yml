@@ -173,15 +173,12 @@ jobs:
         if: matrix.qt_target != 'desktop'
         shell: bash
         run: |
-          brew install tree
-
-          tree -L 1 $QT_ROOT_DIR/lib
-
-          tree -L 2 $QT_ROOT_DIR/lib/ffmpeg
-
+          mkdir -p $QT_ROOT_DIR/lib/ffmpeg
+          
           # 先安装到临时目录再复制是为了缓存
           cp -r $FFMPEG_DIR/* $QT_ROOT_DIR/lib/ffmpeg
           
+          brew install tree
           tree -L 2 $QT_ROOT_DIR/lib/ffmpeg
 
       - name: Checkout qtmultimedia
