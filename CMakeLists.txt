@@ -233,6 +233,11 @@ if(IOS)
             # 1. 直接找出里面所有的 .framework
             file(GLOB CANDIDATE_FRAMEWORKS "${XCFRAMEWORK_PATH}/*/*.framework")
             
+            list(LENGTH CANDIDATE_FRAMEWORKS FW_COUNT)
+            if(FW_COUNT EQUAL 0)
+                continue()
+            endif()
+
             # 2. 用极简的正则过滤匹配当前平台（区分真机/模拟器）
             if(CMAKE_OSX_SYSROOT MATCHES "simulator")
                 list(FILTER CANDIDATE_FRAMEWORKS INCLUDE REGEX "simulator")
