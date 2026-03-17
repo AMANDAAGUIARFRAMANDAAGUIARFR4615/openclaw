@@ -169,6 +169,18 @@ jobs:
           name: ${{ matrix.os }}-ffmpeg-build-${{ env.FFMPEG_SHA }}
           path: ${{ env.FFMPEG_DIR }}
 
+      - name: cp FFmpeg
+        if: matrix.qt_target != 'desktop'
+        shell: bash
+        run: |
+          mkdir -p $QT_ROOT_DIR/lib/ffmpeg
+          
+          # 先安装到临时目录再复制是为了缓存
+          cp -r $FFMPEG_DIR/* $QT_ROOT_DIR/lib/ffmpeg
+          
+          brew install tree
+          tree -L 3 $QT_ROOT_DIR/lib/ffmpeg
+
       - name: Checkout qtmultimedia
         uses: actions/checkout@v4
         with:
