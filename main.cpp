@@ -23,10 +23,10 @@ void onDataReceived(DeviceConnection *connection, const QJsonObject &jsonObject)
     EventHub::trigger(event, data, connection);
 }
 
-class CursorFilter : public QObject
+class GlobalEventFilter : public QObject
 {
 public:
-    CursorFilter(QObject *parent = nullptr) : QObject(parent) {}
+    GlobalEventFilter(QObject *parent = nullptr) : QObject(parent) {}
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override
@@ -36,6 +36,13 @@ protected:
             if (auto button = qobject_cast<QAbstractButton *>(obj))
                 button->setCursor(Qt::PointingHandCursor);
         }
+
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        if (event->type() == QEvent::ContextMenu) {
+            // 返回 true 表示事件已处理，不再向下传递，从而阻止菜单弹出
+            return true;
+        }
+#endif
 
         return QObject::eventFilter(obj, event);
     }
@@ -76,7 +83,7 @@ int main(int argc, char *argv[])
     app.setStyle(fusionStyle);
     app.setPalette(fusionStyle->standardPalette());
 
-    app.installEventFilter(new CursorFilter(&app));
+    app.installEventFilter(new GlobalEventFilter(&app));
 
     QString dataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
 
