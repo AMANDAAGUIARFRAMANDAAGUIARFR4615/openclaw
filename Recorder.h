@@ -95,11 +95,15 @@ private:
         startButton = new QPushButton("开始录制", this);
         stopButton = new QPushButton("停止录制", this);
         startPlaybackButton = new QPushButton("开始回放", this);
+        pausePlaybackButton = new QPushButton("暂停回放", this);
+        resumePlaybackButton = new QPushButton("恢复回放", this);
         stopPlaybackButton = new QPushButton("停止回放", this);
 
         buttonLayout->addWidget(startButton);
         buttonLayout->addWidget(stopButton);
         buttonLayout->addWidget(startPlaybackButton);
+        buttonLayout->addWidget(pausePlaybackButton);
+        buttonLayout->addWidget(resumePlaybackButton);
         buttonLayout->addWidget(stopPlaybackButton);
 
         buttonLayout->addWidget(new QLabel("回放次数:", this));
@@ -189,6 +193,14 @@ private:
             onStartPlayback(path);
         });
 
+        connect(pausePlaybackButton, &QPushButton::clicked, [this]() {
+            onPausePlayback();
+        });
+
+        connect(resumePlaybackButton, &QPushButton::clicked, [this]() {
+            onResumePlayback();
+        });
+
         connect(stopPlaybackButton,  &QPushButton::clicked, [this]() {
             onStopPlayback();
         });
@@ -225,6 +237,10 @@ private:
             auto code = data["code"].toInt();
             setStatusMessage(data["msg"].toString());
             isPlaying = code != 5;
+            
+            if (!isPlaying)
+                isPaused = false;
+            
             updateButtonStates();
         });
     }
@@ -306,7 +322,10 @@ protected:
     void updateButtonStates() {
         startButton->setEnabled(!isRecording && !isPlaying);
         stopButton->setEnabled(isRecording && !isPlaying);
+        
         startPlaybackButton->setEnabled(!isPlaying && !isRecording);
+        pausePlaybackButton->setEnabled(isPlaying && !isPaused && !isRecording);
+        resumePlaybackButton->setEnabled(isPlaying && isPaused && !isRecording);
         stopPlaybackButton->setEnabled(isPlaying && !isRecording);
     }
 
@@ -327,15 +346,29 @@ protected:
         }
 
         isPlaying = true;
+        isPaused = false;
+        updateButtonStates();
+    }
+
+    void onPausePlayback() {
+        connection->send("playback", QJsonObject{{"type", "pause"}});
+
+        isPaused = true;
+        updateButtonStates();
+    }
+
+    void onResumePlayback() {
+        connection->send("playback", QJsonObject{{"type", "resume"}});
+
+        isPaused = false;
         updateButtonStates();
     }
 
     void onStopPlayback() {
-        QJsonObject dataObject;
-        dataObject["type"] = "stop";
-        connection->send("playback", dataObject);
+        connection->send("playback", QJsonObject{{"type", "stop"}});
 
         isPlaying = false;
+        isPaused = false;
         updateButtonStates();
     }
 
@@ -352,12 +385,15 @@ protected:
     QPushButton *startButton;
     QPushButton *stopButton;
     QPushButton *startPlaybackButton;
+    QPushButton *pausePlaybackButton;
+    QPushButton *resumePlaybackButton;
     QPushButton *stopPlaybackButton;
     QSpinBox *playbackTimesSpinBox;
     QCheckBox *infiniteCheckBox;
 
     bool isRecording = false;
     bool isPlaying = false;
+    bool isPaused = false;
 
     QFileSystemModel *fileSystemModel;
     FileFilterProxyModel *filterModel;

@@ -128,6 +128,7 @@ jobs:
           if [[ "${{matrix.qt_target}}" == "desktop" ]]; then
             ./configure \
               --prefix=$FFMPEG_DIR \
+              --disable-programs \
               --disable-everything \
               --enable-static \
               --disable-doc \
