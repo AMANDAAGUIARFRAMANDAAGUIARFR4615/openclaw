@@ -72,7 +72,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         "QScrollBar:horizontal { height: 0px; margin: 0px; }"
     );
     
-    QScroller::grabGesture(scrollArea->viewport(), QScroller::LeftMouseButtonGesture);
+    // QScroller::grabGesture(scrollArea->viewport(), QScroller::LeftMouseButtonGesture);
 #else
     // 【桌面端】垂直滚动
     scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff); 
@@ -109,7 +109,12 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         
         btn->setFixedHeight(34);
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        connect(btn, &QPushButton::released, action, &QAction::trigger);
+#else
         connect(btn, &QPushButton::clicked, action, &QAction::trigger);
+#endif
+
         btnLayout->addWidget(btn);
     }
 
