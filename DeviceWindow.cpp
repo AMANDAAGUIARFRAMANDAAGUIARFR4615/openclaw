@@ -66,7 +66,11 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     // 【移动端】水平滚动
     scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    scrollArea->setStyleSheet("QScrollArea { background: transparent; border: none; } QWidget#ScrollContent { background: transparent; }");
+    scrollArea->setStyleSheet(
+        "QScrollArea { background: transparent; border: none; }"
+        "QWidget#ScrollContent { background: transparent; }"
+        "QScrollBar:horizontal { height: 0px; margin: 0px; }"
+    );
     
     QScroller::grabGesture(scrollArea->viewport(), QScroller::LeftMouseButtonGesture);
 #else
@@ -82,8 +86,8 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
     // 【移动端】按钮横排
     QHBoxLayout *btnLayout = new QHBoxLayout(scrollContent);
-    btnLayout->setContentsMargins(6, 6, 6, 6);
-    btnLayout->setSpacing(6);
+    btnLayout->setContentsMargins(0, 0, 0, 0); 
+    btnLayout->setSpacing(1);// 留 1px 的 spacing 作为按钮分割线
 #else
     // 【桌面端】按钮竖排
     QVBoxLayout *btnLayout = new QVBoxLayout(scrollContent);
@@ -103,26 +107,21 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         if (!action->icon().isNull())
             btn->setIcon(action->icon());
         
-#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        btn->setFixedHeight(26);
-#else
-        btn->setFixedHeight(36);
-#endif
+        btn->setFixedHeight(34);
+
         connect(btn, &QPushButton::clicked, action, &QAction::trigger);
         btnLayout->addWidget(btn);
     }
-    
-    btnLayout->addStretch(1);
 
     scrollArea->setWidget(scrollContent);
     panelLayout->addWidget(scrollArea);
 
     // 设置全局样式
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-    // 【移动端】样式：圆角、内边距 (水平滚动条已隐藏，因此去除了滚动条相关的CSS)
+    // 【核心修改 3：移动端】去掉所有圆角 (border-radius: 0px)，做成沉浸式底栏块
     buttonPanel->setStyleSheet(
-        "QFrame#FloatingPanel { background-color: rgba(30, 34, 40, 220); border-radius: 8px; }"
-        "QPushButton { color: white; background-color: #0D74CE; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; padding: 0 10px; }"
+        "QFrame#FloatingPanel { background-color: #1E2228; border-radius: 0px; }"
+        "QPushButton { color: white; background-color: #0D74CE; border: none; border-radius: 0px; font-size: 15px; font-weight: bold; padding: 0 16px; }"
         "QPushButton:hover { background-color: #158AE5; }"
         "QPushButton:pressed { background-color: #0A5A9E; }"
     );
@@ -214,23 +213,16 @@ void DeviceWindow::updatePanelPosition()
         return;
 
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-    // ================= 【移动端定位】绝对定位于窗口底部的客户区内部 =================
+    // ================= 【移动端定位】直接贴着最底下铺满 =================
     int clientW = width();
     int clientH = height();
 
-    // 面板固定高度：26(按钮) + 6(上边距) + 6(下边距) = 38
-    int panelHeight = 38;
-
     auto scrollArea = buttonPanel->findChild<QScrollArea*>();
-
-    int contentWidth = scrollArea->widget()->sizeHint().width();
-
-    int maxPanelWidth = qMax(100, clientW - 20);
-    int panelWidth = qMin(contentWidth, maxPanelWidth);
-
-    int x = (clientW - panelWidth) / 2;
-    int bottomMargin = 4;
-    int y = clientH - panelHeight - bottomMargin;
+    int panelHeight = scrollArea->widget()->sizeHint().height();
+    
+    int panelWidth = clientW; // 宽度直接铺满
+    int x = 0; 
+    int y = clientH - panelHeight; // y 坐标严丝合缝卡在最底部
 
     buttonPanel->setGeometry(x, y, panelWidth, panelHeight);
     buttonPanel->raise();
@@ -239,8 +231,7 @@ void DeviceWindow::updatePanelPosition()
     // ================= 【桌面端定位】悬浮于窗口右侧外部 =================
     auto mainRect = frameGeometry();
     
-    int panelWidth = 120; 
-    
+    int panelWidth = 110;
     auto scrollArea = buttonPanel->findChild<QScrollArea*>();
     int contentHeight = scrollArea->widget()->sizeHint().height();
     
