@@ -19,6 +19,7 @@
 #include <QMoveEvent>
 #include <QScrollArea> 
 #include <QFrame>
+#include <QScroller>
 
 #ifdef Q_OS_WIN
 #include <winsock2.h>
@@ -39,26 +40,56 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 
     addContextMenuActions();
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+    // 【移动端】作为普通子控件悬浮
+    buttonPanel = new QFrame(this);
+    buttonPanel->setObjectName("FloatingPanel");
+    
+    QHBoxLayout *panelLayout = new QHBoxLayout(buttonPanel);
+#else
+    // 【桌面端】作为独立工具窗口悬浮
     buttonPanel = new QFrame(this, Qt::Tool | Qt::FramelessWindowHint);
     buttonPanel->setAttribute(Qt::WA_TranslucentBackground); 
     buttonPanel->setObjectName("FloatingPanel"); 
     
     QVBoxLayout *panelLayout = new QVBoxLayout(buttonPanel);
+#endif
+
     panelLayout->setContentsMargins(0, 0, 0, 0);
     panelLayout->setSpacing(0);
 
     QScrollArea *scrollArea = new QScrollArea(buttonPanel);
     scrollArea->setFrameShape(QFrame::NoFrame);
     scrollArea->setWidgetResizable(true);
+
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+    // 【移动端】水平滚动
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setStyleSheet("QScrollArea { background: transparent; border: none; } QWidget#ScrollContent { background: transparent; }");
+    
+    QScroller::grabGesture(scrollArea->viewport(), QScroller::LeftMouseButtonGesture);
+#else
+    // 【桌面端】垂直滚动
     scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff); 
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);    
     scrollArea->setStyleSheet("QScrollArea { background: transparent; border: none; }");
+#endif
 
     QWidget *scrollContent = new QWidget();
     scrollContent->setObjectName("ScrollContent");
+
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+    // 【移动端】按钮横排
+    QHBoxLayout *btnLayout = new QHBoxLayout(scrollContent);
+    btnLayout->setContentsMargins(6, 6, 6, 6);
+    btnLayout->setSpacing(6);
+#else
+    // 【桌面端】按钮竖排
     QVBoxLayout *btnLayout = new QVBoxLayout(scrollContent);
     btnLayout->setContentsMargins(8, 8, 8, 8); 
-    btnLayout->setSpacing(8);                  
+    btnLayout->setSpacing(8);
+#endif
 
     for (QAction *action : this->actions()) {
         if (action->isSeparator())
@@ -72,7 +103,11 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         if (!action->icon().isNull())
             btn->setIcon(action->icon());
         
-        btn->setFixedHeight(36); 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        btn->setFixedHeight(26);
+#else
+        btn->setFixedHeight(36);
+#endif
         connect(btn, &QPushButton::clicked, action, &QAction::trigger);
         btnLayout->addWidget(btn);
     }
@@ -83,6 +118,16 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     panelLayout->addWidget(scrollArea);
 
     // 设置全局样式
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+    // 【移动端】样式：圆角、内边距 (水平滚动条已隐藏，因此去除了滚动条相关的CSS)
+    buttonPanel->setStyleSheet(
+        "QFrame#FloatingPanel { background-color: rgba(30, 34, 40, 220); border-radius: 8px; }"
+        "QPushButton { color: white; background-color: #0D74CE; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; padding: 0 10px; }"
+        "QPushButton:hover { background-color: #158AE5; }"
+        "QPushButton:pressed { background-color: #0A5A9E; }"
+    );
+#else
+    // 【桌面端】样式：垂直滚动条
     buttonPanel->setStyleSheet(
         "QFrame#FloatingPanel { background-color: rgba(30, 34, 40, 220); border-radius: 8px; }"
         "QPushButton { color: white; background-color: #0D74CE; border: none; border-radius: 5px; font-size: 14px; font-weight: bold; }"
@@ -94,6 +139,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }"
         "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }"
     );
+#endif
 
     if (!AppSettingsDialog::getInstance()->getValue("hideStandaloneToolbar"))
         buttonPanel->show();
@@ -167,6 +213,30 @@ void DeviceWindow::updatePanelPosition()
     if (isMinimized() || !isVisible())
         return;
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+    // ================= 【移动端定位】绝对定位于窗口底部的客户区内部 =================
+    int clientW = width();
+    int clientH = height();
+
+    // 面板固定高度：26(按钮) + 6(上边距) + 6(下边距) = 38
+    int panelHeight = 38;
+
+    auto scrollArea = buttonPanel->findChild<QScrollArea*>();
+
+    int contentWidth = scrollArea->widget()->sizeHint().width();
+
+    int maxPanelWidth = qMax(100, clientW - 20);
+    int panelWidth = qMin(contentWidth, maxPanelWidth);
+
+    int x = (clientW - panelWidth) / 2;
+    int bottomMargin = 4;
+    int y = clientH - panelHeight - bottomMargin;
+
+    buttonPanel->setGeometry(x, y, panelWidth, panelHeight);
+    buttonPanel->raise();
+
+#else
+    // ================= 【桌面端定位】悬浮于窗口右侧外部 =================
     auto mainRect = frameGeometry();
     
     int panelWidth = 120; 
@@ -184,6 +254,7 @@ void DeviceWindow::updatePanelPosition()
     int y = mainRect.center().y() - (panelHeight / 2);
     
     buttonPanel->move(x, y);
+#endif
 }
 
 void DeviceWindow::changeOrientation(int orientation)
