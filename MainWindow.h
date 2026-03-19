@@ -34,6 +34,7 @@ public:
     int getRandomDelay();
 
     void relayoutDevices();
+    void doRelayoutDevices();
 
     QTabWidget* const tabWidget = new QTabWidget(this);
 
@@ -69,4 +70,6 @@ protected:
     QListWidget* sideBarList;
     QListWidget* deviceListWidget;
     QSlider* zoomSlider;
+
+    QTimer* relayoutTimer;
 };

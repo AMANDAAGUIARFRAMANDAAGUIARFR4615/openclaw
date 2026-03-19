@@ -678,6 +678,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         relayoutDevices();
     });
 
+    relayoutTimer = new QTimer(this);
+    relayoutTimer->setSingleShot(true);
+    relayoutTimer->setInterval(50);
+    connect(relayoutTimer, &QTimer::timeout, this, &MainWindow::doRelayoutDevices);
+
     EventHub::on(this, "deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
         // if (!data["springBoardMsg"].toString().isEmpty()) {
         //     qCriticalEx() << connection << data["springBoardMsg"];
@@ -1185,6 +1190,11 @@ void MainWindow::syncVideoSettingsToDevices()
 }
 
 void MainWindow::relayoutDevices()
+{
+    relayoutTimer->start();
+}
+
+void MainWindow::doRelayoutDevices()
 {
     // 计算目标尺寸并应用到指定的 QListWidget 中，同时返回该分组内的设备总数
     auto applyLayout = [&](BitMaskEditorDialog::Item tabItem, QListWidget* listWidget) -> int {
