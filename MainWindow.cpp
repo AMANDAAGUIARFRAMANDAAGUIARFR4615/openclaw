@@ -1341,7 +1341,7 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     relayoutDevices();
 
-    // player->setupVideoConnection();
+    player->setupVideoConnection();
 }
 
 QList<DeviceConnection*> MainWindow::getDeviceConnections(DeviceView* mainDeviceView)
