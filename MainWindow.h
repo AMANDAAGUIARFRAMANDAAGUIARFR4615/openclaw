@@ -3,7 +3,6 @@
 #include "DeviceInfo.h"
 #include "DeviceConnection.h"
 #include "BitMaskEditorDialog.h"
-#include "VideoVisibilityManager.h"
 #include "SwitchButton.h"
 #include <QMainWindow>
 #include <QKeyEvent>
@@ -70,6 +69,4 @@ protected:
     QListWidget* sideBarList;
     QListWidget* deviceListWidget;
     QSlider* zoomSlider;
-
-    VideoVisibilityManager* videoVisibilityManager;
 };

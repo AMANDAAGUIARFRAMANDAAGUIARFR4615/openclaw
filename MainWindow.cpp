@@ -3,7 +3,6 @@
 #include "Tools.h"
 #include "EmojiIconProvider.h"
 #include "EventHub.h"
-#include "LiveStreamDevice.h"
 #include "UsbDeviceManager.h"
 #include "TcpServer.h"
 #include "DeviceWidget.h"
@@ -25,6 +24,7 @@
 #include "VersionManagerDialog.h"
 #include "FlowEditorDialog.h"
 #include "VideoFrameWidget.h"
+#include "ViewportAwareBehavior.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -66,7 +66,6 @@ class FloatingTabWindow : public QDialog {
 public:
     ExplicitSelectionListWidget* listWidget;
     BitMaskEditorDialog::Item tabItem;
-    VideoVisibilityManager* visibilityMgr;
 
     FloatingTabWindow(QWidget* parent, const BitMaskEditorDialog::Item& item) 
         : QDialog(parent), tabItem(item) {
@@ -86,9 +85,6 @@ public:
         listWidget->sortItems(Qt::AscendingOrder);
         listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
         layout->addWidget(listWidget);
-
-        // 独立的视频能见度管理器，确保悬浮窗上的设备正常渲染
-        visibilityMgr = new VideoVisibilityManager(listWidget, this);
     }
 
     void reject() override {
@@ -649,7 +645,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             deviceListWidget->sortItems(Qt::AscendingOrder);
     });
 
-    videoVisibilityManager = new VideoVisibilityManager(deviceListWidget, this);
+    connect(new ViewportAwareBehavior(deviceListWidget), &ViewportAwareBehavior::viewportItemsChanged, this, [](const QList<QListWidgetItem*>& entered, const QList<QListWidgetItem*>& left){
+        qDebugEx() << "viewportItemsChanged" << "entered:" << entered.size() << "left:" << left.size();
+
+        for (auto& item : entered) {
+            const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
+            deviceWidget->setupVideoConnection();
+        }
+
+        for (auto& item : left) {
+            const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
+            deviceWidget->teardownVideoConnection();
+        }
+    });
 
     connect(tabBar, &QTabBar::currentChanged, [=](int index) {
         qDebugEx() << "onTabChanged" << index;
@@ -1236,8 +1244,6 @@ void MainWindow::relayoutDevices()
         int count = applyLayout(fw->tabItem, fw->listWidget);
         fw->setWindowTitle(QString("%1 [%2]").arg(fw->tabItem.name).arg(count));
     }
-
-    // videoVisibilityManager->refresh();
 }
 
 void MainWindow::addItem(DeviceConnection* connection)
@@ -1272,67 +1278,7 @@ void MainWindow::addItem(DeviceConnection* connection)
         retryTimer->start(0);
     }
 
-    auto ipLabel = player->findChild<QLabel*>("ipLabel");
-
-    auto device = new LiveStreamDevice(player);
-
-    if (connection->type == DeviceConnection::Usb)
-    {
-        auto videoConnection = UsbDeviceManager::getInstance()->connectDevice(deviceInfo->deviceId, deviceInfo->videoPort, true);
-
-        connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::rawDataReceived, player, [=](DeviceConnection* sender, const QByteArray& data){
-            if (sender != videoConnection)
-                return;
-
-            qint64 expireTime = deviceInfo->expireAt.get();
-            qint64 currentTime = Account::getInstance()->loginTime.get() + elapsedTimer->elapsed();
-            if (expireTime > currentTime)
-            {
-                device->appendData(data);
-
-                if (expireTime - currentTime < HIDE_NUM(86400000))
-                    ipLabel->setText(deviceInfo->localIp + HIDE_STR("<font color='orange'>[即将过期]</font>"));
-                else
-                    ipLabel->setText(deviceInfo->localIp);
-            }
-            else
-            {
-                ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : HIDE_STR("<font color='red'>[已过期]</font>")));
-            }
-        });
-
-        player->setSourceDevice(device);
-    }
-    else
-    {
-        auto server = new QTcpServer(player);
-        connect(server, &QTcpServer::newConnection, [=]() {
-            QTcpSocket *socket = server->nextPendingConnection();
-            qDebugEx() << "投屏连接" << socket->peerAddress().toString();
-            connect(socket, &QTcpSocket::readyRead, [=]() {
-                const auto& data = socket->readAll();
-
-                qint64 expireTime = deviceInfo->expireAt.get();
-                qint64 currentTime = Account::getInstance()->loginTime.get() + elapsedTimer->elapsed();
-                if (expireTime > currentTime)
-                {
-                    device->appendData(data);
-
-                    if (expireTime - currentTime < HIDE_NUM(86400000))
-                        ipLabel->setText(deviceInfo->localIp + HIDE_STR("<font color='orange'>[即将过期]</font>"));
-                    else
-                        ipLabel->setText(deviceInfo->localIp);
-                }
-                else
-                {
-                    ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : HIDE_STR("<font color='red'>[已过期]</font>")));
-                }
-            });
-        });
-        server->listen(QHostAddress::Any, 0);
-        connection->send("videoPort", server->serverPort());
-        player->setSourceDevice(device);
-    }
+    player->setupVideoConnection();
 
     auto frame = new QFrame();
     frame->setFrameShape(QFrame::Box);
