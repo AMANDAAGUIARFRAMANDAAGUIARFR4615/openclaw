@@ -1278,8 +1278,6 @@ void MainWindow::addItem(DeviceConnection* connection)
         retryTimer->start(0);
     }
 
-    player->setupVideoConnection();
-
     auto frame = new QFrame();
     frame->setFrameShape(QFrame::Box);
     auto frameLayout = new QVBoxLayout(frame);
@@ -1332,6 +1330,8 @@ void MainWindow::addItem(DeviceConnection* connection)
     player->setProperty("listWidgetItem", QVariant::fromValue(static_cast<QListWidgetItem*>(item)));
 
     relayoutDevices();
+
+    // player->setupVideoConnection();
 }
 
 QList<DeviceConnection*> MainWindow::getDeviceConnections(DeviceView* mainDeviceView)
