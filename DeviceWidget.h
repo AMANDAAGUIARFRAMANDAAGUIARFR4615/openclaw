@@ -12,6 +12,7 @@ public:
     explicit DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo);
     ~DeviceWidget();
 
+    void setupVideoConnection();
     QByteArray grabFrame();
 
     DeviceWindow* getDeviceWindow() { return deviceWindow; }

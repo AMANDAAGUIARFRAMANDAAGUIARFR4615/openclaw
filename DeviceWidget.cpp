@@ -5,6 +5,7 @@
 #include "Safe.h"
 #include "Account.h"
 #include "VideoFrameWidget.h"
+#include "LiveStreamDevice.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -12,6 +13,7 @@
 #include <QStyle>
 #include <QClipboard>
 #include <QInputDialog>
+#include <QTcpServer>
 
 DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo): DeviceView(connection, deviceInfo)
 {
@@ -136,6 +138,71 @@ DeviceWidget::~DeviceWidget()
         deviceWindow->deleteLater();
 
     delete deviceInfo;
+}
+
+void DeviceWidget::setupVideoConnection()
+{
+    auto ipLabel = findChild<QLabel*>("ipLabel");
+
+    auto device = new LiveStreamDevice(this);
+
+    if (connection->type == DeviceConnection::Usb)
+    {
+        auto videoConnection = UsbDeviceManager::getInstance()->connectDevice(deviceInfo->deviceId, deviceInfo->videoPort, true);
+
+        connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::rawDataReceived, this, [=](DeviceConnection* sender, const QByteArray& data){
+            if (sender != videoConnection)
+                return;
+
+            qint64 expireTime = deviceInfo->expireAt.get();
+            qint64 currentTime = Account::getInstance()->loginTime.get() + elapsedTimer->elapsed();
+            if (expireTime > currentTime)
+            {
+                device->appendData(data);
+
+                if (expireTime - currentTime < HIDE_NUM(86400000))
+                    ipLabel->setText(deviceInfo->localIp + HIDE_STR("<font color='orange'>[即将过期]</font>"));
+                else
+                    ipLabel->setText(deviceInfo->localIp);
+            }
+            else
+            {
+                ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : HIDE_STR("<font color='red'>[已过期]</font>")));
+            }
+        });
+
+        setSourceDevice(device);
+    }
+    else
+    {
+        auto server = new QTcpServer(this);
+        connect(server, &QTcpServer::newConnection, [=]() {
+            QTcpSocket *socket = server->nextPendingConnection();
+            qDebugEx() << "投屏连接" << socket->peerAddress().toString();
+            connect(socket, &QTcpSocket::readyRead, [=]() {
+                const auto& data = socket->readAll();
+
+                qint64 expireTime = deviceInfo->expireAt.get();
+                qint64 currentTime = Account::getInstance()->loginTime.get() + elapsedTimer->elapsed();
+                if (expireTime > currentTime)
+                {
+                    device->appendData(data);
+
+                    if (expireTime - currentTime < HIDE_NUM(86400000))
+                        ipLabel->setText(deviceInfo->localIp + HIDE_STR("<font color='orange'>[即将过期]</font>"));
+                    else
+                        ipLabel->setText(deviceInfo->localIp);
+                }
+                else
+                {
+                    ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : HIDE_STR("<font color='red'>[已过期]</font>")));
+                }
+            });
+        });
+        server->listen(QHostAddress::Any, 0);
+        connection->send("videoPort", server->serverPort());
+        setSourceDevice(device);
+    }
 }
 
 QByteArray DeviceWidget::grabFrame()
