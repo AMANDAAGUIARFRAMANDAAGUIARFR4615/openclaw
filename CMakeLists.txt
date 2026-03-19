@@ -46,6 +46,7 @@ add_subdirectory(nodeeditor)
 include_directories(include)
 include_directories(".")
 include_directories(dialogs)
+include_directories(behaviors)
 include_directories(visualscripting)
 
 if(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -87,6 +88,7 @@ file(GLOB ALL_SOURCES
     CONFIGURE_DEPENDS
     "*.cpp" "*.h" "*.hpp"
     "dialogs/*.cpp" "dialogs/*.h"
+    "behaviors/*.cpp" "behaviors/*.h"
     "visualscripting/*.cpp" "visualscripting/*.h" "visualscripting/*.hpp"
 )
 
