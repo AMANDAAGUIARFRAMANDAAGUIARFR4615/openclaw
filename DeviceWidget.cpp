@@ -5,7 +5,6 @@
 #include "Safe.h"
 #include "Account.h"
 #include "VideoFrameWidget.h"
-#include "LiveStreamDevice.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -13,7 +12,6 @@
 #include <QStyle>
 #include <QClipboard>
 #include <QInputDialog>
-#include <QTcpServer>
 
 DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo): DeviceView(connection, deviceInfo)
 {
@@ -134,6 +132,8 @@ DeviceWidget::~DeviceWidget()
     EventHub::off(this, "deviceNameChanged");
     EventHub::off(this, "lockedStatus");
 
+    teardownVideoConnection();
+
     if (deviceWindow)
         deviceWindow->deleteLater();
 
@@ -142,23 +142,26 @@ DeviceWidget::~DeviceWidget()
 
 void DeviceWidget::setupVideoConnection()
 {
+    if (m_videoDevice)
+        return;
+
     auto ipLabel = findChild<QLabel*>("ipLabel");
 
-    auto device = new LiveStreamDevice(this);
+    m_videoDevice = new LiveStreamDevice(this);
 
     if (connection->type == DeviceConnection::Usb)
     {
-        auto videoConnection = UsbDeviceManager::getInstance()->connectDevice(deviceInfo->deviceId, deviceInfo->videoPort, true);
+        m_usbVideoConnection = UsbDeviceManager::getInstance()->connectDevice(deviceInfo->deviceId, deviceInfo->videoPort, true);
 
-        connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::rawDataReceived, this, [=](DeviceConnection* sender, const QByteArray& data){
-            if (sender != videoConnection)
+        connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::rawDataReceived, m_videoDevice, [=](DeviceConnection* sender, const QByteArray& data){
+            if (sender != m_usbVideoConnection)
                 return;
 
             qint64 expireTime = deviceInfo->expireAt.get();
             qint64 currentTime = Account::getInstance()->loginTime.get() + elapsedTimer->elapsed();
             if (expireTime > currentTime)
             {
-                device->appendData(data);
+                if (m_videoDevice) m_videoDevice->appendData(data);
 
                 if (expireTime - currentTime < HIDE_NUM(86400000))
                     ipLabel->setText(deviceInfo->localIp + HIDE_STR("<font color='orange'>[即将过期]</font>"));
@@ -170,15 +173,14 @@ void DeviceWidget::setupVideoConnection()
                 ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : HIDE_STR("<font color='red'>[已过期]</font>")));
             }
         });
-
-        setSourceDevice(device);
     }
     else
     {
-        auto server = new QTcpServer(this);
-        connect(server, &QTcpServer::newConnection, [=]() {
-            QTcpSocket *socket = server->nextPendingConnection();
+        m_videoServer = new QTcpServer(this);
+        connect(m_videoServer, &QTcpServer::newConnection, [=]() {
+            QTcpSocket *socket = m_videoServer->nextPendingConnection();
             qDebugEx() << "投屏连接" << socket->peerAddress().toString();
+            connect(socket, &QTcpSocket::disconnected, socket, &QObject::deleteLater);
             connect(socket, &QTcpSocket::readyRead, [=]() {
                 const auto& data = socket->readAll();
 
@@ -186,7 +188,7 @@ void DeviceWidget::setupVideoConnection()
                 qint64 currentTime = Account::getInstance()->loginTime.get() + elapsedTimer->elapsed();
                 if (expireTime > currentTime)
                 {
-                    device->appendData(data);
+                    if (m_videoDevice) m_videoDevice->appendData(data);
 
                     if (expireTime - currentTime < HIDE_NUM(86400000))
                         ipLabel->setText(deviceInfo->localIp + HIDE_STR("<font color='orange'>[即将过期]</font>"));
@@ -199,10 +201,36 @@ void DeviceWidget::setupVideoConnection()
                 }
             });
         });
-        server->listen(QHostAddress::Any, 0);
-        connection->send("videoPort", server->serverPort());
-        setSourceDevice(device);
+        m_videoServer->listen(QHostAddress::Any, 0);
+        connection->send("videoPort", m_videoServer->serverPort());
     }
+
+    setSourceDevice(m_videoDevice);
+}
+
+void DeviceWidget::teardownVideoConnection()
+{
+    if (deviceWindow)
+        return;
+
+    if (!m_videoDevice)
+        return;
+
+    videoFrameWidget->mediaPlayer->stop();
+
+    if (m_usbVideoConnection) {
+        UsbDeviceManager::getInstance()->disconnectDevice(m_usbVideoConnection);
+        m_usbVideoConnection = nullptr;
+    }
+
+    if (m_videoServer) {
+        m_videoServer->close();
+        m_videoServer->deleteLater();
+        m_videoServer = nullptr;
+    }
+
+    delete m_videoDevice;
+    m_videoDevice = nullptr;
 }
 
 QByteArray DeviceWidget::grabFrame()
@@ -268,6 +296,10 @@ void DeviceWidget::launchDeviceWindow() {
         settings->setValue(deviceInfo->deviceId + "/geometry", deviceInfo->geometry);
         deviceWindow = nullptr;
         placeholder->deleteLater();
+
+        // 独立窗口关闭后，如果主部件当前也是不可见的，则立刻断开连接
+        if (!this->isVisible())
+            teardownVideoConnection();
     });
 
     if (deviceInfo->geometry.isValid()) {

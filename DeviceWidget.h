@@ -1,7 +1,9 @@
 #pragma once
 
 #include "DeviceView.h"
+#include "LiveStreamDevice.h"
 #include <QCheckBox>
+#include <QTcpServer>
 
 class DeviceWindow;
 
@@ -13,6 +15,7 @@ public:
     ~DeviceWidget();
 
     void setupVideoConnection();
+    void teardownVideoConnection();
     QByteArray grabFrame();
 
     DeviceWindow* getDeviceWindow() { return deviceWindow; }
@@ -24,21 +27,9 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void launchDeviceWindow();
 
-    Q_INVOKABLE void play() {
-        // static int count = 0;
-        // count++;
-        // qCriticalEx() << "播放" << count << this;
-        // if (videoFrameWidget)
-        //     videoFrameWidget->mediaPlayer->play();
-    }
-
-    Q_INVOKABLE void pause() {
-        // static int count = 0;
-        // count++;
-        // qCriticalEx() << "暂停" << count << this;
-        // if (videoFrameWidget)
-        //     videoFrameWidget->mediaPlayer->pause();
-    }
-
     DeviceWindow* deviceWindow = nullptr;
+
+    LiveStreamDevice* m_videoDevice = nullptr;
+    QTcpServer* m_videoServer = nullptr;
+    DeviceConnection* m_usbVideoConnection = nullptr;
 };
