@@ -38,8 +38,6 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     layout->addWidget(overlay);
     setLayout(layout);
 
-    addContextMenuActions();
-
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
     // 【移动端】作为普通子控件悬浮
     buttonPanel = new QFrame(this);
@@ -85,38 +83,17 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
     // 【移动端】按钮横排
-    QHBoxLayout *btnLayout = new QHBoxLayout(scrollContent);
-    btnLayout->setContentsMargins(0, 0, 0, 0); 
-    btnLayout->setSpacing(1);// 留 1px 的 spacing 作为按钮分割线
+    QHBoxLayout* buttonLayout = new QHBoxLayout(scrollContent);
+    buttonLayout->setContentsMargins(0, 0, 0, 0); 
+    buttonLayout->setSpacing(1);// 留 1px 的 spacing 作为按钮分割线
 #else
     // 【桌面端】按钮竖排
-    QVBoxLayout *btnLayout = new QVBoxLayout(scrollContent);
-    btnLayout->setContentsMargins(8, 8, 8, 8); 
-    btnLayout->setSpacing(8);
+    QVBoxLayout* buttonLayout = new QVBoxLayout(scrollContent);
+    buttonLayout->setContentsMargins(8, 8, 8, 8); 
+    buttonLayout->setSpacing(8);
 #endif
 
-    for (QAction *action : this->actions()) {
-        if (action->isSeparator())
-            continue;
-
-        if (action->text().contains("更新手机端") || action->text().contains("独占"))
-            continue;
-
-        auto btn = new QPushButton(action->text(), scrollContent);
-
-        if (!action->icon().isNull())
-            btn->setIcon(action->icon());
-        
-        btn->setFixedHeight(34);
-
-#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        connect(btn, &QPushButton::released, action, &QAction::trigger);
-#else
-        connect(btn, &QPushButton::clicked, action, &QAction::trigger);
-#endif
-
-        btnLayout->addWidget(btn);
-    }
+    buttonLayout->setObjectName("buttonLayout");
 
     scrollArea->setWidget(scrollContent);
     panelLayout->addWidget(scrollArea);
@@ -144,6 +121,8 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
         "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }"
     );
 #endif
+
+    addContextMenuActions();
 
     if (!AppSettingsDialog::getInstance()->getValue("hideStandaloneToolbar"))
         buttonPanel->show();

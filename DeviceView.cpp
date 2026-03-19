@@ -266,6 +266,18 @@ void DeviceView::addContextMenuActions()
 {
     qDeleteAll(actions());
 
+    QLayout* buttonLayout = findChild<QLayout*>("buttonLayout");
+    
+    if (buttonLayout) {
+        QLayoutItem *child;
+        while (child = buttonLayout->takeAt(0)) {
+            if (child->widget())
+                delete child->widget();
+            
+            delete child;
+        }
+    }
+
     auto windowMenu = AppSettingsDialog::getInstance()->getEnabledList("windowMenu");
 
     for (int i = 0; i < windowMenu.count(); i++) {
@@ -542,6 +554,30 @@ void DeviceView::addContextMenuActions()
         action->setIcon(EmojiIconProvider::createIcon(iconPart));
         action->setIconVisibleInMenu(true);
         action->setShortcutVisibleInContextMenu(true);
+
+        if (!buttonLayout)
+            continue;
+
+        if (action->isSeparator())
+            continue;
+
+        if (action->text().contains("更新手机端") || action->text().contains("独占"))
+            continue;
+
+        auto button = new QPushButton(action->text());
+
+        if (!action->icon().isNull())
+            button->setIcon(action->icon());
+        
+        button->setFixedHeight(34);
+
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        connect(button, &QPushButton::released, action, &QAction::trigger);
+#else
+        connect(button, &QPushButton::clicked, action, &QAction::trigger);
+#endif
+
+        buttonLayout->addWidget(button);
     }
 }
 
