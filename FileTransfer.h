@@ -273,7 +273,7 @@ protected:
 
                 transferredBytes = bytesSent;
 
-                // 完成时或每隔100ms才发送一次信号
+                // 完成时或每隔500ms才发送一次信号
                 qint64 currentTime = timer.elapsed();
                 if (transferredBytes == size || currentTime - lastNotifyTime > 500) {
                     emit progressUpdated(transferredBytes, size);
