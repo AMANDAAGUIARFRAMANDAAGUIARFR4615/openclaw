@@ -4,6 +4,7 @@
 #include "DeviceConnection.h"
 #include "BitMaskEditorDialog.h"
 #include "SwitchButton.h"
+#include "ViewportAwareBehavior.h"
 #include <QMainWindow>
 #include <QKeyEvent>
 #include <QDialog>
@@ -72,4 +73,5 @@ protected:
     QSlider* zoomSlider;
 
     QTimer* relayoutTimer;
+    ViewportAwareBehavior* viewportAwareBehavior;
 };

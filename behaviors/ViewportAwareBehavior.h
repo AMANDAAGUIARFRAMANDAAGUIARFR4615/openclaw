@@ -38,12 +38,13 @@ protected:
         return QObject::eventFilter(watched, event);
     }
 
-private slots:
+public slots:
     // 每次滚动或改变尺寸时调用，重新开始计时
     void requestUpdate() {
         m_calcTimer.start(); 
     }
 
+private slots:
     // 真正执行计算的逻辑
     void doCalculateVisibility() {
         if (!m_listWidget) return;

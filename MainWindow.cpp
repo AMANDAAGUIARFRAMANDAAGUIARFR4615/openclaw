@@ -24,7 +24,6 @@
 #include "VersionManagerDialog.h"
 #include "FlowEditorDialog.h"
 #include "VideoFrameWidget.h"
-#include "ViewportAwareBehavior.h"
 #include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -645,7 +644,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             deviceListWidget->sortItems(Qt::AscendingOrder);
     });
 
-    connect(new ViewportAwareBehavior(deviceListWidget), &ViewportAwareBehavior::viewportItemsChanged, this, [](const QList<QListWidgetItem*>& entered, const QList<QListWidgetItem*>& left){
+    viewportAwareBehavior = new ViewportAwareBehavior(deviceListWidget);
+    connect(viewportAwareBehavior, &ViewportAwareBehavior::viewportItemsChanged, this, [](const QList<QListWidgetItem*>& entered, const QList<QListWidgetItem*>& left){
         qDebugEx() << "viewportItemsChanged" << "entered:" << entered.size() << "left:" << left.size();
 
         for (auto& item : entered) {
@@ -1254,6 +1254,8 @@ void MainWindow::doRelayoutDevices()
         int count = applyLayout(fw->tabItem, fw->listWidget);
         fw->setWindowTitle(QString("%1 [%2]").arg(fw->tabItem.name).arg(count));
     }
+
+    viewportAwareBehavior->requestUpdate();
 }
 
 void MainWindow::addItem(DeviceConnection* connection)
@@ -1340,8 +1342,6 @@ void MainWindow::addItem(DeviceConnection* connection)
     player->setProperty("listWidgetItem", QVariant::fromValue(static_cast<QListWidgetItem*>(item)));
 
     relayoutDevices();
-
-    player->setupVideoConnection();
 }
 
 QList<DeviceConnection*> MainWindow::getDeviceConnections(DeviceView* mainDeviceView)
