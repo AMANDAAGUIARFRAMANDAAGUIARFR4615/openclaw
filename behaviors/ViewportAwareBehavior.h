@@ -50,12 +50,15 @@ private slots:
         if (!m_listWidget) return;
 
         QSet<QListWidgetItem*> currentVisibleItems;
+        QSet<QListWidgetItem*> allValidItems;
+        
         QRect viewportRect = m_listWidget->viewport()->rect();
 
         for (int i = 0; i < m_listWidget->count(); ++i) {
-            QListWidgetItem* currentItem = m_listWidget->item(i);
+            auto currentItem = m_listWidget->item(i);
             
-            // 兼容隐藏项：如果 item 被隐藏了，直接跳过
+            allValidItems.insert(currentItem);
+
             if (currentItem->isHidden()) continue;
 
             QRect itemVisualRect = m_listWidget->visualItemRect(currentItem);
@@ -63,6 +66,9 @@ private slots:
             if (itemVisualRect.isValid() && viewportRect.intersects(itemVisualRect))
                 currentVisibleItems.insert(currentItem);
         }
+
+        // 过滤掉已经被销毁/从列表中移除的 item（求交集，只保留当前依然有效的指针）
+        m_lastVisibleItems.intersect(allValidItems);
 
         QSet<QListWidgetItem*> itemsEntered = currentVisibleItems - m_lastVisibleItems;
         QSet<QListWidgetItem*> itemsLeft = m_lastVisibleItems - currentVisibleItems;
