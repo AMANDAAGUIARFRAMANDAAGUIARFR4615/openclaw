@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QSocketNotifier>
+#include <QByteArray>
 #if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
 #include <libimobiledevice/libimobiledevice.h>
 #endif
@@ -16,4 +17,10 @@ struct UsbDeviceContext {
     DeviceConnection* handler = nullptr;
     QString udid;
     uint16_t port = 0;
+
+    QByteArray readBuffer; 
+
+    UsbDeviceContext() {
+        readBuffer.resize(1024 * 1024); // 预分配 1MB
+    }
 };

@@ -130,19 +130,16 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
     if (idevice_connection_get_fd(ctx->connection, &fd) == IDEVICE_E_SUCCESS && fd >= 0) {
         ctx->notifier = new QSocketNotifier(fd, QSocketNotifier::Read, ctx->handler);
         connect(ctx->notifier, &QSocketNotifier::activated, [=](int) {
-            QByteArray buffer(1024 * 1024, Qt::Uninitialized);
             quint32 bytes = 0;
-            idevice_error_t err = idevice_connection_receive(ctx->connection, buffer.data(), buffer.size(), &bytes);
+            idevice_error_t err = idevice_connection_receive(ctx->connection, ctx->readBuffer.data(), ctx->readBuffer.size(), &bytes);
+            
             if (err == IDEVICE_E_SUCCESS && bytes > 0) {
-                QByteArray data = buffer.left(bytes);
-
                 if (rawMode) {
-                    emit rawDataReceived(ctx->handler, data);
+                    emit rawDataReceived(ctx->handler, QByteArray(ctx->readBuffer.constData(), bytes));
                     return;
                 }
 
-                qDebugEx() << "接收到字节数据" << data.size();
-                deviceBuffers[ctx].append(data);
+                deviceBuffers[ctx].append(ctx->readBuffer.constData(), bytes);
                 processBufferedData(ctx);
             } else if (err != IDEVICE_E_SUCCESS) {
                 emit errorOccurred(ctx->handler, QString("%1端口通信错误: %2").arg(port).arg(magic_enum::enum_name(err)));
