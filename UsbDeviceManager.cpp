@@ -3,10 +3,10 @@
 #include "Safe.h"
 #include <QJsonDocument>
 #include <magic_enum/magic_enum.hpp>
+#include <QEventLoop>
 
 UsbDeviceManager::UsbDeviceManager(QObject* parent) : QObject(parent)
 {
-    // 在构造函数中初始化，保证生命周期内 watcher 和 timer 永不为空
     watcher = new QFutureWatcher<QSet<QString>>(this);
     connect(watcher, &QFutureWatcher<QSet<QString>>::finished, this, &UsbDeviceManager::handlePollFinished);
 
@@ -72,34 +72,55 @@ void UsbDeviceManager::connectPendingDevices() {
 
         auto deviceInfo = DeviceInfo::getDevice(udid);
 
-        if (!deviceInfo || deviceInfo->connection->type != DeviceConnection::Usb && isUsbSetting)
+        if (!deviceInfo || deviceInfo->connection->type != DeviceConnection::Usb && isUsbSetting) {
+            devices[udid] = true; // 标记处理中，防止重复执行
             connectDevice(udid, 32839, false);
+            QTimer::singleShot(0, this, &UsbDeviceManager::connectPendingDevices);
+            break;
+        }
     }
 }
 
 DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t port, bool rawMode) {
 #if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
-    UsbDeviceContext* ctx = new UsbDeviceContext();
-    ctx->udid = udid;
-    ctx->port = port;
+    // 耗时握手交由后台执行，主线程用 QEventLoop 挂起等待
+    auto future = QtConcurrent::run([=]() -> UsbDeviceContext* {
+        UsbDeviceContext* ctx = new UsbDeviceContext();
+        ctx->udid = udid;
+        ctx->port = port;
 
-    if (IDEVICE_E_SUCCESS != idevice_new(&ctx->device, udid.toUtf8().constData())) {
-        emit errorOccurred(nullptr, QString("无法创建 idevice: %1").arg(udid));
-        delete ctx;
-        return nullptr;
-    }
+        if (IDEVICE_E_SUCCESS != idevice_new(&ctx->device, udid.toUtf8().constData())) {
+            delete ctx;
+            return nullptr;
+        }
 
-    if (idevice_connect(ctx->device, port, &ctx->connection) != IDEVICE_E_SUCCESS) {
+        if (idevice_connect(ctx->device, port, &ctx->connection) != IDEVICE_E_SUCCESS) {
+            idevice_free(ctx->device);
+            delete ctx;
+            return nullptr;
+        }
+        return ctx;
+    });
+
+    // 挂起主线程但保持 UI 刷新与响应
+    QFutureWatcher<UsbDeviceContext*> futureWatcher;
+    QEventLoop loop;
+    connect(&futureWatcher, &QFutureWatcher<UsbDeviceContext*>::finished, &loop, &QEventLoop::quit);
+    futureWatcher.setFuture(future);
+    loop.exec(); // 停在这里等待，直到后台连上
+
+    UsbDeviceContext* ctx = futureWatcher.result();
+    
+    if (!ctx) {
         emit errorOccurred(nullptr, QString("无法连接端口 %1 的设备: %2").arg(port).arg(udid));
-        idevice_free(ctx->device);
-        delete ctx;
+        if (port == 32839 && devices.contains(udid)) devices[udid] = false; // 允许后续重试
         return nullptr;
     }
 
+    // 后台连上后，回到主线程安全地绑定所有 Qt UI 对象
     ctx->handler = new DeviceConnection(ctx->connection);
     
-    if (!rawMode)
-    {
+    if (!rawMode) {
         ctx->handler->send("deviceInfo", QJsonObject{
             {"remoteDeviceName", QHostInfo::localHostName()}
         });
@@ -108,16 +129,14 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
     int fd = -1;
     if (idevice_connection_get_fd(ctx->connection, &fd) == IDEVICE_E_SUCCESS && fd >= 0) {
         ctx->notifier = new QSocketNotifier(fd, QSocketNotifier::Read, ctx->handler);
-        connect(ctx->notifier, &QSocketNotifier::activated, [=](int) {   
-            char buffer[1024 * 1024];
+        connect(ctx->notifier, &QSocketNotifier::activated, [=](int) {
+            QByteArray buffer(1024 * 1024, Qt::Uninitialized);
             quint32 bytes = 0;
-            idevice_error_t err = idevice_connection_receive(ctx->connection, buffer, sizeof(buffer), &bytes);
+            idevice_error_t err = idevice_connection_receive(ctx->connection, buffer.data(), buffer.size(), &bytes);
             if (err == IDEVICE_E_SUCCESS && bytes > 0) {
-                QByteArray data(buffer, bytes);
-                // qDebugEx() << "接收到字节数据" << bytes;
+                QByteArray data = buffer.left(bytes);
 
-                if (rawMode)
-                {
+                if (rawMode) {
                     emit rawDataReceived(ctx->handler, data);
                     return;
                 }
@@ -134,8 +153,7 @@ DeviceConnection* UsbDeviceManager::connectDevice(const QString& udid, uint16_t 
 
     connToContext.insert(ctx->handler, ctx);
 
-    if (ctx->port == 32839)
-    {
+    if (ctx->port == 32839) {
         devices[udid] = true;
         emit deviceConnected(ctx->handler);
     }
@@ -162,8 +180,7 @@ void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
 
     connToContext.remove(conn);
 
-    if (ctx->port == 32839)
-    {
+    if (ctx->port == 32839) {
         if (devices.contains(ctx->udid))
             devices[ctx->udid] = false;
 
@@ -179,8 +196,12 @@ void UsbDeviceManager::disconnectDevice(DeviceConnection* conn) {
 
     ctx->handler->deleteLater();
 
-    if (ctx->connection) idevice_disconnect(ctx->connection);
-    if (ctx->device) idevice_free(ctx->device);
+    auto connection = ctx->connection;
+    auto device = ctx->device;
+    QtConcurrent::run([connection, device]() {
+        if (connection) idevice_disconnect(connection);
+        if (device) idevice_free(device);
+    });
 
     deviceBuffers.remove(ctx);
     delete ctx;
