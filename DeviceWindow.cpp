@@ -100,7 +100,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 
     // 设置全局样式
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-    // 【核心修改 3：移动端】去掉所有圆角 (border-radius: 0px)，做成沉浸式底栏块
+    // 【移动端】去掉所有圆角 (border-radius: 0px)，做成沉浸式底栏块
     buttonPanel->setStyleSheet(
         "QFrame#FloatingPanel { background-color: #1E2228; border-radius: 0px; }"
         "QPushButton { color: white; background-color: #0D74CE; border: none; border-radius: 0px; font-size: 15px; font-weight: bold; padding: 0 16px; }"
