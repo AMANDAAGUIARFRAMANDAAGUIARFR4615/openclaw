@@ -234,7 +234,7 @@ jobs:
           path: ${{ env.QTMULTIMEDIA_DIR }}
 
       - name: Upload qtmultimedia cache
-        if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
+        # if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}-${{ env.QT_VERSION }}
