@@ -75,8 +75,6 @@ void UsbDeviceManager::connectPendingDevices() {
         if (!deviceInfo || deviceInfo->connection->type != DeviceConnection::Usb && isUsbSetting) {
             devices[udid] = true; // 标记处理中，防止重复执行
             connectDevice(udid, 32839, false);
-            QTimer::singleShot(0, this, &UsbDeviceManager::connectPendingDevices);
-            break;
         }
     }
 }
@@ -263,6 +261,17 @@ void UsbDeviceManager::handlePollFinished() {
         qInfoEx() << "❌检测到设备拔出:" << ctx->udid;
         devices.remove(ctx->udid);
         disconnectDevice(ctx->handler);
+    }
+
+    // 彻底清除已经不在物理连接列表中的设备的缓存记录
+    // 防止因为通信错误断开的设备被遗留在 devices 字典中导致无限重连
+    auto it = devices.begin();
+    while (it != devices.end()) {
+        if (!currentDevices.contains(it.key())) {
+            it = devices.erase(it); // 安全擦除
+        } else {
+            ++it;
+        }
     }
 
     previousDevices = currentDevices;
