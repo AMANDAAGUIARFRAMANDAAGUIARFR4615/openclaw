@@ -69,7 +69,7 @@ public:
 
             // 策略 1: 目标文件不存在 -> 直接写入
             if (!localFile.exists()) {
-                if (writeToFile(destFilePath, zipData)) {
+                if (writeToFile(destFilePath, zipData, info.permissions)) {
                     qDebugEx() << "[新增] " << info.filePath;
                 } else {
                     allSuccess = false;
@@ -91,8 +91,10 @@ public:
                 QFile::remove(backupPath);
             }
 
+            const QFile::Permissions oldPermissions = QFileInfo(destFilePath).permissions();
+
             if (localFile.rename(backupPath)) {
-                if (writeToFile(destFilePath, zipData)) {
+                if (writeToFile(destFilePath, zipData, info.permissions, oldPermissions)) {
                     qDebugEx() << "[更新] " << info.filePath << "(已备份为 .old)";
                 } else {
                     qCriticalEx() << "ZipUtils: 写入新文件失败，尝试恢复备份 ->" << destFilePath;
@@ -154,6 +156,42 @@ public:
     }
 
 private:
+    static bool isMachO(const QByteArray &data) {
+        if (data.size() < 4) return false;
+        const uchar b0 = static_cast<uchar>(data[0]);
+        const uchar b1 = static_cast<uchar>(data[1]);
+        const uchar b2 = static_cast<uchar>(data[2]);
+        const uchar b3 = static_cast<uchar>(data[3]);
+
+        // 32/64-bit Mach-O + FAT universal headers
+        const bool is32 = (b0 == 0xFE && b1 == 0xED && b2 == 0xFA && b3 == 0xCE) ||
+                          (b0 == 0xCE && b1 == 0xFA && b2 == 0xED && b3 == 0xFE);
+        const bool is64 = (b0 == 0xFE && b1 == 0xED && b2 == 0xFA && b3 == 0xCF) ||
+                          (b0 == 0xCF && b1 == 0xFA && b2 == 0xED && b3 == 0xFE);
+        const bool isFat = (b0 == 0xCA && b1 == 0xFE && b2 == 0xBA && b3 == 0xBE) ||
+                           (b0 == 0xBE && b1 == 0xBA && b2 == 0xFE && b3 == 0xCA) ||
+                           (b0 == 0xCA && b1 == 0xFE && b2 == 0xBA && b3 == 0xBF) ||
+                           (b0 == 0xBF && b1 == 0xBA && b2 == 0xFE && b3 == 0xCA);
+        return is32 || is64 || isFat;
+    }
+
+    static QFile::Permissions inferPermissionsIfNeeded(const QString &filePath,
+                                                       const QByteArray &data,
+                                                       QFile::Permissions permissions) {
+#if defined(Q_OS_MACOS)
+        if (isMachO(data)) {
+            const bool ownerExec = permissions.testFlag(QFileDevice::ExeOwner);
+            const bool groupExec = permissions.testFlag(QFileDevice::ExeGroup);
+            const bool otherExec = permissions.testFlag(QFileDevice::ExeOther);
+            if (!ownerExec || !groupExec || !otherExec) {
+                qDebugEx() << "ZipUtils: Mach-O 缺少执行位，自动补权限 ->" << filePath;
+                permissions |= QFileDevice::ExeOwner | QFileDevice::ExeGroup | QFileDevice::ExeOther;
+            }
+        }
+#endif
+        return permissions;
+    }
+
     // 检查 Reader 状态
     static bool isReaderValid(QZipReader &reader, const QString &zipPath) {
         if (!QFile::exists(zipPath)) {
@@ -168,11 +206,23 @@ private:
     }
 
     // 写入文件辅助函数
-    static bool writeToFile(const QString &filePath, const QByteArray &data) {
+    static bool writeToFile(const QString &filePath,
+                            const QByteArray &data,
+                            QFile::Permissions zipPermissions = {},
+                            QFile::Permissions fallbackPermissions = {}) {
         QFile file(filePath);
         if (file.open(QIODevice::WriteOnly)) {
             file.write(data);
             file.close();
+
+            QFile::Permissions permissions = zipPermissions;
+            if (permissions == QFile::Permissions())
+                permissions = fallbackPermissions;
+            permissions = inferPermissionsIfNeeded(filePath, data, permissions);
+
+            if (permissions != QFile::Permissions() && !QFile::setPermissions(filePath, permissions))
+                qWarning() << "ZipUtils: 设置权限失败 ->" << filePath;
+
             return true;
         }
         qCriticalEx() << "ZipUtils: 写入失败 ->" << filePath << file.errorString();
