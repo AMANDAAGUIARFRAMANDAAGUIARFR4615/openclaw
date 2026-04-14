@@ -45,6 +45,7 @@ add_subdirectory(nodeeditor)
 
 include_directories(include)
 include_directories(".")
+include_directories(tools)
 include_directories(dialogs)
 include_directories(behaviors)
 include_directories(visualscripting)
@@ -87,8 +88,7 @@ endif()
 file(GLOB ALL_SOURCES 
     CONFIGURE_DEPENDS
     "*.cpp" "*.h" "*.hpp"
-    "dialogs/*.cpp" "dialogs/*.h"
-    "behaviors/*.cpp" "behaviors/*.h"
+    "tools/*.h" "dialogs/*.h" "behaviors/*.h"
     "visualscripting/*.cpp" "visualscripting/*.h" "visualscripting/*.hpp"
 )
 
