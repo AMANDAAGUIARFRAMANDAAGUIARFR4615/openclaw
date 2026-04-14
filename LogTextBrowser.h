@@ -167,7 +167,7 @@ protected:
 
     void appendIfMatch(const QString& text)
     {
-        bool matchError = !showOnlyErrors || text.contains("color:red");
+        bool matchError = !showOnlyErrors || (text.contains("color:red") || text.contains("color:orange"));
         bool matchSearch = searchEdit->text().isEmpty() || text.contains(searchEdit->text(), Qt::CaseInsensitive);
 
         if (matchError && matchSearch)
