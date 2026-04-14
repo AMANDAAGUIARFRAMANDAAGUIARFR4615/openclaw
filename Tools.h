@@ -2,6 +2,7 @@
 
 #include "Logger.h"
 #include "qrcodegen.hpp"
+#include "global.h"
 #include <QJsonObject>
 #include <QFile>
 #include <QCryptographicHash>
@@ -17,6 +18,13 @@
 #include <QSettings>
 #include <QDirIterator>
 #include <QDesktopServices>
+#include <QUrlQuery>
+#include <QNetworkReply>
+#include <QEventLoop>
+#include <QJsonArray>
+#include <QCoreApplication>
+#include <QApplication>
+#include <QTimer>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -27,6 +35,51 @@ using namespace qrcodegen;
 
 class Tools {
 public:
+    static void quitApplication(bool restartAfterQuit = false, const QString &macAppBundlePath = QString())
+    {
+        static bool quitScheduled = false;
+        static bool restartScheduled = false;
+
+        if (restartAfterQuit && !restartScheduled) {
+            restartScheduled = true;
+            restartApplicationAfterQuit(macAppBundlePath);
+        }
+
+        if (quitScheduled)
+            return;
+
+        quitScheduled = true;
+
+        QTimer::singleShot(0, qApp, []() {
+            QApplication::closeAllWindows();
+            QCoreApplication::quit();
+        });
+    }
+
+    static void restartApplicationAfterQuit(const QString &macAppBundlePath = QString())
+    {
+#if defined(Q_OS_MACOS)
+        QString appBundlePath = macAppBundlePath;
+        if (appBundlePath.isEmpty()) {
+            QDir bundleDir(QCoreApplication::applicationDirPath());
+            bundleDir.cdUp();
+            bundleDir.cdUp();
+            appBundlePath = bundleDir.absolutePath();
+        }
+
+        if (appBundlePath.endsWith(".old"))
+            appBundlePath.chop(4);
+
+        const auto pid = QCoreApplication::applicationPid();
+        const QString command = QString("while kill -0 %1 2>/dev/null; do sleep 0.2; done; open -n \"%2\"")
+            .arg(pid)
+            .arg(appBundlePath);
+        QProcess::startDetached("/bin/sh", {"-c", command});
+#elif defined(Q_OS_WIN)
+        QProcess::startDetached(qApp->applicationFilePath());
+#endif
+    }
+
     static constexpr bool isDebug() {
 #ifdef QT_DEBUG
         return true;
@@ -274,5 +327,48 @@ public:
 #else
         return false;
 #endif
+    }
+
+    static QString getIpFromDomain(const QString &domain)
+    {
+        QUrl url("https://dns.alidns.com/resolve");
+        QUrlQuery query;
+        query.addQueryItem("name", domain);
+        url.setQuery(query);
+
+        QNetworkRequest request(url);
+        request.setRawHeader("Accept", "application/json");
+
+        QNetworkReply *reply = networkAccessManager->get(request);
+
+        QEventLoop loop;
+        QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        loop.exec(); 
+
+        QString ipAddress = "";
+        
+        if (reply->error() == QNetworkReply::NoError) {
+            QJsonParseError error;
+            QJsonDocument doc = QJsonDocument::fromJson(reply->readAll(), &error);
+            
+            if (error.error == QJsonParseError::NoError && doc.isObject()) {
+                QJsonObject root = doc.object();
+                if (root.contains("Answer") && root["Answer"].isArray()) {
+                    QJsonArray answers = root["Answer"].toArray();
+                    if (!answers.isEmpty()) {
+                        QJsonObject firstAnswer = answers.first().toObject();
+                        if (firstAnswer.contains("data")) {
+                            ipAddress = firstAnswer["data"].toString();
+                        }
+                    }
+                }
+            }
+        } else {
+            qCriticalEx() << "DNS 请求失败:" << reply->errorString();
+        }
+
+        reply->deleteLater();
+        
+        return ipAddress;
     }
 };

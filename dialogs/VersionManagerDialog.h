@@ -15,9 +15,10 @@
 #include <QJsonObject>
 #include <QDateTime>
 #include <QFile>
-#include <QStandardPaths>
+#include <QFileInfo>
 #include <QDir>
 #include <QMessageBox>
+#include <QProcess>
 #include <QProgressDialog>
 #include <QStyleHints>
 #include <QApplication>
@@ -115,6 +116,22 @@ private:
     QWidget *m_scrollContent;
     QLabel *m_statusLabel;
     QWidget *m_loadingWidget;
+
+    void applyMacPostUpdateFixes(const QString &appBundlePath) {
+#if defined(Q_OS_MACOS)
+        if (appBundlePath.isEmpty() || !QFileInfo::exists(appBundlePath)) {
+            qWarning() << "更新后修复: App 路径无效 ->" << appBundlePath;
+            return;
+        }
+
+        // 清理隔离属性，避免下载解压后的 bundle 触发 Gatekeeper 限制。
+        const int xattrCode = QProcess::execute("/usr/bin/xattr", {"-dr", "com.apple.quarantine", appBundlePath});
+        if (xattrCode != 0)
+            qWarning() << "更新后修复: xattr 清理失败，退出码" << xattrCode;
+#else
+        Q_UNUSED(appBundlePath);
+#endif
+    }
 
     void setupUI() {
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -263,7 +280,7 @@ private:
         QUrl qurl(url);
         QString fileName = qurl.fileName();
         if (fileName.isEmpty()) fileName = QString("update_%1.zip").arg(tagName);
-        QString filePath = QDir(QStandardPaths::writableLocation(QStandardPaths::DownloadLocation)).filePath(fileName);
+        QString filePath = QDir::temp().filePath(fileName);
 
         QFile *file = new QFile(filePath);
         if (!file->open(QIODevice::WriteOnly | QIODevice::Truncate)) {
@@ -292,12 +309,24 @@ private:
                 QFile::remove(filePath);
             } else {
 #if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
-                if (ZipUtils::extractSmart(filePath, ".")) {
-                    QFile::remove(filePath);
-                    qApp->quit();
-#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
-                    QProcess::startDetached(QString(qApp->applicationFilePath()).remove(".old"));
+                QString extractDir = QCoreApplication::applicationDirPath();
+                QString appBundlePath;
+
+#if defined(Q_OS_MACOS)
+                QDir dir(extractDir);
+                dir.cdUp();
+                dir.cdUp();
+                appBundlePath = dir.absolutePath();
+                dir.cdUp();
+                extractDir = dir.absolutePath();
 #endif
+
+                if (ZipUtils::extractSmart(filePath, extractDir)) {
+#if defined(Q_OS_MACOS)
+                    applyMacPostUpdateFixes(appBundlePath);
+#endif
+                    QFile::remove(filePath);
+                    Tools::quitApplication(true, appBundlePath);
                 } else {
                     new ToastWidget("解压失败");
                 }
