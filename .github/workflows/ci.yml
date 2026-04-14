@@ -151,7 +151,18 @@ jobs:
               --enable-filter=scale \
               --enable-filter=format \
               --disable-xlib \
-              --disable-libxcb
+              --disable-libxcb \
+              `# --- 开启 Windows 原生硬解 ---` \
+              --enable-hwaccel=h264_d3d11va \
+              --enable-hwaccel=h264_dxva2 \
+              `# --- 开启 macOS/iOS 原生硬解 ---` \
+              --enable-hwaccel=h264_videotoolbox \
+              --enable-decoder=h264_videotoolbox \
+              `# --- 开启 Android 原生硬解 ---` \
+              --enable-jni \
+              --enable-mediacodec \
+              --enable-hwaccel=h264_mediacodec \
+              --enable-decoder=h264_mediacodec
 
             if [[ "${{runner.os}}" == "macOS" ]]; then
               sudo make -j install
@@ -341,6 +352,14 @@ jobs:
         run: |
           gem install fastlane
           fastlane build_and_sign
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RemotePro-${{ matrix.os }}-${{ env.VERSION }}
+          path: |
+            build/RemotePro*.zip
+            build/RemotePro*.ipa
+            build/RemotePro*.apk
 
       - name: 发布 Release
         uses: softprops/action-gh-release@v2.4.2
