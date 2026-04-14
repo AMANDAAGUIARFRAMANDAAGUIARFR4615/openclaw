@@ -110,11 +110,11 @@ public:
     };
 
     explicit BitMaskEditorDialog(const QList<Item>& items,
-                                 quint32& maskRef,
+                                 const QList<quint32*>& maskRefs,
                                  QWidget* parent = nullptr)
         : QDialog(parent)
         , m_items(items)
-        , m_maskRef(maskRef)
+        , m_maskRefs(maskRefs)
     {
         setWindowTitle("位掩码编辑器");
         setupUi();
@@ -134,10 +134,27 @@ private:
             const auto& item = m_items[i];
 
             auto cb = new QCheckBox(item.name, this);
-            cb->setChecked(m_maskRef & (1U << item.bit));
+            
+            // 统计当前分组在多少个设备中是勾选状态
+            int checkedCount = 0;
+            for (quint32* mask : m_maskRefs) {
+                if (*mask & (1U << item.bit)) {
+                    checkedCount++;
+                }
+            }
+
+            // 根据包含该位掩码的设备数量决定 CheckBox 的状态
+            if (m_maskRefs.isEmpty() || checkedCount == 0) {
+                cb->setCheckState(Qt::Unchecked);
+            } else if (checkedCount == m_maskRefs.size()) {
+                cb->setCheckState(Qt::Checked);
+            } else {
+                cb->setTristate(true);
+                cb->setCheckState(Qt::PartiallyChecked);
+            }
             
             if (!item.bit) {
-                cb->setChecked(true);
+                cb->setCheckState(Qt::Checked);
                 cb->setEnabled(false);
             }
 
@@ -164,17 +181,25 @@ private:
 
     void collectMask()
     {
-        m_maskRef = 0;
-
         for (int i = 0; i < m_checkBoxes.size(); ++i) {
-            if (m_checkBoxes[i]->isChecked()) {
-                int bit = m_items[i].bit;
-                m_maskRef |= (1U << bit);
+            int bit = m_items[i].bit;
+            Qt::CheckState state = m_checkBoxes[i]->checkState();
+
+            if (state == Qt::PartiallyChecked) {
+                continue; // 半选状态保留原样
+            }
+
+            for (quint32* maskRef : m_maskRefs) {
+                if (state == Qt::Checked) {
+                    *maskRef |= (1U << bit);
+                } else if (state == Qt::Unchecked) {
+                    *maskRef &= ~(1U << bit);
+                }
             }
         }
     }
 
     const QList<Item> m_items;
-    quint32& m_maskRef;
+    QList<quint32*> m_maskRefs; 
     QList<QCheckBox*> m_checkBoxes;
 };

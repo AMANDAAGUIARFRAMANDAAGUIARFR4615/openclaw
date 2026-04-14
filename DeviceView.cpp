@@ -76,7 +76,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
         auto type = data["type"].toInt();
         auto content = data["content"].toString();
 
-        if (type == 1)
+        if (type == 1 || type == 3 || type == 4)
         {
             if (clipboardTotal == 0) {
                 // 手机上触发的复制
@@ -204,7 +204,6 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 DeviceView::~DeviceView()
 {
     EventHub::off(this, "clipboard");
-    EventHub::off(this, "orientation");
 }
 
 void DeviceView::setSourceDevice(QIODevice *device, const QUrl &sourceUrl)
@@ -373,9 +372,9 @@ void DeviceView::addContextMenuActions()
             auto action = addAction(text, [this]() {
                 auto flags = windowFlags();
                 
-                for (const auto& deviceWidget : MainWindow::getInstance()->getDeviceWindows(this)) {
-                    auto f = deviceWidget->windowFlags();
-                    auto title = deviceWidget->windowTitle();
+                for (const auto& deviceWindow : MainWindow::getInstance()->getDeviceWindows(this)) {
+                    auto f = deviceWindow->windowFlags();
+                    auto title = deviceWindow->windowTitle();
 
                     if (flags & Qt::WindowStaysOnTopHint)
                     {
@@ -388,9 +387,9 @@ void DeviceView::addContextMenuActions()
                         if (!title.contains("📌")) title += "📌";
                     }
 
-                    deviceWidget->setWindowFlags(f);
-                    deviceWidget->setWindowTitle(title);
-                    deviceWidget->show();
+                    deviceWindow->setWindowFlags(f);
+                    deviceWindow->setWindowTitle(title);
+                    deviceWindow->show();
                 }
             });
 
@@ -404,11 +403,21 @@ void DeviceView::addContextMenuActions()
                     return;
                 }
 
-                BitMaskEditorDialog dialog(MainWindow::getInstance()->getTabs(), deviceInfo->groupMask, this);
+                QList<quint32*> maskRefs;
+                auto deviceWidgets = MainWindow::getInstance()->getDeviceWidgets(this);
+                
+                for (const auto& deviceWidget : deviceWidgets) {
+                    maskRefs.append(&(deviceWidget->deviceInfo->groupMask));
+                }
+
+                BitMaskEditorDialog dialog(MainWindow::getInstance()->getTabs(), maskRefs, this);
                 dialog.setWindowTitle("修改分组");
                 if (dialog.exec() != QDialog::Accepted) return;
 
-                settings->setValue(deviceInfo->deviceId + "/groupMask", deviceInfo->groupMask);
+                for (const auto& deviceWidget : deviceWidgets) {
+                    settings->setValue(deviceWidget->deviceInfo->deviceId + "/groupMask", deviceWidget->deviceInfo->groupMask);
+                }
+
                 MainWindow::getInstance()->relayoutDevices();
             });
         }
@@ -489,10 +498,7 @@ void DeviceView::addContextMenuActions()
 
                                 const auto& data = reply->readAll();
 
-                                // 获取系统临时文件夹路径 (例如 Windows 的 C:/Users/xxx/AppData/Local/Temp)
-                                QString tempDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-
-                                QString localPath = QDir(tempDir).filePath(pkgFile.section('/', -1));
+                                QString localPath = QDir::temp().filePath(pkgFile.section('/', -1));
 
                                 QFile file(localPath);
                                 if (!file.open(QIODevice::WriteOnly)) {
