@@ -243,6 +243,8 @@ private:
                     QJsonObject obj = remoteDevices[i].toObject();
                     deviceId = obj[HIDE_STR("udid")].toString();
                     deviceName = obj["deviceName"].toString(); // 字段需对应后端
+                    if (deviceName.isEmpty())
+                        deviceName = deviceId;
                     model = obj["model"].toString();
                     expireAt = obj[HIDE_STR("expireAt")].toVariant().toLongLong();
                 } else {
