@@ -152,6 +152,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
 DeviceWindow::~DeviceWindow()
 {
     EventHub::off(this, "lockedStatus");
+    EventHub::off(this, "orientation");
     EventHub::off(this, "audioPort");
 
     UsbDeviceManager::getInstance()->disconnectDevice(audioDeviceConnection);

@@ -5,6 +5,7 @@
 #include "Safe.h"
 #include "Account.h"
 #include "VideoFrameWidget.h"
+#include "LambdaEventFilter.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -69,17 +70,31 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
 
     auto ipLabel = new QLabel(connection->type == DeviceConnection::Usb ? "" : deviceInfo->localIp, this);
     ipLabel->setObjectName("ipLabel");
-    ipLabel->setAlignment(Qt::AlignCenter);
+    ipLabel->setAlignment(Qt::AlignRight | Qt::AlignCenter);
     ipLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     ipLabel->setFixedHeight(22);
     auto versionLabel = new QLabel(QStringList{"", "有根", "无根", "隐根"}[deviceInfo->jbType] + deviceInfo->version, this);
     versionLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     versionLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     versionLabel->setFixedHeight(22);
-
+    versionLabel->setMinimumWidth(1);
+    
     auto bottomLayout = new QHBoxLayout;
     bottomLayout->setContentsMargins(5, 0, 5, 0);
-    bottomLayout->setSpacing(0);
+    bottomLayout->setSpacing(10);
+
+    installEventFilter(new LambdaEventFilter(this, [=](QObject* watched, QEvent* event) -> bool {
+        if (event->type() == QEvent::Resize) {
+            int threshold = ipLabel->minimumSizeHint().width() + 22;
+        
+            bool shouldShow = this->width() > threshold;
+
+            if (versionLabel->isVisible() != shouldShow)
+                versionLabel->setVisible(shouldShow);
+        }
+        
+        return false;
+    }));
 
     bottomLayout->addStretch();
     bottomLayout->addWidget(ipLabel);
@@ -131,6 +146,8 @@ DeviceWidget::~DeviceWidget()
 {
     EventHub::off(this, "deviceNameChanged");
     EventHub::off(this, "lockedStatus");
+    EventHub::off(this, "orientation");
+    EventHub::off(this, HIDE_STR("deviceExpired"));
 
     teardownVideoConnection();
 
@@ -153,10 +170,7 @@ void DeviceWidget::setupVideoConnection()
     {
         m_usbVideoConnection = UsbDeviceManager::getInstance()->connectDevice(deviceInfo->deviceId, deviceInfo->videoPort, true);
 
-        connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::rawDataReceived, m_videoDevice, [=](DeviceConnection* sender, const QByteArray& data){
-            if (sender != m_usbVideoConnection)
-                return;
-
+        connect(m_usbVideoConnection, &DeviceConnection::usbRawDataReceived, m_videoDevice, [=](const QByteArray& data) {
             qint64 expireTime = deviceInfo->expireAt.get();
             qint64 currentTime = Account::getInstance()->loginTime.get() + elapsedTimer->elapsed();
             if (expireTime > currentTime)

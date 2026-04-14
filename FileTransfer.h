@@ -111,10 +111,7 @@ protected:
                     return;
                 }
 
-                connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::rawDataReceived, this, [=](DeviceConnection* sender, const QByteArray& data){
-                    if (sender != transferConnection)
-                        return;
-
+                connect(transferConnection, &DeviceConnection::usbRawDataReceived, this, [=](const QByteArray& data) {
                     handleDataRead(data);
                 });
 
@@ -177,57 +174,64 @@ protected:
 
     void handleNewConnection()
     {
-        if (type == 1)
-        {
-            QString dirPath = QFileInfo(localPath).absolutePath();
-
-            static QDir dir;
-            if (!dir.exists(dirPath))
-                dir.mkpath(dirPath);
-
-            recvFile.setFileName(localPath);
-
-            if (!recvFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        auto doWork = [this]() {
+            if (type == 1)
             {
-                qCriticalEx() << "文件保存失败:" << recvFile.errorString();
-                deleteLater();
-            }
+                QString dirPath = QFileInfo(localPath).absolutePath();
 
-            return;
-        }
+                static QDir dir;
+                if (!dir.exists(dirPath))
+                    dir.mkpath(dirPath);
 
-        QtConcurrent::run([this]() {
-            QFile sendFile(localPath);
+                recvFile.setFileName(localPath);
 
-            if (!sendFile.open(QIODevice::ReadOnly))
-            {
-                qCriticalEx() << "Failed to open file for sending.";
-                // 确保在主线程析构
-                QMetaObject::invokeMethod(this, [this](){ deleteLater(); });
+                if (!recvFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
+                {
+                    qCriticalEx() << "文件保存失败:" << recvFile.errorString();
+                    deleteLater();
+                }
+
                 return;
             }
 
-            const qint64 chunkSize = 512 * 1024; 
+            QtConcurrent::run([this]() {
+                QFile sendFile(localPath);
 
-            while (!sendFile.atEnd())
-            {
-                // 如果任务已被移出运行队列（被外部删除了），停止发送
-                if (!runningList.contains(this)) break;
+                if (!sendFile.open(QIODevice::ReadOnly))
+                {
+                    qCriticalEx() << "Failed to open file for sending.";
+                    // 确保在主线程析构
+                    QMetaObject::invokeMethod(this, [this](){ deleteLater(); });
+                    return;
+                }
 
-                const auto& buffer = sendFile.read(chunkSize);
+                const qint64 chunkSize = 64 * 1024; 
 
-                // 使用 Qt::BlockingQueuedConnection，这会阻塞当前子线程，直到主线程完成 write 调用。
-                // 这起到了两个作用：
-                // 1. 防止子线程读取速度过快，导致主线程事件队列堆积成千上万个事件（卡死UI的主因）。
-                // 2. 自动实现了“背压”，即读取速度自动适配网络/主线程处理速度。
-                QMetaObject::invokeMethod(this, [=]() {
-                    transferConnection->write(buffer);
-                }, Qt::BlockingQueuedConnection);
-            }
+                while (!sendFile.atEnd())
+                {
+                    // 如果任务已被移出运行队列（被外部删除了），停止发送
+                    if (!runningList.contains(this)) break;
 
-            sendFile.close();
-            qInfoEx() << "文件关闭";
-        });
+                    const auto& buffer = sendFile.read(chunkSize);
+
+                    // 使用 Qt::BlockingQueuedConnection，这会阻塞当前子线程，直到主线程完成 write 调用。
+                    // 这起到了两个作用：
+                    // 1. 防止子线程读取速度过快，导致主线程事件队列堆积成千上万个事件（卡死UI的主因）。
+                    // 2. 自动实现了“背压”，即读取速度自动适配网络/主线程处理速度。
+                    QMetaObject::invokeMethod(this, [=]() {
+                        transferConnection->write(buffer);
+                    }, Qt::BlockingQueuedConnection);
+                }
+
+                sendFile.close();
+                qInfoEx() << "文件关闭";
+            });
+        };
+
+        if (transferConnection->type == DeviceConnection::Usb)
+            connect(transferConnection, &DeviceConnection::connected, this, doWork);
+        else
+            doWork();
     }
 
     void handleDataRead(const QByteArray& data)
@@ -246,8 +250,8 @@ protected:
                     return;
             }
 
-            // 只有当 buffer 积累到 512KB 以上，或者文件接收完毕时，才执行写盘操作。
-            if (buffer.size() < 512 * 1024 && transferredBytes + buffer.size() < size)
+            // 只有当 buffer 积累到 64KB 以上，或者文件接收完毕时，才执行写盘操作。
+            if (buffer.size() < 64 * 1024 && transferredBytes + buffer.size() < size)
                 return;
 
             recvFile.write(buffer);
