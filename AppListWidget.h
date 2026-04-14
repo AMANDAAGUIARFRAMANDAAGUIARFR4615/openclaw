@@ -187,6 +187,7 @@ private:
         const auto& iconBase64 = jsonObject["icon"].toString();
         const auto& appName = jsonObject["name"].toString();
         const auto& packageName = jsonObject["identifier"].toString();
+        const auto& version = jsonObject["version"].toString();
         const auto& type = jsonObject["type"].toInt();
         const auto& isDeletable = jsonObject["isDeletable"].toBool();
 
@@ -246,6 +247,12 @@ private:
         pkgItem->setTextAlignment(Qt::AlignVCenter | Qt::AlignLeft);
         pkgItem->setForeground(QBrush(QColor("#606060"))); // 标准灰色
         table->setItem(row, 2, pkgItem);
+
+        // 版本
+        QTableWidgetItem *versionItem = new QTableWidgetItem(version);
+        versionItem->setTextAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+        versionItem->setForeground(QBrush(QColor("#606060")));
+        table->setItem(row, 3, versionItem);
 
         // 操作按钮区域
         QWidget *actionWidget = new QWidget();
@@ -350,7 +357,7 @@ private:
         layout->addStretch();
         
         actionWidget->setLayout(layout);
-        table->setCellWidget(row, 3, actionWidget);
+        table->setCellWidget(row, 4, actionWidget);
     }
 
 protected:
@@ -363,8 +370,8 @@ protected:
 
 private:
     void setupTable() {
-        table->setColumnCount(4);
-        table->setHorizontalHeaderLabels(QStringList() << "图标" << "应用名称" << "包名" << "操作");
+        table->setColumnCount(5);
+        table->setHorizontalHeaderLabels(QStringList() << "图标" << "应用名称" << "包名" << "版本" << "操作");
 
         table->verticalHeader()->setVisible(false);
         // 去除虚线框
@@ -382,11 +389,13 @@ private:
         table->setColumnWidth(0, 70);  
         table->setColumnWidth(1, 200); 
         table->setColumnWidth(2, 250); 
+        table->setColumnWidth(3, 130); 
 
         table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
         table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
         table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
         table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+        table->horizontalHeader()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
     }
 
     DeviceConnection* const connection;
