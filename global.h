@@ -13,16 +13,17 @@ extern QElapsedTimer* elapsedTimer;
 extern QNetworkAccessManager* networkAccessManager;
 
 namespace Config {
+    inline const QString SERVER_IP() {
 #ifdef QT_DEBUG
-    const QString SERVER_IP = "192.168.0.111";
-    // const QString SERVER_IP = "8.210.25.235";
+        const QString ip = "192.168.0.111";
 #else
-    // const QString SERVER_IP = "43.167.226.242";
-    const QString SERVER_IP = "47.107.154.171";
+        QString ip = qApp->property("SERVER_IP").toString();
 #endif
+        return ip;
+    }
 
     const int SERVER_PORT = 9000;
 
     const QString SITE_URL = "https://remotepro.cn";
-    const QString VERSION = "2.3.4";
+    const QString VERSION = "2.6.0";
 }

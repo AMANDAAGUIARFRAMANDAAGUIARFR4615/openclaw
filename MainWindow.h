@@ -71,6 +71,7 @@ protected:
     QListWidget* sideBarList;
     QListWidget* deviceListWidget;
     QSlider* zoomSlider;
+    QTimer* relayoutTimer;
 
     ViewportAwareBehavior* viewportAwareBehavior;
 };

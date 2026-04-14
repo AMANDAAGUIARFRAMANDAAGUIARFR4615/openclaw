@@ -65,6 +65,7 @@ public:
 
         actionButton = new QPushButton("登录");
         actionButton->setObjectName("mainBtn");
+        actionButton->setEnabled(false);
         switchButton = new QPushButton("注册新账号");
         switchButton->setObjectName("subBtn");
         
@@ -120,7 +121,7 @@ public:
             actionButton->setEnabled(false);
         });
 
-        webSocketClient->open(QUrl("ws://" + Config::SERVER_IP + ":" + QString::number(Config::SERVER_PORT)));
+        webSocketClient->open(QUrl("ws://" + Config::SERVER_IP() + ":" + QString::number(Config::SERVER_PORT)));
 
         auto server = new QTcpServer(this);
         server->listen(QHostAddress::Any, 0);

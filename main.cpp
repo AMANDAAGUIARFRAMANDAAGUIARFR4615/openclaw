@@ -57,26 +57,44 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
+    QNetworkProxy::setApplicationProxy(QNetworkProxy::NoProxy);
+
     settings = new QSettings("deepseek", "RemotePro");
     webSocketClient = new WebSocketClient();
     elapsedTimer = new QElapsedTimer();
     networkAccessManager = new QNetworkAccessManager();
 
-#if defined(Q_OS_IOS)
-    QNetworkRequest request(QUrl("http://captive.apple.com"));
-    networkAccessManager->get(request);
-#endif
+// #if defined(Q_OS_IOS)
+//     QNetworkRequest request(QUrl("http://captive.apple.com"));
+//     networkAccessManager->get(request);
+// #endif
+
+    QString ip = Tools::getIpFromDomain("ws.remotepro.cn");
+    if (ip.isEmpty()) {
+        QMessageBox::warning(nullptr, "警告", "域名解析失败，请稍后重试");
+        return 0;
+    }
+
+    qApp->setProperty("SERVER_IP", ip);
 
     auto lockFile = new QLockFile(QDir::temp().absoluteFilePath("RemotePro.lock"));
 
     // 尝试加锁，设置超时时间为 100 毫秒（防止之前的僵死进程导致的短暂锁定）
     if (!lockFile->tryLock(100)) {
-        QMessageBox::warning(nullptr, "警告", "应用程序已经在运行中！");
+        QMessageBox::warning(nullptr, "警告", "应用程序已经在运行中");
         return 0;
     }
 
-    if (QFile::exists(qApp->applicationFilePath() + ".old"))
+    if (QFile::exists(qApp->applicationFilePath() + ".old")) {
+#if defined(Q_OS_MACOS)
+        QDir dir(QCoreApplication::applicationDirPath());
+        dir.cdUp();
+        dir.cdUp();
+        Tools::removeFilesRecursively(dir.absolutePath(), {"*.old"});
+#else
         Tools::removeFilesRecursively(QCoreApplication::applicationDirPath(), {"*.old"});
+#endif
+    }
 
     app.styleHints()->setColorScheme((Qt::ColorScheme)settings->value("colorScheme").toInt());
     QStyle *fusionStyle = QStyleFactory::create("Fusion");
@@ -150,8 +168,6 @@ int main(int argc, char *argv[])
             window->setFocus();
     });
 
-    QNetworkProxy::setApplicationProxy(QNetworkProxy::NoProxy);
-
     // qputenv("QT_FFMPEG_DEBUG", "1");
     // qputenv("QT_MEDIA_BACKEND", "ffmpeg");
 
@@ -187,8 +203,7 @@ int main(int argc, char *argv[])
     webSocketClient->on("force_logout", [](const QJsonValue &data) {
 #if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
         settings->setValue("force_logout", data.toString());
-        qApp->quit();
-        QProcess::startDetached(qApp->applicationFilePath());
+        Tools::quitApplication(true);
 #endif
     });
 
@@ -218,6 +233,7 @@ int main(int argc, char *argv[])
         UsbDeviceManager::getInstance()->start();
 
         QObject::connect(qApp, &QApplication::aboutToQuit, [=]() {
+            qInstallMessageHandler(nullptr);
             lockFile->unlock();
             UsbDeviceManager::getInstance()->stop();
             MainWindow::getInstance()->deleteLater();

@@ -13,18 +13,14 @@ class ViewportAwareBehavior : public QObject {
 public:
     explicit ViewportAwareBehavior(QListWidget *listWidget) : QObject(listWidget), m_listWidget(listWidget)
     {
-        if (m_listWidget) {
-            m_calcTimer.setSingleShot(true);
-            m_calcTimer.setInterval(50);
-            connect(&m_calcTimer, &QTimer::timeout, this, &ViewportAwareBehavior::doCalculateVisibility);
+        m_updateTimer.setSingleShot(true);
+        connect(&m_updateTimer, &QTimer::timeout, this, &ViewportAwareBehavior::handleUpdateTimeout);
 
-            connect(m_listWidget->verticalScrollBar(), &QScrollBar::valueChanged, this, &ViewportAwareBehavior::requestUpdate);
-            connect(m_listWidget->horizontalScrollBar(), &QScrollBar::valueChanged, this, &ViewportAwareBehavior::requestUpdate);
-            
-            m_listWidget->installEventFilter(this); 
-            
-            QTimer::singleShot(0, this, &ViewportAwareBehavior::requestUpdate);
-        }
+        connect(m_listWidget->verticalScrollBar(), &QScrollBar::valueChanged, this, &ViewportAwareBehavior::delayUpdate);
+        connect(m_listWidget->horizontalScrollBar(), &QScrollBar::valueChanged, this, &ViewportAwareBehavior::delayUpdate);
+        connect(m_listWidget->model(), &QAbstractItemModel::layoutChanged, this, &ViewportAwareBehavior::delayUpdate);
+        
+        m_listWidget->installEventFilter(this);
     }
 
 signals:
@@ -33,21 +29,31 @@ signals:
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override {
         if (watched == m_listWidget && event->type() == QEvent::Resize)
-            requestUpdate();
+            delayUpdate();
 
         return QObject::eventFilter(watched, event);
     }
 
 public slots:
-    // 每次滚动或改变尺寸时调用，重新开始计时
-    void requestUpdate() {
-        m_calcTimer.start(); 
+    void delayUpdate() {
+        if (!m_hasPendingDelay) {
+            m_delayBaseVisibleItems = m_lastVisibleItems;
+            m_hasPendingDelay = true;
+        }
+
+        m_updateTimer.start(kUpdateDelayMs);
     }
 
 private slots:
-    // 真正执行计算的逻辑
-    void doCalculateVisibility() {
-        if (!m_listWidget) return;
+    void handleUpdateTimeout() {
+        m_hasPendingDelay = false;
+        updateVisibility(m_delayBaseVisibleItems);
+        m_delayBaseVisibleItems.clear();
+    }
+
+private:
+    void updateVisibility(QSet<QListWidgetItem*> previousVisibleItems) {
+        m_listWidget->doItemsLayout();
 
         QSet<QListWidgetItem*> currentVisibleItems;
         QSet<QListWidgetItem*> allValidItems;
@@ -68,10 +74,10 @@ private slots:
         }
 
         // 过滤掉已经被销毁/从列表中移除的 item（求交集，只保留当前依然有效的指针）
-        m_lastVisibleItems.intersect(allValidItems);
+        previousVisibleItems.intersect(allValidItems);
 
-        QSet<QListWidgetItem*> itemsEntered = currentVisibleItems - m_lastVisibleItems;
-        QSet<QListWidgetItem*> itemsLeft = m_lastVisibleItems - currentVisibleItems;
+        QSet<QListWidgetItem*> itemsEntered = currentVisibleItems - previousVisibleItems;
+        QSet<QListWidgetItem*> itemsLeft = previousVisibleItems - currentVisibleItems;
 
         if (!itemsEntered.isEmpty() || !itemsLeft.isEmpty())
             emit viewportItemsChanged(itemsEntered.values(), itemsLeft.values());
@@ -79,8 +85,11 @@ private slots:
         m_lastVisibleItems = currentVisibleItems;
     }
 
-private:
     QListWidget *m_listWidget;
     QSet<QListWidgetItem*> m_lastVisibleItems;
-    QTimer m_calcTimer; // 防抖定时器
+    QSet<QListWidgetItem*> m_delayBaseVisibleItems;
+    QTimer m_updateTimer;
+    bool m_hasPendingDelay = false;
+
+    static constexpr int kUpdateDelayMs = 350;
 };

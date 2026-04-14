@@ -59,6 +59,18 @@
 #include <QMouseEvent>
 #include <QWindow>
 
+QString formatElapsedTime(qint64 elapsedMs)
+{
+    const qint64 totalSeconds = qMax<qint64>(0, elapsedMs / 1000);
+    const qint64 hours = totalSeconds / 3600;
+    const qint64 minutes = (totalSeconds % 3600) / 60;
+    const qint64 seconds = totalSeconds % 60;
+    return QString("%1:%2:%3")
+        .arg(hours, 2, 10, QChar('0'))
+        .arg(minutes, 2, 10, QChar('0'))
+        .arg(seconds, 2, 10, QChar('0'));
+}
+
 // 独立屏幕悬浮窗口类
 class FloatingTabWindow : public QDialog {
     Q_OBJECT
@@ -78,6 +90,7 @@ public:
         listWidget = new ExplicitSelectionListWidget(this);
         listWidget->setViewMode(QListWidget::IconMode);
         listWidget->setResizeMode(QListWidget::Adjust);
+        listWidget->setLayoutMode(QListView::SinglePass);
         listWidget->setDragDropMode(QListWidget::NoDragDrop);
         listWidget->setSpacing(10);
         listWidget->setSortingEnabled(true);
@@ -388,11 +401,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (title == "软件更新") {
-            if (QSysInfo::productType() != "windows") {
-                new ToastWidget("苹果版本暂不支持此功能");
-                return;
-            }
-
             VersionManagerDialog(this).exec();
             return;
         }
@@ -419,18 +427,38 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             menu.addAction("兑换码生成", [this]() {
                 QDialog dialog(this);
                 dialog.setWindowTitle("生成兑换码");
-                dialog.setMinimumWidth(300);
+                dialog.setMinimumWidth(350); 
 
                 QFormLayout *formLayout = new QFormLayout(&dialog);
 
                 QLineEdit *phoneEdit = new QLineEdit(&dialog);
                 phoneEdit->setPlaceholderText("请输入目标手机号");
 
+                QHBoxLayout *typeLayout = new QHBoxLayout();
+                QRadioButton *rbWeekly = new QRadioButton("周卡", &dialog);
+                QRadioButton *rbMonthly = new QRadioButton("月卡", &dialog);
+                QRadioButton *rbQuarterly = new QRadioButton("季卡", &dialog);
+                QRadioButton *rbAnnual = new QRadioButton("年卡", &dialog);
+
+                typeLayout->addWidget(rbWeekly);
+                typeLayout->addWidget(rbMonthly);
+                typeLayout->addWidget(rbQuarterly);
+                typeLayout->addWidget(rbAnnual);
+
+                QButtonGroup *typeGroup = new QButtonGroup(&dialog);
+                typeGroup->addButton(rbWeekly, 1);    // 1 代表周卡
+                typeGroup->addButton(rbMonthly, 2);   // 2 代表月卡
+                typeGroup->addButton(rbQuarterly, 3); // 3 代表季卡
+                typeGroup->addButton(rbAnnual, 4);    // 4 代表年卡
+
+                rbMonthly->setChecked(true);
+
                 QSpinBox *countSpin = new QSpinBox(&dialog);
                 countSpin->setRange(1, 1000);
                 countSpin->setValue(1);
 
                 formLayout->addRow("手机号:", phoneEdit);
+                formLayout->addRow("类型:", typeLayout); 
                 formLayout->addRow("生成数量:", countSpin);
 
                 QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
@@ -444,21 +472,29 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 QString inputPhone = phoneEdit->text().trimmed();
                 int inputCount = countSpin->value();
 
-                webSocketClient->emitEvent("generate_codes", QJsonObject{{"phone", inputPhone}, {"count", inputCount}}, [=](const QJsonValue &res) {
-                    if (res.isString()) {
-                        QToolTip::showText(QCursor::pos(), res.toString());
-                        return;
-                    }
+                int inputType = typeGroup->checkedId(); 
 
-                    QStringList codes;
-                    if (res.isArray()) {
-                        for (const QJsonValue &item : res.toArray()) {
-                            codes << item.toString(); 
+                webSocketClient->emitEvent("generate_codes", 
+                    QJsonObject{
+                        {"phone", inputPhone}, 
+                        {"count", inputCount},
+                        {"type", inputType}
+                    }, 
+                    [=](const QJsonValue &res) {
+                        if (res.isString()) {
+                            QToolTip::showText(QCursor::pos(), res.toString());
+                            return;
                         }
-                    }
 
-                    qApp->clipboard()->setText(codes.join("\n"));
-                    QToolTip::showText(QCursor::pos(), QString("成功生成 %1 个兑换码并复制").arg(codes.size()));
+                        QStringList codes;
+                        if (res.isArray()) {
+                            for (const QJsonValue &item : res.toArray()) {
+                                codes << item.toString(); 
+                            }
+                        }
+
+                        qApp->clipboard()->setText(codes.join("\n"));
+                        QToolTip::showText(QCursor::pos(), QString("成功生成 %1 个兑换码并复制").arg(codes.size()));
                 });
             });
             menu.addAction("在线用户", [this]() {
@@ -549,6 +585,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     hLayout->addLayout(rangeLayout);
     hLayout->addWidget(lineDispatcherSwitchButton);
     hLayout->addStretch();
+
+    auto runtimeLabel = new QLabel("运行时间 00:00:00");
+    runtimeLabel->setToolTip("软件启动到现在的运行时间");
+    hLayout->addWidget(runtimeLabel);
+
+    auto runtimeTimer = new QTimer(this);
+    runtimeTimer->setInterval(500);
+    auto updateRuntimeLabel = [runtimeLabel]() {
+        runtimeLabel->setText(QString("运行时间 %1").arg(formatElapsedTime(elapsedTimer->elapsed())));
+    };
+    connect(runtimeTimer, &QTimer::timeout, this, updateRuntimeLabel);
+    updateRuntimeLabel();
+    runtimeTimer->start();
+
     rightLayout->addLayout(hLayout);
 
     auto tabBar = tabWidget->tabBar();
@@ -612,6 +662,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     deviceListWidget = new ExplicitSelectionListWidget(this);
     deviceListWidget->setViewMode(QListWidget::IconMode); // 图标模式（网格）
     deviceListWidget->setResizeMode(QListWidget::Adjust); // 随窗口自动调整换行
+    deviceListWidget->setLayoutMode(QListView::SinglePass);
     deviceListWidget->setDragDropMode(QListWidget::NoDragDrop);
     deviceListWidget->setSpacing(10);
     deviceListWidget->setSortingEnabled(true);
@@ -643,6 +694,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         if (settings->value("sortSelectedToTop").toBool())
             deviceListWidget->sortItems(Qt::AscendingOrder);
     });
+
+    relayoutTimer = new QTimer(this);
+    relayoutTimer->setSingleShot(true);
+    relayoutTimer->setInterval(60);
+    connect(relayoutTimer, &QTimer::timeout, this, &MainWindow::doRelayoutDevices);
 
     viewportAwareBehavior = new ViewportAwareBehavior(deviceListWidget);
     connect(viewportAwareBehavior, &ViewportAwareBehavior::viewportItemsChanged, this, [](const QList<QListWidgetItem*>& entered, const QList<QListWidgetItem*>& left){
@@ -679,17 +735,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     });
 
     EventHub::on(this, "deviceInfo", [this](const QJsonValue &data, DeviceConnection* connection) {
-        // if (!data["springBoardMsg"].toString().isEmpty()) {
-        //     qCriticalEx() << connection << data["springBoardMsg"];
-        //     connection->close();
-        //     return;
-        // }
+        const auto& model = data["model"].toString();
+        const int iosMajor = data["systemVersion"].toString().section('.', 0, 0).toInt();
+        if (!QStringList({"iPhone XS", "iPhone XS Max", "iPhone XR", "iPhone 11", "iPhone 11 Pro", "iPhone SE (2nd generation)"}).contains(model) || iosMajor >= 14) {
+            if (!data["springBoardMsg"].toString().isEmpty()) {
+                qCriticalEx() << connection << data["springBoardMsg"];
+                new ToastWidget(data["springBoardMsg"].toString(), this);
+                connection->close();
+                return;
+            }
 
-        // if (!data["choicyMsg"].toString().isEmpty()) {
-        //     qCriticalEx() << connection << data["choicyMsg"];
-        //     connection->close();
-        //     return;
-        // }
+            if (!data["choicyMsg"].toString().isEmpty()) {
+                qCriticalEx() << connection << data["choicyMsg"];
+                new ToastWidget(data["choicyMsg"].toString(), this);
+                connection->close();
+                return;
+            }
+        }
 
         auto deviceInfo = DeviceInfo::getDevice(data["deviceId"].toString());
 
@@ -885,16 +947,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     QTimer *timer = new QTimer(this);
     timer->callOnTimeout([=](){
-        *elapsed += 3000;
-#ifndef QT_DEBUG
-        if (qAbs(elapsedTimer->elapsed() - *elapsed) > 60000)
-        {
-#ifdef Q_OS_WIN
-            __fastfail(7);
-#endif
-            *(int*)qApp = 0;
-        }
-#endif
+//         *elapsed += 3000;
+// #ifndef QT_DEBUG
+//         if (qAbs(elapsedTimer->elapsed() - *elapsed) > 60000)
+//         {
+// #ifdef Q_OS_WIN
+//             __fastfail(7);
+// #endif
+//             *(int*)qApp = 0;
+//         }
+// #endif
 
         broadcastTask();
     });
@@ -904,6 +966,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 MainWindow::~MainWindow()
 {
     EventHub::off(this, "deviceInfo");
+    EventHub::off(this, "disconnected");
+    EventHub::off(this, "getAppInfo");
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
@@ -1091,7 +1155,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
         settings->setValue("mainWindowSize", normalGeometry().size());
 
     saveTabs();
-    qApp->quit();
+    event->accept();
+    Tools::quitApplication();
 }
 
 void MainWindow::changeEvent(QEvent *event)
@@ -1186,6 +1251,11 @@ void MainWindow::syncVideoSettingsToDevices()
 
 void MainWindow::relayoutDevices()
 {
+    relayoutTimer->start();
+}
+
+void MainWindow::doRelayoutDevices()
+{
     // 计算目标尺寸并应用到指定的 QListWidget 中，同时返回该分组内的设备总数
     auto applyLayout = [&](BitMaskEditorDialog::Item tabItem, QListWidget* listWidget) -> int {
         const auto scale = tabItem.scale == 0 ? 1 : tabItem.scale / 100.0f;
@@ -1245,12 +1315,12 @@ void MainWindow::relayoutDevices()
         fw->setWindowTitle(QString("%1 [%2]").arg(fw->tabItem.name).arg(count));
     }
 
-    viewportAwareBehavior->requestUpdate();
+    viewportAwareBehavior->delayUpdate();
 }
 
 void MainWindow::addItem(DeviceConnection* connection)
 {
-    connection->send("server", QJsonObject{{"accountId", Account::getInstance()->id}, {"ip", Config::SERVER_IP}, {"port", Config::SERVER_PORT}});
+    connection->send("server", QJsonObject{{"accountId", Account::getInstance()->id}, {"ip", Config::SERVER_IP()}, {"port", Config::SERVER_PORT}});
 
     auto deviceInfo = connection->deviceInfo;
 
@@ -1287,7 +1357,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     frameLayout->addWidget(player);
 
     auto item = new NaturalSortListWidgetItem();
-    item->setText(deviceInfo->deviceName);
+    item->setText(deviceInfo->deviceName + " " + deviceInfo->localIp);
     item->setData(Qt::UserRole, QVariant::fromValue(player));
 
     // 根据所属组动态分配到对应的 ListWidget（解决刚连接的设备自动掉进悬浮窗）
@@ -1330,6 +1400,8 @@ void MainWindow::addItem(DeviceConnection* connection)
     item->setSelected(true);
 
     player->setProperty("listWidgetItem", QVariant::fromValue(static_cast<QListWidgetItem*>(item)));
+
+    viewportAwareBehavior->delayUpdate();
 
     relayoutDevices();
 }
@@ -1553,21 +1625,15 @@ void MainWindow::loadTabs()
 
 void MainWindow::saveTabs(int index)
 {
-    settings->beginWriteArray("tabs");
+    Q_UNUSED(index);
 
-    int start = 0;
-    int end = tabs.size();
-
-    if (index != -1) {
-        start = index;
-        end = index + 1;
-    }
-    
-    for (int i = start; i < end; i++) {
+    settings->beginWriteArray("tabs", tabs.size());
+    for (int i = 0; i < tabs.size(); i++) {
         tabs[i].save(i);
     }
 
     settings->endArray();
+    settings->sync();
 }
 
 int MainWindow::findAvailableTabId()
