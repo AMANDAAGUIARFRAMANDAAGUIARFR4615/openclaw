@@ -56,7 +56,7 @@ public:
                         return;
                     }
 
-                    deviceComboBox->addItem("主界面", "");
+                    deviceComboBox->addItem(QString("主界面[%1]").arg(devices.size()), "");
                     
                     for (const QJsonValue &item : devices) {
                         const auto& deviceId = item["deviceId"].toString();
