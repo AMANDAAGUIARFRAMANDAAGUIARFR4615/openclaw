@@ -421,8 +421,6 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
         return;
     }
 
-    qDebugEx() << "updateDirectoryView" << path << parentItem->rowCount();
-
     QSet<QString> currentPaths;
     for (const auto &value : list) {
         auto obj = value.toObject();
@@ -430,7 +428,8 @@ void RemoteFileExplorer::updateDirectoryView(const QString &path, const QJsonArr
         currentPaths.insert(name);
     }
 
-    qDebugEx() << "currentPaths" << currentPaths;
+    qDebugEx() << "updateDirectoryView" << path << currentPaths.size();
+    // qDebugEx() << "currentPaths" << currentPaths;
 
     for (int i = parentItem->rowCount() - 1; i >= 0; i--) {
         auto childItem = parentItem->child(i);
