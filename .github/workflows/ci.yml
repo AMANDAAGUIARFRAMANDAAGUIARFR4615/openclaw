@@ -110,14 +110,14 @@ jobs:
         shell: bash
         run: |
           SHA=$(git -C FFmpeg rev-parse HEAD)
-          echo "FFMPEG_SHA=$SHA" >> $GITHUB_ENV
+          echo "FFMPEG_CACHE_KEY=${{ matrix.os }}-ffmpeg-build-$SHA" >> $GITHUB_ENV
           echo "FFmpeg SHA: $SHA"
 
       - name: Restore FFmpeg cache
         id: cache-ffmpeg
         uses: actions/cache/restore@v4
         with:
-          key: ${{ matrix.os }}-ffmpeg-build-${{ env.FFMPEG_SHA }}
+          key: ${{ env.FFMPEG_CACHE_KEY }}
           path: ${{ env.FFMPEG_DIR }}
 
       - name: Build FFmpeg
@@ -167,14 +167,14 @@ jobs:
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
-          key: ${{ matrix.os }}-ffmpeg-build-${{ env.FFMPEG_SHA }}
+          key: ${{ env.FFMPEG_CACHE_KEY }}
           path: ${{ env.FFMPEG_DIR }}
 
       - name: Upload FFmpeg cache
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-ffmpeg-build-${{ env.FFMPEG_SHA }}
+          name: ${{ env.FFMPEG_CACHE_KEY }}
           path: ${{ env.FFMPEG_DIR }}
 
       - name: cp FFmpeg
@@ -199,14 +199,14 @@ jobs:
         shell: bash
         run: |
           SHA=$(git -C qtmultimedia rev-parse HEAD)
-          echo "QTMULTIMEDIA_SHA=$SHA" >> $GITHUB_ENV
+          echo "QTMULTIMEDIA_CACHE_KEY=${{ matrix.os }}-qtmultimedia-build-$SHA-${{ env.FFMPEG_CACHE_KEY }}-${{ env.QT_VERSION }}" >> $GITHUB_ENV
           echo "QTMULTIMEDIA SHA: $SHA"
 
       - name: Restore qtmultimedia cache
         id: cache-qtmultimedia
         uses: actions/cache/restore@v4
         with:
-          key: ${{ matrix.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}-${{ env.QT_VERSION }}
+          key: ${{ env.QTMULTIMEDIA_CACHE_KEY }}
           path: ${{ env.QTMULTIMEDIA_DIR }}
 
       - name: Build qtmultimedia
@@ -230,14 +230,14 @@ jobs:
         if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
-          key: ${{ matrix.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}-${{ env.QT_VERSION }}
+          key: ${{ env.QTMULTIMEDIA_CACHE_KEY }}
           path: ${{ env.QTMULTIMEDIA_DIR }}
 
       - name: Upload qtmultimedia cache
         # if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-qtmultimedia-build-${{ env.QTMULTIMEDIA_SHA }}-${{ env.FFMPEG_SHA }}-${{ env.QT_VERSION }}
+          name: ${{ env.QTMULTIMEDIA_CACHE_KEY }}
           path: ${{ env.QTMULTIMEDIA_DIR }}
 
       - name: cp qtmultimedia
