@@ -22,6 +22,8 @@
 #include <QLineEdit>
 #include <QRadioButton>
 #include <QButtonGroup>
+#include <QApplication>
+#include <QClipboard>
 
 class AppListWidget : public QWidget
 {
@@ -110,6 +112,22 @@ private:
         setLayout(mainLayout);
 
         setupTable();
+
+        connect(table, &QTableWidget::cellDoubleClicked, this, [this](int row, int column) {
+            if (column != 1 && column != 2)
+                return;
+
+            QTableWidgetItem *targetItem = table->item(row, column);
+            if (!targetItem)
+                return;
+
+            const QString text = targetItem->text().trimmed();
+            if (text.isEmpty())
+                return;
+
+            QApplication::clipboard()->setText(text);
+            new ToastWidget(column == 1 ? "已复制应用名" : "已复制包名", this);
+        });
 
         // 统一的过滤逻辑函数
         auto performFilter = [this, searchEdit, filterGroup]() {
