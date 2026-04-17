@@ -125,19 +125,22 @@ private:
         auto videoFps = tab.getVideoFps();
         auto videoQuality = tab.getVideoQuality();
 
-        // 取宽高中较小的一边作为分辨率基准 (例如 1280x720 -> 720)
-        int minResolution = qMin(alignedWidth, alignedHeight);
+        // 使用物理像素计算清晰度限制，解决高分屏模糊问题
+        float dpr = devicePixelRatioF();
+        int physicalWidth = qRound(alignedWidth * dpr);
+        int physicalHeight = qRound(alignedHeight * dpr);
+        int minPhysicalRes = qMin(physicalWidth, physicalHeight);
 
         int minAllowed = 1;
         int maxAllowed = 4;
 
-        if (minResolution < 180) maxAllowed = 1;
-        else if (minResolution < 320) maxAllowed = 2;
-        else if (minResolution < 480) maxAllowed = 3;
+        if (minPhysicalRes < 180) maxAllowed = 1;
+        else if (minPhysicalRes < 320) maxAllowed = 2;
+        else if (minPhysicalRes < 480) maxAllowed = 3;
         else maxAllowed = 4;
 
-        if (minResolution >= 1080) minAllowed = 3;
-        else if (minResolution >= 720) minAllowed = 2;
+        if (minPhysicalRes >= 1080) minAllowed = 3;
+        else if (minPhysicalRes >= 720) minAllowed = 2;
 
         if (minAllowed > maxAllowed) minAllowed = maxAllowed;
 
@@ -146,9 +149,23 @@ private:
         auto isWindow = qobject_cast<DeviceWindow*>(parentWidget());
         auto standaloneAlwaysUltraHD = isWindow && AppSettingsDialog::getInstance()->getValue("standaloneAlwaysUltraHD");
 
+        // 确保 width 为较小边，height 为较大边，并进行整数四舍五入
+        int finalWidth, finalHeight;
+        if (standaloneAlwaysUltraHD) {
+            finalWidth = qMin(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight);
+            finalHeight = qMax(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight);
+        } else {
+            finalWidth = qMin(physicalWidth, physicalHeight);
+            finalHeight = qMax(physicalWidth, physicalHeight);
+        }
+
+        // 确保宽高是 8 的倍数（部分硬件编码器的硬性要求，否则可能绿屏或模糊）
+        finalWidth = (finalWidth + 7) & ~7;
+        finalHeight = (finalHeight + 7) & ~7;
+
         connection->send("videoSettings", QJsonObject({
-            {"width", standaloneAlwaysUltraHD ? qMin(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight) : qMin(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
-            {"height", standaloneAlwaysUltraHD ? qMax(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight) : qMax(alignedWidth * devicePixelRatioF(), alignedHeight * devicePixelRatioF())},
+            {"width", finalWidth},
+            {"height", finalHeight},
             {"fps", isWindow ? 30 : QList<float>{ 30, 0.2f, 1, 15, 30, 60, 120 }[qBound(0, videoFps, 6)]},
             {"quality", videoQuality}
         }));
