@@ -113,13 +113,12 @@ private:
         bool isPortrait = connection->deviceInfo->orientation == 1 || connection->deviceInfo->orientation == 2;
         auto aspectRatio = isPortrait ? (float)connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth : (float)connection->deviceInfo->screenWidth / connection->deviceInfo->screenHeight;
 
-        // 宽度保持 16 字节对齐（很多编码器的硬性要求）
+        // 宽度保持 16 对齐（很多编码器的硬性要求）
         int alignedWidth = (width() + 15) & ~15;
         int alignedHeight = qRound((float)alignedWidth * aspectRatio);
 
-        // 高度强制设为偶数 (对齐到 2)
-        // 视频编码通常要求宽高至少是 2 的倍数，奇数高度会导致崩溃或花屏
-        alignedHeight = alignedHeight & ~1;
+        // 高度也强制 16 对齐，满足统一的编码分辨率要求
+        alignedHeight = (alignedHeight + 15) & ~15;
 
         auto tab = MainWindow::getInstance()->getTab();
         auto videoFps = tab.getVideoFps();
@@ -159,9 +158,9 @@ private:
             finalHeight = qMax(physicalWidth, physicalHeight);
         }
 
-        // 确保宽高是 8 的倍数（部分硬件编码器的硬性要求，否则可能绿屏或模糊）
-        finalWidth = (finalWidth + 7) & ~7;
-        finalHeight = (finalHeight + 7) & ~7;
+        // 确保宽高是 16 的倍数，避免编码侧因对齐不足出现异常
+        finalWidth = (finalWidth + 15) & ~15;
+        finalHeight = (finalHeight + 15) & ~15;
 
         connection->send("videoSettings", QJsonObject({
             {"width", finalWidth},
