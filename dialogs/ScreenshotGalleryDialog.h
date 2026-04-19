@@ -162,15 +162,16 @@ private:
 
 class ScreenshotGalleryDialog : public BaseDialog {
 public:
-    static void open(QWidget *parent = nullptr) {
-        ScreenshotGalleryDialog dialog(parent);
+    static void open(QWidget *parent, const QString &deviceId) {
+        ScreenshotGalleryDialog dialog(parent, deviceId);
         dialog.resize(1020, 660);
         dialog.exec();
     }
 
 private:
-    explicit ScreenshotGalleryDialog(QWidget *parent = nullptr)
-        : BaseDialog(QStringLiteral("截图相册"), parent) {
+    explicit ScreenshotGalleryDialog(QWidget *parent, const QString &deviceId)
+        : BaseDialog(QStringLiteral("截图相册"), parent),
+          galleryDir_(Tools::screenshotSaveDirectory(deviceId)) {
         dark_ = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
         cardBg_ = dark_ ? QStringLiteral("#1A1B1E") : QStringLiteral("#FFFFFF");
         cardBorder_ = dark_ ? QStringLiteral("#2E3036") : QStringLiteral("#E2E5EB");
@@ -341,9 +342,8 @@ private:
 
         connect(refreshBtn_, &QPushButton::clicked, this, &ScreenshotGalleryDialog::reloadGallery);
         connect(folderBtn_, &QPushButton::clicked, this, [this]() {
-            const QString dir = Tools::screenshotSaveDirectory();
-            QDir().mkpath(dir);
-            QDesktopServices::openUrl(QUrl::fromLocalFile(dir));
+            QDir().mkpath(galleryDir_);
+            QDesktopServices::openUrl(QUrl::fromLocalFile(galleryDir_));
         });
         connect(dateFrom_, &QDateEdit::dateChanged, this, &ScreenshotGalleryDialog::onDateRangeChanged);
         connect(dateTo_, &QDateEdit::dateChanged, this, &ScreenshotGalleryDialog::onDateRangeChanged);
@@ -399,11 +399,10 @@ private:
     }
 
     void reloadGallery() {
-        const QString dirPath = Tools::screenshotSaveDirectory();
-        QDir().mkpath(dirPath);
-        pathLabel_->setText(elideMiddle(dirPath, pathLabel_->font(), qMax(200, width() - 48)));
+        QDir().mkpath(galleryDir_);
+        pathLabel_->setText(elideMiddle(galleryDir_, pathLabel_->font(), qMax(200, width() - 48)));
 
-        QDir dir(dirPath);
+        QDir dir(galleryDir_);
         QStringList filters{QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"), QStringLiteral("*.png"),
                             QStringLiteral("*.webp")};
         allFiles_ = dir.entryInfoList(filters, QDir::Files | QDir::Readable, QDir::NoSort);
@@ -482,7 +481,7 @@ private:
             if (allFiles_.isEmpty()) {
                 setPreviewPlaceholder(QStringLiteral(
                     "暂无截图\n\n"
-                    "在「设置 → 截图保存」中选含「文件」后，在投屏窗口截图即可。"));
+                    "在「设置 → 截图保存」中选含「文件」后，在本窗口截取屏幕即可。"));
             } else {
                 setPreviewPlaceholder(QStringLiteral("当前日期范围内没有结果，请调整日期或点「刷新」。"));
             }
@@ -550,7 +549,7 @@ protected:
     void resizeEvent(QResizeEvent *event) override {
         BaseDialog::resizeEvent(event);
         if (pathLabel_)
-            pathLabel_->setText(elideMiddle(Tools::screenshotSaveDirectory(), pathLabel_->font(),
+            pathLabel_->setText(elideMiddle(galleryDir_, pathLabel_->font(),
                                             qMax(200, width() - 48)));
         if (list_->currentItem())
             onSelectionChanged(list_->currentItem(), nullptr);
@@ -579,4 +578,5 @@ private:
     QDateEdit *dateFrom_{nullptr};
     QDateEdit *dateTo_{nullptr};
     QFileInfoList allFiles_;
+    QString galleryDir_;
 };
