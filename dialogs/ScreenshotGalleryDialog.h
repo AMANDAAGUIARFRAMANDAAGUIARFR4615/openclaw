@@ -4,7 +4,6 @@
 #include "Tools.h"
 #include <QAbstractItemView>
 #include <QApplication>
-#include <QComboBox>
 #include <QDateEdit>
 #include <QDesktopServices>
 #include <QFileInfo>
@@ -189,7 +188,7 @@ private:
         root->setSpacing(0);
         root->setContentsMargins(0, 0, 0, 0);
 
-        // —— 单行工具区：统计 + 时间筛选 + 按钮；路径单独一行（省高度） ——
+        // —— 单行工具区：统计 + 日期范围 + 按钮；路径单独一行（省高度） ——
         auto *toolbar = new QFrame(this);
         toolbar->setObjectName(QStringLiteral("sgToolbar"));
         toolbar->setStyleSheet(QStringLiteral(
@@ -206,25 +205,15 @@ private:
         countLabel_->setStyleSheet(QStringLiteral("color: %1; font-size: 12px;").arg(subtle_));
         row1->addWidget(countLabel_);
 
-        auto *timeLbl = new QLabel(QStringLiteral("时间"), this);
-        timeLbl->setStyleSheet(QStringLiteral("color: %1; font-size: 12px;").arg(subtle_));
-        row1->addWidget(timeLbl);
+        auto *rangeLbl = new QLabel(QStringLiteral("日期"), this);
+        rangeLbl->setStyleSheet(QStringLiteral("color: %1; font-size: 12px;").arg(subtle_));
+        row1->addWidget(rangeLbl);
 
-        timeFilter_ = new QComboBox(this);
-        timeFilter_->setMinimumWidth(140);
-        timeFilter_->addItem(QStringLiteral("全部"), 0);
-        timeFilter_->addItem(QStringLiteral("今天"), 1);
-        timeFilter_->addItem(QStringLiteral("近 7 天"), 2);
-        timeFilter_->addItem(QStringLiteral("近 30 天"), 3);
-        timeFilter_->addItem(QStringLiteral("自选…"), 4);
-        styleCombo(timeFilter_);
-        row1->addWidget(timeFilter_);
+        auto *fromLbl = new QLabel(QStringLiteral("从"), this);
+        fromLbl->setStyleSheet(QStringLiteral("color: %1; font-size: 12px;").arg(subtle_));
+        row1->addWidget(fromLbl);
 
-        customRangeWrap_ = new QWidget(this);
-        auto *rangeLay = new QHBoxLayout(customRangeWrap_);
-        rangeLay->setContentsMargins(0, 0, 0, 0);
-        rangeLay->setSpacing(6);
-        dateFrom_ = new QDateEdit(QDate::currentDate().addDays(-7), this);
+        dateFrom_ = new QDateEdit(QDate(2000, 1, 1), this);
         dateTo_ = new QDateEdit(QDate::currentDate(), this);
         for (auto *de : {dateFrom_, dateTo_}) {
             de->setCalendarPopup(true);
@@ -232,13 +221,13 @@ private:
             de->setMinimumHeight(30);
             styleDateEdit(de);
         }
-        rangeLay->addWidget(dateFrom_);
-        auto *rangeDash = new QLabel(QStringLiteral("—"), customRangeWrap_);
-        rangeDash->setStyleSheet(QStringLiteral("color: %1;").arg(subtle_));
-        rangeLay->addWidget(rangeDash);
-        rangeLay->addWidget(dateTo_);
-        customRangeWrap_->hide();
-        row1->addWidget(customRangeWrap_);
+        row1->addWidget(dateFrom_);
+
+        auto *rangeDash = new QLabel(QStringLiteral("至"), this);
+        rangeDash->setStyleSheet(QStringLiteral("color: %1; font-size: 12px;").arg(subtle_));
+        row1->addWidget(rangeDash);
+
+        row1->addWidget(dateTo_);
 
         row1->addStretch();
 
@@ -355,10 +344,8 @@ private:
             QDir().mkpath(dir);
             QDesktopServices::openUrl(QUrl::fromLocalFile(dir));
         });
-        connect(timeFilter_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-                &ScreenshotGalleryDialog::onTimeFilterChanged);
-        connect(dateFrom_, &QDateEdit::dateChanged, this, &ScreenshotGalleryDialog::onCustomRangeChanged);
-        connect(dateTo_, &QDateEdit::dateChanged, this, &ScreenshotGalleryDialog::onCustomRangeChanged);
+        connect(dateFrom_, &QDateEdit::dateChanged, this, &ScreenshotGalleryDialog::onDateRangeChanged);
+        connect(dateTo_, &QDateEdit::dateChanged, this, &ScreenshotGalleryDialog::onDateRangeChanged);
         connect(list_, &QListWidget::currentItemChanged, this, &ScreenshotGalleryDialog::onSelectionChanged);
         connect(list_, &QListWidget::itemDoubleClicked, this, [](QListWidgetItem *item) {
             if (!item)
@@ -385,15 +372,6 @@ private:
         }
     }
 
-    void styleCombo(QComboBox *cb) {
-        cb->setMinimumHeight(32);
-        cb->setStyleSheet(QStringLiteral(
-            "QComboBox { padding: 5px 12px; border-radius: 8px; border: 1px solid %1; background: %2; color: %3; }"
-            "QComboBox:hover { border-color: %4; }"
-            "QComboBox::drop-down { width: 26px; border: none; }")
-            .arg(cardBorder_, dark_ ? QStringLiteral("#22252B") : QStringLiteral("#FFFFFF"), textMain_, accent_));
-    }
-
     void styleDateEdit(QDateEdit *de) {
         de->setStyleSheet(QStringLiteral(
             "QDateEdit { padding: 5px 8px; border-radius: 8px; border: 1px solid %1; background: %2; color: %3; }"
@@ -401,36 +379,22 @@ private:
             .arg(cardBorder_, dark_ ? QStringLiteral("#22252B") : QStringLiteral("#FFFFFF"), textMain_, accent_));
     }
 
-    void onTimeFilterChanged(int index) {
-        customRangeWrap_->setVisible(index == 4);
+    void onDateRangeChanged() {
         updateGridTitle();
         repopulateList();
     }
 
-    void onCustomRangeChanged() {
-        if (timeFilter_->currentIndex() == 4)
-            repopulateList();
-    }
-
     void updateGridTitle() {
-        const int i = timeFilter_->currentIndex();
-        if (i == 4) {
-            QDate df = dateFrom_->date();
-            QDate dt = dateTo_->date();
-            if (df > dt) {
-                const QDate t = df;
-                df = dt;
-                dt = t;
-            }
-            gridTitleLabel_->setText(QStringLiteral("%1 — %2")
-                                         .arg(df.toString(QStringLiteral("yyyy-MM-dd")),
-                                              dt.toString(QStringLiteral("yyyy-MM-dd"))));
-            return;
+        QDate df = dateFrom_->date();
+        QDate dt = dateTo_->date();
+        if (df > dt) {
+            const QDate t = df;
+            df = dt;
+            dt = t;
         }
-        static const QStringList titles{QStringLiteral("全部截图"), QStringLiteral("今天的截图"),
-                                         QStringLiteral("最近 7 天"), QStringLiteral("最近 30 天")};
-        if (i >= 0 && i < titles.size())
-            gridTitleLabel_->setText(titles[i]);
+        gridTitleLabel_->setText(QStringLiteral("%1 — %2")
+                                     .arg(df.toString(QStringLiteral("yyyy-MM-dd")),
+                                          dt.toString(QStringLiteral("yyyy-MM-dd"))));
     }
 
     void reloadGallery() {
@@ -452,29 +416,15 @@ private:
     }
 
     bool passesTimeFilter(const QFileInfo &fi) const {
-        const QDateTime m = fi.lastModified();
-        const QDate d = m.date();
-        const int idx = timeFilter_->currentIndex();
-
-        if (idx == 0)
-            return true;
-        if (idx == 1)
-            return d == QDate::currentDate();
-        if (idx == 2)
-            return m >= QDateTime::currentDateTime().addDays(-7);
-        if (idx == 3)
-            return m >= QDateTime::currentDateTime().addDays(-30);
-        if (idx == 4) {
-            QDate from = dateFrom_->date();
-            QDate to = dateTo_->date();
-            if (from > to) {
-                const QDate tmp = from;
-                from = to;
-                to = tmp;
-            }
-            return d >= from && d <= to;
+        const QDate d = fi.lastModified().date();
+        QDate from = dateFrom_->date();
+        QDate to = dateTo_->date();
+        if (from > to) {
+            const QDate tmp = from;
+            from = to;
+            to = tmp;
         }
-        return true;
+        return d >= from && d <= to;
     }
 
     void setPreviewPlaceholder(const QString &text) {
@@ -533,7 +483,7 @@ private:
                     "暂无截图\n\n"
                     "在「设置 → 截图保存」中选含「文件」后，在投屏窗口截图即可。"));
             } else {
-                setPreviewPlaceholder(QStringLiteral("当前时间筛选下没有结果，请换条件或点「刷新」。"));
+                setPreviewPlaceholder(QStringLiteral("当前日期范围内没有结果，请调整日期或点「刷新」。"));
             }
             metaLabel_->clear();
             countLabel_->setText(QStringLiteral("共 %1 个文件 · 当前 0 张").arg(allFiles_.size()));
@@ -624,9 +574,7 @@ private:
     QLabel *gridTitleLabel_{nullptr};
     QPushButton *refreshBtn_{nullptr};
     QPushButton *folderBtn_{nullptr};
-    QComboBox *timeFilter_{nullptr};
     QDateEdit *dateFrom_{nullptr};
     QDateEdit *dateTo_{nullptr};
-    QWidget *customRangeWrap_{nullptr};
     QFileInfoList allFiles_;
 };
