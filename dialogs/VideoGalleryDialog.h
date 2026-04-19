@@ -3,8 +3,10 @@
 #include "BaseDialog.h"
 #include "Tools.h"
 #include <algorithm>
+#include <memory>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -76,9 +78,15 @@ private:
             if (!p.isEmpty())
                 QDesktopServices::openUrl(QUrl::fromLocalFile(p));
         });
+        connect(player_, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error, const QString &msg) {
+            if (!msg.isEmpty())
+                metaLabel_->setText(metaLabel_->text() + QStringLiteral("\n") + msg);
+        });
 
         reload();
     }
+
+    ~VideoGalleryDialog() override { detachPlaySource(); }
 
     void reload() {
         QDir().mkpath(galleryDir_);
@@ -95,7 +103,7 @@ private:
         });
 
         list_->clear();
-        player_->stop();
+        detachPlaySource();
         metaLabel_->clear();
 
         for (const QFileInfo &fi : sorted) {
@@ -116,7 +124,7 @@ private:
 
     void onPick(QListWidgetItem *cur, QListWidgetItem *) {
         if (!cur) {
-            player_->stop();
+            detachPlaySource();
             metaLabel_->clear();
             return;
         }
@@ -126,11 +134,27 @@ private:
             metaLabel_->setText(QStringLiteral("文件不存在"));
             return;
         }
-        player_->setSource(QUrl::fromLocalFile(path));
+        detachPlaySource();
+        playSourceFile_ = std::make_unique<QFile>(path);
+        if (!playSourceFile_->open(QIODevice::ReadOnly)) {
+            metaLabel_->setText(QStringLiteral("无法打开文件：%1").arg(playSourceFile_->errorString()));
+            playSourceFile_.reset();
+            return;
+        }
+        // 用 QIODevice 喂给解码器，避免精简版 FFmpeg 未注册 file:// 协议时报 Protocol not found
+        player_->setSourceDevice(playSourceFile_.get(), QUrl::fromLocalFile(path));
         player_->play();
         metaLabel_->setText(QStringLiteral("%1\n%2 · %3 字节")
                                 .arg(path, fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss")),
                                      QString::number(fi.size())));
+    }
+
+    void detachPlaySource() {
+        if (!player_)
+            return;
+        player_->stop();
+        player_->setSource(QUrl());
+        playSourceFile_.reset();
     }
 
     QString galleryDir_;
@@ -140,4 +164,5 @@ private:
     QLabel *countLabel_{nullptr};
     QLabel *metaLabel_{nullptr};
     QMediaPlayer *player_{nullptr};
+    std::unique_ptr<QFile> playSourceFile_;
 };
