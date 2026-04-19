@@ -110,7 +110,7 @@ jobs:
         shell: bash
         run: |
           SHA=$(git -C FFmpeg rev-parse HEAD)
-          echo "FFMPEG_CACHE_KEY=${{ matrix.os }}-ffmpeg-build-$SHA" >> $GITHUB_ENV
+          echo "FFMPEG_CACHE_KEY=${{ matrix.os }}-ffmpeg-build-$SHA-mp4" >> $GITHUB_ENV
           echo "FFmpeg SHA: $SHA"
 
       - name: Restore FFmpeg cache
@@ -145,8 +145,12 @@ jobs:
               --enable-swresample \
               --enable-swscale \
               --enable-decoder=h264 \
+              --enable-decoder=aac \
               --enable-parser=h264 \
+              --enable-parser=aac \
               --enable-demuxer=h264 \
+              --enable-demuxer=mov \
+              --enable-protocol=file \
               --enable-protocol=tcp \
               --enable-filter=scale \
               --enable-filter=format \

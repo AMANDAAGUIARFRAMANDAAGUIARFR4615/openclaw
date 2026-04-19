@@ -29,8 +29,10 @@ FLAGS_IOS="-arch arm64 -miphoneos-version-min=12.0 -isysroot $SYSROOT_IOS"
   --extra-ldflags="$FLAGS_IOS" \
   --disable-programs --disable-everything --enable-static --disable-doc \
   --enable-avcodec --enable-avformat --enable-avutil --enable-swresample --enable-swscale \
-  --enable-decoder=h264 --enable-parser=h264 --enable-demuxer=h264 \
-  --enable-protocol=tcp --enable-filter=scale --enable-filter=format \
+  --enable-decoder=h264 --enable-decoder=aac \
+  --enable-parser=h264 --enable-parser=aac \
+  --enable-demuxer=h264 --enable-demuxer=mov \
+  --enable-protocol=file --enable-protocol=tcp --enable-filter=scale --enable-filter=format \
   --disable-xlib --disable-libxcb > /dev/null
 
 make -j$(sysctl -n hw.ncpu) install > /dev/null
@@ -53,9 +55,11 @@ FLAGS_SIM="-target $SIM_TARGET -arch x86_64 -miphonesimulator-version-min=12.0 -
   --extra-cflags="$FLAGS_SIM" \
   --extra-ldflags="$FLAGS_SIM" \
   --disable-programs --disable-everything --enable-static --disable-doc \
-  --enable-avcodec --enable-avformat --enable-avutil --enable-swscale \
-  --enable-decoder=h264 --enable-parser=h264 --enable-demuxer=h264 \
-  --enable-protocol=tcp --enable-filter=scale --enable-filter=format \
+  --enable-avcodec --enable-avformat --enable-avutil --enable-swresample --enable-swscale \
+  --enable-decoder=h264 --enable-decoder=aac \
+  --enable-parser=h264 --enable-parser=aac \
+  --enable-demuxer=h264 --enable-demuxer=mov \
+  --enable-protocol=file --enable-protocol=tcp --enable-filter=scale --enable-filter=format \
   --disable-xlib --disable-libxcb > /dev/null
 
 make -j$(sysctl -n hw.ncpu) install > /dev/null
