@@ -12,8 +12,11 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QMediaPlayer>
+#include <QProcess>
 #include <QPushButton>
+#include <QStandardPaths>
 #include <QUrl>
+#include <QUuid>
 #include <QVBoxLayout>
 #include <QVideoWidget>
 
@@ -88,6 +91,97 @@ private:
 
     ~VideoGalleryDialog() override { detachPlaySource(); }
 
+    void cancelRemuxProcess() {
+        if (!remuxProcess_)
+            return;
+        remuxProcess_->disconnect();
+        remuxProcess_->kill();
+        remuxProcess_->waitForFinished(5000);
+        remuxProcess_->deleteLater();
+        remuxProcess_ = nullptr;
+    }
+
+    /** 裸 .h264 无容器时间戳时 QMediaPlayer 会「能多快播多快」；用 ffmpeg 按 30fps 打时间轴再播。 */
+    void playRawH264ViaIODevice(const QString &path) {
+        playSourceFile_ = std::make_unique<QFile>(path);
+        if (!playSourceFile_->open(QIODevice::ReadOnly)) {
+            metaLabel_->setText(pendingMetaText_ + QStringLiteral("\n无法打开文件：%1").arg(playSourceFile_->errorString()));
+            playSourceFile_.reset();
+            return;
+        }
+        player_->setSourceDevice(playSourceFile_.get(), QUrl::fromLocalFile(path));
+        player_->play();
+    }
+
+    void startFfmpegRemux30fps(const QString &srcPath) {
+        const QString ffmpeg = QStandardPaths::findExecutable(QStringLiteral("ffmpeg"));
+        if (ffmpeg.isEmpty()) {
+            metaLabel_->setText(pendingMetaText_
+                                + QStringLiteral("\n未检测到 PATH 中的 ffmpeg，裸流预览可能过快。"
+                                                 "安装 ffmpeg 后将以 30fps 时间轴转封预览。"));
+            playRawH264ViaIODevice(srcPath);
+            return;
+        }
+
+        ++previewEpoch_;
+        const quint64 epoch = previewEpoch_;
+
+        const QString outPath =
+            QDir::temp().filePath(QStringLiteral("RemotePro_preview_%1.mp4")
+                                      .arg(QUuid::createUuid().toString(QUuid::WithoutBraces)));
+        previewRemuxPath_ = outPath;
+
+        remuxProcess_ = new QProcess(this);
+        remuxProcess_->setProgram(ffmpeg);
+        remuxProcess_->setArguments({QStringLiteral("-hide_banner"),
+                                     QStringLiteral("-loglevel"),
+                                     QStringLiteral("error"),
+                                     QStringLiteral("-y"),
+                                     QStringLiteral("-f"),
+                                     QStringLiteral("h264"),
+                                     QStringLiteral("-r"),
+                                     QStringLiteral("30"),
+                                     QStringLiteral("-i"),
+                                     srcPath,
+                                     QStringLiteral("-an"),
+                                     QStringLiteral("-c:v"),
+                                     QStringLiteral("copy"),
+                                     QStringLiteral("-movflags"),
+                                     QStringLiteral("+faststart"),
+                                     outPath});
+
+        connect(remuxProcess_, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
+                [this, epoch, srcPath, outPath](int exitCode, QProcess::ExitStatus) {
+                    QProcess *proc = remuxProcess_;
+                    remuxProcess_ = nullptr;
+                    if (proc) {
+                        proc->deleteLater();
+                    }
+
+                    if (epoch != previewEpoch_) {
+                        QFile::remove(outPath);
+                        return;
+                    }
+
+                    if (exitCode != 0 || !QFileInfo::exists(outPath)) {
+                        QFile::remove(outPath);
+                        previewRemuxPath_.clear();
+                        metaLabel_->setText(pendingMetaText_
+                                            + QStringLiteral("\nffmpeg 转封失败，已回退为裸流预览（可能仍过快）。"));
+                        playRawH264ViaIODevice(srcPath);
+                        return;
+                    }
+
+                    player_->setSource(QUrl::fromLocalFile(outPath));
+                    player_->play();
+                    metaLabel_->setText(pendingMetaText_
+                                        + QStringLiteral("\n预览：ffmpeg 按 30fps 时间轴转封（无重编码）。"));
+                });
+
+        remuxProcess_->start();
+        metaLabel_->setText(pendingMetaText_ + QStringLiteral("\n正在生成预览…"));
+    }
+
     void reload() {
         QDir().mkpath(galleryDir_);
         pathLabel_->setText(galleryDir_);
@@ -135,26 +229,32 @@ private:
             return;
         }
         detachPlaySource();
-        playSourceFile_ = std::make_unique<QFile>(path);
-        if (!playSourceFile_->open(QIODevice::ReadOnly)) {
-            metaLabel_->setText(QStringLiteral("无法打开文件：%1").arg(playSourceFile_->errorString()));
-            playSourceFile_.reset();
-            return;
+
+        pendingMetaText_ =
+            QStringLiteral("%1\n%2 · %3 字节")
+                .arg(path, fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss")), QString::number(fi.size()));
+
+        const QString suf = fi.suffix().toLower();
+        if (suf == QStringLiteral("h264"))
+            startFfmpegRemux30fps(path);
+        else {
+            metaLabel_->setText(pendingMetaText_);
+            playRawH264ViaIODevice(path);
         }
-        // 用 QIODevice 喂给解码器，避免精简版 FFmpeg 未注册 file:// 协议时报 Protocol not found
-        player_->setSourceDevice(playSourceFile_.get(), QUrl::fromLocalFile(path));
-        player_->play();
-        metaLabel_->setText(QStringLiteral("%1\n%2 · %3 字节")
-                                .arg(path, fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss")),
-                                     QString::number(fi.size())));
     }
 
     void detachPlaySource() {
+        cancelRemuxProcess();
         if (!player_)
             return;
         player_->stop();
         player_->setSource(QUrl());
         playSourceFile_.reset();
+        if (!previewRemuxPath_.isEmpty()) {
+            QFile::remove(previewRemuxPath_);
+            previewRemuxPath_.clear();
+        }
+        ++previewEpoch_;
     }
 
     QString galleryDir_;
@@ -165,4 +265,9 @@ private:
     QLabel *metaLabel_{nullptr};
     QMediaPlayer *player_{nullptr};
     std::unique_ptr<QFile> playSourceFile_;
+
+    QString pendingMetaText_;
+    QString previewRemuxPath_;
+    QProcess *remuxProcess_{nullptr};
+    quint64 previewEpoch_{0};
 };
