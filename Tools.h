@@ -25,6 +25,8 @@
 #include <QCoreApplication>
 #include <QApplication>
 #include <QTimer>
+#include <QStandardPaths>
+#include <QSysInfo>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -35,6 +37,15 @@ using namespace qrcodegen;
 
 class Tools {
 public:
+    /** 截图根目录下的设备子目录，与投屏截图落盘路径一致。 */
+    static QString screenshotSaveDirectory(const QString &deviceId) {
+        QString base =
+            QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + QStringLiteral("/screenshots");
+        if (QSysInfo::productType() == QStringLiteral("windows"))
+            base = QStringLiteral("screenshots");
+        return QDir(base).filePath(deviceId);
+    }
+
     static void quitApplication(bool restartAfterQuit = false, const QString &macAppBundlePath = QString())
     {
         static bool quitScheduled = false;

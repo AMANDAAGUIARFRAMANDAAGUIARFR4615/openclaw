@@ -11,6 +11,7 @@
 #include "EmojiIconProvider.h"
 #include "KeyMapping.h"
 #include "AppSettingsDialog.h"
+#include "ScreenshotGalleryDialog.h"
 #include "Account.h"
 #include "DeviceWidget.h"
 #include "DeviceWindow.h"
@@ -169,10 +170,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
             }
 
             if (screenshotTo != 0) {
-                QString dirPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/screenshots";
-                if (QSysInfo::productType() == "windows")
-                    dirPath = "screenshots";
-                
+                const QString dirPath = Tools::screenshotSaveDirectory(this->deviceInfo->deviceId);
                 QDir dir(dirPath);
                 if (!dir.exists())
                     dir.mkpath(".");
@@ -224,7 +222,7 @@ void DeviceView::showOverlay(const QString &text)
     overlay->show();
     overlay->raise();
 
-    QTimer::singleShot(0, [=]() {
+    QTimer::singleShot(0, [this]() {
         if (videoFrameWidget)
             videoFrameWidget->hide();
     });
@@ -310,6 +308,9 @@ void DeviceView::addContextMenuActions()
         }
         else if (labelPart == "截图") {
             addAction(text, [this](){connection->send("screenshot");});
+        }
+        else if (labelPart == "截图相册") {
+            addAction(text, [this]() { ScreenshotGalleryDialog::open(this, deviceInfo->deviceId); });
         }
         else if (labelPart == "重启") {
             addAction(text, [=](){send("reboot");});
