@@ -15,7 +15,7 @@
 #include <QVBoxLayout>
 #include <QVideoWidget>
 
-/** 浏览本机保存的投屏录像（screenvid_*.mp4），列表 + 内置预览。 */
+/** 浏览本机保存的投屏录像（screenvid_*.h264），列表 + 内置预览。 */
 class VideoGalleryDialog : public BaseDialog {
 public:
     static void open(QWidget *parent, const QString &deviceId) {
@@ -86,8 +86,8 @@ private:
 
         QDir dir(galleryDir_);
         const auto files = dir.entryInfoList(
-            QStringList{QStringLiteral("screenvid_*.mp4"), QStringLiteral("screen_rec_*.mp4"),
-                        QStringLiteral("videocap_*.mp4")},
+            QStringList{QStringLiteral("screenvid_*.h264"), QStringLiteral("screen_rec_*.h264"),
+                        QStringLiteral("videocap_*.h264")},
             QDir::Files | QDir::Readable, QDir::NoSort);
         QFileInfoList sorted = files;
         std::sort(sorted.begin(), sorted.end(), [](const QFileInfo &a, const QFileInfo &b) {

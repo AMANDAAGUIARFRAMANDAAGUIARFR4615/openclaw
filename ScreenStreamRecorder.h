@@ -8,7 +8,7 @@
 #include <QFileInfo>
 #include <QString>
 
-/** 将投屏原始码流按「每整十分钟」一个文件落盘（与 QMediaPlayer 同源字节，一般为 mp4/fMP4 片段）。 */
+/** 将投屏原始码流按「每整十分钟」一个文件落盘（与 QMediaPlayer 同源字节，一般为 H.264 裸流 .h264）。 */
 class ScreenStreamRecorder {
 public:
     explicit ScreenStreamRecorder(QString deviceId) : deviceId_(std::move(deviceId)) {}
@@ -47,7 +47,7 @@ private:
     void openForSlot() {
         const QString dirPath = Tools::screenVideoSaveDirectory(deviceId_);
         QDir().mkpath(dirPath);
-        const QString path = QDir(dirPath).filePath(QStringLiteral("screenvid_%1.mp4").arg(slotKey_));
+        const QString path = QDir(dirPath).filePath(QStringLiteral("screenvid_%1.h264").arg(slotKey_));
         out_.setFileName(path);
         const bool exists = QFileInfo::exists(path);
         const QIODevice::OpenMode mode =
