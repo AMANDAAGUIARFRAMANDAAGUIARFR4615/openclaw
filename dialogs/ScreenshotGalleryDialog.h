@@ -23,6 +23,7 @@
 #include <QImageReader>
 #include <QResizeEvent>
 #include <QStyleHints>
+#include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -491,7 +492,10 @@ private:
         }
 
         countLabel_->setText(QStringLiteral("共 %1 个文件 · 显示 %2 张").arg(allFiles_.size()).arg(shown));
-        list_->setCurrentRow(0);
+        
+        QTimer::singleShot(0, this, [this] {
+            list_->setCurrentRow(0);
+        });
     }
 
     void onSelectionChanged(QListWidgetItem *current, QListWidgetItem *) {
@@ -533,13 +537,11 @@ private:
         else
             sizeStr = QStringLiteral("%1 MB").arg(bytes / (1024.0 * 1024.0), 0, 'f', 2);
 
-        const int ord = current->data(Qt::UserRole + 1).toInt();
-        QString meta = ord > 0 ? QStringLiteral("序号 %1（当前列表）\n\n").arg(ord) : QString();
-        meta += QStringLiteral("%1\n\n%2 × %3 · %4\n%5")
-                    .arg(fi.fileName())
-                    .arg(img.width())
-                    .arg(img.height())
-                    .arg(sizeStr, fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss")));
+        const QString meta = QStringLiteral("%1\n\n%2 × %3 · %4\n%5")
+                                 .arg(fi.fileName())
+                                 .arg(img.width())
+                                 .arg(img.height())
+                                 .arg(sizeStr, fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss")));
         metaLabel_->setTextFormat(Qt::PlainText);
         metaLabel_->setText(meta);
     }
