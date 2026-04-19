@@ -12,6 +12,7 @@
 #include "KeyMapping.h"
 #include "AppSettingsDialog.h"
 #include "ScreenshotGalleryDialog.h"
+#include "VideoGalleryDialog.h"
 #include "Account.h"
 #include "DeviceWidget.h"
 #include "DeviceWindow.h"
@@ -311,6 +312,20 @@ void DeviceView::addContextMenuActions()
         }
         else if (labelPart == "截图相册") {
             addAction(text, [this]() { ScreenshotGalleryDialog::open(this, deviceInfo->deviceId); });
+        }
+        else if (labelPart == "投屏录像") {
+            DeviceWidget *dw = qobject_cast<DeviceWidget *>(this);
+            if (!dw)
+                if (auto *w = qobject_cast<DeviceWindow *>(this))
+                    dw = w->deviceWidget;
+            if (!dw)
+                continue;
+            auto *action = addAction(text, [dw]() { dw->setStreamRecording(!dw->isStreamRecording()); });
+            action->setCheckable(true);
+            action->setChecked(dw->isStreamRecording());
+        }
+        else if (labelPart == "录像相册") {
+            addAction(text, [this]() { VideoGalleryDialog::open(this, deviceInfo->deviceId); });
         }
         else if (labelPart == "重启") {
             addAction(text, [=](){send("reboot");});

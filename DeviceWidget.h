@@ -4,8 +4,10 @@
 #include "LiveStreamDevice.h"
 #include <QCheckBox>
 #include <QTcpServer>
+#include <memory>
 
 class DeviceWindow;
+class ScreenStreamRecorder;
 
 class DeviceWidget : public DeviceView
 {
@@ -17,6 +19,9 @@ public:
     void setupVideoConnection();
     void teardownVideoConnection();
     QByteArray grabFrame();
+
+    void setStreamRecording(bool on);
+    bool isStreamRecording() const { return static_cast<bool>(streamRecorder_); }
 
     DeviceWindow* getDeviceWindow() { return deviceWindow; }
 
@@ -32,4 +37,6 @@ protected:
     LiveStreamDevice* m_videoDevice = nullptr;
     QTcpServer* m_videoServer = nullptr;
     DeviceConnection* m_usbVideoConnection = nullptr;
+
+    std::unique_ptr<ScreenStreamRecorder> streamRecorder_;
 };

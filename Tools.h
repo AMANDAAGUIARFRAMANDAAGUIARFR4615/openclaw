@@ -46,6 +46,16 @@ public:
         return QDir(base).filePath(deviceId);
     }
 
+    /** 投屏录像根目录下的设备子目录（与 screenshots 命名风格一致）。 */
+    static QString screenVideoSaveDirectory(const QString &deviceId) {
+        QString base =
+            QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
+            + QStringLiteral("/screenvideos");
+        if (QSysInfo::productType() == QStringLiteral("windows"))
+            base = QStringLiteral("screenvideos");
+        return QDir(base).filePath(deviceId);
+    }
+
     static void quitApplication(bool restartAfterQuit = false, const QString &macAppBundlePath = QString())
     {
         static bool quitScheduled = false;

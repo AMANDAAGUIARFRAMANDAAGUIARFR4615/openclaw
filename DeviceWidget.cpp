@@ -1,5 +1,8 @@
 #include "DeviceWidget.h"
+#include "ScreenStreamRecorder.h"
 #include "DeviceWindow.h"
+#include "ToastWidget.h"
+#include "Tools.h"
 #include "EventHub.h"
 #include "MainWindow.h"
 #include "Safe.h"
@@ -176,6 +179,8 @@ void DeviceWidget::setupVideoConnection()
             if (expireTime > currentTime)
             {
                 if (m_videoDevice) m_videoDevice->appendData(data);
+                if (streamRecorder_)
+                    streamRecorder_->append(data);
 
                 if (expireTime - currentTime < HIDE_NUM(86400000))
                     ipLabel->setText(deviceInfo->localIp + HIDE_STR("<font color='orange'>[即将过期]</font>"));
@@ -203,6 +208,8 @@ void DeviceWidget::setupVideoConnection()
                 if (expireTime > currentTime)
                 {
                     if (m_videoDevice) m_videoDevice->appendData(data);
+                    if (streamRecorder_)
+                        streamRecorder_->append(data);
 
                     if (expireTime - currentTime < HIDE_NUM(86400000))
                         ipLabel->setText(deviceInfo->localIp + HIDE_STR("<font color='orange'>[即将过期]</font>"));
@@ -230,6 +237,8 @@ void DeviceWidget::teardownVideoConnection()
     if (!m_videoDevice)
         return;
 
+    streamRecorder_.reset();
+
     videoFrameWidget->mediaPlayer->stop();
 
     if (m_usbVideoConnection) {
@@ -250,6 +259,26 @@ void DeviceWidget::teardownVideoConnection()
 QByteArray DeviceWidget::grabFrame()
 {
     return deviceWindow ? deviceWindow->getVideoFrameWidget()->grabFrame() : videoFrameWidget->grabFrame();
+}
+
+void DeviceWidget::setStreamRecording(bool on)
+{
+    if (on) {
+        if (!m_videoDevice) {
+            new ToastWidget(QStringLiteral("请先建立投屏连接"), this);
+            return;
+        }
+        if (streamRecorder_)
+            return;
+        streamRecorder_ = std::make_unique<ScreenStreamRecorder>(deviceInfo->deviceId);
+        const QString dir = Tools::screenVideoSaveDirectory(deviceInfo->deviceId);
+        new ToastWidget(QStringLiteral("已开始录像（每整十分钟一个文件）\n保存目录：\n%1").arg(dir), this);
+    } else {
+        if (!streamRecorder_)
+            return;
+        streamRecorder_.reset();
+        new ToastWidget(QStringLiteral("已停止录像"), this);
+    }
 }
 
 bool DeviceWidget::event(QEvent *event)
