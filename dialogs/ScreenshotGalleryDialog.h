@@ -14,12 +14,151 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QPixmap>
+#include <QPainter>
+#include <QPainterPath>
+#include <QPen>
 #include <QPushButton>
+#include <QStyle>
+#include <QStyledItemDelegate>
+#include <QStyleOptionViewItem>
 #include <QImageReader>
 #include <QResizeEvent>
 #include <QStyleHints>
 #include <QUrl>
 #include <QVBoxLayout>
+
+/** 统一卡片：序号为小号等宽数字贴在卡内左上（非胶囊、不压图），底部留白防裁字 */
+class ScreenshotGalleryItemDelegate : public QStyledItemDelegate {
+public:
+    static constexpr int kInnerPad = 10;
+    static constexpr int kIndexRowMin = 18;
+    static constexpr int kGap = 5;
+    static constexpr int kImgTextGap = 8;
+    static constexpr int kBottomPad = 16;
+
+    static int indexRowHeight(const QFont &bodyFont) {
+        QFont f = bodyFont;
+        f.setPointSize(9);
+        f.setBold(true);
+        return qMax(kIndexRowMin, QFontMetrics(f).height() + 6);
+    }
+
+    static QSize recommendedCellSize(const QFont &bodyFont, const QSize &iconSize) {
+        QFontMetrics fm(bodyFont);
+        const int lineH = fm.height() + 5;
+        const int textBlock = lineH * 2 + 6;
+        const int idxH = indexRowHeight(bodyFont);
+        return QSize(iconSize.width() + 2 * kInnerPad + 16,
+                     kInnerPad + idxH + kGap + iconSize.height() + kImgTextGap + textBlock + kBottomPad);
+    }
+
+    ScreenshotGalleryItemDelegate(QListWidget *list, bool dark, const QString &textMain, const QString &subtle,
+                                  const QString &selBorderLight, const QString &hoverCell)
+        : QStyledItemDelegate(list), list_(list), dark_(dark), textMain_(textMain), subtle_(subtle),
+          selBorderLight_(selBorderLight), hoverCell_(hoverCell) {}
+
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override {
+        painter->save();
+        painter->setRenderHint(QPainter::Antialiasing, true);
+        painter->setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+        const QRect cell = option.rect;
+        const QRect card = cell.adjusted(4, 4, -4, -4);
+        const bool selected = option.state.testFlag(QStyle::State_Selected);
+        const bool hover = option.state.testFlag(QStyle::State_MouseOver);
+
+        QPainterPath cardPath;
+        cardPath.addRoundedRect(card, 12, 12);
+
+        if (selected) {
+            painter->setPen(Qt::NoPen);
+            painter->setBrush(dark_ ? QColor(59, 130, 246, 38) : QColor(59, 130, 246, 22));
+            painter->drawPath(cardPath);
+        } else if (hover) {
+            painter->setPen(Qt::NoPen);
+            painter->setBrush(QColor(hoverCell_));
+            painter->drawPath(cardPath);
+        }
+
+        painter->setPen(QPen(dark_ ? QColor(QStringLiteral("#353538")) : QColor(QStringLiteral("#E5E7EB")), 1));
+        painter->setBrush(dark_ ? QColor(QStringLiteral("#161618")) : QColor(QStringLiteral("#FFFFFF")));
+        painter->drawPath(cardPath);
+
+        const QRect inner = card.adjusted(kInnerPad, kInnerPad, -kInnerPad, -kInnerPad);
+        const int order = index.data(Qt::UserRole + 1).toInt();
+        const QSize isz = list_->iconSize();
+        const int idxBlock = indexRowHeight(option.font);
+
+        QFont idxFont = option.font;
+        idxFont.setPointSize(9);
+        idxFont.setBold(true);
+        painter->setFont(idxFont);
+        QFontMetrics idxFm(idxFont);
+        if (order > 0) {
+            const QString idxStr =
+                order < 100 ? QStringLiteral("%1").arg(order, 2, 10, QLatin1Char('0')) : QString::number(order);
+            painter->setPen(QColor(subtle_));
+            painter->drawText(inner.left(), inner.top() + idxFm.ascent(), idxStr);
+        }
+
+        const int imgTop = inner.top() + idxBlock + kGap;
+        QRect imgRect(inner.left() + (inner.width() - isz.width()) / 2, imgTop, isz.width(), isz.height());
+
+        const QIcon icon = qvariant_cast<QIcon>(index.data(Qt::DecorationRole));
+        const QPixmap pix = icon.pixmap(isz);
+        if (!pix.isNull()) {
+            QPainterPath imgClip;
+            imgClip.addRoundedRect(imgRect, 8, 8);
+            painter->setClipPath(imgClip);
+            painter->fillRect(imgRect, QColor(12, 13, 16));
+            painter->drawPixmap(imgRect.x() + (imgRect.width() - pix.width()) / 2,
+                                imgRect.y() + (imgRect.height() - pix.height()) / 2, pix);
+            painter->setClipping(false);
+            painter->setPen(QPen(dark_ ? QColor(QStringLiteral("#2A2A2E")) : QColor(QStringLiteral("#EDEFF2")), 1));
+            painter->setBrush(Qt::NoBrush);
+            painter->drawRoundedRect(imgRect.adjusted(0, 0, -1, -1), 8, 8);
+        }
+
+        QFont tf = option.font;
+        tf.setBold(false);
+        tf.setPointSize(option.font.pointSize() > 0 ? option.font.pointSize() : 9);
+        painter->setFont(tf);
+        QFontMetrics fm(tf);
+        const int lineH = fm.height() + 5;
+        int ty = imgRect.bottom() + kImgTextGap;
+
+        const QString rawText = index.data(Qt::DisplayRole).toString();
+        const QStringList lines = rawText.split(QLatin1Char('\n'));
+        if (!lines.isEmpty()) {
+            painter->setPen(QColor(textMain_));
+            const QString name = fm.elidedText(lines[0], Qt::ElideMiddle, inner.width());
+            painter->drawText(QRect(inner.left(), ty, inner.width(), lineH), Qt::AlignHCenter | Qt::AlignTop, name);
+            ty += lineH;
+        }
+        if (lines.size() >= 2) {
+            painter->setPen(QColor(subtle_));
+            painter->drawText(QRect(inner.left(), ty, inner.width(), lineH), Qt::AlignHCenter | Qt::AlignTop, lines[1]);
+        }
+
+        if (selected) {
+            painter->setPen(QPen(QColor(selBorderLight_), 2));
+            painter->setBrush(Qt::NoBrush);
+            painter->drawRoundedRect(card.adjusted(0, 0, -1, -1), 12, 12);
+        }
+
+        painter->restore();
+    }
+
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override {
+        Q_UNUSED(index);
+        return recommendedCellSize(option.font, list_->iconSize());
+    }
+
+private:
+    QListWidget *list_;
+    bool dark_;
+    QString textMain_, subtle_, selBorderLight_, hoverCell_;
+};
 
 class ScreenshotGalleryDialog : public BaseDialog {
 public:
@@ -39,10 +178,7 @@ private:
         textMain_ = dark_ ? QStringLiteral("#F1F5F9") : QStringLiteral("#0F172A");
         mutedBg_ = dark_ ? QStringLiteral("#121316") : QStringLiteral("#F8FAFC");
         accent_ = QStringLiteral("#3B82F6");
-        selBgLight_ = QStringLiteral("#DBEAFE");
         selBorderLight_ = QStringLiteral("#2563EB");
-        selBgDark_ = QStringLiteral("#1E3A5F");
-        selTextDark_ = QStringLiteral("#F8FAFC");
 
         buildUi();
         reloadGallery();
@@ -168,20 +304,12 @@ private:
         list_->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         list_->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
         list_->setMinimumHeight(440);
-        {
-            const QString itemText = dark_ ? selTextDark_ : textMain_;
-            const QString hoverBg = dark_ ? QStringLiteral("#252830") : QStringLiteral("#F1F5F9");
-            const QString selBg = dark_ ? selBgDark_ : selBgLight_;
-            const QString selText = dark_ ? selTextDark_ : QStringLiteral("#0F172A");
-            const QString selBorder = dark_ ? QStringLiteral("#60A5FA") : selBorderLight_;
-            list_->setStyleSheet(QStringLiteral(
-                "QListWidget { background: transparent; border: none; padding: 6px; }"
-                "QListWidget::item { border-radius: 10px; padding: 8px 8px 14px 8px; margin: 3px; color: %1; }"
-                "QListWidget::item:hover { background-color: %2; color: %1; }"
-                "QListWidget::item:selected { background-color: %3; color: %4; border: 2px solid %5; }"
-                "QListWidget::item:selected:active { background-color: %3; color: %4; }")
-                .arg(itemText, hoverBg, selBg, selText, selBorder));
-        }
+        list_->setStyleSheet(QStringLiteral(
+            "QListWidget { background: transparent; border: none; padding: 6px; }"
+            "QListWidget::item { background: transparent; border: none; padding: 0px; margin: 4px; outline: none; }"));
+        list_->setItemDelegate(new ScreenshotGalleryItemDelegate(
+            list_, dark_, textMain_, subtle_, selBorderLight_,
+            dark_ ? QStringLiteral("#2A2D35") : QStringLiteral("#F1F5F9")));
         gridOuter->addWidget(list_, 1);
         mainRow->addWidget(gridCard, 1);
 
@@ -358,12 +486,7 @@ private:
     }
 
     QSize thumbnailCellSizeHint() const {
-        const QSize iconSz = list_->iconSize();
-        QFontMetrics fm(list_->font());
-        const int twoLines = fm.lineSpacing() * 2 + fm.leading() + 6;
-        const int w = iconSz.width() + 28;
-        const int h = iconSz.height() + twoLines + 28;
-        return QSize(w, h);
+        return ScreenshotGalleryItemDelegate::recommendedCellSize(list_->font(), list_->iconSize());
     }
 
     void repopulateList() {
@@ -386,10 +509,14 @@ private:
             if (img.isNull())
                 continue;
 
+            ++shown;
+
             const QString timeLine = fi.lastModified().toString(QStringLiteral("MM-dd  HH:mm"));
             auto *item = new QListWidgetItem(QStringLiteral("%1\n%2").arg(fi.fileName(), timeLine));
             item->setData(Qt::UserRole, fi.absoluteFilePath());
-            item->setToolTip(QStringLiteral("%1\n%2")
+            item->setData(Qt::UserRole + 1, shown);
+            item->setToolTip(QStringLiteral("#%1\n%2\n%3")
+                                 .arg(shown)
                                  .arg(fi.absoluteFilePath(), fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss"))));
 
             const QPixmap pm =
@@ -398,7 +525,6 @@ private:
             item->setTextAlignment(Qt::AlignHCenter | Qt::AlignBottom);
             item->setSizeHint(cell);
             list_->addItem(item);
-            ++shown;
         }
 
         if (shown == 0) {
@@ -457,12 +583,15 @@ private:
         else
             sizeStr = QStringLiteral("%1 MB").arg(bytes / (1024.0 * 1024.0), 0, 'f', 2);
 
+        const int ord = current->data(Qt::UserRole + 1).toInt();
+        QString meta = ord > 0 ? QStringLiteral("序号 %1（当前列表）\n\n").arg(ord) : QString();
+        meta += QStringLiteral("%1\n\n%2 × %3 · %4\n%5")
+                    .arg(fi.fileName())
+                    .arg(img.width())
+                    .arg(img.height())
+                    .arg(sizeStr, fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss")));
         metaLabel_->setTextFormat(Qt::PlainText);
-        metaLabel_->setText(QStringLiteral("%1\n\n%2 × %3 · %4\n%5")
-                               .arg(fi.fileName())
-                               .arg(img.width())
-                               .arg(img.height())
-                               .arg(sizeStr, fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss"))));
+        metaLabel_->setText(meta);
     }
 
 protected:
@@ -485,7 +614,7 @@ private:
 
     bool dark_{false};
     QString cardBg_, cardBorder_, subtle_, textMain_, mutedBg_, accent_;
-    QString selBgLight_, selBorderLight_, selBgDark_, selTextDark_;
+    QString selBorderLight_;
 
     QListWidget *list_{nullptr};
     QLabel *preview_{nullptr};
