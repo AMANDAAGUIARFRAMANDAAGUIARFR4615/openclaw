@@ -101,17 +101,21 @@ private:
         remuxProcess_ = nullptr;
     }
 
-    /** 裸 .h264 无容器时间戳时 QMediaPlayer 会「能多快播多快」；用 ffmpeg 按 30fps 打时间轴再播。 */
-    void playRawH264ViaIODevice(const QString &path) {
+    /** 用 QIODevice 喂给解码器（与裸流注释一致：部分 Qt/MinGW 组合下 setSource(file://) 会报 Could not open file）。 */
+    void playLocalFileViaIODevice(const QString &path) {
         playSourceFile_ = std::make_unique<QFile>(path);
         if (!playSourceFile_->open(QIODevice::ReadOnly)) {
             metaLabel_->setText(pendingMetaText_ + QStringLiteral("\n无法打开文件：%1").arg(playSourceFile_->errorString()));
             playSourceFile_.reset();
             return;
         }
-        player_->setSourceDevice(playSourceFile_.get(), QUrl::fromLocalFile(path));
+        const QString abs = QFileInfo(path).absoluteFilePath();
+        player_->setSourceDevice(playSourceFile_.get(), QUrl::fromLocalFile(abs));
         player_->play();
     }
+
+    /** 裸 .h264 无容器时间戳时 QMediaPlayer 会「能多快播多快」；用 ffmpeg 按 30fps 打时间轴再播。 */
+    void playRawH264ViaIODevice(const QString &path) { playLocalFileViaIODevice(path); }
 
     void startFfmpegRemux30fps(const QString &srcPath) {
         const QString ffmpeg = QStandardPaths::findExecutable(QStringLiteral("ffmpeg"));
@@ -172,8 +176,7 @@ private:
                         return;
                     }
 
-                    player_->setSource(QUrl::fromLocalFile(outPath));
-                    player_->play();
+                    playLocalFileViaIODevice(outPath);
                     metaLabel_->setText(pendingMetaText_
                                         + QStringLiteral("\n预览：ffmpeg 按 30fps 时间轴转封（无重编码）。"));
                 });
