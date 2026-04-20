@@ -12,13 +12,15 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QMediaPlayer>
-#include <QProcess>
 #include <QPushButton>
 #include <QStandardPaths>
 #include <QUrl>
 #include <QUuid>
 #include <QVBoxLayout>
 #include <QVideoWidget>
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
+#include <QProcess>
+#endif
 
 /** 浏览本机保存的投屏录像（screenvid_*.h264），列表 + 内置预览。 */
 class VideoGalleryDialog : public BaseDialog {
@@ -92,6 +94,7 @@ private:
     ~VideoGalleryDialog() override { detachPlaySource(); }
 
     void cancelRemuxProcess() {
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
         if (!remuxProcess_)
             return;
         remuxProcess_->disconnect();
@@ -99,6 +102,7 @@ private:
         remuxProcess_->waitForFinished(5000);
         remuxProcess_->deleteLater();
         remuxProcess_ = nullptr;
+#endif
     }
 
     /** 用 QIODevice 喂给解码器（与裸流注释一致：部分 Qt/MinGW 组合下 setSource(file://) 会报 Could not open file）。 */
@@ -118,6 +122,7 @@ private:
     void playRawH264ViaIODevice(const QString &path) { playLocalFileViaIODevice(path); }
 
     void startFfmpegRemux30fps(const QString &srcPath) {
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
         const QString ffmpeg = QStandardPaths::findExecutable(QStringLiteral("ffmpeg"));
         if (ffmpeg.isEmpty()) {
             metaLabel_->setText(pendingMetaText_
@@ -183,6 +188,10 @@ private:
 
         remuxProcess_->start();
         metaLabel_->setText(pendingMetaText_ + QStringLiteral("\n正在生成预览…"));
+#else
+        metaLabel_->setText(pendingMetaText_ + QStringLiteral("\n当前平台不支持 ffmpeg 转封预览，已使用裸流预览。"));
+        playRawH264ViaIODevice(srcPath);
+#endif
     }
 
     void reload() {
@@ -271,6 +280,8 @@ private:
 
     QString pendingMetaText_;
     QString previewRemuxPath_;
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     QProcess *remuxProcess_{nullptr};
+#endif
     quint64 previewEpoch_{0};
 };
