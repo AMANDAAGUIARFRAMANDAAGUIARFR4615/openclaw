@@ -115,8 +115,10 @@ private:
         if (!isWindow) {
             // 小视图本身就是 DeviceWidget，直接判断是否已存在独立窗口即可
             auto ownerWidget = qobject_cast<DeviceWidget*>(parentWidget());
-            if (ownerWidget && ownerWidget->getDeviceWindow())
+            if (ownerWidget && ownerWidget->getDeviceWindow()) {
+                qCriticalEx() << connection->deviceInfo->deviceName << "小视图此时不应发送设置";
                 return;
+            }
         }
 
         bool isPortrait = connection->deviceInfo->orientation == 1 || connection->deviceInfo->orientation == 2;
