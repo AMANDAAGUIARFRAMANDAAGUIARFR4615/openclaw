@@ -310,7 +310,7 @@ void DeviceView::addContextMenuActions()
         else if (labelPart == "截图") {
             addAction(text, [this](){connection->send("screenshot");});
         }
-        else if (labelPart == "截图相册") {
+        else if (labelPart == "截图库") {
             addAction(text, [this]() { ScreenshotGalleryDialog::open(this, deviceInfo->deviceId); });
         }
         else if (labelPart == "投屏录像") {
@@ -324,7 +324,7 @@ void DeviceView::addContextMenuActions()
             action->setCheckable(true);
             action->setChecked(dw->isStreamRecording());
         }
-        else if (labelPart == "录像相册") {
+        else if (labelPart == "录像库") {
             addAction(text, [this]() { VideoGalleryDialog::open(this, deviceInfo->deviceId); });
         }
         else if (labelPart == "重启") {

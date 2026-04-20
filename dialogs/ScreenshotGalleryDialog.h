@@ -170,7 +170,7 @@ public:
 
 private:
     explicit ScreenshotGalleryDialog(QWidget *parent, const QString &deviceId)
-        : BaseDialog(QStringLiteral("截图相册"), parent),
+        : BaseDialog(QStringLiteral("截图库"), parent),
           galleryDir_(Tools::screenshotSaveDirectory(deviceId)) {
         dark_ = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
         cardBg_ = dark_ ? QStringLiteral("#1A1B1E") : QStringLiteral("#FFFFFF");
