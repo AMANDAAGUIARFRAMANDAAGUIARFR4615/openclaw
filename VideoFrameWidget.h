@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "MainWindow.h"
 #include "EventHub.h"
+#include "DeviceWidget.h"
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QGraphicsVideoItem>
@@ -110,6 +111,14 @@ private:
         if (!isVisible() || width() <= 0 || height() <= 0)
             return;
 
+        auto isWindow = qobject_cast<DeviceWindow*>(parentWidget());
+        if (!isWindow) {
+            // 小视图本身就是 DeviceWidget，直接判断是否已存在独立窗口即可
+            auto ownerWidget = qobject_cast<DeviceWidget*>(parentWidget());
+            if (ownerWidget && ownerWidget->getDeviceWindow())
+                return;
+        }
+
         bool isPortrait = connection->deviceInfo->orientation == 1 || connection->deviceInfo->orientation == 2;
         QSize containerSize = size();
         QSize sourceSize(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight);
@@ -143,7 +152,6 @@ private:
 
         videoQuality = qBound(minAllowed, videoQuality, maxAllowed);
 
-        auto isWindow = qobject_cast<DeviceWindow*>(parentWidget());
         auto standaloneAlwaysUltraHD = isWindow && AppSettingsDialog::getInstance()->getValue("standaloneAlwaysUltraHD");
 
         int finalWidth, finalHeight;
@@ -165,23 +173,6 @@ private:
             {"fps", isWindow ? 30 : QList<float>{ 30, 0.2f, 1, 15, 30, 60, 120 }[qBound(0, videoFps, 6)]},
             {"quality", videoQuality}
         }));
-
-        qDebugEx()
-            << "[videoSettings]"
-            << "widgetSize=" << size()
-            << "viewportSize=" << viewport()->size()
-            << "containerSize=" << containerSize
-            << "sourceSize=" << sourceSize
-            << "displaySourceSize=" << displaySourceSize
-            << "targetSizeF=" << targetSizeF
-            << "targetSize=" << targetSize
-            << "dpr=" << dpr
-            << "physical=" << QSize(physicalWidth, physicalHeight)
-            << "orientation=" << connection->deviceInfo->orientation
-            << "isPortrait=" << isPortrait
-            << "videoQuality=" << videoQuality
-            << "final=" << QSize(finalWidth, finalHeight)
-            << "sent=" << QSize(qMin(finalWidth, finalHeight), qMax(finalWidth, finalHeight));
 
         videoItem->setSize(targetSizeF);
 
