@@ -166,6 +166,23 @@ private:
             {"quality", videoQuality}
         }));
 
+        qDebugEx()
+            << "[videoSettings]"
+            << "widgetSize=" << size()
+            << "viewportSize=" << viewport()->size()
+            << "containerSize=" << containerSize
+            << "sourceSize=" << sourceSize
+            << "displaySourceSize=" << displaySourceSize
+            << "targetSizeF=" << targetSizeF
+            << "targetSize=" << targetSize
+            << "dpr=" << dpr
+            << "physical=" << QSize(physicalWidth, physicalHeight)
+            << "orientation=" << connection->deviceInfo->orientation
+            << "isPortrait=" << isPortrait
+            << "videoQuality=" << videoQuality
+            << "final=" << QSize(finalWidth, finalHeight)
+            << "sent=" << QSize(qMin(finalWidth, finalHeight), qMax(finalWidth, finalHeight));
+
         videoItem->setSize(targetSizeF);
 
         scene()->setSceneRect(0, 0, containerSize.width(), containerSize.height());
