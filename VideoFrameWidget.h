@@ -111,23 +111,21 @@ private:
             return;
 
         bool isPortrait = connection->deviceInfo->orientation == 1 || connection->deviceInfo->orientation == 2;
-        auto aspectRatio = isPortrait ? (float)connection->deviceInfo->screenHeight / connection->deviceInfo->screenWidth : (float)connection->deviceInfo->screenWidth / connection->deviceInfo->screenHeight;
+        QSize containerSize = size();
+        QSize sourceSize(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight);
+        QSize displaySourceSize = isPortrait ? sourceSize : sourceSize.transposed();
 
-        // 宽度保持 16 对齐（很多编码器的硬性要求）
-        int alignedWidth = (width() + 15) & ~15;
-        int alignedHeight = qRound((float)alignedWidth * aspectRatio);
-
-        // 高度也强制 16 对齐，满足统一的编码分辨率要求
-        alignedHeight = (alignedHeight + 15) & ~15;
+        QSizeF targetSizeF = displaySourceSize.scaled(containerSize, Qt::KeepAspectRatio);
+        QSize targetSize = targetSizeF.toSize();
 
         auto tab = MainWindow::getInstance()->getTab();
         auto videoFps = tab.getVideoFps();
         auto videoQuality = tab.getVideoQuality();
 
-        // 使用物理像素计算清晰度限制，解决高分屏模糊问题
+        // 使用实际渲染尺寸的物理像素计算清晰度限制，避免窗口很大但发送分辨率偏小
         float dpr = devicePixelRatioF();
-        int physicalWidth = qRound(alignedWidth * dpr);
-        int physicalHeight = qRound(alignedHeight * dpr);
+        int physicalWidth = qRound(targetSize.width() * dpr);
+        int physicalHeight = qRound(targetSize.height() * dpr);
         int minPhysicalRes = qMin(physicalWidth, physicalHeight);
 
         int minAllowed = 1;
@@ -148,38 +146,32 @@ private:
         auto isWindow = qobject_cast<DeviceWindow*>(parentWidget());
         auto standaloneAlwaysUltraHD = isWindow && AppSettingsDialog::getInstance()->getValue("standaloneAlwaysUltraHD");
 
-        // 确保 width 为较小边，height 为较大边，并进行整数四舍五入
         int finalWidth, finalHeight;
         if (standaloneAlwaysUltraHD) {
-            finalWidth = qMin(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight);
-            finalHeight = qMax(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight);
+            finalWidth = displaySourceSize.width();
+            finalHeight = displaySourceSize.height();
         } else {
-            finalWidth = qMin(physicalWidth, physicalHeight);
-            finalHeight = qMax(physicalWidth, physicalHeight);
+            finalWidth = physicalWidth;
+            finalHeight = physicalHeight;
         }
 
         // 确保宽高是 16 的倍数，避免编码侧因对齐不足出现异常
         finalWidth = (finalWidth + 15) & ~15;
-        finalHeight = (finalHeight + 15) & ~15;
+        // finalHeight = (finalHeight + 15) & ~15;
 
         connection->send("videoSettings", QJsonObject({
-            {"width", finalWidth},
-            {"height", finalHeight},
+            {"width", qMin(finalWidth, finalHeight)},
+            {"height", qMax(finalWidth, finalHeight)},
             {"fps", isWindow ? 30 : QList<float>{ 30, 0.2f, 1, 15, 30, 60, 120 }[qBound(0, videoFps, 6)]},
             {"quality", videoQuality}
         }));
 
-        QSize containerSize = size();
-        QSize sourceSize(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight);
-
-        QSizeF targetSize = (isPortrait ? sourceSize : sourceSize.transposed()).scaled(containerSize, Qt::KeepAspectRatio);
-
-        videoItem->setSize(targetSize);
+        videoItem->setSize(targetSizeF);
 
         scene()->setSceneRect(0, 0, containerSize.width(), containerSize.height());
 
-        qreal x = (containerSize.width() - targetSize.width()) / 2.0;
-        qreal y = (containerSize.height() - targetSize.height()) / 2.0;
+        qreal x = (containerSize.width() - targetSizeF.width()) / 2.0;
+        qreal y = (containerSize.height() - targetSizeF.height()) / 2.0;
         
         videoItem->setPos(x, y);
     }
