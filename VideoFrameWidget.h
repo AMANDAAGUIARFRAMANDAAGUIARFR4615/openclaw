@@ -166,7 +166,7 @@ private:
         }
 
         // 确保宽高是 16 的倍数，避免编码侧因对齐不足出现异常
-        finalWidth = (finalWidth + 15) & ~15;
+        // finalWidth = (finalWidth + 15) & ~15;
         // finalHeight = (finalHeight + 15) & ~15;
 
         connection->send("videoSettings", QJsonObject({
