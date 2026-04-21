@@ -16,15 +16,28 @@ public:
         textBrowser->setFrameShape(QFrame::NoFrame);
 
         const bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-        const QString bgColor = isDarkMode ? "#0F141C" : "#F5F8FD";
-        const QString cardColor = isDarkMode ? "#1A2230" : "#FFFFFF";
-        const QString borderColor = isDarkMode ? "#2A3446" : "#DEE6F2";
+        // 暗色模式使用纯色背景，避免出现条纹/渐变感。
+        const QString bgColor = isDarkMode ? "#14171D" : "#F5F8FD";
+        const QString cardColor = isDarkMode ? "#14171D" : "#FFFFFF";
+        const QString borderColor = isDarkMode ? "#2A3140" : "#DEE6F2";
         const QString titleColor = isDarkMode ? "#E8EEF9" : "#0F1D33";
         const QString subTitleColor = isDarkMode ? "#8CB7FF" : "#1B62D1";
         const QString bodyColor = isDarkMode ? "#C9D4E4" : "#2B3A4F";
         const QString strongColor = isDarkMode ? "#F2F6FF" : "#122540";
-        const QString tipBg = isDarkMode ? "#1D2C45" : "#EAF2FF";
-        const QString tipColor = isDarkMode ? "#A9CBFF" : "#1B4FB8";
+        const QString tipColor = isDarkMode ? "#8FB3EC" : "#1B4FB8";
+
+        textBrowser->setStyleSheet(QString(R"(
+            QTextBrowser {
+                background-color: %1;
+                border: none;
+            }
+            QTextBrowser::viewport {
+                background-color: %1;
+            }
+            QTextBrowser > QWidget > QWidget {
+                background-color: %1;
+            }
+        )").arg(bgColor));
 
         const QString helpContent = QString(R"(
             <style>
@@ -32,16 +45,18 @@ public:
                     background: %1;
                     color: %2;
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+                    margin: 0;
                 }
                 .wrap {
-                    padding: 14px 10px 18px 10px;
+                    padding: 10px 14px 18px 14px;
+                    background: %1;
                 }
                 .header {
-                    margin-bottom: 12px;
-                    padding: 14px 16px;
-                    border-radius: 12px;
-                    border: 1px solid %3;
-                    background: %4;
+                    margin-bottom: 10px;
+                    padding: 2px 0 10px 0;
+                    border-radius: 0;
+                    border: none;
+                    background: %1;
                 }
                 .header h2 {
                     margin: 0 0 6px 0;
@@ -54,35 +69,43 @@ public:
                     line-height: 1.6;
                 }
                 .card {
-                    margin-top: 12px;
-                    padding: 14px 16px;
-                    border-radius: 12px;
-                    border: 1px solid %3;
-                    background: %4;
+                    margin-top: 8px;
+                    padding: 2px 0 2px 0;
+                    border-radius: 0;
+                    border: none;
+                    background: %1;
+                }
+                .card + .card {
+                    margin-top: 14px;
+                    padding-top: 12px;
+                    border-top: 1px solid %3;
                 }
                 .card h3 {
-                    margin: 0 0 8px 0;
+                    margin: 0 0 6px 0;
                     color: %6;
                     font-size: 16px;
+                    font-weight: 700;
                 }
                 ul {
                     margin: 0;
-                    padding-left: 22px;
+                    padding-left: 24px;
                 }
                 li {
-                    margin: 6px 0;
+                    margin: 8px 0;
                     color: %2;
-                    line-height: 1.65;
+                    line-height: 1.55;
                 }
                 strong {
                     color: %7;
                 }
                 .tip {
                     margin-top: 10px;
-                    padding: 8px 10px;
-                    border-radius: 8px;
-                    background: %8;
-                    color: %9;
+                    padding: 0;
+                    border: none;
+                    color: %8;
+                    font-weight: 700;
+                    font-size: 14px;
+                    line-height: 1.5;
                 }
             </style>
 
@@ -135,7 +158,7 @@ public:
                 </div>
             </div>
         )")
-            .arg(bgColor, bodyColor, borderColor, cardColor, titleColor, subTitleColor, strongColor, tipBg, tipColor);
+            .arg(bgColor, bodyColor, borderColor, cardColor, titleColor, subTitleColor, strongColor, tipColor);
 
         textBrowser->setHtml(helpContent);
         contentLayout()->addWidget(textBrowser);
