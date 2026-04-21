@@ -110,6 +110,75 @@ private:
     explicit AppSettingsDialog(QWidget *parent = nullptr) : BaseDialog("设置", parent)
     {
         auto mainLayout = contentLayout();
+        setMinimumSize(860, 760);
+        setStyleSheet(styleSheet() + R"(
+            QTabWidget::pane {
+                border: 1px solid #DCE1EB;
+                border-radius: 8px;
+                top: -1px;
+                background: #FFFFFF;
+            }
+            QTabBar::tab {
+                min-width: 126px;
+                padding: 8px 16px;
+                margin-right: 6px;
+                border: 1px solid #DCE1EB;
+                border-bottom: none;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+                background: #F3F6FC;
+                color: #3B4452;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            QTabBar::tab:selected {
+                background: #FFFFFF;
+                color: #1F6FEB;
+            }
+            QTabBar::tab:hover:!selected {
+                background: #EAF1FF;
+            }
+            QGroupBox {
+                border: 1px solid #DCE1EB;
+                border-radius: 10px;
+                margin-top: 14px;
+                background: #FAFCFF;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 12px;
+                top: 4px;
+                padding: 0 6px;
+                color: #1D2A3A;
+                font-size: 13px;
+                font-weight: 700;
+            }
+            QLabel {
+                color: #222B38;
+            }
+            QRadioButton {
+                spacing: 6px;
+                color: #2F3A4B;
+                padding: 2px 0;
+            }
+            QListWidget {
+                border: 1px solid #DCE1EB;
+                border-radius: 8px;
+                background: #FFFFFF;
+                padding: 4px;
+            }
+            QListWidget::item {
+                padding: 5px 8px;
+                border-radius: 6px;
+            }
+            QListWidget::item:hover {
+                background: #EEF4FF;
+            }
+            QListWidget::item:selected {
+                background: #DDEBFF;
+                color: #1B4FB8;
+            }
+        )");
         
         QTabWidget *tabWidget = new QTabWidget(this);
         mainLayout->addWidget(tabWidget);
@@ -120,8 +189,8 @@ private:
 
         QWidget *generalTab = new QWidget();
         QVBoxLayout *generalLayout = new QVBoxLayout(generalTab);
-        generalLayout->setSpacing(15);
-        generalLayout->setContentsMargins(15, 15, 15, 15);
+        generalLayout->setSpacing(18);
+        generalLayout->setContentsMargins(18, 18, 18, 18);
 
         addSettingGroup(generalLayout, "colorScheme", "颜色主题", {"默认", "浅色", "深色"}, 0);
         addSettingGroup(generalLayout, "autoSyncClipboard", "手机剪切板自动同步到电脑", {"关闭", "开启"}, 0);
@@ -132,23 +201,10 @@ private:
         addSettingGroup(generalLayout, "hideStandaloneToolbar", "隐藏独立窗口右侧按钮", {"关闭", "开启"}, 0);
 
         QGroupBox *defaultBox = new QGroupBox("投屏设置 (分组单独设置优先)", generalTab);
-        defaultBox->setStyleSheet(R"(
-            QGroupBox {
-                border: 2px solid palette(mid);
-                border-radius: 5px;
-                margin-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                left: 10px;
-                padding: 0 5px;
-            }
-        )");
 
         QVBoxLayout *boxLayout = new QVBoxLayout(defaultBox);
-        boxLayout->setSpacing(5);
-        boxLayout->setContentsMargins(15, 25, 15, 15);
+        boxLayout->setSpacing(10);
+        boxLayout->setContentsMargins(18, 26, 18, 16);
 
         addSettingGroup(boxLayout, "isLandscape", "投屏显示", {"竖屏显示", "横屏显示"}, 0);
         addSettingGroup(boxLayout, "videoFps", "视频帧率", {"", "5秒1帧", "1秒1帧", "1秒15帧", "1秒30帧", "1秒60帧", "1秒120帧"}, 4);
@@ -169,15 +225,15 @@ private:
 
         QWidget *menuTab = new QWidget();
         QVBoxLayout *menuLayout = new QVBoxLayout(menuTab);
-        menuLayout->setSpacing(15);
-        menuLayout->setContentsMargins(10, 10, 10, 10);
+        menuLayout->setSpacing(16);
+        menuLayout->setContentsMargins(18, 16, 18, 16);
 
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
         QVBoxLayout *topMenusLayout = new QVBoxLayout();
 #else
         QHBoxLayout *topMenusLayout = new QHBoxLayout();
 #endif
-        topMenusLayout->setSpacing(20);
+        topMenusLayout->setSpacing(22);
         topMenusLayout->setAlignment(Qt::AlignTop);
 
         QStringList sideBarMenu{"🔗设备连接", "⚙️设置", "💡帮助", "📲越狱助手", "📱手机软件源", "💿USB驱动", "⏳续费", "🤝换绑", "🌐软件更新"};
@@ -246,13 +302,14 @@ private:
         m_shortcutDefaults.insert(key, defaultShortcuts);
 
         QVBoxLayout *groupLayout = new QVBoxLayout();
-        groupLayout->setSpacing(5);
+        groupLayout->setSpacing(7);
 
         QLabel *titleLabel = new QLabel(title, this);
         QFont font = titleLabel->font();
         font.setBold(true);
-        font.setPointSize(9);
+        font.setPointSize(10);
         titleLabel->setFont(font);
+        titleLabel->setStyleSheet("color:#223047;");
 
         QListWidget *listWidget = new QListWidget(this);
         listWidget->setDragDropMode(QAbstractItemView::InternalMove);
@@ -401,16 +458,17 @@ private:
         m_intDefaults.insert(key, defaultIndex);
 
         QVBoxLayout *groupLayout = new QVBoxLayout();
-        groupLayout->setSpacing(5);
+        groupLayout->setSpacing(7);
 
         QLabel *titleLabel = new QLabel(title, this);
         QFont font = titleLabel->font();
         font.setBold(true);
-        font.setPointSize(9);
+        font.setPointSize(10);
         titleLabel->setFont(font);
+        titleLabel->setStyleSheet("color:#223047;");
 
         QHBoxLayout *optionsLayout = new QHBoxLayout();
-        optionsLayout->setSpacing(5);
+        optionsLayout->setSpacing(12);
 
         QButtonGroup *group = new QButtonGroup(this);
         int currentVal = settings->value(key, defaultIndex).toInt();
