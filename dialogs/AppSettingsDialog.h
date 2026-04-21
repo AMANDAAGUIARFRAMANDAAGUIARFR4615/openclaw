@@ -111,60 +111,79 @@ private:
     {
         auto mainLayout = contentLayout();
         setMinimumSize(860, 760);
-        setStyleSheet(styleSheet() + R"(
+        const bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+        const QString tabPaneBorder = isDarkMode ? "#3A3F4B" : "#DCE1EB";
+        const QString tabPaneBg = isDarkMode ? "#1F232B" : "#FFFFFF";
+        const QString tabBg = isDarkMode ? "#2A2F3A" : "#F3F6FC";
+        const QString tabText = isDarkMode ? "#C8D1DC" : "#3B4452";
+        const QString tabSelectedBg = isDarkMode ? "#1F232B" : "#FFFFFF";
+        const QString tabSelectedText = isDarkMode ? "#6BA6FF" : "#1F6FEB";
+        const QString tabHoverBg = isDarkMode ? "#323949" : "#EAF1FF";
+        const QString groupBorder = isDarkMode ? "#3A3F4B" : "#DCE1EB";
+        const QString groupBg = isDarkMode ? "#252B35" : "#FAFCFF";
+        const QString groupTitle = isDarkMode ? "#E2E8F0" : "#1D2A3A";
+        const QString labelColor = isDarkMode ? "#D2D8E2" : "#222B38";
+        const QString radioColor = isDarkMode ? "#C8D1DC" : "#2F3A4B";
+        const QString listBorder = isDarkMode ? "#3A3F4B" : "#DCE1EB";
+        const QString listBg = isDarkMode ? "#1F232B" : "#FFFFFF";
+        const QString listItemHoverBg = isDarkMode ? "#313847" : "#EEF4FF";
+        const QString listItemSelectedBg = isDarkMode ? "#3A4357" : "#DDEBFF";
+        const QString listItemSelectedText = isDarkMode ? "#8EB8FF" : "#1B4FB8";
+
+        setStyleSheet(styleSheet() + QString(R"(
             QTabWidget::pane {
-                border: 1px solid #DCE1EB;
+                border: 1px solid %1;
                 border-radius: 8px;
                 top: -1px;
-                background: #FFFFFF;
+                background: %2;
             }
             QTabBar::tab {
                 min-width: 126px;
                 padding: 8px 16px;
                 margin-right: 6px;
-                border: 1px solid #DCE1EB;
+                border: 1px solid %1;
                 border-bottom: none;
                 border-top-left-radius: 8px;
                 border-top-right-radius: 8px;
-                background: #F3F6FC;
-                color: #3B4452;
+                background: %3;
+                color: %4;
                 font-size: 13px;
                 font-weight: 600;
             }
             QTabBar::tab:selected {
-                background: #FFFFFF;
-                color: #1F6FEB;
+                background: %5;
+                color: %6;
             }
             QTabBar::tab:hover:!selected {
-                background: #EAF1FF;
+                background: %7;
             }
             QGroupBox {
-                border: 1px solid #DCE1EB;
+                border: 1px solid %8;
                 border-radius: 10px;
                 margin-top: 14px;
-                background: #FAFCFF;
+                background: %9;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
                 left: 12px;
                 top: 4px;
                 padding: 0 6px;
-                color: #1D2A3A;
+                color: %10;
                 font-size: 13px;
                 font-weight: 700;
             }
             QLabel {
-                color: #222B38;
+                color: %11;
             }
             QRadioButton {
                 spacing: 6px;
-                color: #2F3A4B;
+                color: %12;
                 padding: 2px 0;
             }
             QListWidget {
-                border: 1px solid #DCE1EB;
+                border: 1px solid %13;
                 border-radius: 8px;
-                background: #FFFFFF;
+                background: %14;
                 padding: 4px;
             }
             QListWidget::item {
@@ -172,13 +191,16 @@ private:
                 border-radius: 6px;
             }
             QListWidget::item:hover {
-                background: #EEF4FF;
+                background: %15;
             }
             QListWidget::item:selected {
-                background: #DDEBFF;
-                color: #1B4FB8;
+                background: %16;
+                color: %17;
             }
-        )");
+        )")
+            .arg(tabPaneBorder, tabPaneBg, tabBg, tabText, tabSelectedBg, tabSelectedText, tabHoverBg,
+                 groupBorder, groupBg, groupTitle, labelColor, radioColor, listBorder, listBg,
+                 listItemHoverBg, listItemSelectedBg, listItemSelectedText));
         
         QTabWidget *tabWidget = new QTabWidget(this);
         mainLayout->addWidget(tabWidget);
@@ -309,7 +331,8 @@ private:
         font.setBold(true);
         font.setPointSize(10);
         titleLabel->setFont(font);
-        titleLabel->setStyleSheet("color:#223047;");
+        titleLabel->setStyleSheet(QString("color:%1;")
+            .arg(qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark ? "#D2D8E2" : "#223047"));
 
         QListWidget *listWidget = new QListWidget(this);
         listWidget->setDragDropMode(QAbstractItemView::InternalMove);
@@ -465,7 +488,8 @@ private:
         font.setBold(true);
         font.setPointSize(10);
         titleLabel->setFont(font);
-        titleLabel->setStyleSheet("color:#223047;");
+        titleLabel->setStyleSheet(QString("color:%1;")
+            .arg(qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark ? "#D2D8E2" : "#223047"));
 
         QHBoxLayout *optionsLayout = new QHBoxLayout();
         optionsLayout->setSpacing(12);
