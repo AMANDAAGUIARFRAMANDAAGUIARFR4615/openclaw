@@ -428,14 +428,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     auto rightLayout = new QVBoxLayout(rightContainer);
     rightLayout->setContentsMargins(0, 0, 0, 0);
     rightLayout->setSpacing(5);
-    sideBarToggleButton = new QToolButton(this);
+    sideBarToggleButton = new QToolButton(central);
     sideBarToggleButton->setToolTip("收起/展开左侧栏");
-    sideBarToggleButton->setFixedSize(64, 30);
+    sideBarToggleButton->setFixedSize(22, 22);
     sideBarToggleButton->setStyleSheet(
-        "QToolButton { color: #FFFFFF; background-color: #111827; border: 2px solid #F9FAFB; border-radius: 15px; font-size: 13px; font-weight: 700; }"
-        "QToolButton:hover { background-color: #1F2937; }"
-        "QToolButton:pressed { background-color: #000000; }"
+        "QToolButton { color: #111827; background-color: rgba(255,255,255,220); border: 1px solid #D1D5DB; border-radius: 11px; font-size: 12px; font-weight: 700; padding: 0px; }"
+        "QToolButton:hover { background-color: rgba(255,255,255,245); border-color: #9CA3AF; }"
+        "QToolButton:pressed { background-color: rgba(243,244,246,245); }"
     );
+    sideBarToggleButton->show();
 
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
     auto hLayout = new QHBoxLayout();
@@ -584,12 +585,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 sideBarToggleButton->setText(sideBarCollapsed ? "▶" : "◀");
             }
         }
+
+        updateSidebarToggleButtonPosition();
     });
 
     connect(sideBarToggleButton, &QToolButton::clicked, this, [this]() {
         setSidebarCollapsed(!sideBarCollapsed);
     });
     setSidebarCollapsed(sideBarCollapsed);
+    updateSidebarToggleButtonPosition();
+    sideBarToggleButton->raise();
 
     deviceListWidget = new ExplicitSelectionListWidget(this);
     deviceListWidget->setViewMode(QListWidget::IconMode); // 图标模式（网格）
@@ -930,12 +935,39 @@ void MainWindow::setSidebarCollapsed(bool collapsed)
         }
         sideBarList->setMaximumWidth(0);
         mainSplitter->setSizes({0, total});
+        updateSidebarToggleButtonPosition();
         return;
     }
 
     sideBarList->setMaximumWidth(sideBarExpandedWidth);
     const int left = qBound(60, sideBarExpandedWidth, total - 1);
     mainSplitter->setSizes({left, qMax(1, total - left)});
+    updateSidebarToggleButtonPosition();
+}
+
+void MainWindow::updateSidebarToggleButtonPosition()
+{
+    if (!sideBarToggleButton || !mainSplitter) {
+        return;
+    }
+
+    const QRect splitterRect = mainSplitter->geometry();
+    const QList<int> sizes = mainSplitter->sizes();
+    const int leftWidth = sizes.isEmpty() ? sideBarExpandedWidth : qMax(0, sizes[0]);
+    const int handleWidth = mainSplitter->handleWidth();
+    // 悬浮在 central 上：不参与布局、不压缩视频区域，也不会被 splitter/子控件裁剪。
+    // X 坐标吸附到分割线中心，保证箭头始终跟着分割线。
+    int buttonX = splitterRect.x() + leftWidth + (handleWidth - sideBarToggleButton->width()) / 2;
+    const int buttonY = splitterRect.y() + 8;
+    buttonX = qBound(4, buttonX, qMax(4, centralWidget()->width() - sideBarToggleButton->width() - 4));
+
+    sideBarToggleButton->move(buttonX, buttonY);
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    QMainWindow::resizeEvent(event);
+    updateSidebarToggleButtonPosition();
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
