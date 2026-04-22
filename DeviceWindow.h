@@ -4,6 +4,7 @@
 #include <QAudioOutput>
 
 class DeviceWidget;
+class QPushButton;
 
 class DeviceWindow : public DeviceView
 {
@@ -26,5 +27,7 @@ protected:
     DeviceConnection* audioDeviceConnection = nullptr;
 
     QFrame *buttonPanel;
+    QPushButton *closeButton = nullptr;
     void updatePanelPosition();
+    void updateCloseButtonPosition();
 };

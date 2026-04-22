@@ -20,6 +20,7 @@
 #include <QScrollArea> 
 #include <QFrame>
 #include <QScroller>
+#include <cmath>
 
 #ifdef Q_OS_WIN
 #include <winsock2.h>
@@ -127,6 +128,19 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     if (!AppSettingsDialog::getInstance()->getValue("hideStandaloneToolbar"))
         buttonPanel->show();
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+    closeButton = new QPushButton("关闭", this);
+    closeButton->setCursor(Qt::PointingHandCursor);
+    closeButton->setFixedSize(64, 30);
+    closeButton->setStyleSheet(
+        "QPushButton { color: #FFFFFF; background-color: #111827; border: 2px solid #F9FAFB; border-radius: 15px; font-size: 13px; font-weight: 700; }"
+        "QPushButton:hover { background-color: #1F2937; }"
+        "QPushButton:pressed { background-color: #000000; }"
+    );
+    connect(closeButton, &QPushButton::clicked, this, &QWidget::close);
+    closeButton->raise();
+#endif
+
     EventHub::on(this, "lockedStatus", [this](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
@@ -178,18 +192,21 @@ void DeviceWindow::showEvent(QShowEvent *event)
     DeviceView::showEvent(event);
     changeOrientation(deviceInfo->orientation);
     updatePanelPosition();
+    updateCloseButtonPosition();
 }
 
 void DeviceWindow::resizeEvent(QResizeEvent *event)
 {
     DeviceView::resizeEvent(event);
     updatePanelPosition();
+    updateCloseButtonPosition();
 }
 
 void DeviceWindow::moveEvent(QMoveEvent *event)
 {
     DeviceView::moveEvent(event);
     updatePanelPosition();
+    updateCloseButtonPosition();
 }
 
 void DeviceWindow::updatePanelPosition()
@@ -233,6 +250,26 @@ void DeviceWindow::updatePanelPosition()
 #endif
 }
 
+void DeviceWindow::updateCloseButtonPosition()
+{
+    if (!closeButton)
+        return;
+
+    const int margin = 2;
+    int safeLeft = 0;
+    int safeTop = 0;
+
+    if (QWindow *win = windowHandle()) {
+        const auto insets = win->safeAreaMargins();
+        safeLeft = static_cast<int>(std::ceil(insets.left()));
+        safeTop = static_cast<int>(std::ceil(insets.top()));
+    }
+
+    // 基于系统安全区定位，避免刘海/状态栏遮挡。
+    closeButton->move(safeLeft + margin, safeTop + margin);
+    closeButton->raise();
+}
+
 void DeviceWindow::changeOrientation(int orientation)
 {
     auto width = size().width();
@@ -255,6 +292,7 @@ void DeviceWindow::changeOrientation(int orientation)
         setMinimumSize(0, 0);
         setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
         resize(width, height);
+        updateCloseButtonPosition();
     });
 }
 
