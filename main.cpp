@@ -157,6 +157,7 @@ int main(int argc, char *argv[])
     timer->start();
 #endif
 
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     QObject::connect(&app, &QApplication::focusChanged, [](QWidget *old, QWidget *now) {
         qDebugEx() << "焦点从" << old << "变为" << now;
 
@@ -167,6 +168,7 @@ int main(int argc, char *argv[])
         if (window)
             window->setFocus();
     });
+#endif
 
     // qputenv("QT_FFMPEG_DEBUG", "1");
     // qputenv("QT_MEDIA_BACKEND", "ffmpeg");
