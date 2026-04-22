@@ -18,6 +18,7 @@
 #include "HelpDialog.h"
 #include "NetworkSegmentEditorDialog.h"
 #include "SwapExpirationDialog.h"
+#include "SourceRepoDialog.h"
 #include "DeviceWindow.h"
 #include "ExplicitSelectionListWidget.h"
 #include "NaturalSortListWidgetItem.h"
@@ -256,61 +257,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (title == "手机软件源") {
-            auto repoDialog = new QDialog(this);
-            repoDialog->setAttribute(Qt::WA_DeleteOnClose);
-            repoDialog->setWindowTitle("使用相机APP扫码");
-
-            auto mainLayout = new QVBoxLayout(repoDialog);
-
-            auto tabWidget = new QTabWidget(repoDialog);
-
-            struct SourceInfo { QString title; QString url; };
-            QList<SourceInfo> sources = {
-                {"Sileo", "sileo://source/" + Config::SITE_URL},
-                {"Cydia", "cydia://url/https://cydia.saurik.com/api/share#?source=" + Config::SITE_URL}
-            };
-
-            int qrSize = 400;
-
-            for (const auto& source : sources) {
-                auto page = new QWidget();
-                auto vLayout = new QVBoxLayout(page);
-                
-                auto img = Tools::generateQrImage(source.url);
-                QPixmap pixmap = QPixmap::fromImage(img).scaled(
-                    qrSize, qrSize, 
-                    Qt::KeepAspectRatio, 
-                    Qt::SmoothTransformation
-                );
-                
-                auto imgLabel = new QLabel(page);
-                imgLabel->setPixmap(pixmap);
-                imgLabel->setAlignment(Qt::AlignCenter);
-
-                const auto& displayUrl = source.url.mid(source.url.lastIndexOf("https://"));
-                
-                QString richText = QString("如不方便扫码，请手动输入软件源地址：<br><a href=\"%1\" style=\"color: #0078d7; text-decoration: none;\">%1</a>")
-                   .arg(displayUrl);
-                auto textLabel = new QLabel(richText, page);
-                textLabel->setAlignment(Qt::AlignCenter);
-                textLabel->setWordWrap(true);
-
-                textLabel->setTextInteractionFlags(Qt::TextBrowserInteraction); // 允许交互
-                textLabel->setOpenExternalLinks(false); // 禁止自动打开浏览器，我们要自己处理点击
-
-                connect(textLabel, &QLabel::linkActivated, [displayUrl](const QString &link) {
-                    qApp->clipboard()->setText(link);
-                    QToolTip::showText(QCursor::pos(), "地址已复制");
-                });
-                
-                vLayout->addWidget(imgLabel);
-                vLayout->addWidget(textLabel);
-                
-                tabWidget->addTab(page, source.title);
-            }
-
-            mainLayout->addWidget(tabWidget);
-            repoDialog->exec();
+            SourceRepoDialog(this).exec();
             return;
         }
 
