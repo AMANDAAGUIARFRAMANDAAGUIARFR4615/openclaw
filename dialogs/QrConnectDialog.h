@@ -1,40 +1,35 @@
 #pragma once
 
-#include <QDialog>
+#include "BaseDialog.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPushButton>
 #include <QJsonDocument>
 #include <QGuiApplication>
 #include <QScreen>
 
-class QrConnectDialog : public QDialog {
+class QrConnectDialog : public BaseDialog {
     Q_OBJECT
 
 public:
-    explicit QrConnectDialog(QWidget *parent = nullptr) : QDialog(parent) {
-        setWindowTitle("用手机APP扫码连接");
-
-#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        setWindowState(Qt::WindowMaximized);
-        auto mainLayout = new QVBoxLayout(this);
-        mainLayout->setAlignment(Qt::AlignCenter);
-#else
-        auto mainLayout = new QHBoxLayout(this);
-        mainLayout->setSizeConstraint(QLayout::SetFixedSize); 
-#endif
-
+    explicit QrConnectDialog(QWidget *parent = nullptr) : BaseDialog("用手机APP扫码连接", parent) {
+        QBoxLayout *mainLayout = contentLayout();
         auto localIPs = NetworkUtils::getPhysicalIPs();
         qInfoEx() << "本机内网IP:" << localIPs;
+
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        mainLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+        mainLayout->setSpacing(12);
+        const int screenW = qApp->primaryScreen()->availableGeometry().width();
+        const int qrMaxByScreen = qMax(140, screenW - 96);
+#endif
 
         for (const QString &localIP : std::as_const(localIPs)) {
             const auto& hostInfo = TcpServer::getInstance()->getHostInfo(localIP);
             const auto& data = QJsonDocument(hostInfo).toJson(QJsonDocument::Compact).toBase64();
             
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-            int screenW = qApp->primaryScreen()->availableGeometry().width();
-            int qrSize = qMin(250, screenW - 100); 
+            int qrSize = localIPs.size() > 1 ? qMin(200, qrMaxByScreen) : qMin(250, qrMaxByScreen);
 #else
             int qrSize = qMax(200, 500 - (localIPs.size() * 100));
 #endif
@@ -48,6 +43,12 @@ public:
 
             auto itemWidget = new QWidget(this);
             auto itemLayout = new QVBoxLayout(itemWidget);
+            itemLayout->setContentsMargins(0, 0, 0, 0);
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+            itemLayout->setSpacing(8);
+#else
+            itemLayout->setSpacing(12);
+#endif
 
             auto imgLabel = new QLabel(itemWidget);
             imgLabel->setPixmap(pixmap);
@@ -56,7 +57,11 @@ public:
             auto textLabel = new QLabel(localIP, itemWidget);
             textLabel->setAlignment(Qt::AlignCenter);
             auto font = textLabel->font();
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+            font.setPointSize(13);
+#else
             font.setPointSize(16);
+#endif
             font.setBold(true);
             textLabel->setFont(font);
 
@@ -68,15 +73,9 @@ public:
 
         if (localIPs.isEmpty()) {
             auto errLabel = new QLabel("未检测到有效网卡", this);
+            errLabel->setAlignment(Qt::AlignCenter);
             mainLayout->addWidget(errLabel);
         }
-
-#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        auto closeButton = new QPushButton("关闭", this);
-        closeButton->setMinimumHeight(50);
-        connect(closeButton, &QPushButton::clicked, this, &QDialog::accept);
-        mainLayout->addWidget(closeButton);
-#endif
     }
 
     ~QrConnectDialog() override = default;
