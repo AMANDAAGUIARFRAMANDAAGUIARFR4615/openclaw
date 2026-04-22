@@ -1,11 +1,10 @@
 #pragma once
 
 #include "BaseDialog.h"
-#include <QTextBrowser>
-#include <QTextOption>
+#include <QAbstractTextDocumentLayout>
 #include <QStyleHints>
-#include <QScroller>
-#include <QScrollerProperties>
+#include <QTextBrowser>
+#include <QTextDocument>
 
 class HelpDialog : public BaseDialog {
     Q_OBJECT
@@ -17,19 +16,13 @@ public:
         resize(780, 640);
 #endif
 
-        auto textBrowser = new QTextBrowser(this);
-        textBrowser->setOpenExternalLinks(true);
-        textBrowser->setFrameShape(QFrame::NoFrame);
-        textBrowser->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        textBrowser->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-        textBrowser->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-
-#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        QScroller::grabGesture(textBrowser->viewport(), QScroller::LeftMouseButtonGesture);
-        QScrollerProperties props = QScroller::scroller(textBrowser->viewport())->scrollerProperties();
-        props.setScrollMetric(QScrollerProperties::MousePressEventDelay, 0.1);
-        QScroller::scroller(textBrowser->viewport())->setScrollerProperties(props);
-#endif
+        auto helpText = new QTextBrowser(this);
+        helpText->setOpenExternalLinks(true);
+        helpText->setFrameShape(QFrame::NoFrame);
+        helpText->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        helpText->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        helpText->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        helpText->document()->setDocumentMargin(0);
 
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
         const QString wrapPadding = "6px 8px 14px 8px";
@@ -59,16 +52,10 @@ public:
         const QString tipColor = isDarkMode ? "#87AEEB" : "#2A5CB5";
         const QString tipBgColor = isDarkMode ? "#1A2232" : "#EEF3FF";
 
-        textBrowser->setStyleSheet(QString(R"(
+        helpText->setStyleSheet(QString(R"(
             QTextBrowser {
                 background-color: %1;
                 border: none;
-            }
-            QTextBrowser::viewport {
-                background-color: %1;
-            }
-            QTextBrowser > QWidget > QWidget {
-                background-color: %1;
             }
         )").arg(bgColor));
 
@@ -199,8 +186,17 @@ public:
             .arg(bgColor, bodyColor, borderColor, cardColor, titleColor, subTitleColor, strongColor, tipColor,
                  wrapPadding, titleFontSize, cardTitleFontSize, bodyFontSize, listPadding, tipFontSize, tipBgColor);
 
-        textBrowser->setHtml(helpContent);
-        contentLayout()->addWidget(textBrowser);
+        helpText->setHtml(helpContent.trimmed());
+
+        auto updateTextHeight = [helpText](const QSizeF &docSize) {
+            helpText->setFixedHeight(qCeil(docSize.height()));
+        };
+
+        QObject::connect(helpText->document()->documentLayout(), &QAbstractTextDocumentLayout::documentSizeChanged,
+                         this, updateTextHeight);
+        updateTextHeight(helpText->document()->size());
+
+        contentLayout()->addWidget(helpText);
     }
 
     ~HelpDialog() override = default;
