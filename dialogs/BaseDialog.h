@@ -125,6 +125,10 @@ public:
         
         QScrollerProperties mainProps = QScroller::scroller(mainScrollArea->viewport())->scrollerProperties();
         mainProps.setScrollMetric(QScrollerProperties::MousePressEventDelay, 0.1);
+        // 关闭回弹
+        mainProps.setScrollMetric(QScrollerProperties::HorizontalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
+        mainProps.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
+
         QScroller::scroller(mainScrollArea->viewport())->setScrollerProperties(mainProps);
 
         auto scrollContentWidget = new QWidget(mainScrollArea);
