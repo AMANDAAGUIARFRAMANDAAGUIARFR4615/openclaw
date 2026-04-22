@@ -26,7 +26,6 @@
 #include "VersionManagerDialog.h"
 #include "FlowEditorDialog.h"
 #include "VideoFrameWidget.h"
-#include <QShortcut>
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QFrame>
@@ -125,20 +124,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     int y = (screenSize.height() - height()) / 2;
     move(x, y);
 
+    sideBarCollapsed = settings->value("mainWindowSidebarCollapsed", false).toBool();
+
     auto central = new QWidget(this);
     setCentralWidget(central);
 
     auto mainLayout = new QHBoxLayout(central);
 
-    auto splitter = new QSplitter(Qt::Horizontal, this);
-    mainLayout->addWidget(splitter);
+    mainSplitter = new QSplitter(Qt::Horizontal, this);
+    mainLayout->addWidget(mainSplitter);
 
     sideBarList = new QListWidget();
     sideBarList->setViewMode(QListView::IconMode);
     sideBarList->setWordWrap(false);
     sideBarList->setTextElideMode(Qt::ElideNone);
     sideBarList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    sideBarList->setFixedWidth(80);
+    sideBarList->setMinimumWidth(0);
+    sideBarList->setMaximumWidth(sideBarExpandedWidth);
     sideBarList->setCursor(Qt::PointingHandCursor);
     sideBarList->setDragDropMode(QAbstractItemView::NoDragDrop);
     sideBarList->setStyleSheet(R"(
@@ -420,12 +422,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
     });
 
-    splitter->addWidget(sideBarList);
+    mainSplitter->addWidget(sideBarList);
 
     auto rightContainer = new QWidget(this);
     auto rightLayout = new QVBoxLayout(rightContainer);
     rightLayout->setContentsMargins(0, 0, 0, 0);
     rightLayout->setSpacing(5);
+    sideBarToggleButton = new QToolButton(this);
+    sideBarToggleButton->setToolTip("收起/展开左侧栏");
+    sideBarToggleButton->setFixedSize(64, 30);
+    sideBarToggleButton->setStyleSheet(
+        "QToolButton { color: #FFFFFF; background-color: #111827; border: 2px solid #F9FAFB; border-radius: 15px; font-size: 13px; font-weight: 700; }"
+        "QToolButton:hover { background-color: #1F2937; }"
+        "QToolButton:pressed { background-color: #000000; }"
+    );
 
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
     auto hLayout = new QHBoxLayout();
@@ -557,7 +567,29 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     rightLayout->addWidget(controlBar);
 
-    splitter->addWidget(rightContainer);
+    mainSplitter->addWidget(rightContainer);
+    mainSplitter->setStretchFactor(1, 1);
+    mainSplitter->setSizes({sideBarExpandedWidth, qMax(1, width() - sideBarExpandedWidth)});
+
+    connect(mainSplitter, &QSplitter::splitterMoved, this, [this](int pos, int) {
+        if (pos > 0) {
+            sideBarExpandedWidth = pos;
+        }
+
+        const bool collapsed = pos <= 0;
+        if (sideBarCollapsed != collapsed) {
+            sideBarCollapsed = collapsed;
+            settings->setValue("mainWindowSidebarCollapsed", sideBarCollapsed);
+            if (sideBarToggleButton) {
+                sideBarToggleButton->setText(sideBarCollapsed ? "▶" : "◀");
+            }
+        }
+    });
+
+    connect(sideBarToggleButton, &QToolButton::clicked, this, [this]() {
+        setSidebarCollapsed(!sideBarCollapsed);
+    });
+    setSidebarCollapsed(sideBarCollapsed);
 
     deviceListWidget = new ExplicitSelectionListWidget(this);
     deviceListWidget->setViewMode(QListWidget::IconMode); // 图标模式（网格）
@@ -868,6 +900,42 @@ MainWindow::~MainWindow()
     EventHub::off(this, "deviceInfo");
     EventHub::off(this, "disconnected");
     EventHub::off(this, "getAppInfo");
+}
+
+void MainWindow::setSidebarCollapsed(bool collapsed)
+{
+    const bool wasCollapsed = sideBarCollapsed;
+    sideBarCollapsed = collapsed;
+    settings->setValue("mainWindowSidebarCollapsed", sideBarCollapsed);
+
+    if (sideBarToggleButton) {
+        sideBarToggleButton->setText(collapsed ? "▶" : "◀");
+    }
+
+    const auto sizes = mainSplitter->sizes();
+    int total = 0;
+    for (const int size : sizes) {
+        total += size;
+    }
+    if (total <= 0) total = mainSplitter->width();
+    if (total <= 0) total = width();
+    total = qMax(1, total);
+
+    if (collapsed) {
+        // 启动时若本来就是折叠态，不要用临时布局宽度覆盖展开宽度。
+        if (!wasCollapsed) {
+            if (!sizes.isEmpty() && sizes[0] > 0) {
+                sideBarExpandedWidth = sizes[0];
+            }
+        }
+        sideBarList->setMaximumWidth(0);
+        mainSplitter->setSizes({0, total});
+        return;
+    }
+
+    sideBarList->setMaximumWidth(sideBarExpandedWidth);
+    const int left = qBound(60, sideBarExpandedWidth, total - 1);
+    mainSplitter->setSizes({left, qMax(1, total - left)});
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)

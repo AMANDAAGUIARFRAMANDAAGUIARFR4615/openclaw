@@ -15,6 +15,8 @@
 class DeviceView;
 class DeviceWidget;
 class DeviceWindow;
+class QSplitter;
+class QToolButton;
 
 class MainWindow : public QMainWindow
 {
@@ -62,6 +64,7 @@ protected:
     void loadTabs();
     void saveTabs(int index = -1);
     int findAvailableTabId();
+    void setSidebarCollapsed(bool collapsed);
 
     QList<BitMaskEditorDialog::Item> tabs;
 
@@ -69,6 +72,10 @@ protected:
     const int spacing = 10;
 
     QListWidget* sideBarList;
+    QSplitter* mainSplitter;
+    QToolButton* sideBarToggleButton;
+    int sideBarExpandedWidth = 80;
+    bool sideBarCollapsed = false;
     QListWidget* deviceListWidget;
     QSlider* zoomSlider;
     QTimer* relayoutTimer;
