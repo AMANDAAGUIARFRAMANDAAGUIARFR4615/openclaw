@@ -477,6 +477,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     rightLayout->setContentsMargins(0, 0, 0, 0);
     rightLayout->setSpacing(5);
 
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
     auto hLayout = new QHBoxLayout();
     hLayout->setContentsMargins(5, 5, 5, 5);
     hLayout->setSpacing(5);
@@ -545,6 +546,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     runtimeTimer->start();
 
     rightLayout->addLayout(hLayout);
+#else
+    multiControlSwitchButton->setChecked(false);
+    lineDispatcherSwitchButton->setChecked(false);
+#endif
 
     auto tabBar = tabWidget->tabBar();
     tabBar->setMovable(true);
