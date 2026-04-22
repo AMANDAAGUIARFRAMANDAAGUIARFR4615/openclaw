@@ -593,11 +593,7 @@ void DeviceView::addContextMenuActions()
         
         button->setFixedHeight(34);
 
-#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        connect(button, &QPushButton::released, action, &QAction::trigger);
-#else
         connect(button, &QPushButton::clicked, action, &QAction::trigger);
-#endif
 
         buttonLayout->addWidget(button);
     }
