@@ -3,7 +3,7 @@
 #include "MainWindow.h"
 #include "Account.h"
 #include "Safe.h"
-#include <QDialog>
+#include "BaseDialog.h"
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QDialogButtonBox>
@@ -17,9 +17,11 @@
 #include <QToolTip>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QScroller>
+#include <QScrollerProperties>
 #include <algorithm>
 
-class SwapExpirationDialog : public QDialog {
+class SwapExpirationDialog : public BaseDialog {
     Q_OBJECT
 
     // 自定义Item用于排序：不可用的排在后面，否则按原始索引排序
@@ -42,18 +44,26 @@ class SwapExpirationDialog : public QDialog {
     };
 
 public:
-    explicit SwapExpirationDialog(QWidget *parent) : QDialog(parent) {
-        setWindowTitle("互换到期时间");
-        setMinimumSize(960, 600);
-        auto mainLayout = new QVBoxLayout(this);
+    explicit SwapExpirationDialog(QWidget *parent) : BaseDialog("互换到期时间", parent) {
+        auto mainLayout = contentLayout();
+        const bool isMobileLayout =
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+            true;
+#else
+            false;
+#endif
 
-        auto splitter = new QSplitter(Qt::Horizontal);
+        if (!isMobileLayout) {
+            setMinimumSize(960, 600);
+        }
+
+        auto splitter = new QSplitter(isMobileLayout ? Qt::Vertical : Qt::Horizontal);
         
         sourceGroupWidget = new QWidget();
         targetGroupWidget = new QWidget();
         
-        createPanel(sourceGroupWidget, sourceFilterComboBox, sourceSelectAllCheckBox, sourceDeviceTable, "源设备 (A)");
-        createPanel(targetGroupWidget, targetFilterComboBox, targetSelectAllCheckBox, targetDeviceTable, "目标设备 (B)");
+        createPanel(sourceGroupWidget, sourceFilterComboBox, sourceSelectAllCheckBox, sourceDeviceTable, "源设备 (A)", isMobileLayout);
+        createPanel(targetGroupWidget, targetFilterComboBox, targetSelectAllCheckBox, targetDeviceTable, "目标设备 (B)", isMobileLayout);
         
         splitter->addWidget(sourceGroupWidget);
         splitter->addWidget(targetGroupWidget);
@@ -136,7 +146,7 @@ private:
     QTableWidget *sourceDeviceTable, *targetDeviceTable;
 
     // 创建左右两侧的面板
-    void createPanel(QWidget* containerWidget, QComboBox*& filterComboBox, QCheckBox*& selectAllCheckBox, QTableWidget*& tableWidget, const QString& title) {
+    void createPanel(QWidget* containerWidget, QComboBox*& filterComboBox, QCheckBox*& selectAllCheckBox, QTableWidget*& tableWidget, const QString& title, bool isMobileLayout) {
         auto verticalLayout = new QVBoxLayout(containerWidget);
         verticalLayout->addWidget(new QLabel(title));
         
@@ -162,9 +172,20 @@ private:
         tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
         tableWidget->setFocusPolicy(Qt::NoFocus);
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        QScroller::grabGesture(tableWidget->viewport(), QScroller::LeftMouseButtonGesture);
+        QScrollerProperties props = QScroller::scroller(tableWidget->viewport())->scrollerProperties();
+        props.setScrollMetric(QScrollerProperties::MousePressEventDelay, 0.1);
+        QScroller::scroller(tableWidget->viewport())->setScrollerProperties(props);
+        tableWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        tableWidget->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+#endif
+
         auto headerView = tableWidget->horizontalHeader();
         headerView->setSectionResizeMode(QHeaderView::ResizeToContents);
-        headerView->setSectionResizeMode(1, QHeaderView::Stretch);
+        if (!isMobileLayout) {
+            headerView->setSectionResizeMode(1, QHeaderView::Stretch);
+        }
         headerView->setSectionsClickable(false);
 
         verticalLayout->addWidget(tableWidget);
