@@ -172,7 +172,7 @@ private:
         connection->send("videoSettings", QJsonObject({
             {"width", qMin(finalWidth, finalHeight)},
             {"height", qMax(finalWidth, finalHeight)},
-            {"fps", isWindow ? 30 : QList<float>{ 30, 0.2f, 1, 15, 30, 60, 120 }[qBound(0, videoFps, 6)]},
+            {"fps", isWindow ? 30 : QList<float>{ 30, 0.2f, 1, 15, 30 }[qBound(0, videoFps, 4)]},
             {"quality", videoQuality}
         }));
 
