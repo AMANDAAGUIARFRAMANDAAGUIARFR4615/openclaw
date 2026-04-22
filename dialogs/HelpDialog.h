@@ -2,18 +2,50 @@
 
 #include "BaseDialog.h"
 #include <QTextBrowser>
+#include <QTextOption>
 #include <QStyleHints>
+#include <QScroller>
+#include <QScrollerProperties>
 
 class HelpDialog : public BaseDialog {
     Q_OBJECT
 
 public:
     explicit HelpDialog(QWidget *parent = nullptr) : BaseDialog("帮助", parent) {
-        setMinimumSize(780, 640);
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
+        // 桌面端初始尺寸，移动端由 BaseDialog 自动全屏托管
+        resize(780, 640);
+#endif
 
         auto textBrowser = new QTextBrowser(this);
         textBrowser->setOpenExternalLinks(true);
         textBrowser->setFrameShape(QFrame::NoFrame);
+        textBrowser->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        textBrowser->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+        textBrowser->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        QScroller::grabGesture(textBrowser->viewport(), QScroller::LeftMouseButtonGesture);
+        QScrollerProperties props = QScroller::scroller(textBrowser->viewport())->scrollerProperties();
+        props.setScrollMetric(QScrollerProperties::MousePressEventDelay, 0.1);
+        QScroller::scroller(textBrowser->viewport())->setScrollerProperties(props);
+#endif
+
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        const QString wrapPadding = "6px 8px 14px 8px";
+        const QString titleFontSize = "18px";
+        const QString cardTitleFontSize = "15px";
+        const QString bodyFontSize = "14px";
+        const QString tipFontSize = "10px";
+        const QString listPadding = "20px";
+#else
+        const QString wrapPadding = "10px 14px 18px 14px";
+        const QString titleFontSize = "20px";
+        const QString cardTitleFontSize = "16px";
+        const QString bodyFontSize = "14px";
+        const QString tipFontSize = "11px";
+        const QString listPadding = "24px";
+#endif
 
         const bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
         // 暗色模式使用纯色背景，避免出现条纹/渐变感。
@@ -24,7 +56,8 @@ public:
         const QString subTitleColor = isDarkMode ? "#8CB7FF" : "#1B62D1";
         const QString bodyColor = isDarkMode ? "#C9D4E4" : "#2B3A4F";
         const QString strongColor = isDarkMode ? "#F2F6FF" : "#122540";
-        const QString tipColor = isDarkMode ? "#8FB3EC" : "#1B4FB8";
+        const QString tipColor = isDarkMode ? "#87AEEB" : "#2A5CB5";
+        const QString tipBgColor = isDarkMode ? "#1A2232" : "#EEF3FF";
 
         textBrowser->setStyleSheet(QString(R"(
             QTextBrowser {
@@ -48,7 +81,7 @@ public:
                     margin: 0;
                 }
                 .wrap {
-                    padding: 10px 14px 18px 14px;
+                    padding: %9;
                     background: %1;
                 }
                 .header {
@@ -61,11 +94,12 @@ public:
                 .header h2 {
                     margin: 0 0 6px 0;
                     color: %5;
-                    font-size: 20px;
+                    font-size: %10;
                 }
                 .header p {
                     margin: 0;
                     color: %2;
+                    font-size: %12;
                     line-height: 1.6;
                 }
                 .card {
@@ -83,29 +117,30 @@ public:
                 .card h3 {
                     margin: 0 0 6px 0;
                     color: %6;
-                    font-size: 16px;
+                    font-size: %11;
                     font-weight: 700;
                 }
                 ul {
                     margin: 0;
-                    padding-left: 24px;
+                    padding-left: %13;
                 }
                 li {
                     margin: 8px 0;
                     color: %2;
+                    font-size: %12;
                     line-height: 1.55;
                 }
                 strong {
                     color: %7;
                 }
                 .tip {
-                    margin-top: 10px;
-                    padding: 0;
+                    margin-top: 12px;
+                    padding: 8px 10px;
                     border: none;
-                    color: %8;
-                    font-weight: 700;
-                    font-size: 14px;
-                    line-height: 1.5;
+                    border-left: 3px solid %8;
+                    border-radius: 6px;
+                    background: %15;
+                    line-height: 1.6;
                 }
             </style>
 
@@ -117,7 +152,10 @@ public:
                         <li><strong>分组管理：</strong>支持自定义分组，便于按场景、项目或机型分类。</li>
                         <li><strong>多分组归属：</strong>同一台设备可以加入多个分组，减少重复维护。</li>
                     </ul>
-                    <div class="tip">提示：可在「设置 - 常规与投屏」中配置默认连接方式和自动连接策略。</div>
+                    <div class="tip" style="font-size:10pt; line-height:1.45;">
+                        <span style="color:%8; font-size:12pt; font-weight:600;">提示：</span>
+                        <span style="color:%2; font-size:12pt; font-weight:400;">可在「设置 - 常规与投屏」中配置默认连接方式和自动连接策略。</span>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -158,7 +196,8 @@ public:
                 </div>
             </div>
         )")
-            .arg(bgColor, bodyColor, borderColor, cardColor, titleColor, subTitleColor, strongColor, tipColor);
+            .arg(bgColor, bodyColor, borderColor, cardColor, titleColor, subTitleColor, strongColor, tipColor,
+                 wrapPadding, titleFontSize, cardTitleFontSize, bodyFontSize, listPadding, tipFontSize, tipBgColor);
 
         textBrowser->setHtml(helpContent);
         contentLayout()->addWidget(textBrowser);
