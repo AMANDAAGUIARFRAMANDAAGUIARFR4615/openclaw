@@ -24,6 +24,8 @@
 #include <QJsonArray>
 #include <QCoreApplication>
 #include <QApplication>
+#include <QStyleHints>
+#include <QPalette>
 #include <QTimer>
 #include <QStandardPaths>
 #include <QSysInfo>
@@ -229,10 +231,16 @@ public:
         int qrSize = qr.getSize();
         int size = (qrSize + border * 2) * scale;
         QImage image(size, size, QImage::Format_RGB888);
-        image.fill(Qt::white);  // 白底
+
+        const bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+
+        // 暗色模式下改用柔和灰阶，降低白底黑码的刺眼感，同时保持可扫码对比度。
+        const QColor qrBackgroundColor = isDarkMode ? QColor(66, 66, 66) : QColor(255, 255, 255);
+        const QColor qrForegroundColor = isDarkMode ? QColor(225, 225, 225) : QColor(0, 0, 0);
+        image.fill(qrBackgroundColor);
 
         QPainter painter(&image);
-        painter.setBrush(Qt::black);
+        painter.setBrush(qrForegroundColor);
         painter.setPen(Qt::NoPen);
 
         for (int y = 0; y < qrSize; y++) {
