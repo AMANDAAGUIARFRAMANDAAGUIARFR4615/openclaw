@@ -450,7 +450,7 @@ void DeviceView::addContextMenuActions()
                 if (dynamicSubMenu->property("isLoaded").toBool())
                     return;
 
-                QNetworkRequest request(Config::SITE_URL + "/Packages");
+                QNetworkRequest request(Config::SITE_URL + "Packages");
                 QNetworkReply *reply = networkAccessManager->get(request);
 
                 connect(reply, &QNetworkReply::finished, dynamicSubMenu, [=]() {
@@ -499,7 +499,7 @@ void DeviceView::addContextMenuActions()
                         auto action = dynamicSubMenu->addAction(pkgVer);
 
                         connect(action, &QAction::triggered, [=]() {
-                            QNetworkRequest request(Config::SITE_URL + "/" + pkgFile);
+                            QNetworkRequest request(Config::SITE_URL + pkgFile);
                             QNetworkReply *reply = networkAccessManager->get(request);
 
                             new ToastWidget("正在下载中，请稍等");
