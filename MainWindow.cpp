@@ -135,6 +135,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     sideBarList = new QListWidget();
     sideBarList->setViewMode(QListView::IconMode);
+    sideBarList->setWordWrap(false);
+    sideBarList->setTextElideMode(Qt::ElideNone);
+    sideBarList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     sideBarList->setFixedWidth(80);
     sideBarList->setCursor(Qt::PointingHandCursor);
     sideBarList->setDragDropMode(QAbstractItemView::NoDragDrop);
