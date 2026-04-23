@@ -18,7 +18,25 @@ public:
 
         connect(m_listWidget->verticalScrollBar(), &QScrollBar::valueChanged, this, &ViewportAwareBehavior::delayUpdate);
         connect(m_listWidget->horizontalScrollBar(), &QScrollBar::valueChanged, this, &ViewportAwareBehavior::delayUpdate);
-        connect(m_listWidget->model(), &QAbstractItemModel::layoutChanged, this, &ViewportAwareBehavior::delayUpdate);
+        auto model = m_listWidget->model();
+        connect(model, &QAbstractItemModel::dataChanged, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::headerDataChanged, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::layoutAboutToBeChanged, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::layoutChanged, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::rowsAboutToBeInserted, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::rowsInserted, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::rowsAboutToBeRemoved, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::rowsRemoved, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::columnsAboutToBeInserted, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::columnsInserted, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::columnsAboutToBeRemoved, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::columnsRemoved, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::modelAboutToBeReset, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::modelReset, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::rowsAboutToBeMoved, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::rowsMoved, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::columnsAboutToBeMoved, this, &ViewportAwareBehavior::delayUpdate);
+        connect(model, &QAbstractItemModel::columnsMoved, this, &ViewportAwareBehavior::delayUpdate);
         
         m_listWidget->installEventFilter(this);
     }
