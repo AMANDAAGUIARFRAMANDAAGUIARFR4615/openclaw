@@ -37,7 +37,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 
     overlay = new QWidget(this);
     overlay->setStyleSheet("background-color: black;");
-    QLabel *label = new QLabel("----------------", overlay);
+    QLabel *label = new QLabel("投屏加载中...", overlay);
     label->setStyleSheet("color: white; font-size: 20px;");
     label->setAlignment(Qt::AlignCenter);
 
