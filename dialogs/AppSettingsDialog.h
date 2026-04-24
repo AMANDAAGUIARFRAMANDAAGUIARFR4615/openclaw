@@ -258,7 +258,11 @@ private:
         topMenusLayout->setSpacing(22);
         topMenusLayout->setAlignment(Qt::AlignTop);
 
-        QStringList sideBarMenu{"🔗设备连接", "⚙️设置", "💡帮助", "📲越狱助手", "📱手机软件源", "💿USB驱动", "⏳续费", "🤝换绑", "🌐软件更新"};
+        QStringList sideBarMenu{"🔗设备连接", "⚙️设置", "💡帮助", "📱手机软件源", "💿USB驱动", "⏳续费", "🤝换绑"};
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
+        sideBarMenu.append("📲越狱助手");
+        sideBarMenu.append("🌐软件更新");
+#endif
         
         if (Tools::isAppleMobileDeviceSupportInstalled())
             sideBarMenu.removeOne("💿USB驱动");
