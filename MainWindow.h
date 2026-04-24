@@ -8,7 +8,6 @@
 #include <QMainWindow>
 #include <QKeyEvent>
 #include <QDialog>
-#include <QResizeEvent>
 #include <QListWidget>
 #include <QSlider>
 #include <QSpinBox>
@@ -57,7 +56,6 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
     void changeEvent(QEvent *event) override;
-    void resizeEvent(QResizeEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void addOptionMenu(QMenu* parent, const QString& title, const QStringList& items, std::optional<int>* targetVar, std::function<void()> onChanged);
     void syncVideoSettingsToDevices();

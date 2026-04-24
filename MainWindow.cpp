@@ -571,6 +571,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     mainSplitter->addWidget(rightContainer);
     mainSplitter->setStretchFactor(1, 1);
     mainSplitter->setSizes({sideBarExpandedWidth, qMax(1, width() - sideBarExpandedWidth)});
+    mainSplitter->installEventFilter(this);
 
     connect(mainSplitter, &QSplitter::splitterMoved, this, [this](int pos, int) {
         if (pos > 0) {
@@ -593,7 +594,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         setSidebarCollapsed(!sideBarCollapsed);
     });
     setSidebarCollapsed(sideBarCollapsed);
-    updateSidebarToggleButtonPosition();
     sideBarToggleButton->raise();
 
     deviceListWidget = new ExplicitSelectionListWidget(this);
@@ -947,31 +947,43 @@ void MainWindow::setSidebarCollapsed(bool collapsed)
 
 void MainWindow::updateSidebarToggleButtonPosition()
 {
-    if (!sideBarToggleButton || !mainSplitter) {
-        return;
+    const QRect splitterRect = mainSplitter->geometry();
+    auto *handle = mainSplitter->handle(1);
+    int buttonX = 0;
+    if (handle && handle->width() > 0) {
+        const QPoint handleTopLeftInCentral = handle->mapTo(centralWidget(), QPoint(0, 0));
+        buttonX = handleTopLeftInCentral.x() + (handle->width() - sideBarToggleButton->width()) / 2;
+    } else {
+        const QList<int> sizes = mainSplitter->sizes();
+        const int leftWidth = sizes.isEmpty() ? sideBarExpandedWidth : qMax(0, sizes[0]);
+        const int handleWidth = mainSplitter->handleWidth();
+        buttonX = splitterRect.x() + leftWidth + (handleWidth - sideBarToggleButton->width()) / 2;
     }
 
-    const QRect splitterRect = mainSplitter->geometry();
-    const QList<int> sizes = mainSplitter->sizes();
-    const int leftWidth = sizes.isEmpty() ? sideBarExpandedWidth : qMax(0, sizes[0]);
-    const int handleWidth = mainSplitter->handleWidth();
     // 悬浮在 central 上：不参与布局、不压缩视频区域，也不会被 splitter/子控件裁剪。
     // X 坐标吸附到分割线中心，保证箭头始终跟着分割线。
-    int buttonX = splitterRect.x() + leftWidth + (handleWidth - sideBarToggleButton->width()) / 2;
     const int buttonY = splitterRect.y() + 8;
     buttonX = qBound(4, buttonX, qMax(4, centralWidget()->width() - sideBarToggleButton->width() - 4));
 
     sideBarToggleButton->move(buttonX, buttonY);
 }
 
-void MainWindow::resizeEvent(QResizeEvent *event)
-{
-    QMainWindow::resizeEvent(event);
-    updateSidebarToggleButtonPosition();
-}
-
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
+    if (watched == mainSplitter) {
+        switch (event->type()) {
+        case QEvent::LayoutRequest:
+        case QEvent::Move:
+        case QEvent::Resize:
+        case QEvent::Show:
+            updateSidebarToggleButtonPosition();
+            break;
+        default:
+            break;
+        }
+        return QMainWindow::eventFilter(watched, event);
+    }
+
     auto tabBar = tabWidget->tabBar();
     if (watched != tabBar) {
         return QMainWindow::eventFilter(watched, event);
