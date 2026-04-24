@@ -442,6 +442,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     auto hLayout = new QHBoxLayout();
     hLayout->setContentsMargins(5, 5, 5, 5);
     hLayout->setSpacing(5);
+    hLayout->addSpacing(8);
     hLayout->addWidget(multiControlSwitchButton);
 
     auto randomDelayChecked = settings->value("randomDelayChecked").toBool();
