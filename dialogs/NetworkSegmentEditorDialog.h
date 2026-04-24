@@ -25,15 +25,15 @@ public:
         : QWidget(parent), m_baseIp(baseIp)
     {
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        const int cellWidth = 34;
+        const int cellWidth = 32;
         const int cellHeight = 30;
-        const int spinWidth = 36;
-        const int dotWidth = 4;
-        const int dashWidth = 16;
-        const int itemSpacing = 6;
-        const int ipGroupSpacing = 3;
-        const int sideMargin = 6;
-        const int dotFontSize = 14;
+        const int spinWidth = 34;
+        const int dotWidth = 3;
+        const int dashWidth = 12;
+        const int itemSpacing = 4;
+        const int ipGroupSpacing = 2;
+        const int sideMargin = 3;
+        const int dotFontSize = 13;
 #else
         const int cellWidth = 40;
         const int cellHeight = 32;
@@ -97,6 +97,8 @@ public:
             layout->addWidget(editOut);
             return layout;
         };
+
+        mainLayout->addStretch();
 
         mainLayout->addLayout(createIPGroup(m_startEdit, startVal));
 
@@ -390,7 +392,8 @@ private:
 
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
         css += QString(R"(
-            QListWidget::item { margin: 4px 2px; }
+            QListWidget { padding: 2px; }
+            QListWidget::item { margin: 3px 0px; }
             QLineEdit#mainIpInput { min-height: 42px; font-size: 14px; }
             QSpinBox { min-height: 30px; font-size: 13px; }
             QLineEdit[readOnly="true"] { font-size: 13px; padding: 3px 4px; }
