@@ -21,13 +21,16 @@ class LiveStreamDevice : public QIODevice {
 public:
     explicit LiveStreamDevice(QObject *parent = nullptr) : QIODevice(parent) {
         m_data = QSharedPointer<InternalData>::create();
+        open(QIODevice::ReadOnly);
     }
 
     ~LiveStreamDevice() {
+        stop();
+    }
+
+    void stop() {
         QMutexLocker locker(&m_data->mutex);
         m_data->stopped = true;
-        // 注意：即使这个析构函数执行完了，m_data 被销毁了，
-        // 只要 readData 里还有指针引用，InternalData 的内存就不会释放。
         m_data->dataAvailable.wakeAll();
     }
 
@@ -35,6 +38,9 @@ public:
 
     void appendData(const QByteArray &data) {
         QMutexLocker locker(&m_data->mutex);
+        if (m_data->stopped)
+            return;
+
         m_data->buffer.append(data);
         m_data->dataAvailable.wakeAll();
     }

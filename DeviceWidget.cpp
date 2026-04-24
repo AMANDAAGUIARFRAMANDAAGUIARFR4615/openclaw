@@ -239,7 +239,10 @@ void DeviceWidget::teardownVideoConnection()
 
     streamRecorder_.reset();
 
+    m_videoDevice->stop();
+
     videoFrameWidget->mediaPlayer->stop();
+    videoFrameWidget->mediaPlayer->setSourceDevice(nullptr);
 
     if (m_usbVideoConnection) {
         UsbDeviceManager::getInstance()->disconnectDevice(m_usbVideoConnection);
@@ -252,7 +255,8 @@ void DeviceWidget::teardownVideoConnection()
         m_videoServer = nullptr;
     }
 
-    delete m_videoDevice;
+    m_videoDevice->close();
+    m_videoDevice->deleteLater();
     m_videoDevice = nullptr;
 }
 
