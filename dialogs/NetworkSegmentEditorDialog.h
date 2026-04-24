@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QDialog>
+#include "BaseDialog.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QListWidget>
@@ -24,10 +24,32 @@ public:
     explicit NetworkSegmentItemWidget(const QString& baseIp, int startVal, int endVal, QWidget* parent = nullptr)
         : QWidget(parent), m_baseIp(baseIp)
     {
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        const int cellWidth = 34;
+        const int cellHeight = 30;
+        const int spinWidth = 36;
+        const int dotWidth = 4;
+        const int dashWidth = 16;
+        const int itemSpacing = 6;
+        const int ipGroupSpacing = 3;
+        const int sideMargin = 6;
+        const int dotFontSize = 14;
+#else
+        const int cellWidth = 40;
+        const int cellHeight = 32;
+        const int spinWidth = 42;
+        const int dotWidth = 6;
+        const int dashWidth = 24;
+        const int itemSpacing = 12;
+        const int ipGroupSpacing = 4;
+        const int sideMargin = 16;
+        const int dotFontSize = 16;
+#endif
+
         setAttribute(Qt::WA_StyledBackground, false);
         auto mainLayout = new QHBoxLayout(this);
-        mainLayout->setContentsMargins(16, 10, 16, 10);
-        mainLayout->setSpacing(12);
+        mainLayout->setContentsMargins(sideMargin, 8, sideMargin, 8);
+        mainLayout->setSpacing(itemSpacing);
 
         QStringList parts = baseIp.split('.', Qt::SkipEmptyParts);
         while (parts.size() < 3) parts.append("0");
@@ -36,8 +58,8 @@ public:
             auto lbl = new QLabel(".", this);
             lbl->setAttribute(Qt::WA_TransparentForMouseEvents);
             lbl->setAlignment(Qt::AlignCenter);
-            lbl->setStyleSheet("font-weight: bold; font-size: 16px;");
-            lbl->setFixedWidth(6);
+            lbl->setStyleSheet(QString("font-weight: bold; font-size: %1px;").arg(dotFontSize));
+            lbl->setFixedWidth(dotWidth);
             return lbl;
         };
 
@@ -45,7 +67,7 @@ public:
             auto le = new QLineEdit(text, this);
             le->setReadOnly(true);
             le->setAlignment(Qt::AlignCenter);
-            le->setFixedSize(40, 32);
+            le->setFixedSize(cellWidth, cellHeight);
             le->setFocusPolicy(Qt::NoFocus);
             le->setAttribute(Qt::WA_TransparentForMouseEvents);
             return le;
@@ -57,13 +79,13 @@ public:
             sb->setValue(value);
             sb->setButtonSymbols(QAbstractSpinBox::NoButtons);
             sb->setAlignment(Qt::AlignCenter);
-            sb->setFixedSize(42, 32);
+            sb->setFixedSize(spinWidth, cellHeight);
             return sb;
         };
 
         auto createIPGroup = [&](QSpinBox*& editOut, int val) {
             auto layout = new QHBoxLayout();
-            layout->setSpacing(4);
+            layout->setSpacing(ipGroupSpacing);
             layout->addWidget(createReadOnlyBox(parts[0]));
             layout->addWidget(createDot());
             layout->addWidget(createReadOnlyBox(parts[1]));
@@ -81,7 +103,7 @@ public:
         auto lblDash = new QLabel("~", this);
         lblDash->setAttribute(Qt::WA_TransparentForMouseEvents);
         lblDash->setAlignment(Qt::AlignCenter);
-        lblDash->setFixedWidth(24);
+        lblDash->setFixedWidth(dashWidth);
         mainLayout->addWidget(lblDash);
 
         mainLayout->addLayout(createIPGroup(m_endEdit, endVal));
@@ -116,13 +138,14 @@ private:
 // ============================================================================
 // 网段扫描配置主对话框
 // ============================================================================
-class NetworkSegmentEditorDialog : public QDialog {
+class NetworkSegmentEditorDialog : public BaseDialog {
     Q_OBJECT
 
 public:
-    explicit NetworkSegmentEditorDialog(QWidget *parent = nullptr) : QDialog(parent) {
-        setWindowTitle(tr("网段扫描配置"));
+    explicit NetworkSegmentEditorDialog(QWidget *parent = nullptr) : BaseDialog(tr("网段扫描配置"), parent) {
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
         resize(560, 600);
+#endif
 
         setupUI();
         loadData();
@@ -165,7 +188,7 @@ private:
     QLineEdit* m_ipInput;
 
     void setupUI() {
-        auto mainLayout = new QVBoxLayout(this);
+        auto mainLayout = contentLayout();
         mainLayout->setSpacing(16);
         mainLayout->setContentsMargins(16, 20, 16, 20);
 
@@ -173,16 +196,23 @@ private:
         m_listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
         m_listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         m_listWidget->setAttribute(Qt::WA_MacShowFocusRect, false);
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        m_listWidget->setMinimumHeight(260);
+#endif
         mainLayout->addWidget(m_listWidget, 1);
 
         auto inputLayout = new QHBoxLayout();
         m_ipInput = new QLineEdit(this);
         m_ipInput->setObjectName("mainIpInput");
-        m_ipInput->setFixedHeight(38);
+        m_ipInput->setMinimumHeight(38);
         m_ipInput->setPlaceholderText(tr("输入要连接的手机IP (如 192.168.1.1)，自动提取并生成网段"));
 
         auto btnAdd = new QPushButton(tr("确认添加"), this);
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        btnAdd->setMinimumSize(96, 42);
+#else
         btnAdd->setFixedSize(90, 38);
+#endif
         inputLayout->addWidget(m_ipInput, 1);
         inputLayout->addWidget(btnAdd);
         mainLayout->addLayout(inputLayout);
@@ -194,15 +224,28 @@ private:
         auto btnReset = new QPushButton(tr("恢复默认"), this);
         auto btnSave = new QPushButton(tr("保存配置"), this);
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        btnDelete->setMinimumHeight(42);
+        btnReset->setMinimumHeight(42);
+        btnSave->setMinimumHeight(42);
+        btnSave->setMinimumWidth(120);
+#else
         btnDelete->setFixedSize(90, 38);
         btnReset->setFixedSize(90, 38);
         btnSave->setFixedSize(120, 38);
+#endif
         btnSave->setObjectName("btnSave");
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        actionLayout->addWidget(btnDelete, 1);
+        actionLayout->addWidget(btnReset, 1);
+        actionLayout->addWidget(btnSave, 1);
+#else
         actionLayout->addWidget(btnDelete);
         actionLayout->addWidget(btnReset);
         actionLayout->addStretch();
         actionLayout->addWidget(btnSave);
+#endif
         mainLayout->addLayout(actionLayout);
 
         // 信号槽逻辑
@@ -251,7 +294,11 @@ private:
     void addSegmentItem(const QString& baseIp, int start, int end) {
         auto item = new QListWidgetItem(m_listWidget);
         auto widget = new NetworkSegmentItemWidget(baseIp, start, end, m_listWidget);
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        item->setSizeHint(QSize(0, 54));
+#else
         item->setSizeHint(QSize(0, 64));
+#endif
         m_listWidget->addItem(item);
         m_listWidget->setItemWidget(item, widget);
     }
@@ -315,7 +362,7 @@ private:
         QString btnBg      = isDark ? "#3E3E42" : "#FFFFFF";
 
         QString css = QString(R"(
-            QDialog { background-color: %1; color: %2; font-family: 'Segoe UI', Arial; font-size: 13px; }
+            NetworkSegmentEditorDialog { background-color: %1; color: %2; font-family: 'Segoe UI', Arial; font-size: 13px; }
             QLabel { color: %2; }
 
             QListWidget { background: transparent; border: none; outline: none; padding: 4px; }
@@ -340,6 +387,16 @@ private:
         )").arg(winBg, textColor, panelBg, subText, border)
                           .arg(accent, itemBg, itemHover, itemSel, readOnlyBg)
                           .arg(editBg, btnBg);
+
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        css += QString(R"(
+            QListWidget::item { margin: 4px 2px; }
+            QLineEdit#mainIpInput { min-height: 42px; font-size: 14px; }
+            QSpinBox { min-height: 30px; font-size: 13px; }
+            QLineEdit[readOnly="true"] { font-size: 13px; padding: 3px 4px; }
+            QPushButton { min-height: 42px; font-size: 14px; }
+        )");
+#endif
 
         this->setStyleSheet(css);
     }
