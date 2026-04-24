@@ -39,6 +39,10 @@ using namespace qrcodegen;
 
 class Tools {
 public:
+    static void showToast(const QString &message, QWidget *parent = nullptr) {
+        new ToastWidget(message, parent);
+    }
+
     /** 截图根目录下的设备子目录，与投屏截图落盘路径一致。 */
     static QString screenshotSaveDirectory(const QString &deviceId) {
         QString base =
@@ -191,7 +195,7 @@ public:
 
     static void showInFileExplorer(const QString& path) {
         if (!QFileInfo::exists(path)) {
-            QToolTip::showText(QCursor::pos(), "文件不存在");
+            showToast(QStringLiteral("文件不存在"));
             return; 
         }
 

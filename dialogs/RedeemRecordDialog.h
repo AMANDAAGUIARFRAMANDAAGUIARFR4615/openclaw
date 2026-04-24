@@ -2,6 +2,7 @@
 
 #include "WebSocketClient.h"
 #include "BaseDialog.h"
+#include "Tools.h"
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -174,7 +175,7 @@ private:
             }
 
             qApp->clipboard()->setText(codes.join("\n"));
-            QToolTip::showText(QCursor::pos(), QString("已复制 %1 个兑换码").arg(codes.size()));
+            Tools::showToast(QStringLiteral("已复制 %1 个兑换码").arg(codes.size()), this);
         });
 #endif
     }

@@ -2,6 +2,7 @@
 
 #include "MainWindow.h"
 #include "Account.h"
+#include "Tools.h"
 #include "Safe.h"
 #include "BaseDialog.h"
 #include <QTableWidget>
@@ -381,7 +382,7 @@ private:
         QJsonArray targetIds = getSelectedIds(targetDeviceTable);
 
         if (sourceIds.isEmpty() || targetIds.isEmpty() || sourceIds.size() != targetIds.size()) {
-            QToolTip::showText(QCursor::pos(), "左右两边选择的设备数量必须一致且不为空");
+            Tools::showToast(QStringLiteral("左右两边选择的设备数量必须一致且不为空"), this);
             return;
         }
 
@@ -393,7 +394,7 @@ private:
         webSocketClient->emitEvent("swapExpire", jsonPayload, [=](const QJsonValue &response) {
             setEnabled(true);
             if (response.isString()) { 
-                QToolTip::showText(QCursor::pos(), response.toString()); 
+                Tools::showToast(response.toString(), this);
                 return; 
             }
 

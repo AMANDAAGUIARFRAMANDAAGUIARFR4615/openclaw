@@ -379,7 +379,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                     }, 
                     [=](const QJsonValue &res) {
                         if (res.isString()) {
-                            QToolTip::showText(QCursor::pos(), res.toString());
+                            Tools::showToast(res.toString(), this);
                             return;
                         }
 
@@ -391,13 +391,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                         }
 
                         qApp->clipboard()->setText(codes.join("\n"));
-                        QToolTip::showText(QCursor::pos(), QString("成功生成 %1 个兑换码并复制").arg(codes.size()));
+                        Tools::showToast(QStringLiteral("成功生成 %1 个兑换码并复制").arg(codes.size()), this);
                 });
             });
             menu.addAction("在线用户", [this]() {
                 webSocketClient->emitEvent("online_accounts", QJsonValue(), [=](const QJsonValue &res) {
                     if (res.isString()) {
-                        QToolTip::showText(QCursor::pos(), res.toString());
+                        Tools::showToast(res.toString(), this);
                         return;
                     }
 
@@ -407,7 +407,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                     }
 
                     if (phoneNumbers.isEmpty()) {
-                        QToolTip::showText(QCursor::pos(), "没有在线账号");
+                        Tools::showToast(QStringLiteral("没有在线账号"), this);
                         return;
                     }
 
@@ -1123,7 +1123,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 void MainWindow::showSupportDialog()
 {
     if (!QFile::exists(qApp->applicationDirPath() + "/imageformats/qpng.dll")) {
-        QToolTip::showText(QCursor::pos(), "请联系客服充值");
+        Tools::showToast(QStringLiteral("请联系客服充值"), this);
         return;
     }
 
@@ -1396,7 +1396,7 @@ void MainWindow::addItem(DeviceConnection* connection)
         if (!isUserAction)
             return;
 
-        QToolTip::showText(QCursor::pos(), R"(
+        Tools::showToast(R"(
             <div>
                 <b>快捷操作指南：</b>
                 <ul style='margin-left: -15px; margin-top: 5px;'>
@@ -1405,7 +1405,7 @@ void MainWindow::addItem(DeviceConnection* connection)
                     <li>点击空白处：全不选</li>
                 </ul>
             </div>
-        )");
+        )", this);
     });
 
     targetList->addItem(item);
@@ -1548,7 +1548,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
             menu.addAction(text, [&]() {
                 int newId = findAvailableTabId();
                 if (newId == -1) {
-                    QToolTip::showText(QCursor::pos(), "已达到最大分组数");
+                    Tools::showToast(QStringLiteral("已达到最大分组数"), this);
                     return;
                 }
 

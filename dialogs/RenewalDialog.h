@@ -2,6 +2,7 @@
 
 #include "MainWindow.h"
 #include "Account.h"
+#include "Tools.h"
 #include "Safe.h"
 #include "BaseDialog.h"
 #include <QTableWidget>
@@ -257,7 +258,7 @@ public:
         connect(buttonBox, &QDialogButtonBox::accepted, [this]() {
             QList<QString> selectedIds = getSelectedDeviceIds();
             if (selectedIds.isEmpty()) {
-                QToolTip::showText(QCursor::pos(), "请至少选择一台设备");
+                Tools::showToast(QStringLiteral("请至少选择一台设备"), this);
                 return;
             }
 
@@ -267,7 +268,7 @@ public:
             if (balancePayRadioButton->isChecked()) {
                 // 余额支付校验
                 if (voucherBalance < currentTotalPrice) {
-                    QToolTip::showText(QCursor::pos(), "余额不足");
+                    Tools::showToast(QStringLiteral("余额不足"), this);
                     return;
                 }
                 payload["type"] = durationButtonGroup->checkedId();
@@ -285,8 +286,9 @@ public:
                 }
 
                 if (validCodes.isEmpty() || validCodes.size() % selectedIds.size() != 0) {
-                    QToolTip::showText(QCursor::pos(), QString("兑换码个数(%1)必须是待支付设备数量(%2)的整数倍")
-                                                        .arg(validCodes.size()).arg(selectedIds.size()));
+                    Tools::showToast(QStringLiteral("兑换码个数(%1)必须是待支付设备数量(%2)的整数倍")
+                                         .arg(validCodes.size()).arg(selectedIds.size()),
+                                     this);
                     return;
                 }
 
@@ -303,7 +305,7 @@ public:
                 unsetCursor();
 
                 if (res.isString()) {
-                    QToolTip::showText(QCursor::pos(), res.toString());
+                    Tools::showToast(res.toString(), this);
                     return;
                 }
 
@@ -355,7 +357,7 @@ public:
                     redeemButton->setEnabled(true);
 
                     setVoucherBalance(res["balance"].toInt());
-                    QToolTip::showText(QCursor::pos(), res["msg"].toString());
+                    Tools::showToast(res["msg"].toString(), this);
                     voucherPlainTextEdit->clear();
                 });
             }

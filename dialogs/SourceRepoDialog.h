@@ -86,11 +86,11 @@ public:
 
             connect(textLabel, &QLabel::linkActivated, [displayUrl](const QString &link) {
                 qApp->clipboard()->setText(link);
-                QToolTip::showText(QCursor::pos(), "地址已复制");
+                Tools::showToast(QStringLiteral("地址已复制"));
             });
             connect(copyButton, &QPushButton::clicked, [displayUrl]() {
                 qApp->clipboard()->setText(displayUrl);
-                QToolTip::showText(QCursor::pos(), "地址已复制");
+                Tools::showToast(QStringLiteral("地址已复制"));
             });
 
             vLayout->addWidget(imgLabel);

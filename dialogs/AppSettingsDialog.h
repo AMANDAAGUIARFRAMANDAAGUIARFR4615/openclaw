@@ -374,7 +374,7 @@ private:
                             QString otherShortcut = otherItem->data(Qt::UserRole + 1).toString();
                             if (otherShortcut == shortcut) {
                                 QString conflictName = otherItem->data(Qt::UserRole).toString();
-                                QToolTip::showText(QCursor::pos(), QString("快捷键 '%1' 已被 '%2' 占用，请更换").arg(shortcut, conflictName));
+                                Tools::showToast(QStringLiteral("快捷键 '%1' 已被 '%2' 占用，请更换").arg(shortcut, conflictName), this);
                                 return;
                             }
                         }
@@ -467,7 +467,7 @@ private:
         connect(listWidget, &QListWidget::itemChanged, [=](QListWidgetItem *item) {
             QString originalName = item->data(Qt::UserRole).toString();
             if (originalName == "⚙️设置" && item->checkState() == Qt::Unchecked) {
-                QToolTip::showText(QCursor::pos(), "[⚙️设置]不可隐藏");
+                Tools::showToast(QStringLiteral("[⚙️设置]不可隐藏"), this);
                 const QSignalBlocker blocker(listWidget); 
                 item->setCheckState(Qt::Checked);
             } else {

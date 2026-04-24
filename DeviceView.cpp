@@ -415,7 +415,7 @@ void DeviceView::addContextMenuActions()
         else if (labelPart == "修改分组") {
             addAction(text, [this]() {
                 if (MainWindow::getInstance()->getTabs().count() <= 1) {
-                    QToolTip::showText(QCursor::pos(), "请先右键点击标签页添加自定义分组");
+                    Tools::showToast(QStringLiteral("请先右键点击标签页添加自定义分组"), this);
                     return;
                 }
 

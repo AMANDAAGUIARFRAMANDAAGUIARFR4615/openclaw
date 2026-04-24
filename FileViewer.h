@@ -16,6 +16,7 @@
 #include <QTextBlock>
 #include <QToolTip>
 #include <QTimer>
+#include "Tools.h"
 
 class CodeEditor : public QPlainTextEdit
 {
@@ -153,7 +154,7 @@ public:
         if (isTextFile()) {
             QFile file(filePath);
             if (!file.open(QIODevice::ReadOnly)) {
-                QToolTip::showText(QCursor::pos(), "无法打开文本文件");
+                Tools::showToast(QStringLiteral("无法打开文本文件"), this);
                 QTimer::singleShot(0, this, &FileViewer::close);
                 return; 
             }
@@ -168,7 +169,7 @@ public:
         else if (isImageFile()) {
             QPixmap pixmap(filePath);
             if (pixmap.isNull()) {
-                QToolTip::showText(QCursor::pos(), "无法加载图片");
+                Tools::showToast(QStringLiteral("无法加载图片"), this);
                 QTimer::singleShot(0, this, &FileViewer::close);
                 return;
             }

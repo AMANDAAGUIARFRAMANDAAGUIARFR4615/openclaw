@@ -326,7 +326,7 @@ void DeviceWidget::launchDeviceWindow() {
 
     if (overlay->isVisible())
     {
-        QToolTip::showText(QCursor::pos(), "请先解锁");
+        Tools::showToast(QStringLiteral("请先解锁"), this);
         return;
     }
 
