@@ -215,10 +215,10 @@ private:
         generalLayout->setContentsMargins(18, 18, 18, 18);
 
         addSettingGroup(generalLayout, "colorScheme", "颜色主题", {"默认", "浅色", "深色"}, 0);
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
         addSettingGroup(generalLayout, "autoSyncClipboard", "手机剪切板自动同步到电脑", {"关闭", "开启"}, 0);
         addSettingGroup(generalLayout, "sortSelectedToTop", "选中的设备排列在前", {"关闭", "开启"}, 0);
         addSettingGroup(generalLayout, "screenshotTo", "截图保存", {"剪切板", "文件", "剪切板+文件"}, 0);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
         addSettingGroup(generalLayout, "standaloneAlwaysUltraHD", "独立窗口始终超高清", {"关闭", "开启"}, 0);
         addSettingGroup(generalLayout, "doubleClickOpenStandalone", "双击打开独立窗口", {"关闭", "开启"}, 1);
         addSettingGroup(generalLayout, "hideStandaloneToolbar", "隐藏独立窗口右侧按钮", {"关闭", "开启"}, 0);
@@ -231,10 +231,12 @@ private:
         boxLayout->setContentsMargins(18, 26, 18, 16);
 
         addSettingGroup(boxLayout, "isLandscape", "投屏显示", {"竖屏显示", "横屏显示"}, 0);
-        addSettingGroup(boxLayout, "videoFps", "视频帧率", {"", "5秒1帧", "1秒1帧", "15帧", "30帧"}, 4);
+        addSettingGroup(boxLayout, "videoFps", "视频帧率", {"", "5秒1帧", "1帧", "15帧", "30帧"}, 4);
         addSettingGroup(boxLayout, "videoQuality", "视频清晰度", {"", "低清", "标清", "高清", "超清"}, 2);
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
         addSettingGroup(boxLayout, "connectionMethod", "连接方式", {"USB优先", "WIFI优先"}, 0);
         addSettingGroup(boxLayout, "autoScanLANDevices", "自动连接局域网设备", {"关闭", "开启"}, 1);
+#endif
         addSettingGroup(boxLayout, "autoConnectUSBDevices", "自动连接USB设备", {"关闭", "开启"}, 1);
 
         generalLayout->addWidget(defaultBox);

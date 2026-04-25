@@ -1578,7 +1578,7 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
             });
         }
         else if (text == "视频帧率") {
-            QStringList list = {"默认", "", "5秒1帧", "1秒1帧", "15帧", "30帧"};
+            QStringList list = {"默认", "", "5秒1帧", "1帧", "15帧", "30帧"};
             addOptionMenu(&menu, text, list, &videoFps, [=]() {
                 saveTabs(index);
 
