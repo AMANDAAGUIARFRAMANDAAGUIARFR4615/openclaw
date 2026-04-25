@@ -218,9 +218,11 @@ private:
         addSettingGroup(generalLayout, "autoSyncClipboard", "手机剪切板自动同步到电脑", {"关闭", "开启"}, 0);
         addSettingGroup(generalLayout, "sortSelectedToTop", "选中的设备排列在前", {"关闭", "开启"}, 0);
         addSettingGroup(generalLayout, "screenshotTo", "截图保存", {"剪切板", "文件", "剪切板+文件"}, 0);
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
         addSettingGroup(generalLayout, "standaloneAlwaysUltraHD", "独立窗口始终超高清", {"关闭", "开启"}, 0);
         addSettingGroup(generalLayout, "doubleClickOpenStandalone", "双击打开独立窗口", {"关闭", "开启"}, 1);
         addSettingGroup(generalLayout, "hideStandaloneToolbar", "隐藏独立窗口右侧按钮", {"关闭", "开启"}, 0);
+#endif
 
         QGroupBox *defaultBox = new QGroupBox("投屏设置 (分组单独设置优先)", generalTab);
 
@@ -250,11 +252,7 @@ private:
         menuLayout->setSpacing(16);
         menuLayout->setContentsMargins(18, 16, 18, 16);
 
-#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        QVBoxLayout *topMenusLayout = new QVBoxLayout();
-#else
         QHBoxLayout *topMenusLayout = new QHBoxLayout();
-#endif
         topMenusLayout->setSpacing(22);
         topMenusLayout->setAlignment(Qt::AlignTop);
 
@@ -286,18 +284,23 @@ private:
         // 左侧：Sidebar
         addSortableGroup(topMenusLayout, "sideBarMenu", "左侧栏 (拖拽调整顺序)", sideBarMenu);
 
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
         // 右侧：TabBar Menu
         addSortableGroup(topMenusLayout, "tabBarMenu", "分组标签页右键菜单 (拖拽调整顺序)", 
             {"重命名分组", "添加分组", "删除分组", "投屏显示", "视频清晰度", "连接方式", "自动连接局域网设备", "自动连接USB设备"});
+#endif
 
         menuLayout->addLayout(topMenusLayout);
 
         // 第二排：窗口右键菜单
         QStringList windowMenuItems = {
-            "🏠主屏幕", "🎛️控制中心", "↕️应用切换", "🧹清理应用", "📁文件管理", 
-            "⏺️录制+回放", "🧩应用管理", "📸截图", "🖼️截图库", "📹投屏录像", "📹录像库", "🔄重启", "🔒锁屏", 
+            "🏠主屏幕", "🎛️控制中心", "↕️应用切换",
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
+            "🧹清理应用", "📁文件管理",
+            "⏺️录制+回放", "🧩应用管理", "📸截图", "🖼️截图库", "📹投屏录像", "📹录像库", "🔄重启", "🔒锁屏",
             "📋获取剪切板", "🗑️清空相册", "🔊音量+", "🔈音量-", "🏹主控", "🎯被控",
             "📌置顶", "🔧修改分组", "🚀更新手机端", "🚩开启独占"
+#endif
         };
         
         QHash<QString, QString> windowShortcuts;
