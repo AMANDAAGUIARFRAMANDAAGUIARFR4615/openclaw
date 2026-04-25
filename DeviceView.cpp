@@ -19,6 +19,7 @@
 #include "VideoFrameWidget.h"
 #include <QLayout>
 #include <QLabel>
+#include <QPushButton>
 #include <QMimeData>
 #include <QDragEnterEvent>
 #include <QDropEvent>
@@ -37,13 +38,37 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 
     overlay = new QWidget(this);
     overlay->setStyleSheet("background-color: black;");
-    QLabel *label = new QLabel("投屏加载中...", overlay);
-    label->setStyleSheet("color: white; font-size: 20px;");
-    label->setAlignment(Qt::AlignCenter);
+    overlayLabel = new QLabel("投屏加载中...", overlay);
+    overlayLabel->setStyleSheet("color: white; font-size: 20px;");
+    overlayLabel->setAlignment(Qt::AlignCenter);
+
+    overlayUnlockButton = new QPushButton("解锁", overlay);
+    overlayUnlockButton->setFixedSize(110, 34);
+    overlayUnlockButton->setStyleSheet(
+        "QPushButton {"
+        " color: white;"
+        " background-color: rgba(255, 255, 255, 0.12);"
+        " border: 1px solid rgba(255, 255, 255, 0.45);"
+        " border-radius: 4px;"
+        " font-size: 15px;"
+        "}"
+        "QPushButton:hover {"
+        " background-color: rgba(255, 255, 255, 0.20);"
+        "}"
+        "QPushButton:pressed {"
+        " background-color: rgba(255, 255, 255, 0.28);"
+        "}"
+    );
+    overlayUnlockButton->hide();
+    connect(overlayUnlockButton, &QPushButton::clicked, this, [this]() {
+        send("changeScreenLockedStatus", 0);
+    });
 
     QVBoxLayout *layout = new QVBoxLayout(overlay);
     layout->addStretch();
-    layout->addWidget(label);
+    layout->addWidget(overlayLabel, 0, Qt::AlignHCenter);
+    layout->addSpacing(8);
+    layout->addWidget(overlayUnlockButton, 0, Qt::AlignHCenter);
     layout->addStretch();
     overlay->setLayout(layout);
 
@@ -217,8 +242,8 @@ void DeviceView::setSourceDevice(QIODevice *device, const QUrl &sourceUrl)
 
 void DeviceView::showOverlay(const QString &text)
 {
-    QLabel *label = overlay->findChild<QLabel *>();
-    label->setText(text);
+    overlayLabel->setText(text);
+    overlayUnlockButton->setVisible(text == "设备已锁定");
 
     overlay->show();
     overlay->raise();
@@ -231,6 +256,7 @@ void DeviceView::showOverlay(const QString &text)
 
 void DeviceView::hideOverlay()
 {
+    overlayUnlockButton->hide();
     overlay->hide();
 
     if (videoFrameWidget)

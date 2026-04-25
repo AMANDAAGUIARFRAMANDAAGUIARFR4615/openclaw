@@ -8,6 +8,8 @@
 
 class QMediaPlayer;
 class VideoFrameWidget;
+class QLabel;
+class QPushButton;
 
 class DeviceView : public QWidget
 {
@@ -43,6 +45,8 @@ protected:
 
     VideoFrameWidget *videoFrameWidget = nullptr;
     QWidget *overlay = nullptr;
+    QLabel *overlayLabel = nullptr;
+    QPushButton *overlayUnlockButton = nullptr;
 
     Qt::MouseButtons pressedButtons = Qt::NoButton;
     QTimer *wheelTimer = nullptr;
