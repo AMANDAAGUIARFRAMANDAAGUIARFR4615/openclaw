@@ -92,6 +92,8 @@ public:
         listWidget->setViewMode(QListWidget::IconMode);
         listWidget->setResizeMode(QListWidget::Adjust);
         listWidget->setLayoutMode(QListView::SinglePass);
+        listWidget->setMovement(QListView::Static);
+        listWidget->setUniformItemSizes(true);
         listWidget->setDragDropMode(QListWidget::NoDragDrop);
         listWidget->setSpacing(10);
         listWidget->setSortingEnabled(true);
@@ -600,9 +602,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     sideBarToggleButton->raise();
 
     deviceListWidget = new ExplicitSelectionListWidget(this);
-    deviceListWidget->setViewMode(QListWidget::IconMode); // 图标模式（网格）
-    deviceListWidget->setResizeMode(QListWidget::Adjust); // 随窗口自动调整换行
+    deviceListWidget->setViewMode(QListWidget::IconMode);
+    deviceListWidget->setResizeMode(QListWidget::Adjust);
     deviceListWidget->setLayoutMode(QListView::SinglePass);
+    deviceListWidget->setMovement(QListView::Static);
+    deviceListWidget->setUniformItemSizes(true);
     deviceListWidget->setDragDropMode(QListWidget::NoDragDrop);
     deviceListWidget->setSpacing(10);
     deviceListWidget->setSortingEnabled(true);
