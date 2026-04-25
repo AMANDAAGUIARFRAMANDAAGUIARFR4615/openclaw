@@ -206,7 +206,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
         }
 
-        if (key == "isLandscape") {
+        if (key == "isLandscape" || key == "mobileGridColumns") {
             relayoutDevices();
             return;
         }
@@ -528,6 +528,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
     rightLayout->addWidget(tabWidget);
 
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
     auto controlBar = new QWidget(this);
     auto controlLayout = new QHBoxLayout(controlBar);
 
@@ -568,6 +569,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     controlLayout->addWidget(percentLabel);
 
     rightLayout->addWidget(controlBar);
+#endif
 
     mainSplitter->addWidget(rightContainer);
     mainSplitter->setStretchFactor(1, 1);
@@ -667,7 +669,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             layout->addWidget(deviceListWidget);
         }
 
-        zoomSlider->setValue(tabs[index].scale);
+        if (zoomSlider)
+            zoomSlider->setValue(tabs[index].scale);
 
         relayoutDevices();
     });
@@ -1180,12 +1183,14 @@ void MainWindow::changeEvent(QEvent *event)
         if (this->windowState() & Qt::WindowFullScreen) {
             sideBarList->hide();
             tabWidget->tabBar()->hide();
-            zoomSlider->parentWidget()->hide();
+            if (zoomSlider && zoomSlider->parentWidget())
+                zoomSlider->parentWidget()->hide();
         }
         else {
             sideBarList->show();
             tabWidget->tabBar()->show();
-            zoomSlider->parentWidget()->show();
+            if (zoomSlider && zoomSlider->parentWidget())
+                zoomSlider->parentWidget()->show();
         }
     }
 }
@@ -1271,7 +1276,7 @@ void MainWindow::doRelayoutDevices()
 {
     // 计算目标尺寸并应用到指定的 QListWidget 中，同时返回该分组内的设备总数
     auto applyLayout = [&](BitMaskEditorDialog::Item tabItem, QListWidget* listWidget) -> int {
-        const auto scale = tabItem.scale == 0 ? 1 : tabItem.scale / 100.0f;
+        float scale = tabItem.scale == 0 ? 1.0f : tabItem.scale / 100.0f;
         const auto isLandscape = tabItem.getIsLandscape();
         
         const auto& devicesInGroup = DeviceInfo::getDevices(1U << tabItem.bit);
@@ -1279,6 +1284,17 @@ void MainWindow::doRelayoutDevices()
         auto frameItemHeight = frameItemWidth * DeviceInfo::getOptimalAspectRatio(devicesInGroup);
         int targetW = (isLandscape ? frameItemHeight : frameItemWidth) * scale;
         int targetH = (isLandscape ? frameItemWidth : frameItemHeight) * scale;
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+        const int columns = qBound(1, AppSettingsDialog::getInstance()->getValue("mobileGridColumns") + 1, 4);
+        const int viewportWidth = qMax(1, listWidget->viewport()->width());
+        const int spacing = listWidget->spacing();
+        const int totalSpacing = spacing * qMax(0, columns - 1);
+        targetW = qMax(120, (viewportWidth - totalSpacing) / columns);
+
+        const float baseW = qMax(1.0f, static_cast<float>(isLandscape ? frameItemHeight : frameItemWidth));
+        const float baseH = qMax(1.0f, static_cast<float>(isLandscape ? frameItemWidth : frameItemHeight));
+        targetH = qMax(120, qRound(targetW * (baseH / baseW)));
+#endif
         QSize targetSize(targetW, targetH);
 
         int actualVisibleCount = 0;

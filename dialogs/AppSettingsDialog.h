@@ -222,6 +222,8 @@ private:
         addSettingGroup(generalLayout, "standaloneAlwaysUltraHD", "独立窗口始终超高清", {"关闭", "开启"}, 0);
         addSettingGroup(generalLayout, "doubleClickOpenStandalone", "双击打开独立窗口", {"关闭", "开启"}, 1);
         addSettingGroup(generalLayout, "hideStandaloneToolbar", "隐藏独立窗口右侧按钮", {"关闭", "开启"}, 0);
+#else
+        addSettingGroup(generalLayout, "mobileGridColumns", "投屏每行显示", {"1个", "2个", "3个", "4个"}, 1);
 #endif
 
         QGroupBox *defaultBox = new QGroupBox("投屏设置 (分组单独设置优先)", generalTab);

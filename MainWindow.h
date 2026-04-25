@@ -78,7 +78,7 @@ protected:
     int sideBarExpandedWidth = 80;
     bool sideBarCollapsed = false;
     QListWidget* deviceListWidget;
-    QSlider* zoomSlider;
+    QSlider* zoomSlider = nullptr;
     QTimer* relayoutTimer;
 
     ViewportAwareBehavior* viewportAwareBehavior;
