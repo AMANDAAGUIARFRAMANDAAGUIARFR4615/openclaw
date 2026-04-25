@@ -608,6 +608,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     deviceListWidget->setSortingEnabled(true);
     deviceListWidget->sortItems(Qt::AscendingOrder);
     deviceListWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    deviceListWidget->installEventFilter(this);
     connect(deviceListWidget, &QListWidget::itemPressed, [this](QListWidgetItem *item) {
         auto widget = deviceListWidget->itemWidget(item);
         widget->findChild<DeviceWidget*>()->setFocus();
@@ -974,6 +975,18 @@ void MainWindow::updateSidebarToggleButtonPosition()
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
+    if (qobject_cast<ExplicitSelectionListWidget*>(watched)) {
+        switch (event->type()) {
+        case QEvent::Resize:
+        case QEvent::Show:
+            relayoutDevices();
+            break;
+        default:
+            break;
+        }
+        return QMainWindow::eventFilter(watched, event);
+    }
+
     if (watched == mainSplitter) {
         switch (event->type()) {
         case QEvent::LayoutRequest:
@@ -1071,6 +1084,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
         };
 
         // 2. 同步悬浮窗的信号与逻辑
+        fw->listWidget->installEventFilter(this);
         connect(fw->listWidget, &QListWidget::itemPressed, [fw](QListWidgetItem *item) {
             if (auto widget = fw->listWidget->itemWidget(item)) 
                 widget->findChild<DeviceWidget*>()->setFocus();
