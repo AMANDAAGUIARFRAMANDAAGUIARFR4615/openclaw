@@ -59,6 +59,7 @@
 #include <QCloseEvent>
 #include <QMouseEvent>
 #include <QWindow>
+#include <QScrollBar>
 
 QString formatElapsedTime(qint64 elapsedMs)
 {
@@ -117,14 +118,19 @@ signals:
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
-    setMinimumSize(800, 600);
-
     QSize screenSize = qApp->primaryScreen()->availableSize();
+
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+    setMinimumSize(0, 0);
+    resize(screenSize);
+#else
+    setMinimumSize(800, 600);
     resize(settings->value("mainWindowSize", screenSize * 0.8).toSize());
 
     int x = (screenSize.width() - width()) / 2;
     int y = (screenSize.height() - height()) / 2;
     move(x, y);
+#endif
 
     sideBarCollapsed = settings->value("mainWindowSidebarCollapsed", false).toBool();
 
@@ -1069,7 +1075,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                     auto item = src->takeItem(i); 
 
                     auto frame = new QFrame();
-                    frame->setFrameShape(QFrame::Box);
+                    frame->setFrameShape(QFrame::NoFrame);
                     auto layout = new QVBoxLayout(frame);
                     layout->setContentsMargins(0, 0, 0, 0);
                     layout->addWidget(player);
@@ -1298,20 +1304,21 @@ void MainWindow::doRelayoutDevices()
         const auto isLandscape = tabItem.getIsLandscape();
         
         const auto& devicesInGroup = DeviceInfo::getDevices(1U << tabItem.bit);
+        const float aspect = DeviceInfo::getOptimalAspectRatio(devicesInGroup);
         
-        auto frameItemHeight = frameItemWidth * DeviceInfo::getOptimalAspectRatio(devicesInGroup);
+        int frameItemHeight = frameItemWidth * aspect;
         int targetW = (isLandscape ? frameItemHeight : frameItemWidth) * scale;
         int targetH = (isLandscape ? frameItemWidth : frameItemHeight) * scale;
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
         const int columns = qBound(1, AppSettingsDialog::getInstance()->getValue("mobileGridColumns") + 1, 4);
-        const int viewportWidth = qMax(1, listWidget->viewport()->width());
         const int spacing = listWidget->spacing();
-        const int totalSpacing = spacing * qMax(0, columns - 1);
-        targetW = qMax(120, (viewportWidth - totalSpacing) / columns);
+        const int viewportWidth = qMax(1, listWidget->viewport()->width());
+        const int scrollBarWidth = listWidget->verticalScrollBar()->isVisible() ? listWidget->verticalScrollBar()->sizeHint().width() : 0;
 
-        const float baseW = qMax(1.0f, static_cast<float>(isLandscape ? frameItemHeight : frameItemWidth));
-        const float baseH = qMax(1.0f, static_cast<float>(isLandscape ? frameItemWidth : frameItemHeight));
-        targetH = qMax(120, qRound(targetW * (baseH / baseW)));
+        const int totalSpacing = spacing * qMax(0, columns + 1);
+        const int availableWidth = qMax(1, viewportWidth - totalSpacing - scrollBarWidth - 8);
+        targetW = qMax(1, availableWidth / columns);
+        targetH = qMax(1, qRound(targetW * aspect));
 #endif
         QSize targetSize(targetW, targetH);
 
@@ -1398,7 +1405,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     }
 
     auto frame = new QFrame();
-    frame->setFrameShape(QFrame::Box);
+    frame->setFrameShape(QFrame::NoFrame);
     auto frameLayout = new QVBoxLayout(frame);
     frameLayout->setContentsMargins(0, 0, 0, 0);
     frameLayout->addWidget(player);
