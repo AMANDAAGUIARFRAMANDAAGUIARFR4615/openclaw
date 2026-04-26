@@ -692,14 +692,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         if (!QStringList({"iPhone XS", "iPhone XS Max", "iPhone XR", "iPhone 11", "iPhone 11 Pro", "iPhone SE (2nd generation)"}).contains(model) || iosMajor >= 14) {
             if (!data["springBoardMsg"].toString().isEmpty()) {
                 qCriticalEx() << connection << data["springBoardMsg"];
-                new ToastWidget(data["springBoardMsg"].toString(), this);
+                // new ToastWidget(data["springBoardMsg"].toString(), this);
                 connection->close();
                 return;
             }
 
             if (!data["choicyMsg"].toString().isEmpty()) {
                 qCriticalEx() << connection << data["choicyMsg"];
-                new ToastWidget(data["choicyMsg"].toString(), this);
+                // new ToastWidget(data["choicyMsg"].toString(), this);
                 connection->close();
                 return;
             }
