@@ -1453,7 +1453,11 @@ void MainWindow::addItem(DeviceConnection* connection)
 
     targetList->addItem(item);
     targetList->setItemWidget(item, frame);
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+    item->setSelected(false);
+#else
     item->setSelected(true);
+#endif
 
     player->setProperty("listWidgetItem", QVariant::fromValue(static_cast<QListWidgetItem*>(item)));
 

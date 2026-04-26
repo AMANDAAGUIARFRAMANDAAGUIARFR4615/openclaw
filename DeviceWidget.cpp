@@ -65,6 +65,10 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
 
     connect(launchButton, &QPushButton::clicked, this, &DeviceWidget::launchDeviceWindow);
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+    checkBox->setEnabled(false);
+#endif
+
     topLayout->addWidget(checkBox);
     topLayout->addStretch();
     topLayout->addWidget(deviceInfoLabel);
