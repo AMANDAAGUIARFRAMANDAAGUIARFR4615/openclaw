@@ -884,14 +884,16 @@ bool DeviceView::event(QEvent *event)
     if (type != 0 && (pressedButtons & Qt::LeftButton)) {
         QPoint globalPos = mapToGlobal(mouseEvent->pos());
         QPoint localPos = videoFrameWidget->mapFromGlobal(globalPos);
-        auto pos = getTransformedPosition(localPos);
+        if (videoFrameWidget->rect().contains(localPos)) {
+            auto pos = getTransformedPosition(localPos);
 
-        QJsonObject dataObject;
-        dataObject["type"] = type;
-        dataObject["x"] = pos.x();
-        dataObject["y"] = pos.y();
+            QJsonObject dataObject;
+            dataObject["type"] = type;
+            dataObject["x"] = pos.x();
+            dataObject["y"] = pos.y();
 
-        connection->send("mouse", dataObject);
+            connection->send("mouse", dataObject);
+        }
     }
 
     if (type == 2)
