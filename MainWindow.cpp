@@ -96,7 +96,7 @@ public:
         listWidget->setMovement(QListView::Static);
         listWidget->setUniformItemSizes(true);
         listWidget->setDragDropMode(QListWidget::NoDragDrop);
-        listWidget->setSpacing(10);
+        listWidget->setSpacing(6);
         listWidget->setSortingEnabled(true);
         listWidget->sortItems(Qt::AscendingOrder);
         listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -131,6 +131,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     int y = (screenSize.height() - height()) / 2;
     move(x, y);
 #endif
+
+    relayoutTimer = new QTimer(this);
+    relayoutTimer->setSingleShot(true);
+    relayoutTimer->setInterval(60);
+    connect(relayoutTimer, &QTimer::timeout, this, &MainWindow::doRelayoutDevices);
 
     sideBarCollapsed = settings->value("mainWindowSidebarCollapsed", false).toBool();
 
@@ -614,7 +619,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     deviceListWidget->setMovement(QListView::Static);
     deviceListWidget->setUniformItemSizes(true);
     deviceListWidget->setDragDropMode(QListWidget::NoDragDrop);
-    deviceListWidget->setSpacing(10);
+    deviceListWidget->setSpacing(6);
     deviceListWidget->setSortingEnabled(true);
     deviceListWidget->sortItems(Qt::AscendingOrder);
     deviceListWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -645,11 +650,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         if (settings->value("sortSelectedToTop").toBool())
             deviceListWidget->sortItems(Qt::AscendingOrder);
     });
-
-    relayoutTimer = new QTimer(this);
-    relayoutTimer->setSingleShot(true);
-    relayoutTimer->setInterval(60);
-    connect(relayoutTimer, &QTimer::timeout, this, &MainWindow::doRelayoutDevices);
 
     viewportAwareBehavior = new ViewportAwareBehavior(deviceListWidget);
     connect(viewportAwareBehavior, &ViewportAwareBehavior::viewportItemsChanged, this, [](const QList<QListWidgetItem*>& entered, const QList<QListWidgetItem*>& left){
@@ -951,6 +951,7 @@ void MainWindow::setSidebarCollapsed(bool collapsed)
         sideBarList->setMaximumWidth(0);
         mainSplitter->setSizes({0, total});
         updateSidebarToggleButtonPosition();
+        relayoutDevices();
         return;
     }
 
@@ -958,6 +959,7 @@ void MainWindow::setSidebarCollapsed(bool collapsed)
     const int left = qBound(60, sideBarExpandedWidth, total - 1);
     mainSplitter->setSizes({left, qMax(1, total - left)});
     updateSidebarToggleButtonPosition();
+    relayoutDevices();
 }
 
 void MainWindow::updateSidebarToggleButtonPosition()
