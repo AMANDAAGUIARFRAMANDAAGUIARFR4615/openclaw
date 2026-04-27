@@ -10,6 +10,7 @@ class QMediaPlayer;
 class VideoFrameWidget;
 class QLabel;
 class QPushButton;
+class QResizeEvent;
 
 class DeviceView : public QWidget
 {
@@ -27,8 +28,10 @@ public:
     DeviceInfo* const deviceInfo;
 
 protected:
+    void resizeEvent(QResizeEvent *event) override;
     void showOverlay(const QString &text);
     void hideOverlay();
+    void updateOverlayControls();
     void send(const DataGuard::StrObfuscator<>& event, const QJsonValue &jsonValue = QJsonValue());
     void addContextMenuActions();
     void contextMenuEvent(QContextMenuEvent *event) override;

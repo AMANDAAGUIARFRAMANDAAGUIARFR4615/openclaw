@@ -29,6 +29,9 @@
 #include <QVideoSink>
 #include <QVideoFrame>
 #include <QNetworkReply>
+#include <QResizeEvent>
+#include <QFontMetrics>
+#include <algorithm>
 
 DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWidget *parent)
     : connection(connection), deviceInfo(deviceInfo), QWidget(parent)
@@ -39,26 +42,11 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
     overlay = new QWidget(this);
     overlay->setStyleSheet("background-color: black;");
     overlayLabel = new QLabel("投屏加载中...", overlay);
-    overlayLabel->setStyleSheet("color: white; font-size: 20px;");
     overlayLabel->setAlignment(Qt::AlignCenter);
+    overlayLabel->setWordWrap(false);
 
     overlayUnlockButton = new QPushButton("解锁", overlay);
     overlayUnlockButton->setFixedSize(110, 34);
-    overlayUnlockButton->setStyleSheet(
-        "QPushButton {"
-        " color: white;"
-        " background-color: rgba(255, 255, 255, 0.12);"
-        " border: 1px solid rgba(255, 255, 255, 0.45);"
-        " border-radius: 4px;"
-        " font-size: 15px;"
-        "}"
-        "QPushButton:hover {"
-        " background-color: rgba(255, 255, 255, 0.20);"
-        "}"
-        "QPushButton:pressed {"
-        " background-color: rgba(255, 255, 255, 0.28);"
-        "}"
-    );
     overlayUnlockButton->hide();
     connect(overlayUnlockButton, &QPushButton::clicked, this, [this]() {
         send("changeScreenLockedStatus", 0);
@@ -71,6 +59,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
     layout->addWidget(overlayUnlockButton, 0, Qt::AlignHCenter);
     layout->addStretch();
     overlay->setLayout(layout);
+    updateOverlayControls();
 
     if (!clipboardTimer) {
         clipboardTimer = new QTimer;
@@ -244,6 +233,7 @@ void DeviceView::showOverlay(const QString &text)
 {
     overlayLabel->setText(text);
     overlayUnlockButton->setVisible(text == "设备已锁定");
+    updateOverlayControls();
 
     overlay->show();
     overlay->raise();
@@ -261,6 +251,62 @@ void DeviceView::hideOverlay()
 
     if (videoFrameWidget)
         videoFrameWidget->show();
+}
+
+void DeviceView::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    updateOverlayControls();
+}
+
+void DeviceView::updateOverlayControls()
+{
+    const int viewW = std::max(1, width());
+    const int viewH = std::max(1, height());
+    const int minSide = std::min(viewW, viewH);
+    const int horizontalPadding = std::clamp(viewW / 20, 4, 28);
+    const int verticalPadding = std::clamp(viewH / 20, 4, 28);
+    const int horizontalSpace = std::max(1, viewW - horizontalPadding * 2);
+
+    overlay->setGeometry(0, 0, viewW, viewH);
+
+    if (auto *layout = qobject_cast<QVBoxLayout *>(overlay->layout())) {
+        layout->setContentsMargins(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
+        layout->setSpacing(std::clamp(minSide / 40, 2, 10));
+    }
+
+    // Keep text readable on small views while avoiding oversized fonts on large views.
+    const int labelPixelSize = std::clamp(minSide / 9, 10, 26);
+    QFont labelFont = overlayLabel->font();
+    labelFont.setPixelSize(labelPixelSize);
+    overlayLabel->setFont(labelFont);
+    overlayLabel->setMaximumWidth(horizontalSpace);
+    const QFontMetrics labelMetrics(labelFont);
+
+    QString overlayText = overlayLabel->text();
+    if (overlayText == "设备已锁定" || overlayText == "已锁定" || overlayText == "锁定") {
+        if (labelMetrics.horizontalAdvance("设备已锁定") <= horizontalSpace)
+            overlayText = "设备已锁定";
+        else if (labelMetrics.horizontalAdvance("已锁定") <= horizontalSpace)
+            overlayText = "已锁定";
+        else
+            overlayText = "锁定";
+        overlayLabel->setText(overlayText);
+    }
+
+    QFont buttonFont = overlayUnlockButton->font();
+    buttonFont.setPixelSize(std::clamp(labelPixelSize - 2, 9, 20));
+    overlayUnlockButton->setFont(buttonFont);
+
+    const QFontMetrics buttonMetrics(buttonFont);
+    const int minButtonW = buttonMetrics.horizontalAdvance(overlayUnlockButton->text()) + std::clamp(viewW / 10, 16, 28);
+    const int maxButtonW = std::max(minButtonW, std::min(horizontalSpace, 180));
+    const int buttonW = std::clamp(viewW * 34 / 100, minButtonW, maxButtonW);
+
+    const int minButtonH = buttonMetrics.height() + std::clamp(viewH / 22, 8, 14);
+    const int maxButtonH = std::max(minButtonH, 44);
+    const int buttonH = std::clamp(viewH * 10 / 100, minButtonH, maxButtonH);
+    overlayUnlockButton->setFixedSize(buttonW, buttonH);
 }
 
 void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
