@@ -1313,10 +1313,13 @@ void MainWindow::doRelayoutDevices()
         const int columns = qBound(1, AppSettingsDialog::getInstance()->getValue("mobileGridColumns") + 1, 4);
         const int spacing = listWidget->spacing();
         const int viewportWidth = qMax(1, listWidget->viewport()->width());
-        const int scrollBarWidth = listWidget->verticalScrollBar()->isVisible() ? listWidget->verticalScrollBar()->sizeHint().width() : 0;
+        const int scrollBarWidth = qMax(
+            listWidget->verticalScrollBar()->sizeHint().width(),
+            listWidget->style()->pixelMetric(QStyle::PM_ScrollBarExtent, nullptr, listWidget)
+        );
 
-        const int totalSpacing = spacing * qMax(0, columns + 1);
-        const int availableWidth = qMax(1, viewportWidth - totalSpacing - scrollBarWidth - 8);
+        const int totalHorizontalSpacing = spacing * qMax(0, columns + 1);
+        const int availableWidth = qMax(1, viewportWidth - totalHorizontalSpacing - scrollBarWidth - 2);
         targetW = qMax(1, availableWidth / columns);
         targetH = qMax(1, qRound(targetW * aspect));
 #endif
