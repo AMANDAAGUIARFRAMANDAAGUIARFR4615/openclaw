@@ -270,6 +270,25 @@ void DeviceView::updateOverlayControls()
 
     overlay->setGeometry(0, 0, viewW, viewH);
 
+    const QColor windowColor = qApp->palette().color(QPalette::Window);
+    const bool isLightScheme = windowColor.lightness() > 128;
+    const QString labelColor = isLightScheme ? QStringLiteral("#F8FAFC") : QStringLiteral("#E5E7EB");
+    const QString buttonBg = isLightScheme ? QStringLiteral("rgba(255, 255, 255, 235)") : QStringLiteral("rgba(30, 41, 59, 230)");
+    const QString buttonBorder = isLightScheme ? QStringLiteral("rgba(148, 163, 184, 210)") : QStringLiteral("rgba(148, 163, 184, 220)");
+    const QString buttonText = isLightScheme ? QStringLiteral("#0F172A") : QStringLiteral("#F8FAFC");
+    const QString buttonHoverBg = isLightScheme ? QStringLiteral("rgba(255, 255, 255, 255)") : QStringLiteral("rgba(51, 65, 85, 235)");
+    const QString buttonPressedBg = isLightScheme ? QStringLiteral("rgba(241, 245, 249, 255)") : QStringLiteral("rgba(30, 41, 59, 255)");
+    overlayLabel->setStyleSheet(QStringLiteral("color: %1;").arg(labelColor));
+    overlayUnlockButton->setStyleSheet(QStringLiteral(
+        "QPushButton {"
+        "background-color: %1;"
+        "border: 1px solid %2;"
+        "color: %3;"
+        "}"
+        "QPushButton:hover { background-color: %4; }"
+        "QPushButton:pressed { background-color: %5; }")
+        .arg(buttonBg, buttonBorder, buttonText, buttonHoverBg, buttonPressedBg));
+
     if (auto *layout = qobject_cast<QVBoxLayout *>(overlay->layout())) {
         layout->setContentsMargins(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
         layout->setSpacing(std::clamp(minSide / 40, 2, 10));
