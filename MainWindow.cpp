@@ -94,7 +94,6 @@ public:
         listWidget->setResizeMode(QListWidget::Adjust);
         listWidget->setLayoutMode(QListView::SinglePass);
         listWidget->setMovement(QListView::Static);
-        listWidget->setUniformItemSizes(true);
         listWidget->setDragDropMode(QListWidget::NoDragDrop);
         listWidget->setSpacing(6);
         listWidget->setSortingEnabled(true);
@@ -617,7 +616,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     deviceListWidget->setResizeMode(QListWidget::Adjust);
     deviceListWidget->setLayoutMode(QListView::SinglePass);
     deviceListWidget->setMovement(QListView::Static);
-    deviceListWidget->setUniformItemSizes(true);
     deviceListWidget->setDragDropMode(QListWidget::NoDragDrop);
     deviceListWidget->setSpacing(6);
     deviceListWidget->setSortingEnabled(true);
