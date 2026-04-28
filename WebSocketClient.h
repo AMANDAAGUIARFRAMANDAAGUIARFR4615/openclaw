@@ -90,6 +90,7 @@ private:
         if (!doc.isObject()) return;
 
         QJsonObject obj = doc.object();
+        qDebugEx() << this << obj;
         QString type = obj["type"].toString();
         QJsonValue data = obj["data"];
 
