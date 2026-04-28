@@ -870,7 +870,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     auto udpTransport = new UdpTransport(0, this);
 
     auto broadcastTask = [=]() {
-        if (settings->value("isLanMode", true)) {
+        if (settings->value("isLanMode", true).toBool()) {
             if (getTab().getAutoScanLANDevices() == 0)
                 return;
 

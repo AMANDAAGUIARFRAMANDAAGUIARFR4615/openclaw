@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 #endif
     });
 
-    QObject::connect(loginWidget, &LoginWidget::authorized, [=](const QJsonValue &account, bool isLanMode) {
+    QObject::connect(loginWidget, &LoginWidget::authorized, [&](const QJsonValue &account, bool isLanMode) {
         Account::getInstance()->id = account["_id"].toString();
         Account::getInstance()->phone = account["phone"].toString();
         Account::getInstance()->balance = account["balance"].toInt();
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
 
         if (!isLanMode) {
             if (!tunnelClient) {
-                tunnelClient = new TunnelClient(Config::SERVER_IP(), 10000, 10001, &app);
+                tunnelClient = new TunnelClient(Config::SERVER_IP(), 10000, 10001);
                 tunnelClient->connectToServer();
             }
 
