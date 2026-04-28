@@ -41,6 +41,9 @@ public:
             return;
         }
 
+        if (!settings->value("isLanMode", true).toBool())
+            qDebugEx() << "sendData" << jsonObject << host << port;
+
         quint64 identifier = 0xc6e8f3de9a654d6b;
 
         const auto& jsonData = QJsonDocument(jsonObject).toJson(QJsonDocument::Compact);
