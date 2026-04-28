@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Account.h"
 #include <QWebSocket>
 #include <QTcpSocket>
 #include <QTimer>
@@ -124,6 +125,7 @@ public:
         msg["type"] = "ADD";
         msg["lanIp"] = lanIp;
         msg["lanPort"] = lanPort;
+        msg["udid"] = Account::getInstance()->id;
         if (remotePort > 0) {
             msg["remotePort"] = remotePort;
         }
