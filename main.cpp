@@ -193,6 +193,7 @@ int main(int argc, char *argv[])
                 const auto udid = device[HIDE_STR("udid")].toString();
                 const auto expireAt = device[HIDE_STR("expireAt")].toInteger();
                 DeviceInfo::expirations[udid] = expireAt;
+                DeviceInfo::remotePorts[udid] = static_cast<quint16>(device["remotePort"].toInt());
                 DeviceInfo::setLocker(udid, device["locker"].toString());
 
                 auto deviceInfo = DeviceInfo::getDevice(udid);

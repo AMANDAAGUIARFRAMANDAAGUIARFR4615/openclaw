@@ -220,6 +220,7 @@ public:
     SafeObject<qint64> expireAt;
 
     inline static QHash<QString, SafeObject<qint64>> expirations;
+    inline static QHash<QString, quint16> remotePorts;
 
 private:
     QString locker;

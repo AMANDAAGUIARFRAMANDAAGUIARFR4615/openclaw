@@ -886,6 +886,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             if (!deviceInfo || deviceInfo->connection->type == DeviceConnection::Usb && !isUsbSetting)
                 udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
         }
+
+        const auto serverIp = Config::SERVER_IP();
+        for (auto it = DeviceInfo::remotePorts.constBegin(); it != DeviceInfo::remotePorts.constEnd(); ++it) {
+            const auto remotePort = it.value();
+            if (remotePort == 0)
+                continue;
+
+            if (DeviceInfo::getDevice(it.key()) != nullptr)
+                continue;
+
+            udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), serverIp, remotePort);
+        }
     };
 
     bool isUsbSetting = getTab().getConnectionMethod() == 0;
@@ -1399,6 +1411,7 @@ void MainWindow::addItem(DeviceConnection* connection)
             webSocketClient->emitEvent("deviceInfo", QJsonObject{{HIDE_STR("udid"), deviceInfo->deviceId}, {"isUsb", connection->type == DeviceConnection::Usb}}, [=](const QJsonValue &res) {
                 deviceInfo->expireAt = res[HIDE_STR("expireAt")].toInteger();
                 DeviceInfo::expirations[deviceInfo->deviceId] = deviceInfo->expireAt;
+                DeviceInfo::remotePorts[deviceInfo->deviceId] = static_cast<quint16>(res["remotePort"].toInt());
 
                 deviceInfo->setLocker(res["locker"].toString());
             });
