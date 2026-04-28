@@ -259,7 +259,11 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         auto atPath = data["atPath"].toString();
         auto name = data["toPath"].toString();
         auto toPath = atPath.left(atPath.lastIndexOf('/') + 1) + name;
-        auto item = pathToItem[atPath];
+        auto item = pathToItem.value(atPath);
+        if (!item) {
+            setStatusMessage("重命名失败: 未找到源路径 " + atPath);
+            return;
+        }
 
         auto index = item->index();
         auto date = model->index(index.row(), 1, index.parent()).data().toString();
@@ -282,7 +286,13 @@ RemoteFileExplorer::RemoteFileExplorer(DeviceConnection* connection, const QStri
         }
 
         auto path = data["path"].toString();
-        removeItemPaths(pathToItem[path]);
+        auto item = pathToItem.value(path);
+        if (!item) {
+            setStatusMessage("删除结果已过期: 未找到路径 " + path);
+            return;
+        }
+
+        removeItemPaths(item);
     });
 
     treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
@@ -389,6 +399,9 @@ void RemoteFileExplorer::fetchDirectoryContents(const QString &path)
 }
 
 void RemoteFileExplorer::removeItemPaths(QStandardItem* item) {
+    if (!item)
+        return;
+
     for (int i = item->rowCount() - 1; i >= 0; i--) {
         auto childItem = item->child(i);
         if (!childItem)
