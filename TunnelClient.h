@@ -166,6 +166,9 @@ public:
         }
     }
 
+signals:
+    void remotePortChanged(const QString &lanIp, quint16 lanPort, quint16 remotePort);
+
 private slots:
     void onWsConnected() {
         qInfo() << "🚀 Connected to Server";
@@ -232,6 +235,7 @@ private:
             
             m_activeMappings[mappingId] = msg;
             qInfo().noquote() << QString("✨ Live: %1:%2 <-> %3:%4").arg(lanIp).arg(lanPort).arg(m_serverIp).arg(remotePort);
+            emit remotePortChanged(lanIp, static_cast<quint16>(lanPort), static_cast<quint16>(remotePort));
         } 
         else if (type == "REQ_TUNNEL") {
             QString sessionId = msg["sessionId"].toString();

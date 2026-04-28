@@ -9,6 +9,7 @@
 #include "Account.h"
 #include "VideoFrameWidget.h"
 #include "LambdaEventFilter.h"
+#include "TunnelClient.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -227,7 +228,23 @@ void DeviceWidget::setupVideoConnection()
             });
         });
         m_videoServer->listen(QHostAddress::Any, 0);
-        connection->send("videoPort", m_videoServer->serverPort());
+        const quint16 videoLocalPort = m_videoServer->serverPort();
+        if (!tunnelClient) {
+            connection->send("videoPort", videoLocalPort);
+        } else {
+            QObject::connect(
+                tunnelClient,
+                &TunnelClient::remotePortChanged,
+                m_videoServer,
+                [=](const QString &lanIp, quint16 lanPort, quint16 remotePort) {
+                    Q_UNUSED(lanIp);
+                    if (lanPort != videoLocalPort || remotePort == 0)
+                        return;
+                    connection->send("videoPort", remotePort);
+                });
+
+            tunnelClient->requestAdd("127.0.0.1", videoLocalPort);
+        }
     }
 
     setSourceDevice(m_videoDevice);
@@ -254,6 +271,8 @@ void DeviceWidget::teardownVideoConnection()
     }
 
     if (m_videoServer) {
+        if (tunnelClient)
+            tunnelClient->requestRemove("127.0.0.1", m_videoServer->serverPort());
         m_videoServer->close();
         m_videoServer->deleteLater();
         m_videoServer = nullptr;

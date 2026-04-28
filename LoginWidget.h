@@ -59,6 +59,8 @@ public:
         confirmLineEdit->setVisible(false);
 
         rememberCheckBox = new QCheckBox("记住账号和密码");
+        lanModeCheckBox = new QCheckBox("是否局域网");
+        lanModeCheckBox->setChecked(settings->value("isLanMode", true).toBool());
 
         findPwdBtn = new QPushButton("忘记密码?");
         findPwdBtn->setStyleSheet("border: none; color: palette(link); text-decoration: underline; background: transparent; padding: 0px;");
@@ -80,6 +82,7 @@ public:
         // 将记住密码和找回密码放在同一行
         auto optionsLayout = new QHBoxLayout;
         optionsLayout->addWidget(rememberCheckBox);
+        optionsLayout->addWidget(lanModeCheckBox);
         optionsLayout->addStretch();
         optionsLayout->addWidget(findPwdBtn);
 
@@ -128,7 +131,7 @@ public:
     }
     
 signals:
-    void authorized(const QJsonValue &account);
+    void authorized(const QJsonValue &account, bool isLanMode);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override {
@@ -144,6 +147,7 @@ protected:
     QLineEdit *passwordLineEdit;
     QLineEdit *confirmLineEdit;
     QCheckBox *rememberCheckBox;
+    QCheckBox *lanModeCheckBox;
     QPushButton *findPwdBtn;
     QPushButton *actionButton;
     QPushButton *switchButton;
@@ -220,6 +224,7 @@ protected:
         confirmLineEdit->clear();
         
         rememberCheckBox->setVisible(!isRegisterMode && !isFindPwdMode);
+        lanModeCheckBox->setVisible(!isRegisterMode && !isFindPwdMode);
         findPwdBtn->setVisible(!isRegisterMode && !isFindPwdMode);
 
         if (isRegisterMode) {
@@ -322,8 +327,9 @@ protected:
                 actionButton->setEnabled(true);
 
                 if (res["msg"].isUndefined()) {
+                    settings->setValue("isLanMode", lanModeCheckBox->isChecked());
                     saveCredentials(phone, password);
-                    emit authorized(res["account"]);
+                    emit authorized(res["account"], lanModeCheckBox->isChecked());
                     close();
                     return;
                 }
@@ -336,6 +342,7 @@ protected:
                 actionButton->setEnabled(true);
 
                 if (res["msg"].isUndefined()) {
+                    settings->setValue("isLanMode", lanModeCheckBox->isChecked());
                     saveCredentials(phone, password);
                     for (const QJsonValue& device: res[HIDE_STR("devices")].toArray()) {
                         const auto& udid = device[HIDE_STR("udid")].toString();
@@ -343,7 +350,7 @@ protected:
                         DeviceInfo::remotePorts[udid] = static_cast<quint16>(device["remotePort"].toInt());
                         DeviceInfo::setLocker(udid, device["locker"].toString());
                     }
-                    emit authorized(res["account"]);
+                    emit authorized(res["account"], lanModeCheckBox->isChecked());
                     close();
                     return;
                 }

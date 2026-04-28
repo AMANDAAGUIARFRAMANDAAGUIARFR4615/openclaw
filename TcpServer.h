@@ -54,7 +54,7 @@ public:
     }
 
     QJsonObject getHostInfo(const QString& ip) {
-        return QJsonObject{{"version", Config::VERSION}, {"ip", ip}, {"port", serverPort()}, {"remoteDeviceName", QHostInfo::localHostName()}};
+        return QJsonObject{{"version", Config::VERSION}, {"ip", ip}, {"port", qApp->getProperty("MAIN_REMOTE_PORT", serverPort())}, {"remoteDeviceName", QHostInfo::localHostName()}};
     }
 
 signals:

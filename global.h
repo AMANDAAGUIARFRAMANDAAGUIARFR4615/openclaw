@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "ToastWidget.h"
 #include "WebSocketClient.h"
+#include "TunnelClient.h"
 #include <QSettings>
 #include <QElapsedTimer>
 #include <QNetworkAccessManager>
@@ -11,6 +12,7 @@ extern QSettings* settings;
 extern WebSocketClient* webSocketClient;
 extern QElapsedTimer* elapsedTimer;
 extern QNetworkAccessManager* networkAccessManager;
+extern TunnelClient* tunnelClient;
 
 namespace Config {
     inline const QString SERVER_IP() {

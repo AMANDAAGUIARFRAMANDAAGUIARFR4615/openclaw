@@ -870,33 +870,36 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     auto udpTransport = new UdpTransport(0, this);
 
     auto broadcastTask = [=]() {
-        if (getTab().getAutoScanLANDevices() == 0)
-            return;
+        if (settings->value("isLanMode", true)) {
+            if (getTab().getAutoScanLANDevices() == 0)
+                return;
 
-        bool isUsbSetting = getTab().getConnectionMethod() == 0;
-        const auto& ips = TcpServer::getInstance()->getConnectedIps();
-        for (const auto& ip : NetworkSegmentEditorDialog::getAllIPs()) {
-            if (ips.contains(ip))
-                continue;
+            bool isUsbSetting = getTab().getConnectionMethod() == 0;
+            const auto& ips = TcpServer::getInstance()->getConnectedIps();
+            for (const auto& ip : NetworkSegmentEditorDialog::getAllIPs()) {
+                if (ips.contains(ip))
+                    continue;
 
-            if (DeviceInfo::isLockByOther(ip))
-                continue;
+                if (DeviceInfo::isLockByOther(ip))
+                    continue;
 
-            const auto& deviceInfo = DeviceInfo::getDevice(ip);
-            if (!deviceInfo || deviceInfo->connection->type == DeviceConnection::Usb && !isUsbSetting)
-                udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
+                const auto& deviceInfo = DeviceInfo::getDevice(ip);
+                if (!deviceInfo || deviceInfo->connection->type == DeviceConnection::Usb && !isUsbSetting)
+                    udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
+            }
         }
+        else {
+            const auto serverIp = Config::SERVER_IP();
+            for (auto it = DeviceInfo::remotePorts.constBegin(); it != DeviceInfo::remotePorts.constEnd(); ++it) {
+                const auto remotePort = it.value();
+                if (remotePort == 0)
+                    continue;
 
-        const auto serverIp = Config::SERVER_IP();
-        for (auto it = DeviceInfo::remotePorts.constBegin(); it != DeviceInfo::remotePorts.constEnd(); ++it) {
-            const auto remotePort = it.value();
-            if (remotePort == 0)
-                continue;
+                if (DeviceInfo::getDevice(it.key()) != nullptr)
+                    continue;
 
-            if (DeviceInfo::getDevice(it.key()) != nullptr)
-                continue;
-
-            udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), serverIp, remotePort);
+                udpTransport->sendData(TcpServer::getInstance()->getHostInfo(serverIp), serverIp, remotePort);
+            }
         }
     };
 

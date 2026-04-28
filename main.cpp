@@ -52,6 +52,7 @@ QSettings* settings;
 WebSocketClient *webSocketClient;
 QElapsedTimer* elapsedTimer;
 QNetworkAccessManager* networkAccessManager;
+TunnelClient* tunnelClient;
 
 int main(int argc, char *argv[])
 {
@@ -210,7 +211,7 @@ int main(int argc, char *argv[])
 #endif
     });
 
-    QObject::connect(loginWidget, &LoginWidget::authorized, [=](const QJsonValue &account) {
+    QObject::connect(loginWidget, &LoginWidget::authorized, [=](const QJsonValue &account, bool isLanMode) {
         Account::getInstance()->id = account["_id"].toString();
         Account::getInstance()->phone = account["phone"].toString();
         Account::getInstance()->balance = account["balance"].toInt();
@@ -234,6 +235,22 @@ int main(int argc, char *argv[])
         });
 
         UsbDeviceManager::getInstance()->start();
+
+        if (!isLanMode) {
+            if (!tunnelClient) {
+                tunnelClient = new TunnelClient(Config::SERVER_IP(), 10000, 10001, &app);
+                tunnelClient->connectToServer();
+            }
+
+            const qint16 mainPort = TcpServer::getInstance()->serverPort();
+
+            QObject::connect(tunnelClient, &TunnelClient::remotePortChanged, &app,
+                             [=](const QString &lanIp, quint16 lanPort, quint16 remotePort) {
+                                 if (lanPort == mainPort && remotePort > 0)
+                                     qApp->setProperty("MAIN_REMOTE_PORT", remotePort);
+                             });
+            tunnelClient->requestAdd("127.0.0.1", mainPort);
+        }
 
         QObject::connect(qApp, &QApplication::aboutToQuit, [=]() {
             qInstallMessageHandler(nullptr);
