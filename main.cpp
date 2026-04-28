@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
                 tunnelClient->connectToServer();
             }
 
-            const qint16 mainPort = TcpServer::getInstance()->serverPort();
+            const quint16 mainPort = TcpServer::getInstance()->serverPort();
 
             QObject::connect(tunnelClient, &TunnelClient::remotePortChanged, &app,
                              [=](const QString &lanIp, quint16 lanPort, quint16 remotePort) {
