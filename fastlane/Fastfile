@@ -1,4 +1,13 @@
+require "fileutils"
+require "shellwords"
+
 default_platform(:ios)
+
+PROJECT_ROOT = File.expand_path("..", __dir__)
+
+def project_path(*parts)
+  File.join(PROJECT_ROOT, *parts)
+end
 
 platform :ios do
   desc "针对免费账号的自动化签名"
@@ -24,5 +33,51 @@ platform :ios do
       signing_identity: "Apple Development: 664301573@qq.com (2443DGF2H7)",
       provisioning_profile: "certs/embedded.mobileprovision"
     )
+  end
+end
+
+
+platform :android do
+  desc "签名已构建的 Android Release APK"
+  lane :sign_release do
+    build_dir = project_path("build")
+    aligned_apk = project_path("build", "RemotePro-aligned.apk")
+    signed_apk = project_path("build", "RemotePro-signed.apk")
+    final_apk = project_path("build", "RemotePro.apk")
+    keystore = project_path("android", "release.keystore")
+    key_alias = "release"
+    key_password = ENV["P12_PASSWORD"]
+
+    apk_matches = Dir[File.join(build_dir, "**", "*.apk")].sort
+    apk_candidates = apk_matches.reject { |path| [aligned_apk, signed_apk].include?(path) }
+    apk_candidates_without_final = apk_candidates.reject { |path| path == final_apk }
+    apk_candidates = apk_candidates_without_final.empty? ? apk_candidates : apk_candidates_without_final
+    release_output_marker = "#{File::SEPARATOR}outputs#{File::SEPARATOR}apk#{File::SEPARATOR}release#{File::SEPARATOR}"
+    unsigned_apk =
+      apk_candidates.find { |path| path.end_with?("-release-unsigned.apk") } ||
+      apk_candidates.find { |path| path.include?(release_output_marker) } ||
+      apk_candidates.first
+
+    UI.user_error!("Missing APK under #{build_dir}") if unsigned_apk.to_s.empty?
+    UI.message("Using unsigned APK: #{unsigned_apk}")
+
+    UI.user_error!("Missing keystore: #{keystore}") unless File.exist?(keystore)
+    UI.user_error!("P12_PASSWORD is empty") if key_password.to_s.empty?
+
+    sdk_root = ENV["ANDROID_SDK_ROOT"] || ENV["ANDROID_HOME"]
+    UI.user_error!("ANDROID_SDK_ROOT / ANDROID_HOME is not set") if sdk_root.to_s.empty?
+
+    apksigner = Dir["#{sdk_root}/build-tools/*/apksigner"].sort.last
+    zipalign = Dir["#{sdk_root}/build-tools/*/zipalign"].sort.last
+
+    UI.user_error!("apksigner not found under #{sdk_root}/build-tools") if apksigner.to_s.empty?
+    UI.user_error!("zipalign not found under #{sdk_root}/build-tools") if zipalign.to_s.empty?
+
+    FileUtils.mkdir_p(build_dir)
+    FileUtils.rm_f([aligned_apk, signed_apk])
+    sh([zipalign, "-f", "-p", "4", unsigned_apk, aligned_apk].shelljoin)
+    sh([apksigner, "sign", "--ks", keystore, "--ks-key-alias", key_alias, "--ks-pass", "pass:#{key_password}", "--key-pass", "pass:#{key_password}", "--out", signed_apk, aligned_apk].shelljoin)
+    sh([apksigner, "verify", "--verbose", signed_apk].shelljoin)
+    FileUtils.mv(signed_apk, final_apk, force: true)
   end
 end

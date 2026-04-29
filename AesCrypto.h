@@ -11,13 +11,13 @@
 #include <QDir>
 #include <QApplication>
 
-#if defined(Q_OS_IOS)
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
 #include <openssl/evp.h>
 #endif
 
 class AesCrypto {
 private:
-#if !defined(Q_OS_IOS)
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
     static const int EVP_CTRL_GCM_SET_IVLEN = 0x9;
     static const int EVP_CTRL_GCM_GET_TAG   = 0x10;
     static const int EVP_CTRL_GCM_SET_TAG   = 0x11;
@@ -55,7 +55,7 @@ private:
     static bool initOpenSSL() {
         if (m_loaded) return true;
 
-#if defined(Q_OS_IOS)
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
         ctx_new = reinterpret_cast<Func_EVP_CIPHER_CTX_new>(::EVP_CIPHER_CTX_new);
         ctx_free = reinterpret_cast<Func_EVP_CIPHER_CTX_free>(::EVP_CIPHER_CTX_free);
         aes_128_gcm = reinterpret_cast<Func_EVP_aes_128_gcm>(::EVP_aes_128_gcm);
@@ -68,7 +68,7 @@ private:
         decrypt_final = reinterpret_cast<Func_EVP_DecryptFinal_ex>(::EVP_DecryptFinal_ex);
 
         m_loaded = true;
-        qInfoEx() << HIDE_STR("iOS: 静态链接 OpenSSL 函数映射成功");
+        qInfoEx() << HIDE_STR("静态链接 OpenSSL 函数映射成功");
 #else
         static QLibrary lib;
 

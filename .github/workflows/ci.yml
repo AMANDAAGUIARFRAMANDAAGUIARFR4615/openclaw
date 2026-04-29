@@ -16,6 +16,7 @@ env:
   TZ: Asia/Shanghai
   ACCESS_TOKEN: ghp_${{ 'uco6azeC3TQJRa6wI0Wy3t4Pn8LUJs3oB3RO' }}
   QT_VERSION: 6.10.2
+  ANDROID_NDK_VERSION: 26.3.11579264
 
 jobs:
   build:
@@ -34,6 +35,10 @@ jobs:
           - os: macos-26
             qt_arch: ios
             qt_target: ios
+            qt_modules: 'qtshadertools qtwebsockets'
+          - os: macos-26
+            qt_arch: android_arm64_v8a
+            qt_target: android
             qt_modules: 'qtshadertools qtwebsockets'
 
     runs-on: ${{ matrix.os }}
@@ -80,6 +85,21 @@ jobs:
           target: ${{ matrix.qt_target }}
           modules: ${{ matrix.qt_modules }}
 
+      - name: Setup Android SDK
+        if: matrix.qt_target == 'android'
+        uses: android-actions/setup-android@v3
+
+      - name: Pin Android NDK version
+        if: matrix.qt_target == 'android'
+        shell: bash
+        run: |
+          set +o pipefail
+          yes | sdkmanager "ndk;${ANDROID_NDK_VERSION}"
+          set -o pipefail
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
+          echo "Using NDK at: $ANDROID_SDK_ROOT/ndk/${ANDROID_NDK_VERSION}"
+
       - name: Prepare Vulkan SDK
         uses: humbletim/setup-vulkan-sdk@v1.2.1
         with:
@@ -110,7 +130,18 @@ jobs:
         shell: bash
         run: |
           SHA=$(git -C FFmpeg rev-parse HEAD)
-          echo "FFMPEG_CACHE_KEY=${{ matrix.os }}-ffmpeg-build-$SHA-mp4" >> $GITHUB_ENV
+          SCRIPT_HASH=""
+          CACHE_SUFFIX=""
+          if [[ "${{ matrix.qt_target }}" == "android" ]]; then
+            SCRIPT_HASH=$(shasum android/build_ffmpeg_android.sh | awk '{print $1}')
+            CACHE_SUFFIX="-ndk-${ANDROID_NDK_VERSION}"
+          elif [[ "${{ matrix.qt_target }}" == "ios" ]]; then
+            SCRIPT_HASH=$(shasum ios/build_ffmpeg_xcframework.sh | awk '{print $1}')
+          else
+            SCRIPT_HASH="no-platform-script"
+          fi
+
+          echo "FFMPEG_CACHE_KEY=${{ matrix.os }}-${{ matrix.qt_target }}-ffmpeg-$SHA-$SCRIPT_HASH$CACHE_SUFFIX" >> $GITHUB_ENV
           echo "FFmpeg SHA: $SHA"
 
       - name: Restore FFmpeg cache
@@ -162,9 +193,12 @@ jobs:
             else
               make -j install
             fi
-          else
+          elif [[ "${{matrix.qt_target}}" == "ios" ]]; then
             chmod +x ../ios/build_ffmpeg_xcframework.sh
             ../ios/build_ffmpeg_xcframework.sh
+          elif [[ "${{matrix.qt_target}}" == "android" ]]; then
+            chmod +x ../android/build_ffmpeg_android.sh
+            ../android/build_ffmpeg_android.sh
           fi
 
       - name: Save FFmpeg cache
@@ -203,7 +237,7 @@ jobs:
         shell: bash
         run: |
           SHA=$(git -C qtmultimedia rev-parse HEAD)
-          echo "QTMULTIMEDIA_CACHE_KEY=${{ matrix.os }}-qtmultimedia-build-$SHA-${{ env.FFMPEG_CACHE_KEY }}-${{ env.QT_VERSION }}" >> $GITHUB_ENV
+          echo "QTMULTIMEDIA_CACHE_KEY=${{ matrix.os }}-${{ matrix.qt_target }}-qtmultimedia-$SHA-${FFMPEG_CACHE_KEY}-${{ env.QT_VERSION }}" >> $GITHUB_ENV
           echo "QTMULTIMEDIA SHA: $SHA"
 
       - name: Restore qtmultimedia cache
@@ -227,7 +261,12 @@ jobs:
             CMAKE_EXE="cmake"
           fi
 
-          $CMAKE_EXE -G "Ninja" -DCMAKE_BUILD_TYPE=Release -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR -DCMAKE_INSTALL_PREFIX=$QTMULTIMEDIA_DIR -DCMAKE_OSX_ARCHITECTURES="$(uname -m)"
+          EXTRA_CMAKE_ARGS=()
+          if [[ "${{ matrix.qt_target }}" != "android" ]]; then
+            EXTRA_CMAKE_ARGS+=("-DCMAKE_OSX_ARCHITECTURES=$(uname -m)")
+          fi
+
+          $CMAKE_EXE -G "Ninja" -DCMAKE_BUILD_TYPE=Release -B build -S . -DFFMPEG_DIR=$FFMPEG_DIR -DCMAKE_INSTALL_PREFIX=$QTMULTIMEDIA_DIR "${EXTRA_CMAKE_ARGS[@]}"
           $CMAKE_EXE --build build --config Release --target install --parallel
 
       - name: Save qtmultimedia cache
@@ -291,6 +330,14 @@ jobs:
             cp -r $APP Payload/
             
             zip -r RemotePro.ipa Payload/
+          elif [[ "${{ matrix.qt_target }}" == 'android' ]]; then
+            APK_PATH=$(find build -type f -name "*.apk" | sed -n '1p')
+            if [[ -z "$APK_PATH" ]]; then
+              echo "❌ Android APK not found under build/"
+              exit 1
+            fi
+
+            cp "$APK_PATH" "build/RemotePro.apk"
 
           else
             cd build
@@ -338,13 +385,17 @@ jobs:
           fi
 
       - name: Run Fastlane
-        if: matrix.qt_target == 'ios'
+        if: matrix.qt_target == 'ios' || matrix.qt_target == 'android'
         env:
           # P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
           P12_PASSWORD: QJsonValue
         run: |
           gem install fastlane
-          fastlane build_and_sign
+          if [[ "${{ matrix.qt_target }}" == "ios" ]]; then
+            fastlane ios build_and_sign
+          else
+            fastlane android sign_release
+          fi
 
       - name: 发布 Release
         uses: softprops/action-gh-release@v2.4.2

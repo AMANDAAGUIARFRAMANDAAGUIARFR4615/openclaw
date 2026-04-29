@@ -161,6 +161,17 @@ if(IOS)
     set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/ios/Info.plist"
     )
+elseif(ANDROID)
+    set(ANDROID_OPENSSL_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/android/openssl_4.0.0_arm64-v8a")
+    set(ANDROID_OPENSSL_INCLUDE_DIR "${ANDROID_OPENSSL_ROOT}/include")
+    set(ANDROID_OPENSSL_CRYPTO_LIB "${ANDROID_OPENSSL_ROOT}/lib/libcrypto.a")
+    set(ANDROID_OPENSSL_SSL_LIB "${ANDROID_OPENSSL_ROOT}/lib/libssl.a")
+
+    include_directories(${ANDROID_OPENSSL_INCLUDE_DIR})
+    set(THIRD_PARTY_LIBS
+        ${ANDROID_OPENSSL_SSL_LIB}
+        ${ANDROID_OPENSSL_CRYPTO_LIB}
+    )
 elseif(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/macos/Info.plist"
