@@ -8,6 +8,7 @@
 #include "Account.h"
 #include "DeviceWindow.h"
 #include <QApplication>
+#include <QSslSocket>
 #include <QNetworkProxy>
 #include <QLoggingCategory>
 #include <QMessageBox>
@@ -57,6 +58,11 @@ TunnelClient* tunnelClient;
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+
+    if (!QSslSocket::supportsSsl()) {
+        QMessageBox::warning(nullptr, "警告", "当前运行环境不支持 SSL/TLS，无法建立安全连接。");
+        return 0;
+    }
 
     QNetworkProxy::setApplicationProxy(QNetworkProxy::NoProxy);
 
