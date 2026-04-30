@@ -59,7 +59,8 @@ public:
         confirmLineEdit->setVisible(false);
 
         rememberCheckBox = new QCheckBox("记住账号和密码");
-        lanModeCheckBox = new QCheckBox("是否局域网");
+        lanModeCheckBox = new QCheckBox("局域网模式");
+        lanModeCheckBox->setToolTip("广域网只能连接已在局域网连接过的设备");
         lanModeCheckBox->setChecked(settings->value("isLanMode", true).toBool());
 
         findPwdBtn = new QPushButton("忘记密码?");
