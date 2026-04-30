@@ -56,7 +56,8 @@ public:
             }
         });
 
-        const auto& filePath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/app_log.txt";
+        const auto filePath = getLogFilePath();
+        QDir().mkpath(QFileInfo(filePath).absolutePath());
 
         logFile.setFileName(filePath);
         if (!logFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
@@ -89,6 +90,15 @@ public:
     void toggleVisibility()
     {
         setVisible(!isVisible());
+    }
+
+    static QString getLogFilePath()
+    {
+#if defined(Q_OS_ANDROID)
+        return QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/app_log.txt";
+#else
+        return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/app_log.txt";
+#endif
     }
 
 protected:

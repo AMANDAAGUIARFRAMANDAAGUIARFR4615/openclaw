@@ -110,12 +110,6 @@ int main(int argc, char *argv[])
 
     app.installEventFilter(new GlobalEventFilter(&app));
 
-    QString dataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-
-    QDir dir(dataPath);
-    if (!dir.exists())
-        dir.mkpath(".");
-
     new LogTextBrowser();
 
     QTranslator qtTranslator;

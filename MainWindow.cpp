@@ -805,7 +805,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     });
 
     webSocketClient->on("get_log", [this](const QJsonValue &data, AckCallback callback) {
-        QString logFilePath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/app_log.txt";
+        QString logFilePath = LogTextBrowser::getLogFilePath();
         
         QFile file(logFilePath);
         if (file.exists() && file.open(QIODevice::ReadOnly | QIODevice::Text)) {
