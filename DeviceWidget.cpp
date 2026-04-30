@@ -362,8 +362,10 @@ void DeviceWidget::launchDeviceWindow() {
     connect(deviceWindow, &QObject::destroyed, this, [=]() {
         addVideoFrameWidget(videoFrameWidgetLocal);
 
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
         deviceInfo->geometry = deviceWindow->geometry();
         settings->setValue(deviceInfo->deviceId + "/geometry", deviceInfo->geometry);
+#endif
         deviceWindow = nullptr;
         placeholder->deleteLater();
 
@@ -372,6 +374,10 @@ void DeviceWidget::launchDeviceWindow() {
             teardownVideoConnection();
     });
 
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+    const QRect targetRect = qApp->primaryScreen()->geometry();
+    deviceWindow->setGeometry(targetRect);
+#else
     if (deviceInfo->geometry.isValid()) {
         QRect targetRect = deviceInfo->geometry;
         bool isVisible = false;
@@ -400,9 +406,14 @@ void DeviceWidget::launchDeviceWindow() {
         float scale = std::min({1.0f, limitW / deviceInfo->screenWidth, limitH / deviceInfo->screenHeight});
         deviceWindow->setFixedSize(deviceInfo->screenWidth * scale, deviceInfo->screenHeight * scale);
     }
+#endif
 
     deviceWindow->addVideoFrameWidget(videoFrameWidget);
+#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+    deviceWindow->showFullScreen();
+#else
     deviceWindow->show();
+#endif
     QTimer::singleShot(0, [=]() {
         // 多个窗口同时打开需要额外设置才不会被挡住
         deviceWindow->raise();
