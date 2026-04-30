@@ -8,6 +8,21 @@ find_package(Qt6 REQUIRED COMPONENTS CorePrivate Widgets Network Concurrent Mult
 
 qt_standard_project_setup()
 
+if(ANDROID)
+    include(FetchContent)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/android/android_openssl/android_openssl.cmake")
+        set(android_openssl_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android/android_openssl")
+    else()
+        FetchContent_Declare(
+            android_openssl
+            DOWNLOAD_EXTRACT_TIMESTAMP true
+            URL https://github.com/KDAB/android_openssl/archive/refs/heads/master.zip
+        )
+        FetchContent_MakeAvailable(android_openssl)
+    endif()
+    include("${android_openssl_SOURCE_DIR}/android_openssl.cmake")
+endif()
+
 # =========================================================
 #  将 __FILE__ 映射为相对路径
 # =========================================================
@@ -162,16 +177,7 @@ if(IOS)
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/ios/Info.plist"
     )
 elseif(ANDROID)
-    set(ANDROID_OPENSSL_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/android/openssl_4.0.0_arm64-v8a")
-    set(ANDROID_OPENSSL_INCLUDE_DIR "${ANDROID_OPENSSL_ROOT}/include")
-    set(ANDROID_OPENSSL_CRYPTO_LIB "${ANDROID_OPENSSL_ROOT}/lib/libcrypto.a")
-    set(ANDROID_OPENSSL_SSL_LIB "${ANDROID_OPENSSL_ROOT}/lib/libssl.a")
-
-    include_directories(${ANDROID_OPENSSL_INCLUDE_DIR})
-    set(THIRD_PARTY_LIBS
-        ${ANDROID_OPENSSL_SSL_LIB}
-        ${ANDROID_OPENSSL_CRYPTO_LIB}
-    )
+    set(THIRD_PARTY_LIBS "")
 elseif(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/macos/Info.plist"
@@ -195,6 +201,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     QtNodes
     ${THIRD_PARTY_LIBS}
 )
+
+if(ANDROID)
+    add_android_openssl_libraries(${PROJECT_NAME})
+endif()
 
 if(IOS)
     # 自动配置 RPATH，这样无需在 Github Actions 中手动执行 install_name_tool
