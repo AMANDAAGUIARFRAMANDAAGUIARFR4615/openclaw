@@ -63,7 +63,6 @@ public:
             append("<span style='color:red;'>无法打开日志文件！</span>");
         }
 
-#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
         qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &message) {
             QMetaObject::invokeMethod(instance, [=]() {
                 QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss.zzz");
@@ -83,7 +82,6 @@ public:
                 out.flush();
             });
         });
-#endif
     }
 
     static LogTextBrowser* getInstance() {return instance;}
