@@ -86,6 +86,7 @@ build_one_abi() {
     --enable-static \
     --disable-shared \
     --disable-doc \
+    --enable-jni \
     --enable-avcodec \
     --enable-avformat \
     --enable-avutil \
