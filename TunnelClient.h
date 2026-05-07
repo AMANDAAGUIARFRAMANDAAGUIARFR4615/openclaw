@@ -16,12 +16,23 @@
 class DataBridge : public QObject {
     Q_OBJECT
 public:
+    // 高水位：单方向 Qt 应用层堆积超过这个值就暂停从对端读取，等下游消化完再恢复。
+    // 防止屏幕流/大文件传输时客户端内存膨胀以及越来越大的延迟。
+    static constexpr qint64 kHighWater = 1 << 20;        // 1 MiB
+    static constexpr qint64 kLowWater  = kHighWater / 2; // 512 KiB
+    // 小于此阈值的本次写入才主动 flush，避免大块流量上每个 chunk 都进一次系统调用。
+    static constexpr int kFlushSmallThreshold = 1500;
+
     DataBridge(const QString &sessionId, const QString &lanIp, quint16 lanPort,
                const QString &serverIp, quint16 transferPort, QObject *parent = nullptr)
         : QObject(parent), m_sessionId(sessionId), m_serverIp(serverIp), m_transferPort(transferPort)
     {
         m_lanSocket = new QTcpSocket(this);
         m_serverSocket = new QTcpSocket(this);
+
+        // 限制 Qt 内部读缓冲，间接对内核接收窗口形成约束，避免在被暂停期间无限囤积。
+        m_lanSocket->setReadBufferSize(kHighWater);
+        m_serverSocket->setReadBufferSize(kHighWater);
 
         connect(m_lanSocket, &QTcpSocket::disconnected, this, &DataBridge::cleanup);
         connect(m_serverSocket, &QTcpSocket::disconnected, this, &DataBridge::cleanup);
@@ -64,17 +75,44 @@ private slots:
         // 3. 暗号对接完毕，历史数据清理完毕，正式打通双向实时数据通道！
         connect(m_lanSocket, &QTcpSocket::readyRead, this, &DataBridge::onLanReadyRead);
         connect(m_serverSocket, &QTcpSocket::readyRead, this, &DataBridge::onServerReadyRead);
+
+        // 背压恢复信号：下游写出后检查是否可以解除上游暂停
+        connect(m_serverSocket, &QTcpSocket::bytesWritten, this, &DataBridge::onServerBytesWritten);
+        connect(m_lanSocket,    &QTcpSocket::bytesWritten, this, &DataBridge::onLanBytesWritten);
     }
 
     void onLanReadyRead() {
-        m_serverSocket->write(m_lanSocket->readAll());
-        // 立即刷出 Qt 应用层缓冲区，配合 TCP_NODELAY 让小包（鼠标/触摸事件）尽早走 WAN
-        m_serverSocket->flush();
+        if (m_lanPaused) return; // 已暂停，等下游消化
+        QByteArray data = m_lanSocket->readAll();
+        if (data.isEmpty()) return;
+        m_serverSocket->write(data);
+        // 仅交互小包付 flush 代价；大块流量交给 TCP/系统决定，节省 syscall
+        if (data.size() < kFlushSmallThreshold) m_serverSocket->flush();
+        if (m_serverSocket->bytesToWrite() > kHighWater) m_lanPaused = true;
     }
 
     void onServerReadyRead() {
-        m_lanSocket->write(m_serverSocket->readAll());
-        m_lanSocket->flush();
+        if (m_serverPaused) return;
+        QByteArray data = m_serverSocket->readAll();
+        if (data.isEmpty()) return;
+        m_lanSocket->write(data);
+        if (data.size() < kFlushSmallThreshold) m_lanSocket->flush();
+        if (m_lanSocket->bytesToWrite() > kHighWater) m_serverPaused = true;
+    }
+
+    void onServerBytesWritten() {
+        // server 下游消化到低水位，恢复从 LAN 端读取
+        if (m_lanPaused && m_serverSocket->bytesToWrite() < kLowWater) {
+            m_lanPaused = false;
+            if (m_lanSocket->bytesAvailable() > 0) onLanReadyRead();
+        }
+    }
+
+    void onLanBytesWritten() {
+        if (m_serverPaused && m_lanSocket->bytesToWrite() < kLowWater) {
+            m_serverPaused = false;
+            if (m_serverSocket->bytesAvailable() > 0) onServerReadyRead();
+        }
     }
 
     void cleanup() {
@@ -91,6 +129,8 @@ private:
     QString m_sessionId;
     QString m_serverIp;
     quint16 m_transferPort;
+    bool m_lanPaused = false;     // 暂停从 LAN 读：server 下游堆积过多
+    bool m_serverPaused = false;  // 暂停从 Server 读：LAN 下游堆积过多
 };
 
 // ==========================================
