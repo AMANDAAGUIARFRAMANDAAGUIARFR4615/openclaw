@@ -31,6 +31,11 @@ public:
         // 🟢 第一步：只监听 LAN 的连接成功
         connect(m_lanSocket, &QTcpSocket::connected, this, &DataBridge::onLanConnected);
 
+        // 关闭 Nagle 算法：投屏鼠标/触摸事件多为高频小包，
+        // 一旦在广域网下被 Nagle 合并，会出现"必须大幅滑动才能触发系统手势"的问题。
+        m_lanSocket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
+        m_serverSocket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
+
         // 发起 LAN 连接
         m_lanSocket->connectToHost(lanIp, lanPort);
     }
@@ -61,12 +66,15 @@ private slots:
         connect(m_serverSocket, &QTcpSocket::readyRead, this, &DataBridge::onServerReadyRead);
     }
 
-    void onLanReadyRead() { 
-        m_serverSocket->write(m_lanSocket->readAll()); 
+    void onLanReadyRead() {
+        m_serverSocket->write(m_lanSocket->readAll());
+        // 立即刷出 Qt 应用层缓冲区，配合 TCP_NODELAY 让小包（鼠标/触摸事件）尽早走 WAN
+        m_serverSocket->flush();
     }
-    
-    void onServerReadyRead() { 
-        m_lanSocket->write(m_serverSocket->readAll()); 
+
+    void onServerReadyRead() {
+        m_lanSocket->write(m_serverSocket->readAll());
+        m_lanSocket->flush();
     }
 
     void cleanup() {

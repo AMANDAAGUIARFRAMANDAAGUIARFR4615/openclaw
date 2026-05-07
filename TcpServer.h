@@ -70,6 +70,10 @@ private slots:
             auto socket = this->nextPendingConnection();
             if (!socket) continue;
 
+            // 关闭 Nagle 算法：投屏鼠标/触摸事件多为高频小包，
+            // 一旦在广域网下被 Nagle 合并，会出现"必须大幅滑动才能触发系统手势"的问题。
+            socket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
+
 #ifndef Q_OS_WASM
             qintptr fd = socket->socketDescriptor();
 
