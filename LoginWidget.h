@@ -5,6 +5,7 @@
 #include "NetworkUtils.h"
 #include "Tools.h"
 #include "DeviceInfo.h"
+#include "Account.h"
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -330,6 +331,7 @@ protected:
                 if (res["msg"].isUndefined()) {
                     settings->setValue("isLanMode", lanModeCheckBox->isChecked());
                     saveCredentials(phone, password);
+                    Account::getInstance()->tabs = res["tabs"].toArray();
                     emit authorized(res["account"], lanModeCheckBox->isChecked());
                     close();
                     return;
@@ -351,6 +353,7 @@ protected:
                         DeviceInfo::remotePorts[udid] = static_cast<quint16>(device["remotePort"].toInt());
                         DeviceInfo::setLocker(udid, device["locker"].toString());
                     }
+                    Account::getInstance()->tabs = res["tabs"].toArray();
                     emit authorized(res["account"], lanModeCheckBox->isChecked());
                     close();
                     return;

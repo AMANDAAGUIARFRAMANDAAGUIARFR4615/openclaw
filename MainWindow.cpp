@@ -46,7 +46,9 @@
 #include <QFormLayout>
 #include <QInputDialog>
 #include <QFileDialog>
+#include <QJsonArray>
 #include <QJsonObject>
+#include <QJsonValue>
 #include <QToolButton>
 #include <QActionGroup>
 #include <QToolTip>
@@ -1684,19 +1686,45 @@ void MainWindow::showTabBarContextMenu(const QPoint &pos)
 
 void MainWindow::loadTabs()
 {
-    int size = settings->beginReadArray("tabs");
-    for (int i = 0; i < size; ++i) {
-        BitMaskEditorDialog::Item item;
-        item.load(i);
-        tabs.append(item);
-        tabWidget->addTab(new QWidget(), item.name);
+    const auto& serverTabs = Account::getInstance()->tabs;
+
+    if (!serverTabs.isEmpty()) {
+        // 优先使用服务端的标签页数据（实现多端同步）
+        for (const QJsonValue& val : serverTabs) {
+            BitMaskEditorDialog::Item item;
+            item.fromJson(val.toObject());
+            tabs.append(item);
+            tabWidget->addTab(new QWidget(), item.name);
+        }
+
+        // 同步到本地 QSettings 作为离线缓存
+        settings->beginWriteArray("tabs", tabs.size());
+        for (int i = 0; i < tabs.size(); i++) {
+            tabs[i].save(i);
+        }
+        settings->endArray();
+        settings->sync();
+    } else {
+        // 服务端无数据：从本地 QSettings 加载（兼容老用户首次升级）
+        int size = settings->beginReadArray("tabs");
+        for (int i = 0; i < size; ++i) {
+            BitMaskEditorDialog::Item item;
+            item.load(i);
+            tabs.append(item);
+            tabWidget->addTab(new QWidget(), item.name);
+        }
+        settings->endArray();
     }
-    settings->endArray();
 
     if (tabWidget->count() == 0) {
         auto name = "默认分组";
         tabs.append(BitMaskEditorDialog::Item({0, name}));
         tabWidget->addTab(new QWidget(), name);
+    }
+
+    // 如果服务端尚无数据但本地有，触发一次回写完成迁移
+    if (serverTabs.isEmpty() && !tabs.isEmpty()) {
+        saveTabs();
     }
 }
 
@@ -1711,6 +1739,15 @@ void MainWindow::saveTabs(int index)
 
     settings->endArray();
     settings->sync();
+
+    // 同步到服务端
+    QJsonArray array;
+    for (const auto& tab : std::as_const(tabs)) {
+        array.append(tab.toJson());
+    }
+    Account::getInstance()->tabs = array;
+
+    webSocketClient->emitEvent("saveTabs", QJsonObject{{"tabs", array}});
 }
 
 int MainWindow::findAvailableTabId()

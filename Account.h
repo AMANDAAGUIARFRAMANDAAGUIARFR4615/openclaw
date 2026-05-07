@@ -2,6 +2,7 @@
 
 #include "SafeObject.h"
 #include <QDateTime>
+#include <QJsonArray>
 #include <QObject>
 
 class Account : public QObject {
@@ -15,6 +16,7 @@ public:
     int balance = 0;
     bool hasRedeemCode = false;
     SafeObject<qint64> loginTime;
+    QJsonArray tabs;
 
 private:
     explicit Account(QObject *parent = nullptr) : QObject(parent) {}

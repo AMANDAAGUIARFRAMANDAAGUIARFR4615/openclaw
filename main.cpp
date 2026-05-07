@@ -201,6 +201,10 @@ int main(int argc, char *argv[])
                 if (deviceInfo)
                     deviceInfo->expireAt = expireAt;
             }
+
+            const auto& tabsValue = res["tabs"];
+            if (tabsValue.isArray())
+                Account::getInstance()->tabs = tabsValue.toArray();
         });
     });
 

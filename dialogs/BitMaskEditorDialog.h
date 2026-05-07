@@ -6,6 +6,8 @@
 #include <QDialogButtonBox>
 #include <QGridLayout>
 #include <QVBoxLayout>
+#include <QJsonObject>
+#include <QJsonValue>
 #include <QList>
 #include <QPushButton>
 
@@ -106,6 +108,51 @@ public:
                 settings->setValue("autoConnectUSBDevices", autoConnectUSBDevices.value());
             else
                 settings->remove("autoConnectUSBDevices");
+        }
+
+        QJsonObject toJson() const
+        {
+            QJsonObject obj;
+            obj["bit"] = bit;
+            obj["name"] = name;
+            obj["scale"] = scale;
+
+            if (isLandscape.has_value())
+                obj["isLandscape"] = isLandscape.value();
+            if (videoFps.has_value())
+                obj["videoFps"] = videoFps.value();
+            if (videoQuality.has_value())
+                obj["videoQuality"] = videoQuality.value();
+            if (connectionMethod.has_value())
+                obj["connectionMethod"] = connectionMethod.value();
+            if (autoScanLANDevices.has_value())
+                obj["autoScanLANDevices"] = autoScanLANDevices.value();
+            if (autoConnectUSBDevices.has_value())
+                obj["autoConnectUSBDevices"] = autoConnectUSBDevices.value();
+
+            return obj;
+        }
+
+        void fromJson(const QJsonObject& obj)
+        {
+            bit = obj.value("bit").toInt();
+            name = obj.value("name").toString();
+            scale = obj.value("scale").toInt();
+
+            auto readOptional = [&obj](const QString& key, std::optional<int>& target) {
+                auto it = obj.find(key);
+                if (it != obj.end() && !it->isNull() && !it->isUndefined())
+                    target = it->toInt();
+                else
+                    target = std::nullopt;
+            };
+
+            readOptional("isLandscape", isLandscape);
+            readOptional("videoFps", videoFps);
+            readOptional("videoQuality", videoQuality);
+            readOptional("connectionMethod", connectionMethod);
+            readOptional("autoScanLANDevices", autoScanLANDevices);
+            readOptional("autoConnectUSBDevices", autoConnectUSBDevices);
         }
     };
 
