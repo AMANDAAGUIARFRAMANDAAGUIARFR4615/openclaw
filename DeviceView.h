@@ -58,6 +58,14 @@ protected:
     const int maxSteps = 5;
     int stepCount = 0;
 
+    // 广域网 ping 约 33ms 时，move 按 RTT 合并发送，避免旧坐标排队后突发执行。
+    QTimer *mouseMoveTimer = nullptr;
+    QPoint pendingMouseMovePos;
+    bool hasPendingMouseMove = false;
+    qint64 lastMouseMoveSendMs = 0;
+    void flushPendingMouseMove();
+    void sendMouseEvent(int type, const QPoint &pos);
+
     inline static QTimer *clipboardTimer = nullptr;
     inline static int clipboardTotal = 0;
     inline static int clipboardCount = 0;

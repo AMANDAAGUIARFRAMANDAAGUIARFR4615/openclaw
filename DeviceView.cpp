@@ -30,8 +30,14 @@
 #include <QVideoFrame>
 #include <QNetworkReply>
 #include <QResizeEvent>
+#include <QDateTime>
 #include <QFontMetrics>
+#include <QTimer>
 #include <algorithm>
+
+namespace {
+constexpr int kMouseMoveIntervalMs = 33;
+}
 
 DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWidget *parent)
     : connection(connection), deviceInfo(deviceInfo), QWidget(parent)
@@ -349,6 +355,33 @@ void DeviceView::send(const DataGuard::StrObfuscator<>& event, const QJsonValue 
     for (const auto& connection : connections) {
         connection->send(event, jsonValue);
     }
+}
+
+void DeviceView::sendMouseEvent(int type, const QPoint &pos)
+{
+    if (!connection)
+        return;
+
+    QJsonObject dataObject;
+    dataObject["type"] = type;
+    dataObject["x"] = pos.x();
+    dataObject["y"] = pos.y();
+    connection->send("mouse", dataObject);
+
+    if (type == 3)
+        lastMouseMoveSendMs = QDateTime::currentMSecsSinceEpoch();
+}
+
+void DeviceView::flushPendingMouseMove()
+{
+    if (mouseMoveTimer)
+        mouseMoveTimer->stop();
+
+    if (!hasPendingMouseMove)
+        return;
+
+    hasPendingMouseMove = false;
+    sendMouseEvent(3, pendingMouseMovePos);
 }
 
 void DeviceView::addContextMenuActions()
@@ -943,8 +976,10 @@ bool DeviceView::event(QEvent *event)
         break;
     }
 
-    if (type == 1)
+    if (type == 1) {
         pressedButtons |= mouseEvent->button();
+        lastMouseMoveSendMs = 0;
+    }
 
     if (type != 0 && (pressedButtons & Qt::LeftButton)) {
         QPoint globalPos = mapToGlobal(mouseEvent->pos());
@@ -952,12 +987,28 @@ bool DeviceView::event(QEvent *event)
         if (videoFrameWidget->rect().contains(localPos)) {
             auto pos = getTransformedPosition(localPos);
 
-            QJsonObject dataObject;
-            dataObject["type"] = type;
-            dataObject["x"] = pos.x();
-            dataObject["y"] = pos.y();
+            if (type == 3) {
+                pendingMouseMovePos = pos;
+                hasPendingMouseMove = true;
 
-            connection->send("mouse", dataObject);
+                const qint64 now = QDateTime::currentMSecsSinceEpoch();
+                const qint64 elapsed = lastMouseMoveSendMs > 0 ? now - lastMouseMoveSendMs : kMouseMoveIntervalMs;
+
+                if (elapsed >= kMouseMoveIntervalMs) {
+                    flushPendingMouseMove();
+                } else {
+                    if (!mouseMoveTimer) {
+                        mouseMoveTimer = new QTimer(this);
+                        mouseMoveTimer->setSingleShot(true);
+                        connect(mouseMoveTimer, &QTimer::timeout, this, &DeviceView::flushPendingMouseMove);
+                    }
+                    if (!mouseMoveTimer->isActive())
+                        mouseMoveTimer->start(int(kMouseMoveIntervalMs - elapsed));
+                }
+            } else {
+                flushPendingMouseMove();
+                sendMouseEvent(type, pos);
+            }
         }
     }
 
