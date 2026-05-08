@@ -15,7 +15,7 @@ extern QNetworkAccessManager* networkAccessManager;
 extern TunnelClient* tunnelClient;
 
 namespace Config {
-    static constexpr qint64 WAN_FILE_TRANSFER_SIZE_LIMIT = 500LL * 1024 * 1024;
+    static constexpr qint64 WAN_FILE_TRANSFER_SIZE_LIMIT = 5LL * 1024 * 1024;
 
     inline bool isWanMode() {
         return settings && !settings->value("isLanMode", true).toBool();
@@ -33,5 +33,5 @@ namespace Config {
     const int SERVER_PORT = 9000;
 
     const QString SITE_URL = "https://remotepro.cn/";
-    const QString VERSION = "2.8.1";
+    const QString VERSION = "2.8.2";
 }
