@@ -9,7 +9,6 @@
 #include "BitMaskEditorDialog.h"
 #include "MainWindow.h"
 #include "EmojiIconProvider.h"
-#include "KeyMapping.h"
 #include "AppSettingsDialog.h"
 #include "ScreenshotGalleryDialog.h"
 #include "VideoGalleryDialog.h"
@@ -1037,22 +1036,16 @@ void DeviceView::keyPressEvent(QKeyEvent *event)
     
     const int key = event->key();
     const auto modifiers = event->modifiers() & ~Qt::KeypadModifier;
+    const QString typedText = event->text();
 
-    if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
-#ifdef Q_OS_WIN
-        char c = KeyMapping::toChar(event->nativeScanCode());
-#else
-        char c = KeyMapping::toChar(event->nativeVirtualKey());
-#endif
-
-        if (c != 0) {
-            qDebugEx() << "扫描码映射字符" << c;
-            connection->send("keyboard", QJsonObject{{"type", "keyPress"}, {"key", QString(modifiers == Qt::ShiftModifier ? "Shift+" : "") + c}, {"repeat", event->isAutoRepeat()}});
-            return;
-        }
-
-        if (key >= Qt::Key_A && key <= Qt::Key_Z) {
-            connection->send("keyboard", QJsonObject{{"type", "keyPress"}, {"key", event->text()}, {"repeat", event->isAutoRepeat()}});
+    // 优先使用输入法/键盘布局最终解析出的文本，确保 Shift+2 等按键在不同语言布局下输入正确字符。
+    if (!typedText.isEmpty() && typedText.at(0).isPrint()) {
+        // 许多欧洲键盘把 AltGr 表现为 Ctrl+Alt；某些布局还可能叠加 Shift 等额外修饰键。
+        const bool isAltGrInput = modifiers.testFlag(Qt::ControlModifier)
+                                && modifiers.testFlag(Qt::AltModifier);
+        const bool hasCtrlMeta = modifiers.testFlag(Qt::ControlModifier) || modifiers.testFlag(Qt::MetaModifier);
+        if (isAltGrInput || !hasCtrlMeta) {
+            send("inputText", typedText);
             return;
         }
     }
