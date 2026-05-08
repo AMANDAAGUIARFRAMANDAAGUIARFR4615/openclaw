@@ -154,16 +154,8 @@ private:
 
         videoQuality = qBound(minAllowed, videoQuality, maxAllowed);
 
-        auto standaloneAlwaysUltraHD = isWindow && AppSettingsDialog::getInstance()->getValue("standaloneAlwaysUltraHD");
-
-        int finalWidth, finalHeight;
-        if (standaloneAlwaysUltraHD) {
-            finalWidth = displaySourceSize.width();
-            finalHeight = displaySourceSize.height();
-        } else {
-            finalWidth = physicalWidth;
-            finalHeight = physicalHeight;
-        }
+        int finalWidth = physicalWidth;
+        int finalHeight = physicalHeight;
 
         // 确保宽高是 16 的倍数，避免编码侧因对齐不足出现异常
         // finalWidth = (finalWidth + 15) & ~15;
