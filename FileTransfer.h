@@ -52,6 +52,9 @@ public:
         EventHub::off(this, "transferPort");
         EventHub::off(this, "transferStatus");
 
+        if (connection->type != DeviceConnection::Usb && Config::isWanMode() && tcpServer)
+            tunnelClient->requestRemove("127.0.0.1", tcpServer->serverPort());
+
         if (tcpServer)
             tcpServer->deleteLater();
         
@@ -143,6 +146,21 @@ protected:
         if (type == 2) {
             size = Tools::getFileSize(localPath);
             dataObject["size"] = size;
+        }
+
+        if (connection->type != DeviceConnection::Usb && Config::isWanMode()) {
+            const quint16 localPort = tcpServer->serverPort();
+            connect(tunnelClient, &TunnelClient::remotePortChanged, this, [=](const QString &lanIp, quint16 lanPort, quint16 remotePort) mutable {
+                Q_UNUSED(lanIp);
+                if (lanPort != localPort || remotePort == 0)
+                    return;
+
+                dataObject["port"] = remotePort;
+                connection->send("transferFile", dataObject);
+            });
+
+            tunnelClient->requestAdd("127.0.0.1", localPort);
+            return;
         }
 
         connection->send("transferFile", dataObject);

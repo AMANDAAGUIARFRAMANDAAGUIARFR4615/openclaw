@@ -768,6 +768,16 @@ void DeviceView::dropEvent(QDropEvent *event)
 {
     qDebugEx() << "dropEvent" << this;
 
+    qint64 totalSize = 0;
+    for (const QUrl& url : event->mimeData()->urls()) {
+        totalSize += qMax<qint64>(0, Tools::getFileSize(url.toLocalFile()));
+    }
+
+    if (Config::isWanMode() && totalSize > Config::WAN_FILE_TRANSFER_SIZE_LIMIT) {
+        new ToastWidget(QString("广域网一次上传不能超过 %1").arg(Tools::formatByteSize(Config::WAN_FILE_TRANSFER_SIZE_LIMIT)), this);
+        return;
+    }
+
     for (const QUrl& url : event->mimeData()->urls()) {
         auto localPath = url.toLocalFile();
         new FileTransfer(connection, 2, localPath, localPath.section('/', -1), this);

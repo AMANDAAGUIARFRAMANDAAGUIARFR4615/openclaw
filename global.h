@@ -15,6 +15,12 @@ extern QNetworkAccessManager* networkAccessManager;
 extern TunnelClient* tunnelClient;
 
 namespace Config {
+    static constexpr qint64 WAN_FILE_TRANSFER_SIZE_LIMIT = 500LL * 1024 * 1024;
+
+    inline bool isWanMode() {
+        return settings && !settings->value("isLanMode", true).toBool();
+    }
+
     inline const QString SERVER_IP() {
 #ifdef QT_DEBUG
         const QString ip = "192.168.0.111";

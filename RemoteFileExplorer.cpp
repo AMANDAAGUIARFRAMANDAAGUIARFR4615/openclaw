@@ -562,6 +562,20 @@ QString RemoteFileExplorer::getLocalPath(const QString& remotePath) {
     return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + connection->deviceInfo->deviceId + "/" + QFileInfo(remotePath).fileName();
 }
 
+bool RemoteFileExplorer::validateWanTransferSize(int type, qint64 totalSize)
+{
+    if (!Config::isWanMode() || totalSize <= Config::WAN_FILE_TRANSFER_SIZE_LIMIT)
+        return true;
+
+    const QString action = type == 1 ? "下载" : "上传";
+    const QString message = QString("广域网一次%1不能超过 %2")
+        .arg(action)
+        .arg(Tools::formatByteSize(Config::WAN_FILE_TRANSFER_SIZE_LIMIT));
+    setStatusMessage(message);
+    new ToastWidget(message, this);
+    return false;
+}
+
 void RemoteFileExplorer::startFileTransfer(int type, const QString &localPath, const QString &remotePath)
 {
     const auto startTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
@@ -708,10 +722,14 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
     QModelIndexList selectedIndexes = treeView->selectionModel()->selectedIndexes();
 
     QStringList paths;
+    QHash<QString, qint64> pathSizes;
 
     for (const QModelIndex &index : selectedIndexes) {
-        if (index.column() == 0)
-            paths.append(index.data(Qt::UserRole).toString());
+        if (index.column() == 0) {
+            const QString path = index.data(Qt::UserRole).toString();
+            paths.append(path);
+            pathSizes.insert(path, index.siblingAtColumn(3).data(Qt::UserRole + 1).toLongLong());
+        }
     }
 
     qDebugEx() << paths;
@@ -739,6 +757,13 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
     })->setEnabled(selectedCount == 1 && !isDir);
 
     menu.addAction("下载", [=]() {
+        qint64 totalSize = 0;
+        for (const QString& remotePath : paths) {
+            totalSize += pathSizes.value(remotePath, 0);
+        }
+        if (!validateWanTransferSize(1, totalSize))
+            return;
+
         for (const QString& remotePath : paths) {
             startFileTransfer(1, getLocalPath(remotePath), remotePath);
         }
@@ -834,6 +859,13 @@ void RemoteFileExplorer::showTreeContextMenu(const QPoint &pos)
         auto reply = QMessageBox::question(this, "下载提示", QString("有%1个文件还未下载不能复制，是否下载？").arg(pendingDownloadPaths.count()), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
         if (reply != QMessageBox::Yes)
+            return;
+
+        qint64 totalSize = 0;
+        for (const QString& remotePath : pendingDownloadPaths) {
+            totalSize += pathSizes.value(remotePath, 0);
+        }
+        if (!validateWanTransferSize(1, totalSize))
             return;
 
         for (const QString &remotePath : pendingDownloadPaths) {
@@ -938,11 +970,19 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
         isDir = index.data(Qt::UserRole + 2).toBool();
     }
 
+    qint64 totalSize = 0;
     for (const QUrl &url : event->mimeData()->urls()) {
         auto localPath = url.toLocalFile();
+        totalSize += qMax<qint64>(0, Tools::getFileSize(localPath));
 
         qDebugEx() << localPath << "=>" << targetPath;
+    }
 
+    if (!validateWanTransferSize(2, totalSize))
+        return;
+
+    for (const QUrl &url : event->mimeData()->urls()) {
+        auto localPath = url.toLocalFile();
         auto dir = isDir ? targetPath : targetPath.left(targetPath.lastIndexOf('/'));
 
         startFileTransfer(2, localPath, dir + QString("/") + QFileInfo(localPath).fileName());
