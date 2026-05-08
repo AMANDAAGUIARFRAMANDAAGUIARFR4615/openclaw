@@ -68,7 +68,7 @@ private:
         decrypt_final = reinterpret_cast<Func_EVP_DecryptFinal_ex>(::EVP_DecryptFinal_ex);
 
         m_loaded = true;
-        qInfoEx() << HIDE_STR("静态链接 OpenSSL 函数映射成功");
+        qDebugEx() << HIDE_STR("静态链接 OpenSSL 函数映射成功");
 #else
         static QLibrary lib;
 
@@ -92,7 +92,7 @@ private:
             return false;
         }
 
-        qInfoEx() << HIDE_STR("libcrypto加载成功");
+        qDebugEx() << HIDE_STR("libcrypto加载成功");
 
         // qDebugEx() << "libcrypto加载成功" << lib.fileName();
 
