@@ -241,7 +241,7 @@ public:
 
             if (isCode) {
                 voucherGroupBox->setTitle("兑换码 (直接抵扣)");
-                voucherPlainTextEdit->setPlaceholderText("请输入兑换码，每行一个。数量需为设备数的整数倍...");
+                voucherPlainTextEdit->setPlaceholderText("请输入兑换码，每行一个。数量须与勾选设备数量一致...");
             } else {
                 voucherGroupBox->setTitle("代金券充值");
                 voucherPlainTextEdit->setPlaceholderText("请输入兑换码，每行一个...");
@@ -274,7 +274,7 @@ public:
                 payload["type"] = durationButtonGroup->checkedId();
                 payload["payMethod"] = "balance"; 
             } else {
-                // 兑换码支付校验：整数倍
+                // 兑换码支付校验：个数须等于待支付设备数
                 QString content = voucherPlainTextEdit->toPlainText();
                 QStringList lines = content.split('\n', Qt::SkipEmptyParts);
                 QStringList validCodes;
@@ -285,8 +285,8 @@ public:
                     }
                 }
 
-                if (validCodes.isEmpty() || validCodes.size() % selectedIds.size() != 0) {
-                    Tools::showToast(QStringLiteral("兑换码个数(%1)必须是待支付设备数量(%2)的整数倍")
+                if (validCodes.isEmpty() || validCodes.size() != selectedIds.size()) {
+                    Tools::showToast(QStringLiteral("兑换码个数(%1)须与待支付设备数量(%2)相等")
                                          .arg(validCodes.size()).arg(selectedIds.size()),
                                      this);
                     return;
