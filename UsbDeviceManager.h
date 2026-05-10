@@ -28,6 +28,8 @@ public:
 
     DeviceConnection* connectDevice(const QString& udid, uint16_t port, bool rawMode);
     void disconnectDevice(DeviceConnection* conn);
+    /** USB 自动连接已向手机发送「被他人独占」reject 后调用，避免定时器重连刷屏 */
+    void markUsbExclusiveRejectSent(const QString& udid);
 
 signals:
     void deviceConnected(DeviceConnection* conn);
@@ -68,6 +70,7 @@ private:
 
     QHash<DeviceConnection*, UsbDeviceContext*> connToContext;
     QHash<QString, bool> devices;
+    QSet<QString> usbExclusiveRejectSentUdids;
 
     QFutureWatcher<QSet<QString>>* watcher;
     QTimer* pollTimer;

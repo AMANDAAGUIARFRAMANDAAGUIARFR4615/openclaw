@@ -736,7 +736,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         deviceInfo = new DeviceInfo(connection, data.toObject());
         if (deviceInfo->isLockByOther()) {
             connection->send("reject", QString("此设备被【%1】独占，需要该账号退出独占模式您才能连接").arg(deviceInfo->getLocker()));
-            
+
+            if (connection->type == DeviceConnection::Usb)
+                UsbDeviceManager::getInstance()->markUsbExclusiveRejectSent(deviceInfo->deviceId);
+
             connection->close();
             delete deviceInfo;
             return;

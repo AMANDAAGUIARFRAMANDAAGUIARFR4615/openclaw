@@ -1,5 +1,6 @@
 #include "UsbDeviceManager.h"
 #include "MainWindow.h"
+#include "DeviceInfo.h"
 #include "Safe.h"
 #include <QJsonDocument>
 #include <magic_enum/magic_enum.hpp>
@@ -38,6 +39,7 @@ void UsbDeviceManager::stop() {
     watcher->disconnect();
     
     connectionQueue.clear(); // 清空排队中的连接任务
+    usbExclusiveRejectSentUdids.clear();
 
     // 如果后台线程正在运行，必须等待其结束，否则程序退出时可能会崩溃
     if (watcher->isRunning())
@@ -52,6 +54,11 @@ void UsbDeviceManager::stop() {
     previousDevices.clear();
     missingPollCounts.clear();
     deviceBuffers.clear();
+}
+
+void UsbDeviceManager::markUsbExclusiveRejectSent(const QString& udid)
+{
+    usbExclusiveRejectSentUdids.insert(udid);
 }
 
 void UsbDeviceManager::connectPendingDevices() {
@@ -76,7 +83,10 @@ void UsbDeviceManager::connectPendingDevices() {
         }
         if (contextExists) continue;
 
-        if (DeviceInfo::isLockByOther(udid))
+        // 独占时仍需先连上 USB，MainWindow 才能向手机 send("reject", …)；通知过后再跳过以免定时器反复连
+        if (!DeviceInfo::isLockByOther(udid))
+            usbExclusiveRejectSentUdids.remove(udid);
+        else if (usbExclusiveRejectSentUdids.contains(udid))
             continue;
 
         auto deviceInfo = DeviceInfo::getDevice(udid);
@@ -399,8 +409,10 @@ void UsbDeviceManager::handlePollFinished() {
         disconnectDevice(ctx->handler);
     }
 
-    for (const QString& udid : confirmedRemovedUdids)
+    for (const QString& udid : confirmedRemovedUdids) {
         devices.remove(udid);
+        usbExclusiveRejectSentUdids.remove(udid);
+    }
 
     previousDevices = currentDevices;
 }
