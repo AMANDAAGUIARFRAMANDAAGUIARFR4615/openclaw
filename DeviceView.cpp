@@ -12,6 +12,7 @@
 #include "AppSettingsDialog.h"
 #include "ScreenshotGalleryDialog.h"
 #include "VideoGalleryDialog.h"
+#include "ElementHierarchyDialog.h"
 #include "Account.h"
 #include "DeviceWidget.h"
 #include "DeviceWindow.h"
@@ -429,6 +430,9 @@ void DeviceView::addContextMenuActions()
         }
         else if (labelPart == "应用管理") {
             addAction(text, [this](){AppListWidget::open(connection, this);});
+        }
+        else if (labelPart == "层级树") {
+            addAction(text, [this]() { ElementHierarchyDialog::open(connection, deviceInfo, this); });
         }
         else if (labelPart == "截图") {
             addAction(text, [this](){connection->send("screenshot");});
