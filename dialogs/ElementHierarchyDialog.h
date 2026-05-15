@@ -241,10 +241,10 @@ private:
             imageCaptureReply_->deleteLater();
             imageCaptureReply_ = nullptr;
         }
-        if (imageBase64Reply_) {
-            imageBase64Reply_->abort();
-            imageBase64Reply_->deleteLater();
-            imageBase64Reply_ = nullptr;
+        if (imageJpegReply_) {
+            imageJpegReply_->abort();
+            imageJpegReply_->deleteLater();
+            imageJpegReply_ = nullptr;
         }
     }
 
@@ -587,7 +587,9 @@ private:
         request.setRawHeader("X-YK-Session-Id", sessionId_.toUtf8());
         request.setTransferTimeout(60000);
 
-        QNetworkReply *reply = networkAccessManager->post(request, QByteArrayLiteral("{}"));
+        const QByteArray captureBody = QByteArrayLiteral(
+            R"({"format":"jpg","quality":0.9})");
+        QNetworkReply *reply = networkAccessManager->post(request, captureBody);
         imageCaptureReply_ = reply;
         connect(reply, &QNetworkReply::finished, this, [this, reply]() {
             if (imageCaptureReply_ == reply)
@@ -610,59 +612,62 @@ private:
                 imageId = val.value(QStringLiteral("id")).toString();
             if (imageId.isEmpty())
                 imageId = root.value(QStringLiteral("imageId")).toString();
-            if (imageId.isEmpty())
-                return;
 
-            fetchImageBase64(imageId);
-        });
-    }
-
-    void fetchImageBase64(const QString &imageId) {
-        if (!networkAccessManager || sessionId_.isEmpty() || imageId.isEmpty())
-            return;
-
-        QUrl url(baseUrl_);
-        url.setPath(QStringLiteral("/image/toBase64"));
-
-        QNetworkRequest request(url);
-        request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
-        request.setRawHeader("X-YK-Session-Id", sessionId_.toUtf8());
-        request.setTransferTimeout(120000);
-
-        const QJsonObject body{{QStringLiteral("imageId"), imageId},
-                               {QStringLiteral("format"), QStringLiteral("jpg")},
-                               {QStringLiteral("quality"), 0.85}};
-        QNetworkReply *reply =
-            networkAccessManager->post(request, QJsonDocument(body).toJson(QJsonDocument::Compact));
-        imageBase64Reply_ = reply;
-        connect(reply, &QNetworkReply::finished, this, [this, reply, imageId]() {
-            if (imageBase64Reply_ == reply)
-                imageBase64Reply_ = nullptr;
-            reply->deleteLater();
-
-            if (reply->error() != QNetworkReply::NoError) {
+            const QString path = val.value(QStringLiteral("path")).toString().trimmed();
+            if (path.isEmpty()) {
+                if (!imageId.isEmpty())
+                    releaseImageId(imageId);
                 if (preview_)
                     preview_->update();
                 return;
             }
 
-            const QJsonObject root = QJsonDocument::fromJson(reply->readAll()).object();
-            const QJsonObject val = root.value(QStringLiteral("value")).toObject();
-            QString b64 = val.value(QStringLiteral("data")).toString();
-            if (b64.isEmpty())
-                b64 = val.value(QStringLiteral("base64")).toString();
-            if (b64.isEmpty())
-                b64 = val.value(QStringLiteral("content")).toString();
-            if (b64.isEmpty() && root.value(QStringLiteral("value")).isString())
-                b64 = root.value(QStringLiteral("value")).toString();
+            fetchHierarchyJpeg(path, imageId);
+        });
+    }
 
-            const QByteArray raw = QByteArray::fromBase64(b64.toLatin1());
-            if (!raw.isEmpty())
-                hierarchyScreenshot_.loadFromData(raw, "JPEG");
-            if (hierarchyScreenshot_.isNull())
-                hierarchyScreenshot_.loadFromData(raw);
+    void fetchHierarchyJpeg(const QString &path, const QString &imageId) {
+        if (!networkAccessManager || sessionId_.isEmpty() || path.isEmpty())
+            return;
 
-            releaseImageId(imageId);
+        QUrl url;
+        if (path.startsWith(QStringLiteral("http://"), Qt::CaseInsensitive)
+            || path.startsWith(QStringLiteral("https://"), Qt::CaseInsensitive)) {
+            url = QUrl(path);
+        } else {
+            const QString refPath =
+                path.startsWith(QLatin1Char('/')) ? path : (QString(QLatin1Char('/')) + path);
+            url = baseUrl_.resolved(QUrl(refPath, QUrl::TolerantMode));
+        }
+
+        QNetworkRequest request(url);
+        request.setRawHeader("X-YK-Session-Id", sessionId_.toUtf8());
+        request.setTransferTimeout(120000);
+
+        QNetworkReply *reply = networkAccessManager->get(request);
+        imageJpegReply_ = reply;
+        connect(reply, &QNetworkReply::finished, this, [this, reply, imageId]() {
+            if (imageJpegReply_ == reply)
+                imageJpegReply_ = nullptr;
+            reply->deleteLater();
+
+            if (reply->error() != QNetworkReply::NoError) {
+                if (preview_)
+                    preview_->update();
+                if (!imageId.isEmpty())
+                    releaseImageId(imageId);
+                return;
+            }
+
+            const QByteArray data = reply->readAll();
+            hierarchyScreenshot_ = QPixmap();
+            if (!data.isEmpty()) {
+                if (!hierarchyScreenshot_.loadFromData(data, "JPEG"))
+                    hierarchyScreenshot_.loadFromData(data);
+            }
+
+            if (!imageId.isEmpty())
+                releaseImageId(imageId);
 
             if (preview_)
                 preview_->update();
@@ -880,7 +885,7 @@ private:
     QString sessionId_;
     QNetworkReply *pendingReply_ = nullptr;
     QNetworkReply *imageCaptureReply_ = nullptr;
-    QNetworkReply *imageBase64Reply_ = nullptr;
+    QNetworkReply *imageJpegReply_ = nullptr;
 
     QPixmap hierarchyScreenshot_;
     QVector<ElementHit> hierarchyHits_;
