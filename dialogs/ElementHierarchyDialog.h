@@ -431,11 +431,48 @@ private:
                             .arg(b.value(QStringLiteral("centerY")).toInt()));
                 }
             });
+            menu.addAction(QStringLiteral("点击此元素"), this, [this, item]() { requestTapElement(item); });
         }
-        menu.addAction(QStringLiteral("复制设备 Base URL"), this, [this]() {
-            QApplication::clipboard()->setText(baseUrl_.toString());
-        });
+        if (menu.isEmpty())
+            return;
         menu.exec(tree_->viewport()->mapToGlobal(pos));
+    }
+
+    void requestTapElement(QTreeWidgetItem *item) {
+        const QJsonObject element =
+            (item && !sessionId_.isEmpty() && networkAccessManager)
+                ? QJsonDocument::fromJson(item->data(0, Qt::UserRole).toString().toUtf8()).object()
+                : QJsonObject{};
+        if (element.isEmpty()) {
+            new ToastWidget(QStringLiteral("无法点击"), this);
+            return;
+        }
+
+        QUrl url(baseUrl_);
+        url.setPath(QStringLiteral("/element/tap"));
+        QNetworkRequest req(url);
+        req.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
+        req.setRawHeader("X-YK-Session-Id", sessionId_.toUtf8());
+        req.setTransferTimeout(30000);
+
+        const QJsonObject body{{QStringLiteral("element"), element},
+                               {QStringLiteral("options"),
+                                QJsonObject{{QStringLiteral("tapMethod"), QStringLiteral("auto")},
+                                            {QStringLiteral("durationMs"), 30}}}};
+        QNetworkReply *reply =
+            networkAccessManager->post(req, QJsonDocument(body).toJson(QJsonDocument::Compact));
+        connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+            reply->deleteLater();
+            const QByteArray raw = reply->readAll();
+            if (reply->error() != QNetworkReply::NoError) {
+                new ToastWidget(QStringLiteral("点击失败：%1").arg(reply->errorString()), this);
+                return;
+            }
+            const bool ok =
+                QJsonDocument::fromJson(raw).object().value(QStringLiteral("value")).toObject().value(
+                    QStringLiteral("success")).toBool();
+            new ToastWidget(ok ? QStringLiteral("点击已发送") : QStringLiteral("点击未成功"), this);
+        });
     }
 
     void onItemDoubleClicked(QTreeWidgetItem *item, int column) {
