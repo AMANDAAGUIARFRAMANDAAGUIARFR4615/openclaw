@@ -4,6 +4,7 @@
 #include "DeviceConnection.h"
 #include "DeviceInfo.h"
 #include "ToastWidget.h"
+#include "HttpUtil.h"
 #include "global.h"
 #include <QApplication>
 #include <QClipboard>
@@ -18,7 +19,6 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QNetworkReply>
-#include <QNetworkRequest>
 #include <QPainter>
 #include <QPaintEvent>
 #include <QPixmap>
@@ -30,6 +30,7 @@
 #include <QVBoxLayout>
 #include <QAbstractItemView>
 #include <QWidget>
+#include <QLatin1String>
 #include <algorithm>
 #include <functional>
 #include <limits>
@@ -161,6 +162,24 @@ private:
 
     ~ElementHierarchyDialog() override { deleteSessionIfNeeded(); }
 
+    [[nodiscard]] HttpUtil::Sender net() {
+        return HttpUtil::Sender{networkAccessManager, this};
+    }
+
+    /** 设备 HTTP 根路径 + path，不含 Session 头 */
+    [[nodiscard]] HttpUtil::Request api(QLatin1String route) {
+        return HttpUtil::Request::relative(baseUrl_, route);
+    }
+
+    [[nodiscard]] HttpUtil::Request api(QLatin1String route, const QString &ykSid) {
+        return api(route).ykSession(ykSid);
+    }
+
+    /** 带当前 sessionId 的 X-YK-Session-Id */
+    [[nodiscard]] HttpUtil::Request apiSes(QLatin1String route) {
+        return api(route).ykSession(sessionId_);
+    }
+
     void deleteSessionIfNeeded() {
         abortImageReplies();
         if (!networkAccessManager)
@@ -170,15 +189,7 @@ private:
         if (sid.isEmpty())
             return;
 
-        QUrl url(baseUrl_);
-        url.setPath(QStringLiteral("/session"));
-
-        QNetworkRequest request(url);
-        request.setRawHeader("X-YK-Session-Id", sid.toUtf8());
-        request.setTransferTimeout(15000);
-
-        QNetworkReply *reply = networkAccessManager->deleteResource(request);
-        connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
+        net().fire(api(QLatin1String("/session"), sid).del().timeout(15000));
     }
 
     void setBusy(const QString &text) {
@@ -210,20 +221,15 @@ private:
 
         setBusy(QStringLiteral("正在创建会话…"));
 
-        QUrl url(baseUrl_);
-        url.setPath(QStringLiteral("/session/create"));
-
-        QNetworkRequest request(url);
-        request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
-        request.setTransferTimeout(30000);
-
-        QNetworkReply *reply = networkAccessManager->post(request, QByteArrayLiteral(R"({"name":"RemotePro层级树"})"));
-        pendingReply_ = reply;
-        connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-            if (pendingReply_ == reply)
-                pendingReply_ = nullptr;
-            onSessionCreateFinished(reply);
-        });
+        pendingReply_ =
+            net().submit(api(QLatin1String("/session/create"))
+                             .postJson(QByteArrayLiteral(R"({"name":"RemotePro层级树"})"))
+                             .timeout(30000),
+                         [this](const HttpUtil::Result &r) {
+                             if (pendingReply_ == r.reply)
+                                 pendingReply_ = nullptr;
+                             onSessionCreateFinished(r);
+                         });
     }
 
     void abortPending() {
@@ -248,17 +254,15 @@ private:
         }
     }
 
-    void onSessionCreateFinished(QNetworkReply *reply) {
-        reply->deleteLater();
-
-        if (reply->error() != QNetworkReply::NoError) {
-            if (reply->error() == QNetworkReply::OperationCanceledError)
-                return;
-            setIdle(QStringLiteral("创建会话失败：%1").arg(reply->errorString()));
+    void onSessionCreateFinished(const HttpUtil::Result &r) {
+        if (r.canceled())
+            return;
+        if (!r.ok()) {
+            setIdle(QStringLiteral("创建会话失败：%1").arg(r.errorString));
             return;
         }
 
-        const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+        const QJsonDocument doc = QJsonDocument::fromJson(r.bytes);
         const QJsonObject rootObj = doc.object();
         const QJsonObject val = rootObj.value(QStringLiteral("value")).toObject();
         sessionId_ = val.value(QStringLiteral("sessionId")).toString();
@@ -276,34 +280,26 @@ private:
     void fetchSource() {
         setBusy(QStringLiteral("正在抓取界面元素树…"));
 
-        QUrl url(baseUrl_);
-        url.setPath(QStringLiteral("/element/source"));
-
-        QNetworkRequest request(url);
-        request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
-        request.setRawHeader("X-YK-Session-Id", sessionId_.toUtf8());
-        request.setTransferTimeout(120000);
-
         const QByteArray body = QByteArrayLiteral(
             R"({"options":{"maxDepth":50,"maxElements":8000,"format":"json","includeMeta":true}})");
-        QNetworkReply *reply = networkAccessManager->post(request, body);
-        pendingReply_ = reply;
-        connect(reply, &QNetworkReply::finished, this, [this, reply]() { onSourceFinished(reply); });
+        pendingReply_ = net().submit(
+            apiSes(QLatin1String("/element/source")).postJson(body).timeout(120000),
+            [this](const HttpUtil::Result &r) {
+                if (pendingReply_ == r.reply)
+                    pendingReply_ = nullptr;
+                onSourceFinished(r);
+            });
     }
 
-    void onSourceFinished(QNetworkReply *reply) {
-        if (reply == pendingReply_)
-            pendingReply_ = nullptr;
-        reply->deleteLater();
-
-        if (reply->error() != QNetworkReply::NoError) {
-            if (reply->error() == QNetworkReply::OperationCanceledError)
-                return;
-            setIdle(QStringLiteral("获取元素树失败：%1").arg(reply->errorString()));
+    void onSourceFinished(const HttpUtil::Result &r) {
+        if (r.canceled())
+            return;
+        if (!r.ok()) {
+            setIdle(QStringLiteral("获取元素树失败：%1").arg(r.errorString));
             return;
         }
 
-        const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+        const QJsonDocument doc = QJsonDocument::fromJson(r.bytes);
         const QJsonObject rootObj = doc.object();
         const QJsonObject val = rootObj.value(QStringLiteral("value")).toObject();
         QJsonArray nodes = val.value(QStringLiteral("nodes")).toArray();
@@ -579,51 +575,41 @@ private:
         if (!networkAccessManager || sessionId_.isEmpty())
             return;
 
-        QUrl url(baseUrl_);
-        url.setPath(QStringLiteral("/image/capture"));
+        const QByteArray captureBody = QByteArrayLiteral(R"({"format":"jpg","quality":0.9})");
+        imageCaptureReply_ = net().submit(
+            apiSes(QLatin1String("/image/capture")).postJson(captureBody).timeout(60000),
+            [this](const HttpUtil::Result &r) {
+                if (imageCaptureReply_ == r.reply)
+                    imageCaptureReply_ = nullptr;
 
-        QNetworkRequest request(url);
-        request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
-        request.setRawHeader("X-YK-Session-Id", sessionId_.toUtf8());
-        request.setTransferTimeout(60000);
+                if (!r.ok()) {
+                    if (!r.canceled() && preview_)
+                        preview_->update();
+                    return;
+                }
 
-        const QByteArray captureBody = QByteArrayLiteral(
-            R"({"format":"jpg","quality":0.9})");
-        QNetworkReply *reply = networkAccessManager->post(request, captureBody);
-        imageCaptureReply_ = reply;
-        connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-            if (imageCaptureReply_ == reply)
-                imageCaptureReply_ = nullptr;
-            reply->deleteLater();
+                const QJsonObject root = QJsonDocument::fromJson(r.bytes).object();
+                const QJsonObject val = root.value(QStringLiteral("value")).toObject();
+                if (val.contains(QStringLiteral("error")))
+                    return;
 
-            if (reply->error() != QNetworkReply::NoError) {
-                if (reply->error() != QNetworkReply::OperationCanceledError && preview_)
-                    preview_->update();
-                return;
-            }
+                QString resolvedImageId = val.value(QStringLiteral("imageId")).toString();
+                if (resolvedImageId.isEmpty())
+                    resolvedImageId = val.value(QStringLiteral("id")).toString();
+                if (resolvedImageId.isEmpty())
+                    resolvedImageId = root.value(QStringLiteral("imageId")).toString();
 
-            const QJsonObject root = QJsonDocument::fromJson(reply->readAll()).object();
-            const QJsonObject val = root.value(QStringLiteral("value")).toObject();
-            if (val.contains(QStringLiteral("error")))
-                return;
+                const QString path = val.value(QStringLiteral("path")).toString().trimmed();
+                if (path.isEmpty()) {
+                    if (!resolvedImageId.isEmpty())
+                        releaseImageId(resolvedImageId);
+                    if (preview_)
+                        preview_->update();
+                    return;
+                }
 
-            QString imageId = val.value(QStringLiteral("imageId")).toString();
-            if (imageId.isEmpty())
-                imageId = val.value(QStringLiteral("id")).toString();
-            if (imageId.isEmpty())
-                imageId = root.value(QStringLiteral("imageId")).toString();
-
-            const QString path = val.value(QStringLiteral("path")).toString().trimmed();
-            if (path.isEmpty()) {
-                if (!imageId.isEmpty())
-                    releaseImageId(imageId);
-                if (preview_)
-                    preview_->update();
-                return;
-            }
-
-            fetchHierarchyJpeg(path, imageId);
-        });
+                fetchHierarchyJpeg(path, resolvedImageId);
+            });
     }
 
     void fetchHierarchyJpeg(const QString &path, const QString &imageId) {
@@ -640,53 +626,41 @@ private:
             url = baseUrl_.resolved(QUrl(refPath, QUrl::TolerantMode));
         }
 
-        QNetworkRequest request(url);
-        request.setRawHeader("X-YK-Session-Id", sessionId_.toUtf8());
-        request.setTransferTimeout(120000);
+        imageJpegReply_ =
+            net().submit(HttpUtil::Request::absolute(url).get().ykSession(sessionId_).timeout(120000),
+                         [this, imageId](const HttpUtil::Result &r) {
+                             if (imageJpegReply_ == r.reply)
+                                 imageJpegReply_ = nullptr;
 
-        QNetworkReply *reply = networkAccessManager->get(request);
-        imageJpegReply_ = reply;
-        connect(reply, &QNetworkReply::finished, this, [this, reply, imageId]() {
-            if (imageJpegReply_ == reply)
-                imageJpegReply_ = nullptr;
-            reply->deleteLater();
+                             if (!r.ok()) {
+                                 if (preview_)
+                                     preview_->update();
+                                 if (!imageId.isEmpty())
+                                     releaseImageId(imageId);
+                                 return;
+                             }
 
-            if (reply->error() != QNetworkReply::NoError) {
-                if (preview_)
-                    preview_->update();
-                if (!imageId.isEmpty())
-                    releaseImageId(imageId);
-                return;
-            }
+                             hierarchyScreenshot_ = QPixmap();
+                             if (!r.bytes.isEmpty()) {
+                                 if (!hierarchyScreenshot_.loadFromData(r.bytes, "JPEG"))
+                                     hierarchyScreenshot_.loadFromData(r.bytes);
+                             }
 
-            const QByteArray data = reply->readAll();
-            hierarchyScreenshot_ = QPixmap();
-            if (!data.isEmpty()) {
-                if (!hierarchyScreenshot_.loadFromData(data, "JPEG"))
-                    hierarchyScreenshot_.loadFromData(data);
-            }
+                             if (!imageId.isEmpty())
+                                 releaseImageId(imageId);
 
-            if (!imageId.isEmpty())
-                releaseImageId(imageId);
-
-            if (preview_)
-                preview_->update();
-        });
+                             if (preview_)
+                                 preview_->update();
+                         });
     }
 
     void releaseImageId(const QString &imageId) {
         if (imageId.isEmpty() || !networkAccessManager || sessionId_.isEmpty())
             return;
-        QUrl url(baseUrl_);
-        url.setPath(QStringLiteral("/image/release"));
-        QNetworkRequest req(url);
-        req.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
-        req.setRawHeader("X-YK-Session-Id", sessionId_.toUtf8());
-        req.setTransferTimeout(15000);
         const QByteArray body =
-            QJsonDocument(QJsonObject{{QStringLiteral("imageId"), imageId}}).toJson(QJsonDocument::Compact);
-        QNetworkReply *rel = networkAccessManager->post(req, body);
-        connect(rel, &QNetworkReply::finished, rel, &QNetworkReply::deleteLater);
+            QJsonDocument(QJsonObject{{QStringLiteral("imageId"), imageId}})
+                .toJson(QJsonDocument::Compact);
+        net().fire(apiSes(QLatin1String("/image/release")).postJson(body).timeout(15000));
     }
 
     static void expandItemAncestors(QTreeWidgetItem *item) {
@@ -843,31 +817,26 @@ private:
             return;
         }
 
-        QUrl url(baseUrl_);
-        url.setPath(QStringLiteral("/element/tap"));
-        QNetworkRequest req(url);
-        req.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
-        req.setRawHeader("X-YK-Session-Id", sessionId_.toUtf8());
-        req.setTransferTimeout(30000);
-
         const QJsonObject body{{QStringLiteral("element"), element},
                                {QStringLiteral("options"),
                                 QJsonObject{{QStringLiteral("tapMethod"), QStringLiteral("auto")},
                                             {QStringLiteral("durationMs"), 30}}}};
-        QNetworkReply *reply =
-            networkAccessManager->post(req, QJsonDocument(body).toJson(QJsonDocument::Compact));
-        connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-            reply->deleteLater();
-            const QByteArray raw = reply->readAll();
-            if (reply->error() != QNetworkReply::NoError) {
-                new ToastWidget(QStringLiteral("点击失败：%1").arg(reply->errorString()), this);
-                return;
-            }
-            const bool ok =
-                QJsonDocument::fromJson(raw).object().value(QStringLiteral("value")).toObject().value(
-                    QStringLiteral("success")).toBool();
-            new ToastWidget(ok ? QStringLiteral("点击已发送") : QStringLiteral("点击未成功"), this);
-        });
+        net().submit(apiSes(QLatin1String("/element/tap"))
+                         .postJson(QJsonDocument(body).toJson(QJsonDocument::Compact))
+                         .timeout(30000),
+                     [this](const HttpUtil::Result &r) {
+                         if (!r.ok()) {
+                             new ToastWidget(QStringLiteral("点击失败：%1").arg(r.errorString), this);
+                             return;
+                         }
+                         const bool ok = QJsonDocument::fromJson(r.bytes)
+                                             .object()
+                                             .value(QStringLiteral("value"))
+                                             .toObject()
+                                             .value(QStringLiteral("success"))
+                                             .toBool();
+                         new ToastWidget(ok ? QStringLiteral("点击已发送") : QStringLiteral("点击未成功"), this);
+                     });
     }
 
     void onItemDoubleClicked(QTreeWidgetItem *item, int column) {
