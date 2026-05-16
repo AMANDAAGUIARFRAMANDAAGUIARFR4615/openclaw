@@ -24,7 +24,7 @@
 #include <QFontMetrics>
 #include <QPixmap>
 #include <QPushButton>
-#include <QScrollArea>
+#include <QSizePolicy>
 #include <QSplitter>
 #include <QTreeWidget>
 #include <QUrl>
@@ -50,7 +50,8 @@ class ElementHierarchyDialog : public BaseDialog {
     public:
         explicit HierarchyPreviewWidget(ElementHierarchyDialog *dlg)
             : QWidget(dlg), dlg_(dlg) {
-            setMinimumSize(240, 420);
+            setMinimumSize(1, 1);
+            setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
             setMouseTracking(true);
             setCursor(Qt::CrossCursor);
         }
@@ -126,12 +127,6 @@ private:
 
         split_ = new QSplitter(Qt::Horizontal, this);
         preview_ = new HierarchyPreviewWidget(this);
-        auto *previewScroll = new QScrollArea(this);
-        previewScroll->setFrameShape(QFrame::NoFrame);
-        previewScroll->setWidgetResizable(true);
-        previewScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        previewScroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        previewScroll->setWidget(preview_);
 
         tree_ = new QTreeWidget(this);
         tree_->setHeaderLabels({QStringLiteral("类型"), QStringLiteral("文本"), QStringLiteral("位置"),
@@ -146,7 +141,7 @@ private:
         tree_->setContextMenuPolicy(Qt::CustomContextMenu);
         tree_->setMinimumHeight(420);
 
-        split_->addWidget(previewScroll);
+        split_->addWidget(preview_);
         split_->addWidget(tree_);
         split_->setStretchFactor(0, 2);
         split_->setStretchFactor(1, 3);
@@ -826,7 +821,8 @@ private:
 
     void drawHierarchyPreview(HierarchyPreviewWidget *w) {
         QPainter p(w);
-        p.fillRect(w->rect(), QColor(36, 36, 38));
+        // 整块预览先铺黑底，缩放后的截图居中绘制后形成上下或左右黑边（letterbox）。
+        p.fillRect(w->rect(), Qt::black);
 
         if (hierarchyHits_.isEmpty()) {
             if (!hierarchyScreenshot_.isNull()) {
