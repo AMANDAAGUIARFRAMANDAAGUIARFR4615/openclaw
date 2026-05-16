@@ -21,6 +21,7 @@
 #include <QNetworkReply>
 #include <QPainter>
 #include <QPaintEvent>
+#include <QFontMetrics>
 #include <QPixmap>
 #include <QPushButton>
 #include <QScrollArea>
@@ -839,10 +840,21 @@ private:
 
             const QString cap = QStringLiteral("#%1 %2").arg(h.index).arg(h.item ? h.item->text(0) : QString());
             p.setFont(smallFont);
-            const QRect textBg = r.adjusted(0, -14, 0, 0).united(r);
-            p.fillRect(textBg.intersected(fitted), QColor(0, 0, 0, 140));
+            const QFontMetrics fm(p.font());
+            const int pad = 2;
+            const int tw = fm.horizontalAdvance(cap);
+            const int th = fm.height();
+            QRect textBg(r.left(),
+                         qMax(fitted.top(), r.top() - th - pad * 2),
+                         tw + pad * 2,
+                         th + pad * 2);
+            textBg = textBg.intersected(fitted);
+            if (!textBg.isEmpty()) {
+                // 仅用文字条做小范围底色，避免按整框半透明叠涂导致整页发暗。
+                p.fillRect(textBg, QColor(0, 0, 0, 88));
+            }
             p.setPen(isSel ? QColor(255, 240, 160) : QColor(200, 255, 210));
-            p.drawText(textBg.intersected(fitted), Qt::AlignLeft | Qt::AlignTop | Qt::TextSingleLine, cap);
+            p.drawText(textBg, Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine, cap);
         }
     }
 
