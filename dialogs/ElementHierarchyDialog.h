@@ -103,7 +103,7 @@ public:
 
 private:
     explicit ElementHierarchyDialog(DeviceInfo *deviceInfo, QWidget *parent)
-        : BaseDialog(QStringLiteral("界面层级树"), parent), deviceInfo_(deviceInfo) {
+        : BaseDialog(QStringLiteral("界面层级树"), parent, false), deviceInfo_(deviceInfo) {
         auto *root = contentLayout();
         root->setContentsMargins(12, 12, 12, 12);
         root->setSpacing(8);
@@ -139,8 +139,10 @@ private:
         tree_->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
         tree_->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
         tree_->setContextMenuPolicy(Qt::CustomContextMenu);
-        tree_->setMinimumHeight(420);
+        tree_->setMinimumHeight(160);
+        tree_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
+        // split_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         split_->addWidget(preview_);
         split_->addWidget(tree_);
         split_->setStretchFactor(0, 2);
