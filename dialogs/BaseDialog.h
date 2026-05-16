@@ -31,7 +31,9 @@ public:
 class BaseDialog : public QDialog {
     Q_OBJECT
 public:
-    explicit BaseDialog(const QString& title, QWidget *parent = nullptr) : QDialog(parent)
+    /// @param withScrollArea 是否在内容区外包一层可滚动区域（默认 true）；为 false 时子类自行处理滚动。
+    explicit BaseDialog(const QString& title, QWidget *parent = nullptr, bool withScrollArea = true)
+        : QDialog(parent)
     {
         setWindowTitle(title);
 
@@ -114,31 +116,27 @@ public:
         m_mainLayout->setContentsMargins(10, 10, 10, 10);
 #endif
 
-        auto mainScrollArea = new AdaptiveScrollArea(this);
-        mainScrollArea->setWidgetResizable(true);
-        mainScrollArea->setFrameShape(QFrame::NoFrame);
-        mainScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        mainScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        AdaptiveScrollArea *scrollArea = withScrollArea ? new AdaptiveScrollArea(this) : nullptr;
+        if (scrollArea) {
+            scrollArea->setWidgetResizable(true);
+            scrollArea->setFrameShape(QFrame::NoFrame);
+            scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            QScroller::grabGesture(scrollArea->viewport(), QScroller::LeftMouseButtonGesture);
+            QScrollerProperties props = QScroller::scroller(scrollArea->viewport())->scrollerProperties();
+            props.setScrollMetric(QScrollerProperties::MousePressEventDelay, 0.1);
+            props.setScrollMetric(QScrollerProperties::HorizontalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
+            props.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
+            QScroller::scroller(scrollArea->viewport())->setScrollerProperties(props);
+        }
 
-        // 设置手势滚动（支持触屏或鼠标左键拖拽）
-        QScroller::grabGesture(mainScrollArea->viewport(), QScroller::LeftMouseButtonGesture);
-        
-        QScrollerProperties mainProps = QScroller::scroller(mainScrollArea->viewport())->scrollerProperties();
-        mainProps.setScrollMetric(QScrollerProperties::MousePressEventDelay, 0.1);
-        // 关闭回弹
-        mainProps.setScrollMetric(QScrollerProperties::HorizontalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
-        mainProps.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
-
-        QScroller::scroller(mainScrollArea->viewport())->setScrollerProperties(mainProps);
-
-        auto scrollContentWidget = new QWidget(mainScrollArea);
-
-        m_contentLayout = new QVBoxLayout(scrollContentWidget);
+        auto *contentWidget = new QWidget(this);
+        m_contentLayout = new QVBoxLayout(contentWidget);
         m_contentLayout->setContentsMargins(15, 15, 15, 15);
-        
-        mainScrollArea->setWidget(scrollContentWidget);
-        
-        m_mainLayout->addWidget(mainScrollArea, 1);
+        if (scrollArea)
+            scrollArea->setWidget(contentWidget);
+
+        m_mainLayout->addWidget(scrollArea ? scrollArea : contentWidget, 1);
     }
 
     // 提供给子类获取内容布局的接口
