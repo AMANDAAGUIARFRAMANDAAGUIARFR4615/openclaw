@@ -600,16 +600,82 @@ private:
                     resolvedImageId = root.value(QStringLiteral("imageId")).toString();
 
                 const QString path = val.value(QStringLiteral("path")).toString().trimmed();
-                if (path.isEmpty()) {
-                    if (!resolvedImageId.isEmpty())
-                        releaseImageId(resolvedImageId);
-                    if (preview_)
-                        preview_->update();
+                if (!path.isEmpty()) {
+                    fetchHierarchyJpeg(path, resolvedImageId);
                     return;
                 }
-
-                fetchHierarchyJpeg(path, resolvedImageId);
+                if (!resolvedImageId.isEmpty())
+                    fetchHierarchyImageAsBase64(resolvedImageId);
+                else if (preview_)
+                    preview_->update();
             });
+    }
+
+    static QString extractBase64FromImageApiJson(const QJsonObject &root) {
+        const QJsonValue wrapped = root.value(QStringLiteral("value"));
+        if (wrapped.isString())
+            return wrapped.toString();
+        if (!wrapped.isObject())
+            return {};
+        const QJsonObject vo = wrapped.toObject();
+        static const QLatin1String keys[] = {QLatin1String("base64"), QLatin1String("data"), QLatin1String("content"),
+                                            QLatin1String("encoded"), QLatin1String("blob")};
+        for (QLatin1String k : keys) {
+            if (!vo.contains(k))
+                continue;
+            const QString s = vo.value(k).toString();
+            if (!s.isEmpty())
+                return s;
+        }
+        return {};
+    }
+
+    void fetchHierarchyImageAsBase64(const QString &imageId) {
+        if (!networkAccessManager || sessionId_.isEmpty() || imageId.isEmpty())
+            return;
+
+        const QByteArray body =
+            QJsonDocument(QJsonObject{{QStringLiteral("imageId"), imageId},
+                                      {QStringLiteral("format"), QStringLiteral("jpg")}})
+                .toJson(QJsonDocument::Compact);
+
+        imageJpegReply_ =
+            net().submit(apiSes(QLatin1String("/image/toBase64")).postJson(body).timeout(120000),
+                         [this, imageId](const HttpUtil::Result &r) {
+                             if (imageJpegReply_ == r.reply)
+                                 imageJpegReply_ = nullptr;
+
+                             const auto finishFail = [&]() {
+                                 if (preview_)
+                                     preview_->update();
+                                 releaseImageId(imageId);
+                             };
+
+                             if (!r.ok()) {
+                                 finishFail();
+                                 return;
+                             }
+
+                             const QString b64 =
+                                 extractBase64FromImageApiJson(QJsonDocument::fromJson(r.bytes).object());
+                             QByteArray raw;
+                             if (!b64.isEmpty())
+                                 raw = QByteArray::fromBase64(b64.toUtf8());
+
+                             hierarchyScreenshot_ = QPixmap();
+                             if (!raw.isEmpty()) {
+                                 if (!hierarchyScreenshot_.loadFromData(raw, "JPEG"))
+                                     hierarchyScreenshot_.loadFromData(raw);
+                             }
+
+                             if (hierarchyScreenshot_.isNull())
+                                 finishFail();
+                             else {
+                                 releaseImageId(imageId);
+                                 if (preview_)
+                                     preview_->update();
+                             }
+                         });
     }
 
     void fetchHierarchyJpeg(const QString &path, const QString &imageId) {

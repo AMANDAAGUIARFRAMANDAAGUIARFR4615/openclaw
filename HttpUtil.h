@@ -274,7 +274,9 @@ inline QNetworkReply *Request::submit(QNetworkAccessManager *nam, QObject *conte
                          Result r;
                          r.reply = reply;
                          r.networkError = reply->error();
-                         r.errorString = reply->errorString();
+                         r.errorString =
+                             (r.networkError == QNetworkReply::NoError) ? QString()
+                                                                        : reply->errorString();
                          r.httpStatus =
                              reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
                          r.bytes = reply->readAll();
@@ -282,13 +284,14 @@ inline QNetworkReply *Request::submit(QNetworkAccessManager *nam, QObject *conte
                          QString rs =
                              reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
 
-                         QString line = QStringLiteral("HTTP ← %1 %2 status=%3 err=%4 %5 bytes=%6")
+                         QString line = QStringLiteral("HTTP ← %1 %2 status=%3 netErr=%4 bytes=%5")
                                             .arg(verbStr,
                                                  urlSeen,
                                                  QString::number(r.httpStatus),
                                                  QString::number(int(r.networkError)),
-                                                 r.errorString,
                                                  QString::number(r.bytes.size()));
+                         if (r.networkError != QNetworkReply::NoError && !r.errorString.isEmpty())
+                             line.append(QStringLiteral(" msg=%1").arg(r.errorString));
                          if (!rs.isEmpty())
                              line.append(QStringLiteral(" reason=%1").arg(rs));
                          line.append(QStringLiteral(" body="));
