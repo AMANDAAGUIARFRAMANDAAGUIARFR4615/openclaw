@@ -30,6 +30,7 @@
 #include <QUrl>
 #include <QVBoxLayout>
 #include <QAbstractItemView>
+#include <QEvent>
 #include <QWidget>
 #include <QLatin1String>
 #include <algorithm>
@@ -50,7 +51,7 @@ class ElementHierarchyDialog : public BaseDialog {
         explicit HierarchyPreviewWidget(ElementHierarchyDialog *dlg)
             : QWidget(dlg), dlg_(dlg) {
             setMinimumSize(240, 420);
-            setMouseTracking(false);
+            setMouseTracking(true);
             setCursor(Qt::CrossCursor);
         }
 
@@ -58,6 +59,16 @@ class ElementHierarchyDialog : public BaseDialog {
         void paintEvent(QPaintEvent *event) override {
             Q_UNUSED(event);
             dlg_->drawHierarchyPreview(this);
+        }
+
+        void mouseMoveEvent(QMouseEvent *event) override {
+            dlg_->onPreviewHoverMove(this, event->pos());
+            QWidget::mouseMoveEvent(event);
+        }
+
+        void leaveEvent(QEvent *event) override {
+            dlg_->onPreviewHoverLeave();
+            QWidget::leaveEvent(event);
         }
 
         void mousePressEvent(QMouseEvent *event) override {
@@ -212,6 +223,7 @@ private:
         filterEdit_->clear();
         hierarchyHits_.clear();
         hierarchyScreenshot_ = QPixmap();
+        previewHoverItem_ = nullptr;
         if (preview_)
             preview_->update();
 
@@ -316,6 +328,7 @@ private:
 
         hierarchyScreenshot_ = QPixmap();
         hierarchyHits_.clear();
+        previewHoverItem_ = nullptr;
         fetchHierarchyScreenshot();
 
         QString meta;
@@ -750,21 +763,57 @@ private:
         return best;
     }
 
+    /** 预览控件本地坐标 → 层级/截图坐标系 (screenX, screenY)，鼠标在画布外或未就绪时返回 false。 */
+    bool previewLocalToScreen(HierarchyPreviewWidget *w, const QPoint &localPos, int &screenX,
+                              int &screenY) const {
+        if (!w)
+            return false;
+        const QRect u = hierarchyScreenBounds();
+        if (u.width() <= 0 || u.height() <= 0)
+            return false;
+        const QRect fitted = fittedPixmapRect(w->size(), u.size());
+        if (!fitted.contains(localPos))
+            return false;
+        const double relX = (localPos.x() - fitted.x()) * double(u.width()) / double(fitted.width());
+        const double relY = (localPos.y() - fitted.y()) * double(u.height()) / double(fitted.height());
+        screenX = int(qFloor(u.x() + relX));
+        screenY = int(qFloor(u.y() + relY));
+        return true;
+    }
+
+    void onPreviewHoverMove(HierarchyPreviewWidget *w, const QPoint &localPos) {
+        int sx = 0, sy = 0;
+        if (!previewLocalToScreen(w, localPos, sx, sy)) {
+            if (previewHoverItem_) {
+                previewHoverItem_ = nullptr;
+                if (preview_)
+                    preview_->update();
+            }
+            return;
+        }
+        QTreeWidgetItem *hit = pickHitAtScreen(sx, sy);
+        if (hit != previewHoverItem_) {
+            previewHoverItem_ = hit;
+            if (preview_)
+                preview_->update();
+        }
+    }
+
+    void onPreviewHoverLeave() {
+        if (!previewHoverItem_)
+            return;
+        previewHoverItem_ = nullptr;
+        if (preview_)
+            preview_->update();
+    }
+
     void handleHierarchyPreviewClick(HierarchyPreviewWidget *w, const QPoint &localPos) {
         if (!tree_ || !w)
             return;
-        const QRect u = hierarchyScreenBounds();
-        if (u.width() <= 0 || u.height() <= 0)
-            return;
 
-        const QRect fitted = fittedPixmapRect(w->size(), u.size());
-        if (!fitted.contains(localPos))
+        int screenX = 0, screenY = 0;
+        if (!previewLocalToScreen(w, localPos, screenX, screenY))
             return;
-
-        const double relX = (localPos.x() - fitted.x()) * double(u.width()) / double(fitted.width());
-        const double relY = (localPos.y() - fitted.y()) * double(u.height()) / double(fitted.height());
-        const int screenX = int(qFloor(u.x() + relX));
-        const int screenY = int(qFloor(u.y() + relY));
 
         QTreeWidgetItem *hit = pickHitAtScreen(screenX, screenY);
         if (!hit)
@@ -834,9 +883,13 @@ private:
                 qMax(1, int(qRound(rScreen.width() * double(fitted.width()) / double(u.width())))),
                 qMax(1, int(qRound(rScreen.height() * double(fitted.height()) / double(u.height())))));
             const bool isSel = sel && h.item == sel;
-            p.setPen(QPen(isSel ? QColor(255, 214, 10) : QColor(60, 220, 120), isSel ? 3 : 1));
+            const bool isHover = previewHoverItem_ && h.item == previewHoverItem_;
+            p.setPen(QPen(isSel ? QColor(255, 214, 10) : QColor(60, 220, 120), isSel ? 3 : (isHover ? 2 : 1)));
             p.setBrush(Qt::NoBrush);
             p.drawRect(r);
+
+            if (!isSel && !isHover)
+                continue;
 
             const QString cap = QStringLiteral("#%1 %2").arg(h.index).arg(h.item ? h.item->text(0) : QString());
             p.setFont(smallFont);
@@ -853,7 +906,12 @@ private:
                 // 仅用文字条做小范围底色，避免按整框半透明叠涂导致整页发暗。
                 p.fillRect(textBg, QColor(0, 0, 0, 88));
             }
-            p.setPen(isSel ? QColor(255, 240, 160) : QColor(200, 255, 210));
+            bool warmText = false;
+            if (isHover && !isSel)
+                warmText = true;
+            p.setPen(isSel               ? QColor(255, 240, 160)
+                       : warmText        ? QColor(180, 230, 255)
+                                         : QColor(200, 255, 210));
             p.drawText(textBg, Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine, cap);
         }
     }
@@ -941,6 +999,7 @@ private:
     QPushButton *refreshBtn_ = nullptr;
     QPushButton *expandBtn_ = nullptr;
     QPushButton *collapseBtn_ = nullptr;
+    QTreeWidgetItem *previewHoverItem_ = nullptr;
     QLineEdit *filterEdit_ = nullptr;
     QSplitter *split_ = nullptr;
     HierarchyPreviewWidget *preview_ = nullptr;
