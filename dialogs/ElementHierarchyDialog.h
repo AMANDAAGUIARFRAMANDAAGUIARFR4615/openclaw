@@ -8,7 +8,6 @@
 #include "global.h"
 #include <QApplication>
 #include <QClipboard>
-#include <QFrame>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QJsonArray>
@@ -142,7 +141,6 @@ private:
         tree_->setMinimumHeight(160);
         tree_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
-        // split_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         split_->addWidget(preview_);
         split_->addWidget(tree_);
         split_->setStretchFactor(0, 2);
@@ -233,7 +231,7 @@ private:
 
         pendingReply_ =
             net().submit(api(QLatin1String("/session/create"))
-                             .postJson(QByteArrayLiteral(R"({"name":"RemotePro层级树"})"))
+                             .postJson(QByteArrayLiteral(R"({})"))
                              .timeout(30000),
                          [this](const HttpUtil::Result &r) {
                              if (pendingReply_ == r.reply)
@@ -274,11 +272,7 @@ private:
 
         const QJsonDocument doc = QJsonDocument::fromJson(r.bytes);
         const QJsonObject rootObj = doc.object();
-        const QJsonObject val = rootObj.value(QStringLiteral("value")).toObject();
-        sessionId_ = val.value(QStringLiteral("sessionId")).toString();
-        if (sessionId_.isEmpty())
-            sessionId_ = rootObj.value(QStringLiteral("sessionId")).toString();
-
+        sessionId_ = rootObj.value(QStringLiteral("value")).toObject().value(QStringLiteral("sessionId")).toString();
         if (sessionId_.isEmpty()) {
             setIdle(QStringLiteral("创建会话失败：响应中无 sessionId"));
             return;
@@ -290,10 +284,8 @@ private:
     void fetchSource() {
         setBusy(QStringLiteral("正在抓取界面元素树…"));
 
-        const QByteArray body = QByteArrayLiteral(
-            R"({"options":{"maxDepth":50,"maxElements":8000,"format":"json","includeMeta":true}})");
         pendingReply_ = net().submit(
-            apiSes(QLatin1String("/element/source")).postJson(body).timeout(120000),
+            apiSes(QLatin1String("/element/source")).postJson(QByteArrayLiteral(R"({})")).timeout(120000),
             [this](const HttpUtil::Result &r) {
                 if (pendingReply_ == r.reply)
                     pendingReply_ = nullptr;
@@ -312,67 +304,52 @@ private:
         const QJsonDocument doc = QJsonDocument::fromJson(r.bytes);
         const QJsonObject rootObj = doc.object();
         const QJsonObject val = rootObj.value(QStringLiteral("value")).toObject();
-        QJsonArray nodes = val.value(QStringLiteral("nodes")).toArray();
-
-        if (nodes.isEmpty()) {
-            const QJsonObject single = val.value(QStringLiteral("tree")).toObject();
-            if (!single.isEmpty())
-                nodes = QJsonArray{single};
-        }
+        const QJsonArray tree = val.value(QStringLiteral("tree")).toArray();
 
         tree_->clear();
-        populateTree(nodes);
+        populateTree(tree);
 
         hierarchyScreenshot_ = QPixmap();
         hierarchyHits_.clear();
         previewHoverItem_ = nullptr;
         fetchHierarchyScreenshot();
 
-        QString meta;
-        if (val.contains(QStringLiteral("duration_ms")))
-            meta += QStringLiteral("抓取耗时 %1 ms").arg(val.value(QStringLiteral("duration_ms")).toInt());
-        if (val.contains(QStringLiteral("http_bridge_duration_ms"))) {
-            if (!meta.isEmpty())
-                meta += QStringLiteral("，");
-            meta += QStringLiteral("桥接 %1 ms").arg(val.value(QStringLiteral("http_bridge_duration_ms")).toInt());
-        }
-        if (meta.isEmpty())
-            meta = QStringLiteral("完成");
-        setIdle(QStringLiteral("共 %1 个顶层节点。%2").arg(tree_->topLevelItemCount()).arg(meta));
+        setIdle(QStringLiteral("共 %1 个顶层节点").arg(tree_->topLevelItemCount()));
         applyFilter(filterEdit_->text());
     }
 
     static QString primaryText(const QJsonObject &o) {
-        static const QStringList keys{QStringLiteral("label"), QStringLiteral("text"), QStringLiteral("name"),
-                                      QStringLiteral("value"), QStringLiteral("title")};
-        for (const QString &k : keys) {
-            const QString s = o.value(k).toString();
-            if (!s.isEmpty())
-                return s;
+        const QString lbl = o.value(QStringLiteral("label")).toString();
+        if (!lbl.isEmpty())
+            return lbl;
+        return o.value(QStringLiteral("value")).toString();
+    }
+
+    /** 文档 bounds：center 或 x/y/width/height */
+    static bool boundsCenterPx(const QJsonObject &o, int &outX, int &outY) {
+        const QJsonObject b = o.value(QStringLiteral("bounds")).toObject();
+        if (b.contains(QStringLiteral("centerX")) && b.contains(QStringLiteral("centerY"))) {
+            outX = qRound(b.value(QStringLiteral("centerX")).toDouble());
+            outY = qRound(b.value(QStringLiteral("centerY")).toDouble());
+            return true;
         }
-        return {};
+        const int x = b.value(QStringLiteral("x")).toInt();
+        const int y = b.value(QStringLiteral("y")).toInt();
+        const int w = b.value(QStringLiteral("width")).toInt();
+        const int h = b.value(QStringLiteral("height")).toInt();
+        if (w > 0 && h > 0) {
+            outX = x + w / 2;
+            outY = y + h / 2;
+            return true;
+        }
+        return false;
     }
 
     static QString boundsText(const QJsonObject &o) {
-        const QJsonObject b = o.value(QStringLiteral("bounds")).toObject();
-        if (b.isEmpty())
+        int cx = 0, cy = 0;
+        if (!boundsCenterPx(o, cx, cy))
             return {};
-
-        if (b.contains(QStringLiteral("centerX")) && b.contains(QStringLiteral("centerY")))
-            return QStringLiteral("(%1,%2)")
-                .arg(b.value(QStringLiteral("centerX")).toInt())
-                .arg(b.value(QStringLiteral("centerY")).toInt());
-
-        if (b.contains(QStringLiteral("x")) && b.contains(QStringLiteral("y"))) {
-            const int x = b.value(QStringLiteral("x")).toInt();
-            const int y = b.value(QStringLiteral("y")).toInt();
-            const int w = b.value(QStringLiteral("width")).toInt();
-            const int h = b.value(QStringLiteral("height")).toInt();
-            if (w > 0 && h > 0)
-                return QStringLiteral("[%1,%2 %3x%4]").arg(x).arg(y).arg(w).arg(h);
-            return QStringLiteral("(%1,%2)").arg(x).arg(y);
-        }
-        return {};
+        return QStringLiteral("(%1,%2)").arg(cx).arg(cy);
     }
 
     static void fillItemColumns(QTreeWidgetItem *item, const QJsonObject &o) {
@@ -399,78 +376,11 @@ private:
         }
     }
 
-    void populateFromDepthList(const QJsonArray &nodes) {
-        QTreeWidgetItem *depthParent[96]{};
-
-        for (const QJsonValue &v : nodes) {
+    void populateTree(const QJsonArray &roots) {
+        for (const QJsonValue &v : roots) {
             if (!v.isObject())
                 continue;
-            const QJsonObject o = v.toObject();
-            int depth = o.value(QStringLiteral("depth")).toInt(-1);
-            if (depth < 0)
-                depth = o.value(QStringLiteral("level")).toInt(0);
-            depth = qBound(0, depth, 95);
-
-            auto *item = new QTreeWidgetItem();
-            fillItemColumns(item, o);
-
-            QTreeWidgetItem *parent = nullptr;
-            if (depth > 0) {
-                for (int p = depth - 1; p >= 0; --p) {
-                    if (depthParent[p]) {
-                        parent = depthParent[p];
-                        break;
-                    }
-                }
-            }
-
-            if (parent)
-                parent->addChild(item);
-            else
-                tree_->addTopLevelItem(item);
-
-            depthParent[depth] = item;
-            for (int i = depth + 1; i < 96; ++i)
-                depthParent[i] = nullptr;
-        }
-    }
-
-    void populateTree(const QJsonArray &nodes) {
-        if (nodes.isEmpty())
-            return;
-
-        bool anyChildren = false;
-        bool anyDepth = false;
-        for (const QJsonValue &v : nodes) {
-            if (!v.isObject())
-                continue;
-            const QJsonObject o = v.toObject();
-            if (o.contains(QStringLiteral("children")) && o.value(QStringLiteral("children")).isArray()
-                && !o.value(QStringLiteral("children")).toArray().isEmpty())
-                anyChildren = true;
-            if (o.contains(QStringLiteral("depth")) || o.contains(QStringLiteral("level")))
-                anyDepth = true;
-        }
-
-        if (anyChildren) {
-            for (const QJsonValue &v : nodes) {
-                if (v.isObject())
-                    appendJsonObjectTree(nullptr, v.toObject());
-            }
-            return;
-        }
-
-        if (anyDepth) {
-            populateFromDepthList(nodes);
-            return;
-        }
-
-        for (const QJsonValue &v : nodes) {
-            if (!v.isObject())
-                continue;
-            auto *item = new QTreeWidgetItem();
-            fillItemColumns(item, v.toObject());
-            tree_->addTopLevelItem(item);
+            appendJsonObjectTree(nullptr, v.toObject());
         }
     }
 
@@ -508,34 +418,15 @@ private:
 
     static QRect boundsToRect(const QJsonObject &o) {
         const QJsonObject b = o.value(QStringLiteral("bounds")).toObject();
-        if (b.isEmpty())
-            return {};
-
-        if (b.contains(QStringLiteral("x")) && b.contains(QStringLiteral("y"))) {
-            const int x = b.value(QStringLiteral("x")).toInt();
-            const int y = b.value(QStringLiteral("y")).toInt();
-            int w = b.value(QStringLiteral("width")).toInt();
-            int h = b.value(QStringLiteral("height")).toInt();
-            if (w <= 0 || h <= 0) {
-                if (b.contains(QStringLiteral("centerX")) && b.contains(QStringLiteral("centerY"))) {
-                    const int cx = b.value(QStringLiteral("centerX")).toInt();
-                    const int cy = b.value(QStringLiteral("centerY")).toInt();
-                    return QRect(cx - 1, cy - 1, 3, 3);
-                }
-                return {};
-            }
+        const int x = b.value(QStringLiteral("x")).toInt();
+        const int y = b.value(QStringLiteral("y")).toInt();
+        const int w = b.value(QStringLiteral("width")).toInt();
+        const int h = b.value(QStringLiteral("height")).toInt();
+        if (w > 0 && h > 0)
             return QRect(x, y, w, h);
-        }
-
-        if (b.contains(QStringLiteral("centerX")) && b.contains(QStringLiteral("centerY"))) {
-            const int cx = b.value(QStringLiteral("centerX")).toInt();
-            const int cy = b.value(QStringLiteral("centerY")).toInt();
-            int w = b.value(QStringLiteral("width")).toInt();
-            int h = b.value(QStringLiteral("height")).toInt();
-            if (w > 0 && h > 0)
-                return QRect(cx - w / 2, cy - h / 2, w, h);
+        int cx = 0, cy = 0;
+        if (boundsCenterPx(o, cx, cy))
             return QRect(cx - 1, cy - 1, 3, 3);
-        }
         return {};
     }
 
@@ -586,7 +477,7 @@ private:
         if (!networkAccessManager || sessionId_.isEmpty())
             return;
 
-        const QByteArray captureBody = QByteArrayLiteral(R"({"format":"jpg","quality":0.9})");
+        const QByteArray captureBody = QByteArrayLiteral(R"({})");
         imageCaptureReply_ = net().submit(
             apiSes(QLatin1String("/image/capture")).postJson(captureBody).timeout(60000),
             [this](const HttpUtil::Result &r) {
@@ -599,46 +490,27 @@ private:
                     return;
                 }
 
-                const QJsonObject root = QJsonDocument::fromJson(r.bytes).object();
-                const QJsonObject val = root.value(QStringLiteral("value")).toObject();
-                if (val.contains(QStringLiteral("error")))
-                    return;
-
-                QString resolvedImageId = val.value(QStringLiteral("imageId")).toString();
-                if (resolvedImageId.isEmpty())
-                    resolvedImageId = val.value(QStringLiteral("id")).toString();
-                if (resolvedImageId.isEmpty())
-                    resolvedImageId = root.value(QStringLiteral("imageId")).toString();
-
-                const QString path = val.value(QStringLiteral("path")).toString().trimmed();
-                if (!path.isEmpty()) {
-                    fetchHierarchyJpeg(path, resolvedImageId);
+                const QJsonObject val =
+                    QJsonDocument::fromJson(r.bytes).object().value(QStringLiteral("value")).toObject();
+                if (val.contains(QStringLiteral("error"))) {
+                    if (preview_)
+                        preview_->update();
                     return;
                 }
-                if (!resolvedImageId.isEmpty())
-                    fetchHierarchyImageAsBase64(resolvedImageId);
-                else if (preview_)
-                    preview_->update();
+
+                const QString imageId = val.value(QStringLiteral("imageId")).toString();
+                if (imageId.isEmpty()) {
+                    if (preview_)
+                        preview_->update();
+                    return;
+                }
+                fetchHierarchyImageAsBase64(imageId);
             });
     }
 
-    static QString extractBase64FromImageApiJson(const QJsonObject &root) {
-        const QJsonValue wrapped = root.value(QStringLiteral("value"));
-        if (wrapped.isString())
-            return wrapped.toString();
-        if (!wrapped.isObject())
-            return {};
-        const QJsonObject vo = wrapped.toObject();
-        static const QLatin1String keys[] = {QLatin1String("base64"), QLatin1String("data"), QLatin1String("content"),
-                                            QLatin1String("encoded"), QLatin1String("blob")};
-        for (QLatin1String k : keys) {
-            if (!vo.contains(k))
-                continue;
-            const QString s = vo.value(k).toString();
-            if (!s.isEmpty())
-                return s;
-        }
-        return {};
+    static QString decodeImageBase64Response(const QJsonObject &root) {
+        const QJsonValue v = root.value(QStringLiteral("value"));
+        return v.isString() ? v.toString() : QString{};
     }
 
     void fetchHierarchyImageAsBase64(const QString &imageId) {
@@ -646,8 +518,7 @@ private:
             return;
 
         const QByteArray body =
-            QJsonDocument(QJsonObject{{QStringLiteral("imageId"), imageId},
-                                      {QStringLiteral("format"), QStringLiteral("jpg")}})
+            QJsonDocument(QJsonObject{{QStringLiteral("imageId"), imageId}})
                 .toJson(QJsonDocument::Compact);
 
         imageJpegReply_ =
@@ -667,8 +538,7 @@ private:
                                  return;
                              }
 
-                             const QString b64 =
-                                 extractBase64FromImageApiJson(QJsonDocument::fromJson(r.bytes).object());
+                             const QString b64 = decodeImageBase64Response(QJsonDocument::fromJson(r.bytes).object());
                              QByteArray raw;
                              if (!b64.isEmpty())
                                  raw = QByteArray::fromBase64(b64.toUtf8());
@@ -686,48 +556,6 @@ private:
                                  if (preview_)
                                      preview_->update();
                              }
-                         });
-    }
-
-    void fetchHierarchyJpeg(const QString &path, const QString &imageId) {
-        if (!networkAccessManager || sessionId_.isEmpty() || path.isEmpty())
-            return;
-
-        QUrl url;
-        if (path.startsWith(QStringLiteral("http://"), Qt::CaseInsensitive)
-            || path.startsWith(QStringLiteral("https://"), Qt::CaseInsensitive)) {
-            url = QUrl(path);
-        } else {
-            const QString refPath =
-                path.startsWith(QLatin1Char('/')) ? path : (QString(QLatin1Char('/')) + path);
-            url = baseUrl_.resolved(QUrl(refPath, QUrl::TolerantMode));
-        }
-
-        imageJpegReply_ =
-            net().submit(HttpUtil::Request::absolute(url).get().ykSession(sessionId_).timeout(120000),
-                         [this, imageId](const HttpUtil::Result &r) {
-                             if (imageJpegReply_ == r.reply)
-                                 imageJpegReply_ = nullptr;
-
-                             if (!r.ok()) {
-                                 if (preview_)
-                                     preview_->update();
-                                 if (!imageId.isEmpty())
-                                     releaseImageId(imageId);
-                                 return;
-                             }
-
-                             hierarchyScreenshot_ = QPixmap();
-                             if (!r.bytes.isEmpty()) {
-                                 if (!hierarchyScreenshot_.loadFromData(r.bytes, "JPEG"))
-                                     hierarchyScreenshot_.loadFromData(r.bytes);
-                             }
-
-                             if (!imageId.isEmpty())
-                                 releaseImageId(imageId);
-
-                             if (preview_)
-                                 preview_->update();
                          });
     }
 
@@ -924,15 +752,11 @@ private:
                     QApplication::clipboard()->setText(json);
             });
             menu.addAction(QStringLiteral("复制中心点坐标 (x,y)"), this, [item]() {
-                const QJsonDocument doc = QJsonDocument::fromJson(item->data(0, Qt::UserRole).toString().toUtf8());
-                const QJsonObject o = doc.object();
-                const QJsonObject b = o.value(QStringLiteral("bounds")).toObject();
-                if (b.contains(QStringLiteral("centerX")) && b.contains(QStringLiteral("centerY"))) {
-                    QApplication::clipboard()->setText(
-                        QStringLiteral("%1,%2")
-                            .arg(b.value(QStringLiteral("centerX")).toInt())
-                            .arg(b.value(QStringLiteral("centerY")).toInt()));
-                }
+                int cx = 0, cy = 0;
+                if (!boundsCenterPx(QJsonDocument::fromJson(item->data(0, Qt::UserRole).toString().toUtf8()).object(),
+                                    cx, cy))
+                    return;
+                QApplication::clipboard()->setText(QStringLiteral("%1,%2").arg(cx).arg(cy));
             });
             menu.addAction(QStringLiteral("点击此元素"), this, [this, item]() { requestTapElement(item); });
         }
@@ -951,10 +775,13 @@ private:
             return;
         }
 
-        const QJsonObject body{{QStringLiteral("element"), element},
-                               {QStringLiteral("options"),
-                                QJsonObject{{QStringLiteral("tapMethod"), QStringLiteral("auto")},
-                                            {QStringLiteral("durationMs"), 30}}}};
+        int tx = 0, ty = 0;
+        if (!boundsCenterPx(element, tx, ty)) {
+            new ToastWidget(QStringLiteral("无法解析元素中心坐标"), this);
+            return;
+        }
+
+        const QJsonObject body{{QStringLiteral("x"), tx}, {QStringLiteral("y"), ty}};
         net().submit(apiSes(QLatin1String("/element/tap"))
                          .postJson(QJsonDocument(body).toJson(QJsonDocument::Compact))
                          .timeout(30000),
