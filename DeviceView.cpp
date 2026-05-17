@@ -12,7 +12,9 @@
 #include "AppSettingsDialog.h"
 #include "ScreenshotGalleryDialog.h"
 #include "VideoGalleryDialog.h"
+#if REMOTEPRO_FEATURE_ELEMENT_HIERARCHY_MENU
 #include "ElementHierarchyDialog.h"
+#endif
 #include "Account.h"
 #include "DeviceWidget.h"
 #include "DeviceWindow.h"
@@ -431,9 +433,11 @@ void DeviceView::addContextMenuActions()
         else if (labelPart == "应用管理") {
             addAction(text, [this](){AppListWidget::open(connection, this);});
         }
+#if REMOTEPRO_FEATURE_ELEMENT_HIERARCHY_MENU
         else if (labelPart == "层级树") {
             addAction(text, [this]() { ElementHierarchyDialog::open(connection, deviceInfo, this); });
         }
+#endif
         else if (labelPart == "截图") {
             addAction(text, [this](){connection->send("screenshot");});
         }

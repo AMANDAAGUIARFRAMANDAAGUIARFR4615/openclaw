@@ -14,6 +14,11 @@ extern QElapsedTimer* elapsedTimer;
 extern QNetworkAccessManager* networkAccessManager;
 extern TunnelClient* tunnelClient;
 
+/** 为 0 时隐藏投屏窗口菜单中的「层级树」入口（开发中）；恢复时改为 1。 */
+#ifndef REMOTEPRO_FEATURE_ELEMENT_HIERARCHY_MENU
+#define REMOTEPRO_FEATURE_ELEMENT_HIERARCHY_MENU 0
+#endif
+
 namespace Config {
     static constexpr qint64 WAN_FILE_TRANSFER_SIZE_LIMIT = 5LL * 1024 * 1024;
 
@@ -33,5 +38,5 @@ namespace Config {
     const int SERVER_PORT = 9000;
 
     const QString SITE_URL = "https://remotepro.cn/";
-    const QString VERSION = "2.8.3";
+    const QString VERSION = "2.8.4";
 }
