@@ -255,10 +255,10 @@ private:
             imageCaptureReply_->deleteLater();
             imageCaptureReply_ = nullptr;
         }
-        if (imageJpegReply_) {
-            imageJpegReply_->abort();
-            imageJpegReply_->deleteLater();
-            imageJpegReply_ = nullptr;
+        if (imageDownloadReply_) {
+            imageDownloadReply_->abort();
+            imageDownloadReply_->deleteLater();
+            imageDownloadReply_ = nullptr;
         }
     }
 
@@ -504,58 +504,33 @@ private:
                         preview_->update();
                     return;
                 }
-                fetchHierarchyImageAsBase64(imageId);
+                fetchHierarchyImageDownload(imageId);
             });
     }
 
-    static QString decodeImageBase64Response(const QJsonObject &root) {
-        const QJsonValue v = root.value(QStringLiteral("value"));
-        return v.isString() ? v.toString() : QString{};
-    }
-
-    void fetchHierarchyImageAsBase64(const QString &imageId) {
+    void fetchHierarchyImageDownload(const QString &imageId) {
         if (!networkAccessManager || sessionId_.isEmpty() || imageId.isEmpty())
             return;
 
-        const QByteArray body =
-            QJsonDocument(QJsonObject{{QStringLiteral("imageId"), imageId}})
-                .toJson(QJsonDocument::Compact);
+        QUrl url(baseUrl_);
+        url.setPath(QStringLiteral("/image/download"));
+        url.setQuery(QStringLiteral("format=jpg&imageId=")
+                     + QString::fromLatin1(QUrl::toPercentEncoding(imageId)));
 
-        imageJpegReply_ =
-            net().submit(apiSes(QLatin1String("/image/toBase64")).postJson(body).timeout(120000),
+        imageDownloadReply_ =
+            net().submit(HttpUtil::Request::absolute(url).get().ykSession(sessionId_).timeout(120000),
                          [this, imageId](const HttpUtil::Result &r) {
-                             if (imageJpegReply_ == r.reply)
-                                 imageJpegReply_ = nullptr;
-
-                             const auto finishFail = [&]() {
-                                 if (preview_)
-                                     preview_->update();
-                                 releaseImageId(imageId);
-                             };
-
-                             if (!r.ok()) {
-                                 finishFail();
-                                 return;
-                             }
-
-                             const QString b64 = decodeImageBase64Response(QJsonDocument::fromJson(r.bytes).object());
-                             QByteArray raw;
-                             if (!b64.isEmpty())
-                                 raw = QByteArray::fromBase64(b64.toUtf8());
+                             if (imageDownloadReply_ == r.reply)
+                                 imageDownloadReply_ = nullptr;
 
                              hierarchyScreenshot_ = QPixmap();
-                             if (!raw.isEmpty()) {
-                                 if (!hierarchyScreenshot_.loadFromData(raw, "JPEG"))
-                                     hierarchyScreenshot_.loadFromData(raw);
+                             if (r.ok() && !r.bytes.isEmpty()) {
+                                 if (!hierarchyScreenshot_.loadFromData(r.bytes, "JPEG"))
+                                     hierarchyScreenshot_.loadFromData(r.bytes);
                              }
-
-                             if (hierarchyScreenshot_.isNull())
-                                 finishFail();
-                             else {
-                                 releaseImageId(imageId);
-                                 if (preview_)
-                                     preview_->update();
-                             }
+                             if (preview_)
+                                 preview_->update();
+                             releaseImageId(imageId);
                          });
     }
 
@@ -815,7 +790,7 @@ private:
     QString sessionId_;
     QNetworkReply *pendingReply_ = nullptr;
     QNetworkReply *imageCaptureReply_ = nullptr;
-    QNetworkReply *imageJpegReply_ = nullptr;
+    QNetworkReply *imageDownloadReply_ = nullptr;
 
     QPixmap hierarchyScreenshot_;
     QVector<ElementHit> hierarchyHits_;
