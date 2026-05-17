@@ -23,6 +23,8 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QButtonGroup>
+#include <QDialog>
+#include <QVBoxLayout>
 
 class RenewalDialog : public BaseDialog {
     Q_OBJECT
@@ -196,10 +198,14 @@ public:
         voucherPlainTextEdit = new QPlainTextEdit();
         voucherPlainTextEdit->setFixedHeight(80);
 
+        queryRedeemButton = new QPushButton("查询信息");
+        queryRedeemButton->setFixedHeight(80);
+
         redeemButton = new QPushButton("批量兑换");
         redeemButton->setFixedHeight(80);
 
         redeemLayout->addWidget(voucherPlainTextEdit, 1);
+        redeemLayout->addWidget(queryRedeemButton);
         redeemLayout->addWidget(redeemButton);
 
         voucherLayout->addWidget(balanceWidget);
@@ -336,6 +342,127 @@ public:
 
         mainLayout->addLayout(optionsLayout);
         mainLayout->addWidget(buttonBox);
+
+        connect(queryRedeemButton, &QPushButton::clicked, [this]() {
+            QString content = voucherPlainTextEdit->toPlainText();
+            QStringList lines = content.split('\n', Qt::SkipEmptyParts);
+            QStringList codes;
+            for (const QString &line : lines) {
+                QString t = line.trimmed();
+                if (!t.isEmpty())
+                    codes.append(t);
+            }
+            if (codes.isEmpty()) {
+                Tools::showToast(QStringLiteral("请先输入要查询的兑换码"), this);
+                return;
+            }
+            const int maxBatch = 100;
+            if (codes.size() > maxBatch) {
+                Tools::showToast(QStringLiteral("一次最多查询 %1 个兑换码").arg(maxBatch), this);
+                return;
+            }
+
+            queryRedeemButton->setEnabled(false);
+            webSocketClient->emitEvent("query_redeem_code", QJsonArray::fromStringList(codes),
+                                       [=](const QJsonValue &res) {
+                                           queryRedeemButton->setEnabled(true);
+                                           if (!res.isObject()) {
+                                               Tools::showToast(QStringLiteral("查询失败"), this);
+                                               return;
+                                           }
+                                           QJsonObject root = res.toObject();
+                                           if (root.contains(QStringLiteral("msg"))
+                                               && root[QStringLiteral("results")].toArray().isEmpty()) {
+                                               Tools::showToast(root[QStringLiteral("msg")].toString(), this);
+                                               return;
+                                           }
+                                           QJsonArray rows = root[QStringLiteral("results")].toArray();
+                                           if (rows.isEmpty()) {
+                                               Tools::showToast(QStringLiteral("未收到查询结果"), this);
+                                               return;
+                                           }
+
+                                           auto *dlg = new QDialog(this);
+                                           dlg->setWindowTitle(QStringLiteral("兑换码查询结果（%1 条）").arg(rows.size()));
+                                           dlg->setAttribute(Qt::WA_DeleteOnClose);
+                                           auto *vLay = new QVBoxLayout(dlg);
+                                           auto *resultTable = new QTableWidget(dlg);
+                                           resultTable->setColumnCount(6);
+                                           resultTable->setHorizontalHeaderLabels(
+                                               {QStringLiteral("兑换码"), QStringLiteral("面值"), QStringLiteral("续费天数"),
+                                                QStringLiteral("状态"), QStringLiteral("兑换时间"), QStringLiteral("兑换账号")});
+                                           resultTable->setRowCount(rows.size());
+                                           resultTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+                                           resultTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+                                           resultTable->setSelectionMode(QAbstractItemView::NoSelection);
+                                           resultTable->verticalHeader()->setVisible(false);
+                                           resultTable->setWordWrap(false);
+
+                                           for (int r = 0; r < rows.size(); ++r) {
+                                               QJsonObject o = rows[r].toObject();
+                                               QString code = o[QStringLiteral("code")].toString();
+                                               resultTable->setItem(r, 0, new QTableWidgetItem(code));
+
+                                               if (!o[QStringLiteral("found")].toBool()) {
+                                                   resultTable->setItem(r, 1, new QTableWidgetItem(QStringLiteral("—")));
+                                                   resultTable->setItem(r, 2, new QTableWidgetItem(QStringLiteral("—")));
+                                                   resultTable->setItem(
+                                                       r, 3,
+                                                       new QTableWidgetItem(
+                                                           o[QStringLiteral("msg")].toString(QStringLiteral("不存在"))));
+                                                   resultTable->setItem(r, 4, new QTableWidgetItem(QStringLiteral("—")));
+                                                   resultTable->setItem(r, 5, new QTableWidgetItem(QStringLiteral("—")));
+                                                   continue;
+                                               }
+
+                                               resultTable->setItem(r, 1,
+                                                                    new QTableWidgetItem(o[QStringLiteral("typeLabel")].toString()));
+                                               int days = o[QStringLiteral("durationDays")].toInt();
+                                               resultTable->setItem(
+                                                   r, 2, new QTableWidgetItem(days > 0 ? QString::number(days)
+                                                                                       : QStringLiteral("—")));
+
+                                               QString status =
+                                                   o[QStringLiteral("redeemed")].toBool() ? QStringLiteral("已兑换")
+                                                                                            : QStringLiteral("未兑换");
+                                               resultTable->setItem(r, 3, new QTableWidgetItem(status));
+
+                                               QString timeStr = QStringLiteral("—");
+                                               if (o[QStringLiteral("redeemed")].toBool()) {
+                                                   QString raw = o[QStringLiteral("redeemAt")].toString();
+                                                   QDateTime dt = QDateTime::fromString(raw, Qt::ISODateWithMs);
+                                                   if (!dt.isValid())
+                                                       dt = QDateTime::fromString(raw, Qt::ISODate);
+                                                   timeStr = dt.isValid()
+                                                                 ? dt.toLocalTime().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss"))
+                                                                 : raw;
+                                               }
+                                               resultTable->setItem(r, 4, new QTableWidgetItem(timeStr));
+                                               resultTable->setItem(
+                                                   r, 5,
+                                                   new QTableWidgetItem(
+                                                       o[QStringLiteral("redeemed")].toBool()
+                                                           ? o[QStringLiteral("redeemedBy")].toString()
+                                                           : QStringLiteral("—")));
+                                           }
+
+                                           auto *hdr = resultTable->horizontalHeader();
+                                           hdr->setMinimumSectionSize(72);
+                                           for (int c = 0; c < 6; ++c)
+                                               resultTable->resizeColumnToContents(c);
+                                           for (int c = 0; c < 6; ++c)
+                                               hdr->setSectionResizeMode(c, QHeaderView::ResizeToContents);
+                                           hdr->setStretchLastSection(true);
+                                           resultTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+                                           vLay->addWidget(resultTable);
+                                           auto *bb = new QDialogButtonBox(QDialogButtonBox::Ok, dlg);
+                                           QObject::connect(bb, &QDialogButtonBox::accepted, dlg, &QDialog::accept);
+                                           vLay->addWidget(bb);
+                                           dlg->resize(880, qMin(520, 48 + rows.size() * 36));
+                                           dlg->exec();
+                                       });
+        });
 
         // 恢复原有兑换按钮的逻辑，仅在“余额支付”下点击时充值余额
         connect(redeemButton, &QPushButton::clicked, [this](){
@@ -569,6 +696,7 @@ protected:
     
     QGroupBox *voucherGroupBox;
     QPlainTextEdit *voucherPlainTextEdit;
+    QPushButton *queryRedeemButton;
     QPushButton *redeemButton;
     
     QWidget *balanceWidget;
