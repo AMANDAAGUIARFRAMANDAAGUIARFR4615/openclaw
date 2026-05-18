@@ -45,7 +45,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     # LTO/IPO 优化：开启跨模块优化，打乱函数布局
     include(CheckIPOSupported)
     check_ipo_supported(RESULT result OUTPUT output)
-    if(result)
+    if(result AND NOT EMSCRIPTEN)
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
     else()
         message(WARNING "IPO is not supported: ${output}")
@@ -133,9 +133,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 
         if(APPLE)
             target_link_options(${PROJECT_NAME} PRIVATE -Wl,-x -Wl,-S)
-        else()
-            target_link_options(${PROJECT_NAME} PRIVATE 
-                -s              # 移除符号表
+        elseif(NOT EMSCRIPTEN)
+            # em++/wasm 会将「-s」解析为 Emscripten 选项，禁止使用这里的 strip 语义
+            target_link_options(${PROJECT_NAME} PRIVATE
+                -s              # 移除符号表（仅原生 GCC/Clang 链接器）
                 -Wl,--strip-all # 彻底移除
             )
         endif()
@@ -201,6 +202,14 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     QtNodes
     ${THIRD_PARTY_LIBS}
 )
+
+# 浏览器主线程不可用阻塞式 QEventLoop::exec；需 Emscripten ASYNCIFY 翻译为异步（体积与链接时间会增大）
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    target_link_options(${PROJECT_NAME} PRIVATE
+        "SHELL:-s ASYNCIFY"
+        "SHELL:-s ASYNCIFY_STACK_SIZE=8388608"
+    )
+endif()
 
 if(ANDROID)
     add_android_openssl_libraries(${PROJECT_NAME})
