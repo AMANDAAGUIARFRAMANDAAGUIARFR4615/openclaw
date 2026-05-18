@@ -1,5 +1,3 @@
-#if defined(Q_OS_WASM)
-
 #include "AesCrypto.h"
 #include <mbedtls/gcm.h>
 
@@ -55,5 +53,3 @@ QByteArray AesCrypto::wasmDecryptBody(const QByteArray &key, const QByteArray &i
         return QByteArray();
     return plainText;
 }
-
-#endif
