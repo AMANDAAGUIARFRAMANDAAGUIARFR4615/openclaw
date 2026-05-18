@@ -20,6 +20,7 @@
 #include <QRegularExpressionValidator>
 #include <QTcpServer>
 #include <QKeyEvent>
+#include <QSizePolicy>
 
 class LoginWidget : public QWidget
 {
@@ -88,21 +89,31 @@ public:
         optionsLayout->addStretch();
         optionsLayout->addWidget(findPwdBtn);
 
-        auto mainLayout = new QVBoxLayout(this);
-        mainLayout->setContentsMargins(40, 30, 40, 30);
-        mainLayout->setSpacing(16);
-        mainLayout->addStretch();
-        mainLayout->addWidget(titleLabel);
-        mainLayout->addWidget(phoneLineEdit);
-        mainLayout->addWidget(udidLineEdit);
-        mainLayout->addWidget(passwordLineEdit);
-        mainLayout->addWidget(confirmLineEdit);
-        mainLayout->addLayout(optionsLayout);
-        mainLayout->addLayout(buttonLayout);
-        mainLayout->addWidget(statusLabel);
-        mainLayout->addStretch();
+        auto *formContainer = new QWidget(this);
+        auto *formLayout = new QVBoxLayout(formContainer);
+        formLayout->setContentsMargins(40, 30, 40, 30);
+        formLayout->setSpacing(16);
+        formLayout->addWidget(titleLabel);
+        formLayout->addWidget(phoneLineEdit);
+        formLayout->addWidget(udidLineEdit);
+        formLayout->addWidget(passwordLineEdit);
+        formLayout->addWidget(confirmLineEdit);
+        formLayout->addLayout(optionsLayout);
+        formLayout->addLayout(buttonLayout);
+        formLayout->addWidget(statusLabel);
 
-        setMinimumWidth(450);
+        constexpr int loginFormMaximumWidth = 450;
+        formContainer->setMaximumWidth(loginFormMaximumWidth);
+        formContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+        auto *windowLayout = new QVBoxLayout(this);
+        windowLayout->setContentsMargins(0, 0, 0, 0);
+        windowLayout->setSpacing(0);
+        windowLayout->addStretch(1);
+        windowLayout->addWidget(formContainer, 0, Qt::AlignHCenter);
+        windowLayout->addStretch(1);
+
+        setMinimumWidth(loginFormMaximumWidth);
         updateStyle();
 
         loadCredentials();
@@ -141,7 +152,7 @@ protected:
             close();
         else
             QWidget::keyPressEvent(event);
-    }    
+    }
 
     QLabel *titleLabel;
     QLineEdit *phoneLineEdit;
