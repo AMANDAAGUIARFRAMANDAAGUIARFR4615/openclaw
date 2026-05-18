@@ -17,12 +17,13 @@
 
 class AesCrypto {
 private:
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID) && !defined(Q_OS_WASM)
     static const int EVP_CTRL_GCM_SET_IVLEN = 0x9;
     static const int EVP_CTRL_GCM_GET_TAG   = 0x10;
     static const int EVP_CTRL_GCM_SET_TAG   = 0x11;
 #endif
 
+#if !defined(Q_OS_WASM)
     typedef void* (*Func_EVP_CIPHER_CTX_new)();
     typedef void (*Func_EVP_CIPHER_CTX_free)(void*);
     typedef const void* (*Func_EVP_aes_128_gcm)();
@@ -44,6 +45,7 @@ private:
     static inline Func_EVP_DecryptInit_ex     decrypt_init = nullptr;
     static inline Func_EVP_DecryptUpdate      decrypt_update = nullptr;
     static inline Func_EVP_DecryptFinal_ex    decrypt_final = nullptr;
+#endif
 
     static inline bool m_loaded = false;
     static inline QVector<QByteArray> m_keyTable;
@@ -52,10 +54,20 @@ private:
     static const int KEY_COUNT = 4096;             // 密钥数量
     static const quint16 OBFUSCATE_MASK = 0xA55A;  // 混淆掩码
 
+#if defined(Q_OS_WASM)
+    static QByteArray wasmEncryptBody(quint16 storedValue, const QByteArray &key, const QByteArray &iv,
+                                      const QByteArray &plainText);
+    static QByteArray wasmDecryptBody(const QByteArray &key, const QByteArray &iv, const QByteArray &cipherBody,
+                                      const QByteArray &tag);
+#endif
+
     static bool initOpenSSL() {
         if (m_loaded) return true;
 
-#if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
+#if defined(Q_OS_WASM)
+        m_loaded = true;
+        return true;
+#elif defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
         ctx_new = reinterpret_cast<Func_EVP_CIPHER_CTX_new>(::EVP_CIPHER_CTX_new);
         ctx_free = reinterpret_cast<Func_EVP_CIPHER_CTX_free>(::EVP_CIPHER_CTX_free);
         aes_128_gcm = reinterpret_cast<Func_EVP_aes_128_gcm>(::EVP_aes_128_gcm);
@@ -162,6 +174,9 @@ public:
         
         quint16 storedValue = (keyIndex ^ OBFUSCATE_MASK) + ivPart;
 
+#if defined(Q_OS_WASM)
+        return wasmEncryptBody(storedValue, key, iv, plainText);
+#else
         void* ctx = ctx_new();
         if (!ctx) return QByteArray();
 
@@ -185,6 +200,7 @@ public:
         result.append(cipherBody);
         result.append(tag);
         return result;
+#endif
     }
 
     static QByteArray decrypt(const QByteArray &encryptedData) {
@@ -211,6 +227,9 @@ public:
         QByteArray tag = encryptedData.right(16);
         QByteArray cipherBody = encryptedData.mid(14, encryptedData.size() - 30);
 
+#if defined(Q_OS_WASM)
+        return wasmDecryptBody(key, iv, cipherBody, tag);
+#else
         void* ctx = ctx_new();
         if (!ctx) return QByteArray();
 
@@ -233,5 +252,6 @@ public:
 
         plainText.resize(plainLen);
         return plainText;
+#endif
     }
 };

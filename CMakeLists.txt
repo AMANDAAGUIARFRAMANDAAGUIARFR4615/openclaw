@@ -4,6 +4,20 @@ project(RemotePro LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# WebAssembly：无法 QLibrary 加载 libcrypto，用 mbedTLS（仅 mbedcrypto / AES-GCM）静态链接
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    include(FetchContent)
+    set(ENABLE_PROGRAMS OFF CACHE BOOL "" FORCE)
+    set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(
+        mbedtls
+        GIT_REPOSITORY https://github.com/Mbed-TLS/mbedtls.git
+        GIT_TAG v3.6.4
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(mbedtls)
+endif()
+
 find_package(Qt6 REQUIRED COMPONENTS CorePrivate Widgets Network Concurrent Multimedia MultimediaWidgets WebSockets)
 
 qt_standard_project_setup()
@@ -122,6 +136,11 @@ file(GLOB ALL_SOURCES
     "visualscripting/*.cpp" "visualscripting/*.h" "visualscripting/*.hpp"
 )
 
+# WASM 专用实现；原生构建编译会得到空 TU，排除以免多余编译单元
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    list(FILTER ALL_SOURCES EXCLUDE REGEX "AesCryptoWasm\\.cpp$")
+endif()
+
 # =========================================================
 # 3. 定义可执行文件
 # =========================================================
@@ -228,6 +247,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     QtNodes
     ${THIRD_PARTY_LIBS}
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    target_link_libraries(${PROJECT_NAME} PRIVATE mbedcrypto)
+endif()
 
 # 浏览器主线程不可用阻塞式 QEventLoop::exec；需 Emscripten ASYNCIFY 翻译为异步（体积与链接时间会增大）
 if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
