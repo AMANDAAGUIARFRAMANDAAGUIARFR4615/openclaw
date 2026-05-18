@@ -56,6 +56,7 @@ public:
             }
         });
 
+#if !defined(Q_OS_WASM)
         const auto filePath = getLogFilePath();
         QDir().mkpath(QFileInfo(filePath).absolutePath());
 
@@ -83,6 +84,7 @@ public:
                 out.flush();
             });
         });
+#endif
     }
 
     static LogTextBrowser* getInstance() {return instance;}
@@ -149,7 +151,8 @@ protected:
         menu->addAction("清空日志", [this]() {
             clear();
             allLogs.clear();
-            logFile.resize(0);
+            if (logFile.isOpen())
+                logFile.resize(0);
         });
 
         QAction *filterAction = menu->addAction("只显示错误日志", [this](bool checked) {
