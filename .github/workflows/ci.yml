@@ -443,8 +443,8 @@ jobs:
           cache: true
           host: all_os
           target: wasm
-          arch: wasm_singlethread
-          # qtmultimedia：工程 find_package 需要 Multimedia / MultimediaWidgets（WASM 亦有对应包，需显式安装）
+          # Qt 在线仓库里 qtmultimedia 仅随 wasm_multithread 提供（aqt list-qt all_os wasm --modules 6.10.2 wasm_multithread 含 qtmultimedia；wasm_singlethread 不含）
+          arch: wasm_multithread
           modules: 'qtshadertools qtwebsockets qtmultimedia'
 
       - name: Ensure Qt wasm tools are executable
