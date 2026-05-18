@@ -3,7 +3,9 @@
 #include "Logger.h"
 #include <QOperatingSystemVersion>
 #include <QProcess>
+#ifndef Q_OS_WASM
 #include <QNetworkInterface>
+#endif
 #include <QHostAddress>
 #include <QString>
 #include <QList>
@@ -78,12 +80,14 @@ public:
         static QString lastNetworkState;
 
         QString currentState;
+#ifndef Q_OS_WASM
         for (const QNetworkInterface &iface : QNetworkInterface::allInterfaces()) {
             currentState += iface.name() + QString::number((int)iface.flags());
             for (const QNetworkAddressEntry &entry : iface.addressEntries()) {
                 currentState += entry.ip().toString();
             }
         }
+#endif
 
         if (currentState == lastNetworkState && !cachedIps.isEmpty())
             return cachedIps;
