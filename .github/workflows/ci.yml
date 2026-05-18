@@ -59,7 +59,7 @@ jobs:
           echo "Cleanup complete."
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: true
        
@@ -121,7 +121,7 @@ jobs:
           echo "QTMULTIMEDIA_DIR=$USER_DIR/qtmultimedia" >> $GITHUB_ENV
 
       - name: Checkout FFmpeg
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: wowkids1914/FFmpeg
           path: FFmpeg
@@ -146,7 +146,7 @@ jobs:
 
       - name: Restore FFmpeg cache
         id: cache-ffmpeg
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: ${{ env.FFMPEG_CACHE_KEY }}
           path: ${{ env.FFMPEG_DIR }}
@@ -203,14 +203,14 @@ jobs:
 
       - name: Save FFmpeg cache
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           key: ${{ env.FFMPEG_CACHE_KEY }}
           path: ${{ env.FFMPEG_DIR }}
 
       - name: Upload FFmpeg cache
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.FFMPEG_CACHE_KEY }}
           path: ${{ env.FFMPEG_DIR }}
@@ -228,7 +228,7 @@ jobs:
           tree -L 3 $QT_ROOT_DIR/lib/ffmpeg
 
       - name: Checkout qtmultimedia
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: wowkids1914/qtmultimedia
           path: qtmultimedia
@@ -242,7 +242,7 @@ jobs:
 
       - name: Restore qtmultimedia cache
         id: cache-qtmultimedia
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           key: ${{ env.QTMULTIMEDIA_CACHE_KEY }}
           path: ${{ env.QTMULTIMEDIA_DIR }}
@@ -271,14 +271,14 @@ jobs:
 
       - name: Save qtmultimedia cache
         if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           key: ${{ env.QTMULTIMEDIA_CACHE_KEY }}
           path: ${{ env.QTMULTIMEDIA_DIR }}
 
       - name: Upload qtmultimedia cache
         # if: steps.cache-qtmultimedia.outputs.cache-hit != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.QTMULTIMEDIA_CACHE_KEY }}
           path: ${{ env.QTMULTIMEDIA_DIR }}
@@ -419,7 +419,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: true
 
@@ -523,7 +523,7 @@ jobs:
           ls -la "$OUT"
 
       - name: Upload web package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: RemotePro-web-${{ env.VERSION }}
           path: RemotePro-${{ env.VERSION }}-web.zip
