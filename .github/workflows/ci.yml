@@ -456,16 +456,45 @@ jobs:
       - name: Install Ninja
         run: sudo apt-get update && sudo apt-get install -y ninja-build
 
+      # Qt 官方二进制用固定 Emscripten 版本构建，应用须使用相同主版本（见 doc.qt.io/qt-6.10/wasm.html）
+      - name: Setup Emscripten SDK
+        uses: emscripten-core/setup-emsdk@v15
+        with:
+          version: 4.0.7
+          actions-cache-folder: emsdk-cache
+
       - name: Configure & Build (Web)
         shell: bash
         run: |
           set -euo pipefail
+          # Qt CMake 需 EMSDK 指向 emsdk 根目录；部分环境下仅注入 PATH 未设置该变量，从 emcc 路径推断
+          if [[ -z "${EMSDK:-}" ]]; then
+            EMCC_PATH="$(command -v emcc)"
+            export EMSDK="$(cd "$(dirname "$EMCC_PATH")/../.." && pwd)"
+          fi
+          echo "Using EMSDK=$EMSDK"
+          TOOLCHAIN="$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+          if [[ ! -f "$TOOLCHAIN" ]]; then
+            echo "❌ 未找到 Emscripten.cmake: $TOOLCHAIN"
+            exit 1
+          fi
+
+          NINJA_BIN="$(command -v ninja)"
           CMAKE_EXE="${QT_ROOT_DIR}/bin/qt-cmake"
+          CMAKE_ARGS=(
+            -G Ninja
+            "-DCMAKE_MAKE_PROGRAM=${NINJA_BIN}"
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_C_FLAGS=-w
+            -DCMAKE_CXX_FLAGS=-w
+            -B build
+            -S .
+          )
           if [[ ! -x "$CMAKE_EXE" ]]; then
-            echo "Trying qt-cmake without execute bit..."
-            bash "$CMAKE_EXE" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-w" -DCMAKE_CXX_FLAGS="-w" -B build -S .
+            echo "Running qt-cmake via bash (non-executable bit)..."
+            bash "$CMAKE_EXE" "${CMAKE_ARGS[@]}"
           else
-            "$CMAKE_EXE" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-w" -DCMAKE_CXX_FLAGS="-w" -B build -S .
+            "$CMAKE_EXE" "${CMAKE_ARGS[@]}"
           fi
           cmake --build build --config Release --parallel
 
