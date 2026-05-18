@@ -16,6 +16,9 @@
 #include <QMessageBox>
 #include <QStyleHints>
 #include <QStyleFactory>
+#if defined(Q_OS_WASM)
+#include <QFontDatabase>
+#endif
 
 void onDataReceived(DeviceConnection *connection, const QJsonObject &jsonObject) {
     auto event = jsonObject["event"].toString();
@@ -60,6 +63,28 @@ TunnelClient* tunnelClient;
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+
+#if defined(Q_OS_WASM)
+    const QStringList fams = QFontDatabase::applicationFontFamilies(
+        QFontDatabase::addApplicationFont(QStringLiteral(":/fonts/NotoSansSC-VF.ttf")));
+    const QString primary = fams.isEmpty() ? QString() : fams.constFirst();
+    if (!primary.isEmpty()) {
+        // QSS/HTML 里的「微软雅黑 / pingfang」等在 WASM 不可用，映射到嵌入式字体族
+        const QStringList fontAliases = {QStringLiteral("Microsoft YaHei"),
+                                          QStringLiteral("PingFang SC"),
+                                          QStringLiteral("Heiti SC"),
+                                          QStringLiteral("SimSun"),
+                                          QStringLiteral("NSimSun"),
+                                          QStringLiteral("SimHei"),
+                                          QStringLiteral("STHeiti")};
+        for (const QString &alias : fontAliases)
+            QFont::insertSubstitution(alias, primary);
+        QFont uiFont(primary);
+        uiFont.setStyleHint(QFont::SansSerif);
+        uiFont.setPointSize(11);
+        QGuiApplication::setFont(uiFont);
+    }
+#endif
 
 #if !defined(Q_OS_WASM)
     if (!QSslSocket::supportsSsl()) {

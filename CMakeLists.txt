@@ -8,6 +8,21 @@ find_package(Qt6 REQUIRED COMPONENTS CorePrivate Widgets Network Concurrent Mult
 
 qt_standard_project_setup()
 
+# WebAssembly：浏览器环境无系统中文字体，嵌入 SIL 授权的 Noto Sans SC（Pinned commit + SHA256）
+set(REMOTE_PRO_WASM_EMBED_FONT "")
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    set(REMOTE_PRO_WASM_EMBED_FONT "${CMAKE_BINARY_DIR}/wasm_embed/NotoSansSC-VF.ttf")
+    set(_wasm_font_remote "https://raw.githubusercontent.com/notofonts/noto-cjk/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/Variable/TTF/Subset/NotoSansSC-VF.ttf")
+    if(NOT EXISTS "${REMOTE_PRO_WASM_EMBED_FONT}")
+        file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/wasm_embed")
+        file(DOWNLOAD "${_wasm_font_remote}" "${REMOTE_PRO_WASM_EMBED_FONT}"
+            EXPECTED_HASH SHA256=d68bafcb48a2707749396aa12bbbd833cb70401f3a9a689fd2902c7e0d295964
+            TLS_VERIFY ON
+            SHOW_PROGRESS
+        )
+    endif()
+endif()
+
 if(ANDROID)
     include(FetchContent)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/android/android_openssl/android_openssl.cmake")
@@ -114,6 +129,13 @@ qt_add_executable(${PROJECT_NAME}
     ${ALL_SOURCES}
     ${RESOURCE_SOURCES}
 )
+
+if(REMOTE_PRO_WASM_EMBED_FONT)
+    qt_add_resources(${PROJECT_NAME} wasm_chinese_font
+        PREFIX "/fonts"
+        FILES "${REMOTE_PRO_WASM_EMBED_FONT}"
+    )
+endif()
 
 # =========================================================
 # 4. 目标特定编译优化 (必须放在 add_executable 之后)
