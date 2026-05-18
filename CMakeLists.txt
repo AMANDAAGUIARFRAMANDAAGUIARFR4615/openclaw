@@ -62,7 +62,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     check_ipo_supported(RESULT result OUTPUT output)
     if(result AND NOT EMSCRIPTEN)
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-    else()
+    elseif(NOT result AND NOT EMSCRIPTEN)
         message(WARNING "IPO is not supported: ${output}")
     endif()
 endif()
@@ -131,6 +131,10 @@ qt_add_executable(${PROJECT_NAME}
 )
 
 if(REMOTE_PRO_WASM_EMBED_FONT)
+    # Qt 6：构建目录下的绝对路径资源必须设别名，否则 qt_add_resources 报错
+    set_source_files_properties("${REMOTE_PRO_WASM_EMBED_FONT}" PROPERTIES
+        QT_RESOURCE_ALIAS "NotoSansSC-VF.ttf"
+    )
     qt_add_resources(${PROJECT_NAME} wasm_chinese_font
         PREFIX "/fonts"
         FILES "${REMOTE_PRO_WASM_EMBED_FONT}"
