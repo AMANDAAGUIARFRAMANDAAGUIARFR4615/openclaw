@@ -409,3 +409,91 @@ jobs:
           generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ env.ACCESS_TOKEN }}
+
+  # Qt for WebAssembly：与桌面/移动矩阵分离，无 FFmpeg / Vulkan / 自编译 qtmultimedia
+  build-web:
+    runs-on: ubuntu-22.04
+    env:
+      TZ: Asia/Shanghai
+      QT_VERSION: 6.10.2
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Get Release Version
+        shell: bash
+        run: |
+          VERSION=$(perl -nle 'print $1 if /const QString VERSION = "([^"]+)"/' global.h)
+
+          if [ -z "$VERSION" ]; then
+            echo "❌ 错误: 无法在 global.h 中获取 VERSION"
+            exit 1
+          fi
+
+          echo "✅ 成功获取版本号: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Install Qt (WebAssembly)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          cache: true
+          host: all_os
+          target: wasm
+          arch: wasm_singlethread
+          modules: 'qtshadertools qtwebsockets'
+
+      - name: Ensure Qt wasm tools are executable
+        shell: bash
+        run: |
+          if [[ -d "${QT_ROOT_DIR}/bin" ]]; then
+            chmod +x "${QT_ROOT_DIR}/bin/"* 2>/dev/null || true
+          fi
+
+      - name: Install Ninja
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Configure & Build (Web)
+        shell: bash
+        run: |
+          set -euo pipefail
+          CMAKE_EXE="${QT_ROOT_DIR}/bin/qt-cmake"
+          if [[ ! -x "$CMAKE_EXE" ]]; then
+            echo "Trying qt-cmake without execute bit..."
+            bash "$CMAKE_EXE" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-w" -DCMAKE_CXX_FLAGS="-w" -B build -S .
+          else
+            "$CMAKE_EXE" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-w" -DCMAKE_CXX_FLAGS="-w" -B build -S .
+          fi
+          cmake --build build --config Release --parallel
+
+      - name: Pack web artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="RemotePro-${{ env.VERSION }}-web.zip"
+          cd build
+          # 常见 Qt6 WASM / Emscripten 输出
+          mapfile -t ASSETS < <(find . -maxdepth 4 -type f \( \
+            -name '*.wasm' -o -name '*.js' -o -name '*.html' -o -name '*.data' -o -name '*.json' \
+            \) 2>/dev/null | sort -u)
+          if [[ ${#ASSETS[@]} -eq 0 ]]; then
+            echo "⚠️ 未匹配到典型 wasm 产物，改为打包 build 目录（排除 CMake 中间文件，体积可能较大）"
+            cd ..
+            zip -r -q "$OUT" build \
+              -x 'build/CMakeFiles/*' \
+              -x 'build/*/CMakeFiles/*' \
+              -x '*.o' -x '*.a'
+          else
+            zip -r -q "../$OUT" "${ASSETS[@]}"
+            cd ..
+          fi
+          ls -la "$OUT"
+
+      - name: Upload web package
+        uses: actions/upload-artifact@v4
+        with:
+          name: RemotePro-web-${{ env.VERSION }}
+          path: RemotePro-${{ env.VERSION }}-web.zip
