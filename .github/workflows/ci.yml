@@ -444,7 +444,8 @@ jobs:
           host: all_os
           target: wasm
           arch: wasm_singlethread
-          modules: 'qtshadertools qtwebsockets'
+          # qtmultimedia：工程 find_package 需要 Multimedia / MultimediaWidgets（WASM 亦有对应包，需显式安装）
+          modules: 'qtshadertools qtwebsockets qtmultimedia'
 
       - name: Ensure Qt wasm tools are executable
         shell: bash
