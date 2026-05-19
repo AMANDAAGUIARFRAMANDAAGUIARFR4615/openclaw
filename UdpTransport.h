@@ -35,20 +35,6 @@ public:
         });
     }
 
-    /** UDP 载荷与 WASM HTTP POST body 完全一致：magic + 密文长度 + AES 密文 */
-    static QByteArray buildEncryptedDiscoveryPacket(const QJsonObject &jsonObject) {
-        constexpr quint64 identifier = 0xc6e8f3de9a654d6bULL;
-        const QByteArray jsonData = QJsonDocument(jsonObject).toJson(QJsonDocument::Compact);
-        const QByteArray data = AesCrypto::encrypt(jsonData);
-        const quint32 size = static_cast<quint32>(data.size());
-
-        QByteArray out;
-        out.append(reinterpret_cast<const char*>(&identifier), sizeof(identifier));
-        out.append(reinterpret_cast<const char*>(&size), sizeof(size));
-        out.append(data);
-        return out;
-    }
-
     void sendData(const QJsonObject &jsonObject, const QString &host, quint16 port) {
         if (state() != QAbstractSocket::BoundState) {
             qCriticalEx() << "UDP 套接字未绑定，无法发送数据！";
@@ -58,8 +44,19 @@ public:
         if (!settings->value("isLanMode", true).toBool())
             qDebugEx() << "sendData" << jsonObject << host << port;
 
-        const QByteArray dataToSend = buildEncryptedDiscoveryPacket(jsonObject);
-        writeDatagram(dataToSend, QHostAddress(host), port);
+        quint64 identifier = 0xc6e8f3de9a654d6b;
+
+        const auto& jsonData = QJsonDocument(jsonObject).toJson(QJsonDocument::Compact);
+        const auto& data = AesCrypto::encrypt(jsonData);
+
+        quint32 size = data.size();
+
+        QByteArray dataToSend;
+        dataToSend.append(reinterpret_cast<const char*>(&identifier), sizeof(identifier));
+        dataToSend.append(reinterpret_cast<const char*>(&size), sizeof(size));
+        dataToSend.append(data);
+
+        auto sent = writeDatagram(dataToSend, QHostAddress(host), port);
 
         // if (sent != dataToSend.size())
         //     qCriticalEx() << "发送失败" << dataToSend.size() << host.toString() + ":" + QString::number(port);
