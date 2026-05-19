@@ -139,7 +139,6 @@ file(GLOB ALL_SOURCES
 # WASM 专用实现；原生构建编译会得到空 TU，排除以免多余编译单元
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
     list(FILTER ALL_SOURCES EXCLUDE REGEX "AesCryptoWasm\\.cpp$")
-    list(FILTER ALL_SOURCES EXCLUDE REGEX "NetworkUtilsWasm\\.cpp$")
 endif()
 
 # =========================================================
