@@ -6,7 +6,9 @@
 #include "DeviceConnection.h"
 #include "DeviceInfo.h"
 #include "UsbDeviceManager.h"
+#include "global.h"
 #include <QTcpServer>
+#include <QTcpSocket>
 #include <QFile>
 #include <QDataStream>
 #include <QtConcurrent>
@@ -89,7 +91,7 @@ protected:
 
         timer.start();
 
-        if (connection->type != DeviceConnection::Usb)
+        if (connection->type != DeviceConnection::Usb && !Config::isWifiTcpClientMode())
         {
             tcpServer = new QTcpServer(this);
 
@@ -98,7 +100,7 @@ protected:
             tcpServer->listen(QHostAddress::Any, 0);
             qDebugEx() << "文件传输服务已启动，监听端口" << tcpServer->serverPort();
         }
-        else
+        else if (connection->type == DeviceConnection::Usb)
         {
             EventHub::on(this, "transferPort", [=](const QJsonValue &data, DeviceConnection* connection) {
                 if (this->connection != connection)
@@ -119,6 +121,28 @@ protected:
                 });
 
                 handleNewConnection();
+            });
+        }
+        else
+        {
+            EventHub::on(this, "transferPort", [=](const QJsonValue &data, DeviceConnection* connection) {
+                if (this->connection != connection)
+                    return;
+
+                if (data["id"] != id)
+                    return;
+
+                auto socket = new QTcpSocket(this);
+                connect(socket, &QTcpSocket::connected, this, [=]() {
+                    transferConnection = new DeviceConnection(socket);
+                    connect(socket, &QTcpSocket::readyRead, this, &FileTransfer::onReadyRead);
+                    handleNewConnection();
+                });
+                connect(socket, &QTcpSocket::errorOccurred, this, [this, socket](QAbstractSocket::SocketError) {
+                    qCriticalEx() << "文件传输连接失败" << socket->errorString();
+                    deleteLater();
+                });
+                socket->connectToHost(connection->deviceInfo->localIp, data["port"].toInt());
             });
         }
 

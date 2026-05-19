@@ -5,6 +5,7 @@
 #include "EventHub.h"
 #include "UsbDeviceManager.h"
 #include "TcpServer.h"
+#include "TcpClient.h"
 #include "DeviceWidget.h"
 #include "SettingsViewer.h"
 #include "UdpTransport.h"
@@ -880,7 +881,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 return;
 
             bool isUsbSetting = getTab().getConnectionMethod() == 0;
-            const auto& ips = TcpServer::getInstance()->getConnectedIps();
+            const auto& ips = Config::isWifiTcpClientMode()
+                ? TcpClient::getInstance()->getConnectedIps()
+                : TcpServer::getInstance()->getConnectedIps();
             for (const auto& ip : NetworkSegmentEditorDialog::getAllIPs()) {
                 if (ips.contains(ip))
                     continue;
@@ -889,8 +892,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                     continue;
 
                 const auto& deviceInfo = DeviceInfo::getDevice(ip);
-                if (!deviceInfo || deviceInfo->connection->type == DeviceConnection::Usb && !isUsbSetting)
-                    udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
+                if (!deviceInfo || deviceInfo->connection->type == DeviceConnection::Usb && !isUsbSetting) {
+                    if (Config::isWifiTcpClientMode())
+                        TcpClient::getInstance()->connectToHost(ip, Config::WIFI_TCP_CLIENT_MAIN_PORT);
+                    else
+                        udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
+                }
             }
         }
         else {

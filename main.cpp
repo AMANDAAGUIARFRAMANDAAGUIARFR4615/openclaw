@@ -1,6 +1,7 @@
 #include "Logger.h"
 #include "MainWindow.h"
 #include "TcpServer.h"
+#include "TcpClient.h"
 #include "EventHub.h"
 #include "UsbDeviceManager.h"
 #include "LoginWidget.h"
@@ -251,11 +252,19 @@ int main(int argc, char *argv[])
         Account::getInstance()->hasRedeemCode = account["hasRedeemCode"].toBool();
         Account::getInstance()->loginTime = account["loginTime"].toInteger();
 
-        QObject::connect(TcpServer::getInstance(), &TcpServer::clientDisconnected, [](DeviceConnection* conn){
-            EventHub::trigger("disconnected", QJsonValue(), conn);
-        });
+        if (Config::isWifiTcpClientMode()) {
+            QObject::connect(TcpClient::getInstance(), &TcpClient::clientDisconnected, [](DeviceConnection* conn){
+                EventHub::trigger("disconnected", QJsonValue(), conn);
+            });
 
-        QObject::connect(TcpServer::getInstance(), &TcpServer::dataReceived, onDataReceived);
+            QObject::connect(TcpClient::getInstance(), &TcpClient::dataReceived, onDataReceived);
+        } else {
+            QObject::connect(TcpServer::getInstance(), &TcpServer::clientDisconnected, [](DeviceConnection* conn){
+                EventHub::trigger("disconnected", QJsonValue(), conn);
+            });
+
+            QObject::connect(TcpServer::getInstance(), &TcpServer::dataReceived, onDataReceived);
+        }
 
         QObject::connect(UsbDeviceManager::getInstance(), &UsbDeviceManager::deviceDisconnected, [](DeviceConnection* conn){
             EventHub::trigger("disconnected", QJsonValue(), conn);

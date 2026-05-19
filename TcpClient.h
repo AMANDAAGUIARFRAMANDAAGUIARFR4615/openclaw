@@ -1,0 +1,228 @@
+#pragma once
+
+#include "global.h"
+#include "AesCrypto.h"
+#include "DeviceConnection.h"
+#include "Safe.h"
+#include <QTcpSocket>
+#include <QByteArray>
+#include <QJsonObject>
+#include <QHash>
+#include <QSet>
+#include <QJsonDocument>
+
+#if defined(_WIN32)
+#include <winsock2.h>
+#include <mstcpip.h>
+#elif defined(__linux__) || defined(__APPLE__)
+#include <sys/socket.h>
+#include <netinet/tcp.h>
+#include <netinet/in.h>
+#endif
+
+class TcpClient : public QObject
+{
+    Q_OBJECT
+
+public:
+    static TcpClient* getInstance() { static TcpClient* instance = new TcpClient; return instance; }
+
+    QSet<QString> getConnectedIps() const {
+        QSet<QString> ips;
+        for (auto socket : clientBuffers.keys()) {
+            if (socket && socket->state() == QAbstractSocket::ConnectedState) {
+                auto ip = normalizePeerIp(socket->peerAddress().toString());
+                ips.insert(ip);
+            }
+        }
+        return ips;
+    }
+
+    void connectToHost(const QString& ip, quint16 port) {
+        if (ip.isEmpty() || port == 0)
+            return;
+
+        const QString normalizedIp = normalizePeerIp(ip);
+        if (pendingConnects.contains(normalizedIp))
+            return;
+
+        for (auto socket : clientBuffers.keys()) {
+            if (socket && socket->state() == QAbstractSocket::ConnectedState
+                && normalizePeerIp(socket->peerAddress().toString()) == normalizedIp) {
+                return;
+            }
+        }
+
+        pendingConnects.insert(normalizedIp);
+
+        auto socket = new QTcpSocket(this);
+        connect(socket, &QTcpSocket::connected, this, [this, socket]() {
+            pendingConnects.remove(normalizePeerIp(socket->peerAddress().toString()));
+            setupConnectedSocket(socket);
+        });
+        connect(socket, &QTcpSocket::errorOccurred, this, [this, socket, normalizedIp](QAbstractSocket::SocketError) {
+            pendingConnects.remove(normalizedIp);
+            qDebugEx() << "主动连接失败" << normalizedIp << socket->errorString();
+            socket->deleteLater();
+        });
+
+        qDebugEx() << "主动连接设备" << normalizedIp + ":" + QString::number(port);
+        socket->connectToHost(normalizedIp, port);
+    }
+
+signals:
+    void clientConnected(DeviceConnection* connection);
+    void dataReceived(DeviceConnection* connection, const QJsonObject& jsonObject);
+    void clientDisconnected(DeviceConnection* connection);
+    void clientError(DeviceConnection* connection, QAbstractSocket::SocketError error);
+
+private slots:
+    void onReadyRead() {
+        auto socket = qobject_cast<QTcpSocket*>(sender());
+        if (!socket) {
+            qCriticalEx() << "socket对象错误";
+            return;
+        }
+
+        if (!clientBuffers.contains(socket)) {
+            qCriticalEx() << "缓存错误";
+            return;
+        }
+
+        auto data = socket->readAll();
+        if (data.isEmpty()) {
+            qCriticalEx() << "数据为空";
+            return;
+        }
+
+        qDebugEx() << "接收到字节数据" << data.size();
+
+        clientBuffers[socket].append(data);
+        processBufferedData(socket);
+    }
+
+    void onDisconnected() {
+        auto socket = qobject_cast<QTcpSocket*>(sender());
+        if (!socket) return;
+
+        auto ip = socket->peerAddress().toString();
+        auto port = socket->peerPort();
+
+        qDebugEx() << "连接断开" << ip + ":" + QString::number(port);
+
+        auto connection = connections.value(socket);
+
+        clientBuffers.remove(socket);
+        connections.remove(socket);
+
+        if (connection)
+            emit clientDisconnected(connection);
+
+        socket->deleteLater();
+    }
+
+    void onErrorOccurred(QAbstractSocket::SocketError error) {
+        auto socket = qobject_cast<QTcpSocket*>(sender());
+        if (!socket) return;
+
+        qCriticalEx() << "onErrorOccurred" << error << socket->errorString();
+
+        auto connection = connections.value(socket);
+        if (connection)
+            emit clientError(connection, error);
+    }
+
+private:
+    QHash<QTcpSocket*, QByteArray> clientBuffers;
+    QHash<QTcpSocket*, DeviceConnection*> connections;
+    QSet<QString> pendingConnects;
+
+    static QString normalizePeerIp(const QString& ip) {
+        return ip.startsWith("::ffff:") ? ip.mid(7) : ip;
+    }
+
+    void setupConnectedSocket(QTcpSocket* socket) {
+        socket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
+
+#ifndef Q_OS_WASM
+        qintptr fd = socket->socketDescriptor();
+
+        int opt = 1;
+        setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (const char*)&opt, sizeof(opt));
+#endif
+
+#ifdef _WIN32
+        struct tcp_keepalive alive;
+        DWORD bytesReturned;
+        alive.onoff = 1;
+        alive.keepalivetime = 3000;
+        alive.keepaliveinterval = 200;
+        WSAIoctl(fd, SIO_KEEPALIVE_VALS, &alive, sizeof(alive),
+                 nullptr, 0, &bytesReturned, nullptr, nullptr);
+#elif defined(__APPLE__)
+        int idle = 3;
+        int interval = 1;
+        int count = 3;
+        setsockopt(fd, IPPROTO_TCP, TCP_KEEPALIVE,  &idle,     sizeof(idle));
+        setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL,  &interval, sizeof(interval));
+        setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT,    &count,    sizeof(count));
+#endif
+
+        auto ip = socket->peerAddress().toString();
+        auto port = socket->peerPort();
+
+        qDebugEx() << "连接成功" << ip + ":" + QString::number(port);
+
+        connect(socket, &QTcpSocket::readyRead, this, &TcpClient::onReadyRead);
+        connect(socket, &QTcpSocket::disconnected, this, &TcpClient::onDisconnected);
+        connect(socket, &QTcpSocket::errorOccurred, this, &TcpClient::onErrorOccurred);
+
+        clientBuffers.insert(socket, QByteArray());
+
+        auto connection = new DeviceConnection(socket);
+        connections.insert(socket, connection);
+
+        emit clientConnected(connection);
+    }
+
+    void processBufferedData(QTcpSocket* socket) {
+        while (clientBuffers.contains(socket)) {
+            auto &buffer = clientBuffers[socket];
+
+            if (buffer.size() < sizeof(quint64) + sizeof(quint32))
+                return;
+
+            auto identifier = *reinterpret_cast<const quint64*>(buffer.constData());
+            if (identifier != 0xb7c2e0f542a39a3e) {
+                qCriticalEx() << HIDE_STR("识别码不匹配，丢弃数据");
+                buffer.clear();
+                return;
+            }
+
+            auto size = *reinterpret_cast<const quint32*>(buffer.constData() + sizeof(quint64));
+
+            if (buffer.size() < static_cast<int>(sizeof(quint64) + sizeof(quint32) + size)) {
+                return;
+            }
+
+            const auto& data = buffer.mid(sizeof(quint64) + sizeof(quint32), size);
+            buffer.remove(0, sizeof(quint64) + sizeof(quint32) + size);
+
+            const auto& jsonData = AesCrypto::decrypt(data);
+            if (jsonData.size() == 0) {
+                qDebugEx() << HIDE_STR("解密失败");
+                continue;
+            }
+
+            const auto& doc = QJsonDocument::fromJson(jsonData);
+
+            if (!doc.isNull()) {
+                auto connection = connections.value(socket);
+                if (connection)
+                    emit dataReceived(connection, doc.object());
+            } else {
+                qCriticalEx() << HIDE_STR("JSON 解析失败，丢弃数据");
+            }
+        }
+    }
+};
