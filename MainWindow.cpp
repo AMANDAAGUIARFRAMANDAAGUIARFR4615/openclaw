@@ -8,6 +8,10 @@
 #include "DeviceWidget.h"
 #include "SettingsViewer.h"
 #include "UdpTransport.h"
+#if defined(Q_OS_WASM)
+#include "global.h"
+#include "HttpUtil.h"
+#endif
 #include "AppSettingsDialog.h"
 #include "JailbreakAssistantDialog.h"
 #include "RedeemRecordDialog.h"
@@ -871,10 +875,30 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     loadTabs();
 
     const auto localIP = NetworkUtils::getPhysicalIPs()[0];
-    
+
+#if !defined(Q_OS_WASM)
     auto udpTransport = new UdpTransport(0, this);
+#endif
 
     auto broadcastTask = [=]() {
+        auto sendDiscovery = [&](const QJsonObject &hostInfoJson, const QString &host, quint16 port) {
+#if !defined(Q_OS_WASM)
+            udpTransport->sendData(hostInfoJson, host, port);
+#else
+            if (!networkAccessManager)
+                return;
+            QUrl url;
+            url.setScheme(QStringLiteral("http"));
+            url.setHost(host);
+            url.setPort(port);
+            HttpUtil::Request::absolute(url)
+                .post(UdpTransport::buildEncryptedDiscoveryPacket(hostInfoJson))
+                .hdr("Content-Type", "application/octet-stream")
+                .timeout(1500)
+                .submit(networkAccessManager, this);
+#endif
+        };
+
         if (settings->value("isLanMode", true).toBool()) {
             if (getTab().getAutoScanLANDevices() == 0)
                 return;
@@ -890,7 +914,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
                 const auto& deviceInfo = DeviceInfo::getDevice(ip);
                 if (!deviceInfo || deviceInfo->connection->type == DeviceConnection::Usb && !isUsbSetting)
-                    udpTransport->sendData(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
+                    sendDiscovery(TcpServer::getInstance()->getHostInfo(localIP), ip, 32838);
             }
         }
         else {
@@ -903,7 +927,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 if (DeviceInfo::getDevice(it.key()) != nullptr)
                     continue;
 
-                udpTransport->sendData(TcpServer::getInstance()->getHostInfo(serverIp), serverIp, remotePort);
+                sendDiscovery(TcpServer::getInstance()->getHostInfo(serverIp), serverIp, remotePort);
             }
         }
     };
