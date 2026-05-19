@@ -11,6 +11,10 @@
 #include <QList>
 #include <QRegularExpression>
 
+#if defined(Q_OS_WASM)
+QString networkUtilsWasmPageHostname();
+#endif
+
 #ifdef Q_OS_WIN
 #include <winsock2.h>
 #include <windows.h>
@@ -151,9 +155,14 @@ public:
 
             return a < b;
         });
+#else
+        const QString hostname = networkUtilsWasmPageHostname();
+        qInfoEx() << "getPhysicalIPs WASM hostname:" << hostname;
+        if (!hostname.isEmpty())
+            ips.append(hostname);
 #endif
 
-        if (ips.size() == 0)
+        if (ips.isEmpty())
             ips << "127.0.0.1";
 
         cachedIps = ips;
