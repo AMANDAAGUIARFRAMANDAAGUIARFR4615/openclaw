@@ -37,7 +37,7 @@
 #include <limits>
 #include <numeric>
 
-/** 通过设备 HTTP（参见 docs：设备 ip:8080 转发脚本服务）拉取 /element/tree 并以树形展示。 */
+/** 通过设备 HTTP（参见 docs：设备 ip:65322 转发脚本服务）拉取 /element/tree 并以树形展示。 */
 class ElementHierarchyDialog : public BaseDialog {
     struct ElementHit {
         QRect bounds;
@@ -162,7 +162,7 @@ private:
 
         baseUrl_.setScheme(QStringLiteral("http"));
         baseUrl_.setHost(deviceInfo_->localIp);
-        baseUrl_.setPort(8080);
+        baseUrl_.setPort(65322);
 
         startFetch();
     }
