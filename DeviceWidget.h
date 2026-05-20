@@ -26,9 +26,6 @@ public:
     DeviceWindow* getDeviceWindow() { return deviceWindow; }
     const DeviceWindow* getDeviceWindow() const { return deviceWindow; }
 
-    QSize videoAreaChromeSize() const;
-    void applyVideoAreaSize(const QSize &videoSize);
-
     QCheckBox* const checkBox = new QCheckBox;
 
 protected:

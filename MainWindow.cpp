@@ -1796,8 +1796,9 @@ void MainWindow::doRelayoutDevices()
             item->setHidden(!deviceWidget || !devicesInGroup.contains(deviceWidget->deviceInfo));
 
             if (!item->isHidden()) {
-                deviceWidget->applyVideoAreaSize(targetSize);
-                item->setSizeHint(deviceWidget->sizeHint());
+                const QSize cardSize(targetW + 20, targetH + 74);
+                deviceWidget->setFixedSize(cardSize);
+                item->setSizeHint(cardSize);
                 actualVisibleCount++; // 只有未隐藏且物理存在于该容器的才计数
             }
         }

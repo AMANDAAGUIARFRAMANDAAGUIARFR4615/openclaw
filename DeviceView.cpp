@@ -299,6 +299,8 @@ void DeviceView::hideOverlay()
 void DeviceView::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
+    if (layout())
+        layout()->activate();
     updateOverlayControls();
 }
 
