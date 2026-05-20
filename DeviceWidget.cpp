@@ -161,6 +161,34 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     });
 }
 
+QSize DeviceWidget::videoAreaChromeSize() const
+{
+    const QMargins margins = layout()->contentsMargins();
+    int chromeW = margins.left() + margins.right();
+    int chromeH = margins.top() + margins.bottom();
+
+    if (const auto *boxLayout = qobject_cast<const QVBoxLayout *>(layout())) {
+        chromeH += boxLayout->spacing() * 2;
+
+        if (const auto *topLayout = qobject_cast<const QLayout *>(boxLayout->itemAt(0)->layout()))
+            chromeH += topLayout->sizeHint().height();
+
+        if (const auto *bottomLayout = qobject_cast<const QLayout *>(boxLayout->itemAt(2)->layout()))
+            chromeH += bottomLayout->sizeHint().height();
+    }
+
+    return {chromeW, chromeH};
+}
+
+void DeviceWidget::applyVideoAreaSize(const QSize &videoSize)
+{
+    if (auto *screenFrame = findChild<QFrame *>("screenFrame"))
+        screenFrame->setFixedSize(videoSize);
+
+    setFixedSize(videoSize + videoAreaChromeSize());
+    updateOverlayControls();
+}
+
 DeviceWidget::~DeviceWidget()
 {
     EventHub::off(this, "deviceNameChanged");

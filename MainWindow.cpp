@@ -1714,8 +1714,8 @@ void MainWindow::doRelayoutDevices()
             item->setHidden(!deviceWidget || !devicesInGroup.contains(deviceWidget->deviceInfo));
 
             if (!item->isHidden()) {
-                item->setSizeHint(targetSize + QSize(0, 54));
-                deviceWidget->setFixedSize(targetSize + QSize(0, 54));
+                deviceWidget->applyVideoAreaSize(targetSize);
+                item->setSizeHint(deviceWidget->sizeHint());
                 actualVisibleCount++; // 只有未隐藏且物理存在于该容器的才计数
             }
         }
