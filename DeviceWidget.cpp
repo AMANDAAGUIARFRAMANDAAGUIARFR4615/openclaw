@@ -10,7 +10,6 @@
 #include "VideoFrameWidget.h"
 #include "LambdaEventFilter.h"
 #include "TunnelClient.h"
-#include "global.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -199,38 +198,6 @@ void DeviceWidget::setupVideoConnection()
             }
         });
     }
-    else if (Config::isWifiTcpClientMode())
-    {
-        auto appendVideoData = [=](const QByteArray& data) {
-            qint64 expireTime = deviceInfo->expireAt.get();
-            qint64 currentTime = Account::getInstance()->loginTime.get() + elapsedTimer->elapsed();
-            if (expireTime > currentTime)
-            {
-                if (m_videoDevice) m_videoDevice->appendData(data);
-                if (streamRecorder_)
-                    streamRecorder_->append(data);
-
-                if (expireTime - currentTime < HIDE_NUM(86400000))
-                    ipLabel->setText(deviceInfo->localIp + HIDE_STR("<font color='orange'>[即将过期]</font>"));
-                else
-                    ipLabel->setText(deviceInfo->localIp);
-            }
-            else
-            {
-                ipLabel->setText(deviceInfo->localIp + (deviceInfo->expireAt.get() == 0 ? "" : HIDE_STR("<font color='red'>[已过期]</font>")));
-            }
-        };
-
-        m_videoSocket = new QTcpSocket(this);
-        connect(m_videoSocket, &QTcpSocket::readyRead, this, [=]() {
-            appendVideoData(m_videoSocket->readAll());
-        });
-        connect(m_videoSocket, &QTcpSocket::disconnected, this, [this]() {
-            qDebugEx() << "投屏连接断开" << deviceInfo->localIp;
-        });
-        m_videoSocket->connectToHost(deviceInfo->localIp, deviceInfo->videoPort);
-        qDebugEx() << "主动连接投屏" << deviceInfo->localIp + ":" + QString::number(deviceInfo->videoPort);
-    }
     else
     {
         m_videoServer = new QTcpServer(this);
@@ -309,12 +276,6 @@ void DeviceWidget::teardownVideoConnection()
         m_videoServer->close();
         m_videoServer->deleteLater();
         m_videoServer = nullptr;
-    }
-
-    if (m_videoSocket) {
-        m_videoSocket->disconnectFromHost();
-        m_videoSocket->deleteLater();
-        m_videoSocket = nullptr;
     }
 
     m_videoDevice->close();

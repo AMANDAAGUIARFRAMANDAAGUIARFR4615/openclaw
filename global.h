@@ -19,23 +19,12 @@ extern TunnelClient* tunnelClient;
 #define REMOTEPRO_FEATURE_ELEMENT_HIERARCHY_MENU 0
 #endif
 
-/** 为 1 时 WiFi 模式下 PC 主动 TCP 连接设备；为 0 时 PC 监听等待设备连入。 */
-#ifndef REMOTEPRO_WIFI_TCP_CLIENT_MODE
-#define REMOTEPRO_WIFI_TCP_CLIENT_MODE 1
-#endif
-
 namespace Config {
     static constexpr qint64 WAN_FILE_TRANSFER_SIZE_LIMIT = 5LL * 1024 * 1024;
 
     inline bool isWanMode() {
         return settings && !settings->value("isLanMode", true).toBool();
     }
-
-    inline bool isWifiTcpClientMode() {
-        return REMOTEPRO_WIFI_TCP_CLIENT_MODE != 0;
-    }
-
-    static constexpr quint16 WIFI_TCP_CLIENT_MAIN_PORT = 32839;
 
     inline const QString SERVER_IP() {
 #ifdef QT_DEBUG

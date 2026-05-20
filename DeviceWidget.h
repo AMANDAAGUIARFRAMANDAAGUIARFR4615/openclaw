@@ -4,7 +4,6 @@
 #include "LiveStreamDevice.h"
 #include <QCheckBox>
 #include <QTcpServer>
-#include <QTcpSocket>
 #include <memory>
 
 class DeviceWindow;
@@ -37,7 +36,6 @@ protected:
 
     LiveStreamDevice* m_videoDevice = nullptr;
     QTcpServer* m_videoServer = nullptr;
-    QTcpSocket* m_videoSocket = nullptr;
     DeviceConnection* m_usbVideoConnection = nullptr;
 
     std::unique_ptr<ScreenStreamRecorder> streamRecorder_;
