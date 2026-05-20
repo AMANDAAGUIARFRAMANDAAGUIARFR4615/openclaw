@@ -63,8 +63,9 @@ public:
         setAttribute(Qt::WA_DeleteOnClose);
         setAutoFillBackground(false);
         setObjectName("loginWidget");
-        resize(560, 720);
-        setMinimumSize(480, 600);
+        // 尺寸比例参考设计稿（1024×918，白色卡片约占窗口宽度 66%）
+        resize(kLoginWindowWidth, kLoginWindowHeight);
+        setMinimumSize(kLoginFormCardWidth + 96, 560);
 
         titleLabel = new QLabel("用户登录");
         titleLabel->setObjectName("loginTitle");
@@ -137,7 +138,7 @@ public:
         auto *formContainer = new QFrame(this);
         formContainer->setObjectName("loginFormCard");
         auto *formLayout = new QVBoxLayout(formContainer);
-        formLayout->setContentsMargins(44, 36, 44, 36);
+        formLayout->setContentsMargins(40, 32, 40, 32);
         formLayout->setSpacing(14);
         formLayout->addWidget(titleLabel, 0, Qt::AlignHCenter);
         phoneField = wrapInputField(phoneLineEdit, InputIcon::User);
@@ -152,9 +153,8 @@ public:
         formLayout->addSpacing(6);
         formLayout->addLayout(buttonLayout);
 
-        constexpr int loginFormMaximumWidth = 420;
-        formContainer->setMaximumWidth(loginFormMaximumWidth);
-        formContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+        formContainer->setFixedWidth(kLoginFormCardWidth);
+        formContainer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
 
         auto *shadow = new QGraphicsDropShadowEffect(formContainer);
         shadow->setBlurRadius(32);
@@ -286,6 +286,11 @@ protected:
     }
 
 private:
+    // 参考设计稿比例（卡片宽约等于窗口宽 66%），尺寸按常见登录窗缩放
+    static constexpr int kLoginWindowWidth = 520;
+    static constexpr int kLoginWindowHeight = 660;
+    static constexpr int kLoginFormCardWidth = kLoginWindowWidth * 66 / 100; // 343
+
     enum class InputIcon { User, Lock, Device };
 
     QLabel *titleLabel = nullptr;
