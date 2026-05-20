@@ -815,7 +815,7 @@ void DeviceView::dropEvent(QDropEvent *event)
         totalSize += qMax<qint64>(0, Tools::getFileSize(url.toLocalFile()));
     }
 
-    if (Config::isWanMode() && totalSize > Config::WAN_FILE_TRANSFER_SIZE_LIMIT) {
+    if (Config::isWanMode() && connection->type != DeviceConnection::Usb && totalSize > Config::WAN_FILE_TRANSFER_SIZE_LIMIT) {
         new ToastWidget(QString("广域网一次上传不能超过 %1").arg(Tools::formatByteSize(Config::WAN_FILE_TRANSFER_SIZE_LIMIT)), this);
         return;
     }

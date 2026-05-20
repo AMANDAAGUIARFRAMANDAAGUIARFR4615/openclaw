@@ -564,7 +564,7 @@ QString RemoteFileExplorer::getLocalPath(const QString& remotePath) {
 
 bool RemoteFileExplorer::validateWanTransferSize(int type, qint64 totalSize)
 {
-    if (!Config::isWanMode() || totalSize <= Config::WAN_FILE_TRANSFER_SIZE_LIMIT)
+    if (connection->type == DeviceConnection::Usb || !Config::isWanMode() || totalSize <= Config::WAN_FILE_TRANSFER_SIZE_LIMIT)
         return true;
 
     const QString action = type == 1 ? "下载" : "上传";
