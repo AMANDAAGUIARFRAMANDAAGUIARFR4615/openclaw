@@ -24,6 +24,7 @@ public:
     bool isStreamRecording() const { return static_cast<bool>(streamRecorder_); }
 
     DeviceWindow* getDeviceWindow() { return deviceWindow; }
+    const DeviceWindow* getDeviceWindow() const { return deviceWindow; }
 
     QCheckBox* const checkBox = new QCheckBox;
 

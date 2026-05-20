@@ -59,9 +59,34 @@
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QCloseEvent>
+#include <QSignalBlocker>
 #include <QMouseEvent>
 #include <QWindow>
 #include <QScrollBar>
+#include <QGraphicsDropShadowEffect>
+#include <QFontMetrics>
+
+namespace {
+constexpr auto kPrimaryBlue = "#4A86F7";
+constexpr auto kPageBg = "#F0F3F8";
+constexpr auto kPanelBg = "#FFFFFF";
+constexpr auto kTextMuted = "#94A3B8";
+constexpr auto kBorder = "#E2E8F0";
+
+int computeSidebarWidth(const QStringList &menu)
+{
+    QFont sidebarFont;
+    sidebarFont.setPixelSize(13);
+    const QFontMetrics fm(sidebarFont);
+    int maxText = 0;
+    for (const QString &text : menu) {
+        QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
+        finder.toNextBoundary();
+        maxText = qMax(maxText, fm.horizontalAdvance(text.mid(finder.position())));
+    }
+    return 20 + 8 + maxText + 32;
+}
+} // namespace
 
 QString formatElapsedTime(qint64 elapsedMs)
 {
@@ -141,44 +166,39 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     sideBarCollapsed = settings->value("mainWindowSidebarCollapsed", false).toBool();
 
     auto central = new QWidget(this);
+    central->setObjectName("mainCentral");
     setCentralWidget(central);
 
     auto mainLayout = new QHBoxLayout(central);
+    mainLayout->setContentsMargins(12, 12, 12, 12);
+    mainLayout->setSpacing(10);
 
     mainSplitter = new QSplitter(Qt::Horizontal, this);
+    mainSplitter->setObjectName("mainSplitter");
+    mainSplitter->setHandleWidth(1);
     mainLayout->addWidget(mainSplitter);
 
-    sideBarList = new QListWidget();
-    sideBarList->setViewMode(QListView::IconMode);
+    sideBarPanel = new QFrame(this);
+    sideBarPanel->setObjectName("sideBarPanel");
+    auto *sideBarPanelLayout = new QVBoxLayout(sideBarPanel);
+    sideBarPanelLayout->setContentsMargins(8, 12, 8, 12);
+    sideBarPanelLayout->setSpacing(0);
+
+    sideBarList = new QListWidget(sideBarPanel);
+    sideBarList->setObjectName("sideBarList");
+    sideBarList->setViewMode(QListView::ListMode);
+    sideBarList->setFlow(QListView::TopToBottom);
+    sideBarList->setWrapping(false);
     sideBarList->setWordWrap(false);
     sideBarList->setTextElideMode(Qt::ElideNone);
     sideBarList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    sideBarList->setMinimumWidth(0);
-    sideBarList->setMaximumWidth(sideBarExpandedWidth);
+    sideBarList->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     sideBarList->setCursor(Qt::PointingHandCursor);
     sideBarList->setDragDropMode(QAbstractItemView::NoDragDrop);
-    sideBarList->setStyleSheet(R"(
-        QListWidget {
-            border: none;
-            outline: 0px;
-            background-color: transparent;
-        }
-        QListWidget::item {
-            border: 1px solid transparent; 
-            border-radius: 6px;
-            color: palette(text);
-            padding: 4px;
-        }
-        QListWidget::item:hover {
-            background-color: palette(midlight); 
-            border: 1px solid palette(mid);
-        }
-        QListWidget::item:selected {
-            background-color: palette(highlight);
-            color: palette(highlighted-text);
-            border: 1px solid palette(dark);
-        }
-    )");
+    sideBarList->setFrameShape(QFrame::NoFrame);
+    sideBarList->setIconSize(QSize(20, 20));
+    sideBarList->setSpacing(4);
+    sideBarList->setUniformItemSizes(true);
 
     auto updateSideBar = [=]() {
         sideBarList->clear();
@@ -195,17 +215,24 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             auto labelPart = text.mid(splitPos);
 
             auto item = new QListWidgetItem(EmojiIconProvider::createIcon(iconPart), labelPart);
+            item->setTextAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
             sideBarList->addItem(item);
-            item->setSizeHint(QSize(sideBarList->width() - 4, 70));
+            constexpr int itemH = 38;
+            item->setSizeHint(QSize(0, itemH));
         }
+
+        sideBarExpandedWidth = computeSidebarWidth(sideBarMenu);
     };
 
     updateSideBar();
+    sideBarPanelLayout->addWidget(sideBarList);
 
     connect(AppSettingsDialog::getInstance(), &AppSettingsDialog::configurationChanged, this, [=](const QString &key) {
         if (key == "sideBarMenu")
         {
             updateSideBar();
+            if (!sideBarCollapsed)
+                applySidebarExpandedSize();
             return;
         }
 
@@ -275,7 +302,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             return;
         }
 
-        if (title == "手机软件源") {
+        if (title == "软件源") {
             SourceRepoDialog(this).exec();
             return;
         }
@@ -436,51 +463,68 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
     });
 
-    mainSplitter->addWidget(sideBarList);
+    mainSplitter->addWidget(sideBarPanel);
+    mainSplitter->setStretchFactor(0, 0);
+    mainSplitter->setStretchFactor(1, 1);
 
-    auto rightContainer = new QWidget(this);
-    auto rightLayout = new QVBoxLayout(rightContainer);
-    rightLayout->setContentsMargins(0, 0, 0, 0);
-    rightLayout->setSpacing(5);
+    contentPanel = new QFrame(this);
+    contentPanel->setObjectName("contentPanel");
+    auto rightLayout = new QVBoxLayout(contentPanel);
+    rightLayout->setContentsMargins(16, 14, 16, 12);
+    rightLayout->setSpacing(8);
     sideBarToggleButton = new QToolButton(central);
     sideBarToggleButton->setToolTip("收起/展开左侧栏");
     sideBarToggleButton->setFixedSize(22, 22);
-    sideBarToggleButton->setStyleSheet(
-        "QToolButton { color: #111827; background-color: rgba(255,255,255,220); border: 1px solid #D1D5DB; border-radius: 11px; font-size: 12px; font-weight: 700; padding: 0px; }"
-        "QToolButton:hover { background-color: rgba(255,255,255,245); border-color: #9CA3AF; }"
-        "QToolButton:pressed { background-color: rgba(243,244,246,245); }"
-    );
     sideBarToggleButton->show();
 
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-    auto hLayout = new QHBoxLayout();
-    hLayout->setContentsMargins(5, 5, 5, 5);
-    hLayout->setSpacing(5);
-    hLayout->addSpacing(8);
+    multiControlSwitchButton->setColors(QColor(kPrimaryBlue), QColor("#E8ECF2"));
+    multiControlSwitchButton->setFixedHeight(32);
+    lineDispatcherSwitchButton->setColors(QColor(kPrimaryBlue), QColor("#E8ECF2"));
+    lineDispatcherSwitchButton->setFixedHeight(32);
+
+    QFont toolbarFont;
+    toolbarFont.setPixelSize(13);
+    randomDelayCheckBox->setObjectName("toolbarCheck");
+    randomDelayCheckBox->setFont(toolbarFont);
+
+    auto controlToolbar = new QWidget(contentPanel);
+    controlToolbar->setObjectName("controlToolbar");
+    auto hLayout = new QHBoxLayout(controlToolbar);
+    hLayout->setContentsMargins(2, 2, 2, 6);
+    hLayout->setSpacing(16);
     hLayout->addWidget(multiControlSwitchButton);
 
     auto randomDelayChecked = settings->value("randomDelayChecked").toBool();
     randomDelayCheckBox->setChecked(randomDelayChecked);
-    randomDelayCheckBox->hide();
+    randomDelayCheckBox->setVisible(multiControlSwitchButton->isChecked());
 
     minDelaySpinBox->setRange(0, 99);
     maxDelaySpinBox->setRange(0, 99);
-    minDelaySpinBox->setSuffix("秒");
-    maxDelaySpinBox->setSuffix("秒");
+    minDelaySpinBox->setSuffix(QStringLiteral("秒"));
+    maxDelaySpinBox->setSuffix(QStringLiteral("秒"));
+    minDelaySpinBox->setFont(toolbarFont);
+    maxDelaySpinBox->setFont(toolbarFont);
     minDelaySpinBox->setValue(settings->value("minDelay", 3).toInt());
     maxDelaySpinBox->setValue(settings->value("maxDelay", 10).toInt());
     minDelaySpinBox->setMaximum(maxDelaySpinBox->value());
     maxDelaySpinBox->setMinimum(minDelaySpinBox->value());
 
     auto rangeLayout = new QHBoxLayout();
+    rangeLayout->setSpacing(10);
+    rangeLayout->setContentsMargins(0, 2, 0, 2);
     rangeLayout->addWidget(minDelaySpinBox);
-    rangeLayout->addWidget(new QLabel("—"));
+    auto rangeDash = new QLabel(QStringLiteral("-"), controlToolbar);
+    rangeDash->setObjectName("rangeDashLabel");
+    rangeDash->setAlignment(Qt::AlignCenter);
+    rangeDash->setFixedWidth(16);
+    rangeLayout->addWidget(rangeDash);
     rangeLayout->addWidget(maxDelaySpinBox);
     Tools::setLayoutVisible(rangeLayout, multiControlSwitchButton->isChecked() && randomDelayChecked);
 
-    connect(randomDelayCheckBox, &QCheckBox::clicked, [=](bool checked) {
+    connect(randomDelayCheckBox, &QCheckBox::toggled, [=](bool checked) {
         settings->setValue("randomDelayChecked", checked);
-        Tools::setLayoutVisible(rangeLayout, checked);
+        Tools::setLayoutVisible(rangeLayout, multiControlSwitchButton->isChecked() && checked);
     });
 
     connect(multiControlSwitchButton, &SwitchButton::toggled, [=](bool checked) {
@@ -488,14 +532,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         Tools::setLayoutVisible(rangeLayout, checked && randomDelayCheckBox->isChecked());
     });
 
-    connect(minDelaySpinBox, &QSpinBox::valueChanged, [this](int value) {
+    connect(minDelaySpinBox, &PillSpinBox::valueChanged, [this](int value) {
         maxDelaySpinBox->setMinimum(value);
         settings->setValue("minDelay", value);
         for (const auto& deviceWidget : getDeviceWidgets()) {
             deviceWidget->deviceInfo->randomDelay = 0;
         }
     });
-    connect(maxDelaySpinBox, &QSpinBox::valueChanged, [this](int value) {
+    connect(maxDelaySpinBox, &PillSpinBox::valueChanged, [this](int value) {
         minDelaySpinBox->setMaximum(value);
         settings->setValue("maxDelay", value);
         for (const auto& deviceWidget : getDeviceWidgets()) {
@@ -508,45 +552,73 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     hLayout->addWidget(lineDispatcherSwitchButton);
     hLayout->addStretch();
 
-    auto runtimeLabel = new QLabel("运行时间 00:00:00");
-    runtimeLabel->setToolTip("软件启动到现在的运行时间");
-    hLayout->addWidget(runtimeLabel);
+    auto runtimeChip = new QFrame(controlToolbar);
+    runtimeChip->setObjectName("runtimeChip");
+    runtimeChip->setFixedHeight(32);
+    runtimeChip->setToolTip(QStringLiteral("软件启动到现在的运行时间"));
+    auto runtimeLayout = new QHBoxLayout(runtimeChip);
+    runtimeLayout->setContentsMargins(12, 0, 14, 0);
+    runtimeLayout->setSpacing(6);
+
+    auto runtimeClock = new QLabel(runtimeChip);
+    runtimeClock->setPixmap(EmojiIconProvider::createPixmap(QStringLiteral("⏱"), 16));
+    runtimeClock->setFixedSize(16, 16);
+
+    auto runtimeTitle = new QLabel(QStringLiteral("运行时间"), runtimeChip);
+    runtimeTitle->setObjectName("runtimeTitle");
+
+    auto runtimeValue = new QLabel(formatElapsedTime(elapsedTimer->elapsed()), runtimeChip);
+    runtimeValue->setObjectName("runtimeValue");
+
+    runtimeLayout->addWidget(runtimeClock);
+    runtimeLayout->addWidget(runtimeTitle);
+    runtimeLayout->addWidget(runtimeValue);
+    hLayout->addWidget(runtimeChip);
 
     auto runtimeTimer = new QTimer(this);
     runtimeTimer->setInterval(500);
-    auto updateRuntimeLabel = [runtimeLabel]() {
-        runtimeLabel->setText(QString("运行时间 %1").arg(formatElapsedTime(elapsedTimer->elapsed())));
-    };
-    connect(runtimeTimer, &QTimer::timeout, this, updateRuntimeLabel);
-    updateRuntimeLabel();
+    connect(runtimeTimer, &QTimer::timeout, this, [runtimeValue]() {
+        runtimeValue->setText(formatElapsedTime(elapsedTimer->elapsed()));
+    });
     runtimeTimer->start();
 
-    rightLayout->addLayout(hLayout);
+    rightLayout->addWidget(controlToolbar);
 #else
     multiControlSwitchButton->setChecked(false);
     lineDispatcherSwitchButton->setChecked(false);
 #endif
 
+    tabWidget->setObjectName("deviceTabWidget");
+    tabWidget->setDocumentMode(true);
+
     auto tabBar = tabWidget->tabBar();
+    tabBar->setObjectName("deviceTabBar");
     tabBar->setMovable(true);
     tabBar->setToolTip("右键点击可修改分组");
     tabBar->setContextMenuPolicy(Qt::CustomContextMenu);
+    tabBar->setDrawBase(false);
+    tabBar->setElideMode(Qt::ElideRight);
+    tabBar->setUsesScrollButtons(true);
     QFont font = tabWidget->font();
-    font.setPixelSize(16);
+    font.setPixelSize(13);
     tabWidget->setFont(font);
+    tabWidget->tabBar()->setExpanding(false);
 
     tabBar->installEventFilter(this);
 
     connect(tabBar, &QTabBar::tabMoved, this, &MainWindow::onTabMoved);
     connect(tabBar, &QWidget::customContextMenuRequested, this, &MainWindow::showTabBarContextMenu);
 
-    rightLayout->addWidget(tabWidget);
+    rightLayout->addWidget(tabWidget, 1);
 
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
     auto controlBar = new QWidget(this);
     auto controlLayout = new QHBoxLayout(controlBar);
+    controlLayout->setContentsMargins(4, 8, 4, 0);
+    controlLayout->setSpacing(12);
 
     zoomSlider = new QSlider(Qt::Horizontal, controlBar);
+    zoomSlider->setObjectName("zoomSlider");
     zoomSlider->setRange(20, 500);
 
     auto zoomOutBtn = new QToolButton(controlBar);
@@ -567,32 +639,41 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         zoomSlider->setValue(zoomSlider->value() + 10);
     });
     
-    auto percentLabel = new QLabel("100%", controlBar);
-    percentLabel->setFixedWidth(40);
-    percentLabel->setAlignment(Qt::AlignCenter);
+    auto zoomPercentLabel = new QLabel("100%", controlBar);
+    zoomPercentLabel->setObjectName("zoomPercentLabel");
+    zoomPercentLabel->setFixedHeight(28);
+    zoomPercentLabel->setMinimumWidth(52);
+    zoomPercentLabel->setAlignment(Qt::AlignCenter);
 
     connect(zoomSlider, &QSlider::valueChanged, [=](int value) {
         getTab().scale = value;
-        percentLabel->setText(QString::number(value) + "%");
+        zoomPercentLabel->setText(QString::number(value) + "%");
         relayoutDevices();
     });
 
     controlLayout->addWidget(zoomOutBtn);
     controlLayout->addWidget(zoomSlider);
     controlLayout->addWidget(zoomInBtn);
-    controlLayout->addWidget(percentLabel);
+    controlLayout->addWidget(zoomPercentLabel);
 
     rightLayout->addWidget(controlBar);
 #endif
 
-    mainSplitter->addWidget(rightContainer);
+    mainSplitter->addWidget(contentPanel);
     mainSplitter->setStretchFactor(1, 1);
     mainSplitter->setSizes({sideBarExpandedWidth, qMax(1, width() - sideBarExpandedWidth)});
     mainSplitter->installEventFilter(this);
 
     connect(mainSplitter, &QSplitter::splitterMoved, this, [this](int pos, int) {
-        if (pos > 0) {
-            sideBarExpandedWidth = pos;
+        if (!sideBarCollapsed && pos > 0 && pos != sideBarExpandedWidth) {
+            QSignalBlocker blocker(mainSplitter);
+            int total = 0;
+            for (const int size : mainSplitter->sizes())
+                total += size;
+            if (total <= 0)
+                total = qMax(1, mainSplitter->width());
+            mainSplitter->setSizes({sideBarExpandedWidth, qMax(1, total - sideBarExpandedWidth)});
+            pos = sideBarExpandedWidth;
         }
 
         const bool collapsed = pos <= 0;
@@ -610,16 +691,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     connect(sideBarToggleButton, &QToolButton::clicked, this, [this]() {
         setSidebarCollapsed(!sideBarCollapsed);
     });
+    if (sideBarToggleButton)
+        sideBarToggleButton->setText(sideBarCollapsed ? "▶" : "◀");
     setSidebarCollapsed(sideBarCollapsed);
     sideBarToggleButton->raise();
 
     deviceListWidget = new ExplicitSelectionListWidget(this);
+    deviceListWidget->setObjectName("deviceList");
     deviceListWidget->setViewMode(QListWidget::IconMode);
     deviceListWidget->setResizeMode(QListWidget::Adjust);
     deviceListWidget->setLayoutMode(QListView::SinglePass);
     deviceListWidget->setMovement(QListView::Static);
     deviceListWidget->setDragDropMode(QListWidget::NoDragDrop);
-    deviceListWidget->setSpacing(6);
+    deviceListWidget->setSpacing(12);
     deviceListWidget->setSortingEnabled(true);
     deviceListWidget->sortItems(Qt::AscendingOrder);
     deviceListWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -931,6 +1015,260 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         broadcastTask();
     });
     timer->start(3000);
+
+    applyMainWindowTheme();
+}
+
+void MainWindow::applyMainWindowTheme()
+{
+    const QString theme = QString(R"(
+        QWidget#mainCentral { background: %1; }
+        QSplitter#mainSplitter::handle { background: transparent; width: 0px; }
+        QFrame#sideBarPanel {
+            background: %2;
+            border: none;
+            border-radius: 16px;
+        }
+        QListWidget#sideBarList {
+            border: none;
+            outline: none;
+            background: transparent;
+        }
+        QListWidget#sideBarList::item {
+            border-radius: 18px;
+            color: #6B7280;
+            padding: 6px 10px;
+            margin: 2px 6px;
+            font-size: 13px;
+        }
+        QListWidget#sideBarList::item:hover { background: #F3F6FA; }
+        QListWidget#sideBarList::item:selected {
+            background: #EAF2FF;
+            color: %3;
+            font-weight: 600;
+        }
+        QFrame#contentPanel {
+            background: %2;
+            border: 1px solid %4;
+            border-radius: 12px;
+        }
+        QWidget#controlToolbar { background: transparent; }
+        QCheckBox#toolbarCheck {
+            color: #475569;
+            font-size: 13px;
+            spacing: 8px;
+        }
+        QCheckBox#toolbarCheck::indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 1.5px solid #C5D3E8;
+            background: #FFFFFF;
+        }
+        QCheckBox#toolbarCheck::indicator:hover { border-color: %3; }
+        QCheckBox#toolbarCheck::indicator:checked {
+            background: %3;
+            border-color: %3;
+            image: url(:/icons/check_white.svg);
+        }
+        QLabel#rangeDashLabel {
+            color: #CBD5E1;
+            font-size: 14px;
+            padding-bottom: 1px;
+        }
+        QFrame#pillSpinBox {
+            background: #FFFFFF;
+            border: 1px solid #E5EAF0;
+            border-radius: 17px;
+        }
+        QFrame#pillSpinBox[focused="true"] {
+            border-color: %3;
+        }
+        QSpinBox#pillSpinBoxInner {
+            background: transparent;
+            border: none;
+            color: #1E293B;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 0;
+            min-height: 22px;
+        }
+        QSpinBox#pillSpinBoxInner::up-button, QSpinBox#pillSpinBoxInner::down-button {
+            width: 0;
+            height: 0;
+            border: none;
+        }
+        QFrame#runtimeChip {
+            background: #F1F5F9;
+            border: none;
+            border-radius: 16px;
+            min-height: 32px;
+        }
+        QLabel#runtimeTitle { color: #64748B; font-size: 13px; }
+        QLabel#runtimeValue {
+            color: %3;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: "SF Mono", "Menlo", "Consolas", monospace;
+        }
+        QTabWidget#deviceTabWidget::pane {
+            border: 1px solid %4;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            background: %2;
+            top: -1px;
+            padding: 0;
+        }
+        QTabWidget#deviceTabWidget::tab-bar {
+            left: 0;
+            alignment: left;
+        }
+        QTabBar#deviceTabBar {
+            background: transparent;
+            border: none;
+            padding: 6px 6px 0 6px;
+        }
+        QTabBar#deviceTabBar::tab {
+            background: #EEF2F7;
+            color: #64748B;
+            border: 1px solid %4;
+            border-top: none;
+            border-bottom: 1px solid #EEF2F7;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            padding: 7px 18px 9px 18px;
+            margin: 0 2px 0 0;
+            min-width: 80px;
+            font-size: 13px;
+        }
+        QTabBar#deviceTabBar::tab:!selected {
+            margin-top: 4px;
+            padding-top: 5px;
+            padding-bottom: 7px;
+        }
+        QTabBar#deviceTabBar::tab:hover:!selected {
+            background: #F4F7FB;
+            color: #475569;
+        }
+        QTabBar#deviceTabBar::tab:selected {
+            background: %2;
+            color: %3;
+            border-color: %4;
+            border-top: none;
+            border-bottom-color: %2;
+            font-weight: 600;
+            margin-top: 0;
+            padding-top: 7px;
+            padding-bottom: 9px;
+        }
+        QTabBar#deviceTabBar::scroller {
+            width: 20px;
+        }
+        QListWidget#deviceList {
+            background: transparent;
+            border: none;
+            outline: none;
+        }
+        QListWidget#deviceList::item {
+            background: transparent;
+            border: none;
+        }
+        QFrame#deviceCard {
+            background: %2;
+            border: 1px solid %4;
+            border-radius: 12px;
+        }
+        QFrame#screenFrame {
+            background: #000000;
+            border-radius: 10px;
+        }
+        QCheckBox#deviceCardCheck::indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 1px solid #CBD5E1;
+            background: %2;
+        }
+        QCheckBox#deviceCardCheck::indicator:checked {
+            background: %3;
+            border-color: %3;
+            image: url(:/icons/check_white.svg);
+        }
+        QLabel#deviceFooterLabel, QLabel#ipLabel {
+            color: %5;
+            font-size: 12px;
+        }
+        QLabel#overlayStatusLabel {
+            color: #FFFFFF;
+            font-size: 14px;
+            font-weight: 500;
+            background: transparent;
+        }
+        QPushButton#overlayUnlockBtn {
+            background: %3;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 999px;
+            padding: 0 28px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        QPushButton#overlayUnlockBtn:hover { background: #3B78EE; }
+        QPushButton#overlayUnlockBtn:pressed { background: #356FE0; }
+        QPushButton#deviceLaunchBtn {
+            border: none;
+            background: transparent;
+            padding: 2px;
+        }
+        QPushButton#deviceLaunchBtn:hover { background: #F1F5F9; border-radius: 6px; }
+        QSlider#zoomSlider::groove:horizontal {
+            height: 4px;
+            background: #E2E8F0;
+            border-radius: 2px;
+        }
+        QSlider#zoomSlider::sub-page:horizontal { background: %3; border-radius: 2px; }
+        QSlider#zoomSlider::handle:horizontal {
+            width: 14px;
+            height: 14px;
+            margin: -5px 0;
+            background: %2;
+            border: 2px solid %3;
+            border-radius: 7px;
+        }
+        QLabel#zoomPercentLabel { color: #64748B; font-size: 13px; }
+    )").arg(kPageBg, kPanelBg, kPrimaryBlue, kBorder, kTextMuted);
+
+    centralWidget()->setStyleSheet(theme);
+
+    sideBarToggleButton->setStyleSheet(QString(R"(
+        QToolButton {
+            color: #64748B;
+            background: %1;
+            border: 1px solid %2;
+            border-radius: 11px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        QToolButton:hover { background: #F8FAFC; border-color: %3; color: %3; }
+    )").arg(kPanelBg, kBorder, kPrimaryBlue));
+
+    if (sideBarPanel && !sideBarPanel->graphicsEffect()) {
+        auto *shadow = new QGraphicsDropShadowEffect(sideBarPanel);
+        shadow->setBlurRadius(20);
+        shadow->setOffset(0, 4);
+        shadow->setColor(QColor(15, 23, 42, 25));
+        sideBarPanel->setGraphicsEffect(shadow);
+    }
+    if (contentPanel && !contentPanel->graphicsEffect()) {
+        auto *shadow = new QGraphicsDropShadowEffect(contentPanel);
+        shadow->setBlurRadius(20);
+        shadow->setOffset(0, 4);
+        shadow->setColor(QColor(15, 23, 42, 25));
+        contentPanel->setGraphicsEffect(shadow);
+    }
+
 }
 
 MainWindow::~MainWindow()
@@ -940,9 +1278,36 @@ MainWindow::~MainWindow()
     EventHub::off(this, "getAppInfo");
 }
 
+void MainWindow::applySidebarExpandedSize()
+{
+    if (!sideBarPanel || !mainSplitter || sideBarCollapsed)
+        return;
+
+    sideBarPanel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+    sideBarPanel->setFixedWidth(sideBarExpandedWidth);
+
+    const auto sizes = mainSplitter->sizes();
+    int total = 0;
+    for (const int size : sizes)
+        total += size;
+    if (total <= 0)
+        total = qMax(1, mainSplitter->width());
+    if (total <= 0)
+        total = qMax(1, width());
+    if (total <= 0)
+        return;
+
+    const int left = qMin(sideBarExpandedWidth, total - 1);
+    if (sizes.isEmpty() || sizes[0] != left) {
+        QSignalBlocker blocker(mainSplitter);
+        mainSplitter->setSizes({left, qMax(1, total - left)});
+    }
+    if (sideBarToggleButton)
+        updateSidebarToggleButtonPosition();
+}
+
 void MainWindow::setSidebarCollapsed(bool collapsed)
 {
-    const bool wasCollapsed = sideBarCollapsed;
     sideBarCollapsed = collapsed;
     settings->setValue("mainWindowSidebarCollapsed", sideBarCollapsed);
 
@@ -960,28 +1325,23 @@ void MainWindow::setSidebarCollapsed(bool collapsed)
     total = qMax(1, total);
 
     if (collapsed) {
-        // 启动时若本来就是折叠态，不要用临时布局宽度覆盖展开宽度。
-        if (!wasCollapsed) {
-            if (!sizes.isEmpty() && sizes[0] > 0) {
-                sideBarExpandedWidth = sizes[0];
-            }
-        }
-        sideBarList->setMaximumWidth(0);
+        sideBarPanel->setMinimumWidth(0);
+        sideBarPanel->setMaximumWidth(0);
         mainSplitter->setSizes({0, total});
         updateSidebarToggleButtonPosition();
         relayoutDevices();
         return;
     }
 
-    sideBarList->setMaximumWidth(sideBarExpandedWidth);
-    const int left = qBound(60, sideBarExpandedWidth, total - 1);
-    mainSplitter->setSizes({left, qMax(1, total - left)});
-    updateSidebarToggleButtonPosition();
+    applySidebarExpandedSize();
     relayoutDevices();
 }
 
 void MainWindow::updateSidebarToggleButtonPosition()
 {
+    if (!mainSplitter || !sideBarToggleButton || !centralWidget())
+        return;
+
     const QRect splitterRect = mainSplitter->geometry();
     auto *handle = mainSplitter->handle(1);
     int buttonX = 0;
@@ -1354,8 +1714,8 @@ void MainWindow::doRelayoutDevices()
             item->setHidden(!deviceWidget || !devicesInGroup.contains(deviceWidget->deviceInfo));
 
             if (!item->isHidden()) {
-                item->setSizeHint(targetSize + QSize(0, 46));
-                deviceWidget->setFixedSize(targetSize + QSize(0, 46));
+                item->setSizeHint(targetSize + QSize(0, 54));
+                deviceWidget->setFixedSize(targetSize + QSize(0, 54));
                 actualVisibleCount++; // 只有未隐藏且物理存在于该容器的才计数
             }
         }
@@ -1429,10 +1789,17 @@ void MainWindow::addItem(DeviceConnection* connection)
     }
 
     auto frame = new QFrame();
+    frame->setObjectName("deviceCard");
     frame->setFrameShape(QFrame::NoFrame);
     auto frameLayout = new QVBoxLayout(frame);
     frameLayout->setContentsMargins(0, 0, 0, 0);
     frameLayout->addWidget(player);
+
+    auto *cardShadow = new QGraphicsDropShadowEffect(frame);
+    cardShadow->setBlurRadius(26);
+    cardShadow->setOffset(0, 6);
+    cardShadow->setColor(QColor(16, 38, 73, 40));
+    frame->setGraphicsEffect(cardShadow);
 
     auto item = new NaturalSortListWidgetItem();
     item->setText(deviceInfo->deviceName + " " + deviceInfo->localIp);

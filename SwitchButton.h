@@ -45,10 +45,8 @@ public:
     QSize sizeHint() const override {
         QFontMetrics fm(font());
         int textW = qMax(fm.horizontalAdvance(m_onText), fm.horizontalAdvance(m_offText));
-        int h = 30;
-        // 宽度 = 滑块直径(约等于h) + 文字宽 + 左右额外间距(20)
-        // 这里的间距决定了“距离”的大小
-        int w = h + textW + 20;
+        int h = 32;
+        int w = h + textW + 24;
         return QSize(w, h);
     }
 
@@ -95,9 +93,11 @@ protected:
         p.setPen(Qt::NoPen);
         p.drawRoundedRect(0, 0, w, h, h/2, h/2);
 
-        QColor currentTextColor = m_offset > 0.5 ? palette.color(QPalette::HighlightedText) : palette.color(QPalette::Text);
-        p.setPen(currentTextColor);
-        p.setFont(font());
+        p.setPen(m_offset > 0.5 ? QColor(Qt::white) : QColor("#64748B"));
+        QFont labelFont = font();
+        labelFont.setPixelSize(13);
+        labelFont.setWeight(m_offset > 0.5 ? QFont::DemiBold : QFont::Normal);
+        p.setFont(labelFont);
 
         // 核心修改逻辑：精确计算“空白区域”的矩形
         // 目标：将文字绘制在 [滑块边缘] 和 [背景边缘] 之间的正中心
@@ -122,7 +122,7 @@ protected:
         float endX = w - sliderSize - margin;
         float currentX = startX + (endX - startX) * m_offset;
 
-        p.setBrush(palette.color(QPalette::Base));
+        p.setBrush(Qt::white);
         p.drawEllipse(QRectF(currentX, margin, sliderSize, sliderSize));
     }
 

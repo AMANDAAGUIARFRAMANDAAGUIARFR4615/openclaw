@@ -17,19 +17,22 @@
 #include <QStyle>
 #include <QClipboard>
 #include <QInputDialog>
+#include <QFrame>
 
 DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo): DeviceView(connection, deviceInfo)
 {
     auto layout = new QVBoxLayout;
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(0);
+    layout->setContentsMargins(10, 8, 10, 8);
+    layout->setSpacing(6);
 
     auto topLayout = new QHBoxLayout;
-    topLayout->setContentsMargins(5, 0, 5, 0);
-    topLayout->setSpacing(0);
+    topLayout->setContentsMargins(0, 0, 0, 0);
+    topLayout->setSpacing(6);
+
+    checkBox->setObjectName("deviceCardCheck");
 
     auto deviceInfoLabel = new QLabel(deviceInfo->displayName(true), this);
-    deviceInfoLabel->setAlignment(Qt::AlignCenter);
+    deviceInfoLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     deviceInfoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     deviceInfoLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
     deviceInfoLabel->setOpenExternalLinks(false);
@@ -60,6 +63,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     });
 
     auto launchButton = new QPushButton(this);
+    launchButton->setObjectName("deviceLaunchBtn");
     launchButton->setIcon(style()->standardIcon(QStyle::SP_TitleBarMaxButton));
     launchButton->setFlat(true);
     launchButton->setToolTip("在独立窗口中打开");
@@ -70,26 +74,35 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
     checkBox->setEnabled(false);
 #endif
 
-    topLayout->addWidget(checkBox);
-    topLayout->addStretch();
-    topLayout->addWidget(deviceInfoLabel);
-    topLayout->addStretch();
-    topLayout->addWidget(launchButton);
+    topLayout->addWidget(checkBox, 0, Qt::AlignVCenter);
+    topLayout->addWidget(deviceInfoLabel, 1);
+    topLayout->addWidget(launchButton, 0, Qt::AlignVCenter);
+
+    auto *screenFrame = new QFrame(this);
+    screenFrame->setObjectName("screenFrame");
+    screenFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    overlay->setParent(screenFrame);
+    screenFrame->installEventFilter(new LambdaEventFilter(this, [this](QObject *, QEvent *event) -> bool {
+        if (event->type() == QEvent::Resize)
+            updateOverlayControls();
+        return false;
+    }));
 
     auto ipLabel = new QLabel(connection->type == DeviceConnection::Usb ? "" : deviceInfo->localIp, this);
     ipLabel->setObjectName("ipLabel");
-    ipLabel->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    ipLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     ipLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     ipLabel->setFixedHeight(22);
     auto versionLabel = new QLabel(QStringList{"", "有根", "无根", "隐根"}[deviceInfo->jbType] + deviceInfo->version, this);
+    versionLabel->setObjectName("deviceFooterLabel");
     versionLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     versionLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     versionLabel->setFixedHeight(22);
     versionLabel->setMinimumWidth(1);
     
     auto bottomLayout = new QHBoxLayout;
-    bottomLayout->setContentsMargins(5, 0, 5, 0);
-    bottomLayout->setSpacing(10);
+    bottomLayout->setContentsMargins(2, 2, 2, 0);
+    bottomLayout->setSpacing(8);
 
     installEventFilter(new LambdaEventFilter(this, [=](QObject* watched, QEvent* event) -> bool {
         if (event->type() == QEvent::Resize) {
@@ -104,13 +117,11 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
         return false;
     }));
 
-    bottomLayout->addStretch();
-    bottomLayout->addWidget(ipLabel);
-    bottomLayout->addStretch();
+    bottomLayout->addWidget(ipLabel, 1);
     bottomLayout->addWidget(versionLabel);
 
     layout->addLayout(topLayout);
-    layout->addWidget(overlay);
+    layout->addWidget(screenFrame, 1);
     layout->addLayout(bottomLayout);
     setLayout(layout);
 

@@ -48,6 +48,7 @@ protected:
 
     VideoFrameWidget *videoFrameWidget = nullptr;
     QWidget *overlay = nullptr;
+    QLabel *overlayLockIcon = nullptr;
     QLabel *overlayLabel = nullptr;
     QPushButton *overlayUnlockButton = nullptr;
 

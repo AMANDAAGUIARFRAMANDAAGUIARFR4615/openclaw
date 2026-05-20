@@ -4,13 +4,15 @@
 #include "DeviceConnection.h"
 #include "BitMaskEditorDialog.h"
 #include "SwitchButton.h"
+#include "PillSpinBox.h"
 #include "ViewportAwareBehavior.h"
 #include <QMainWindow>
+#include <QFrame>
 #include <QKeyEvent>
 #include <QDialog>
 #include <QListWidget>
 #include <QSlider>
-#include <QSpinBox>
+#include <QCheckBox>
 
 class DeviceView;
 class DeviceWidget;
@@ -45,8 +47,8 @@ public:
     SwitchButton* const lineDispatcherSwitchButton = new SwitchButton("文本逐行分发");
 
     QCheckBox* const randomDelayCheckBox = new QCheckBox("鼠标随机延迟");
-    QSpinBox* const minDelaySpinBox = new QSpinBox;
-    QSpinBox* const maxDelaySpinBox = new QSpinBox;
+    PillSpinBox* const minDelaySpinBox = new PillSpinBox;
+    PillSpinBox* const maxDelaySpinBox = new PillSpinBox;
 
 private:
     MainWindow(QWidget *parent = nullptr);
@@ -65,6 +67,7 @@ protected:
     void saveTabs(int index = -1);
     int findAvailableTabId();
     void setSidebarCollapsed(bool collapsed);
+    void applySidebarExpandedSize();
     void updateSidebarToggleButtonPosition();
 
     QList<BitMaskEditorDialog::Item> tabs;
@@ -72,7 +75,11 @@ protected:
     const int frameItemWidth = 300;
     const int spacing = 10;
 
+    void applyMainWindowTheme();
+
     QListWidget* sideBarList;
+    QFrame* sideBarPanel = nullptr;
+    QFrame* contentPanel = nullptr;
     QSplitter* mainSplitter;
     QToolButton* sideBarToggleButton;
     int sideBarExpandedWidth = 80;

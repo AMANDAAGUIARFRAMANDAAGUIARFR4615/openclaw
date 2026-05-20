@@ -35,11 +35,28 @@
 #include <QDateTime>
 #include <QFontMetrics>
 #include <QTimer>
+#include <QPainter>
+#include <QFrame>
 #include <algorithm>
 
 namespace {
 constexpr int kMouseMoveIntervalMs = 33;
+
+QPixmap makeLockIconPixmap(int size, const QColor &color)
+{
+    QPixmap pixmap(size, size);
+    pixmap.fill(Qt::transparent);
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    QPen pen(color, 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    painter.setPen(pen);
+    painter.setBrush(Qt::NoBrush);
+    const qreal s = size;
+    painter.drawRoundedRect(QRectF(s * 0.28, s * 0.46, s * 0.44, s * 0.36), 3, 3);
+    painter.drawArc(QRectF(s * 0.34, s * 0.18, s * 0.32, s * 0.32), 0, 180 * 16);
+    return pixmap;
 }
+} // namespace
 
 DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWidget *parent)
     : connection(connection), deviceInfo(deviceInfo), QWidget(parent)
@@ -48,13 +65,21 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
     setAttribute(Qt::WA_InputMethodEnabled, true);
 
     overlay = new QWidget(this);
-    overlay->setStyleSheet("background-color: black;");
+    overlay->setStyleSheet("background-color: #000000;");
+
+    overlayLockIcon = new QLabel(overlay);
+    overlayLockIcon->setAlignment(Qt::AlignCenter);
+    overlayLockIcon->setPixmap(makeLockIconPixmap(36, QColor("#4A86F7")));
+    overlayLockIcon->hide();
+
     overlayLabel = new QLabel("投屏加载中...", overlay);
+    overlayLabel->setObjectName("overlayStatusLabel");
     overlayLabel->setAlignment(Qt::AlignCenter);
     overlayLabel->setWordWrap(false);
 
     overlayUnlockButton = new QPushButton("解锁", overlay);
-    overlayUnlockButton->setFixedSize(110, 34);
+    overlayUnlockButton->setObjectName("overlayUnlockBtn");
+    overlayUnlockButton->setFixedSize(104, 34);
     overlayUnlockButton->hide();
     connect(overlayUnlockButton, &QPushButton::clicked, this, [this]() {
         send("changeScreenLockedStatus", 0);
@@ -62,8 +87,10 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 
     QVBoxLayout *layout = new QVBoxLayout(overlay);
     layout->addStretch();
-    layout->addWidget(overlayLabel, 0, Qt::AlignHCenter);
+    layout->addWidget(overlayLockIcon, 0, Qt::AlignHCenter);
     layout->addSpacing(8);
+    layout->addWidget(overlayLabel, 0, Qt::AlignHCenter);
+    layout->addSpacing(12);
     layout->addWidget(overlayUnlockButton, 0, Qt::AlignHCenter);
     layout->addStretch();
     overlay->setLayout(layout);
@@ -240,13 +267,16 @@ void DeviceView::setSourceDevice(QIODevice *device, const QUrl &sourceUrl)
 void DeviceView::showOverlay(const QString &text)
 {
     overlayLabel->setText(text);
-    overlayUnlockButton->setVisible(text == "设备已锁定");
+    const bool locked = text == "设备已锁定";
+    overlayUnlockButton->setVisible(locked);
+    if (overlayLockIcon)
+        overlayLockIcon->setVisible(locked);
     updateOverlayControls();
 
     overlay->show();
     overlay->raise();
 
-    QTimer::singleShot(0, [this]() {
+    QTimer::singleShot(0, this, [this]() {
         if (videoFrameWidget)
             videoFrameWidget->hide();
     });
@@ -255,10 +285,15 @@ void DeviceView::showOverlay(const QString &text)
 void DeviceView::hideOverlay()
 {
     overlayUnlockButton->hide();
+    if (overlayLockIcon)
+        overlayLockIcon->hide();
+
     overlay->hide();
 
-    if (videoFrameWidget)
+    if (videoFrameWidget) {
+        updateOverlayControls();
         videoFrameWidget->show();
+    }
 }
 
 void DeviceView::resizeEvent(QResizeEvent *event)
@@ -269,33 +304,26 @@ void DeviceView::resizeEvent(QResizeEvent *event)
 
 void DeviceView::updateOverlayControls()
 {
-    const int viewW = std::max(1, width());
-    const int viewH = std::max(1, height());
+    QWidget *host = overlay->parentWidget();
+    if (!host)
+        host = this;
+
+    const int viewW = std::max(1, host->width());
+    const int viewH = std::max(1, host->height());
     const int minSide = std::min(viewW, viewH);
     const int horizontalPadding = std::clamp(viewW / 20, 4, 28);
     const int verticalPadding = std::clamp(viewH / 20, 4, 28);
     const int horizontalSpace = std::max(1, viewW - horizontalPadding * 2);
 
     overlay->setGeometry(0, 0, viewW, viewH);
+    if (videoFrameWidget && videoFrameWidget->parentWidget() == host)
+        videoFrameWidget->setGeometry(0, 0, viewW, viewH);
 
-    const QColor windowColor = qApp->palette().color(QPalette::Window);
-    const bool isLightScheme = windowColor.lightness() > 128;
-    const QString labelColor = isLightScheme ? QStringLiteral("#F8FAFC") : QStringLiteral("#E5E7EB");
-    const QString buttonBg = isLightScheme ? QStringLiteral("rgba(255, 255, 255, 235)") : QStringLiteral("rgba(30, 41, 59, 230)");
-    const QString buttonBorder = isLightScheme ? QStringLiteral("rgba(148, 163, 184, 210)") : QStringLiteral("rgba(148, 163, 184, 220)");
-    const QString buttonText = isLightScheme ? QStringLiteral("#0F172A") : QStringLiteral("#F8FAFC");
-    const QString buttonHoverBg = isLightScheme ? QStringLiteral("rgba(255, 255, 255, 255)") : QStringLiteral("rgba(51, 65, 85, 235)");
-    const QString buttonPressedBg = isLightScheme ? QStringLiteral("rgba(241, 245, 249, 255)") : QStringLiteral("rgba(30, 41, 59, 255)");
-    overlayLabel->setStyleSheet(QStringLiteral("color: %1;").arg(labelColor));
-    overlayUnlockButton->setStyleSheet(QStringLiteral(
-        "QPushButton {"
-        "background-color: %1;"
-        "border: 1px solid %2;"
-        "color: %3;"
-        "}"
-        "QPushButton:hover { background-color: %4; }"
-        "QPushButton:pressed { background-color: %5; }")
-        .arg(buttonBg, buttonBorder, buttonText, buttonHoverBg, buttonPressedBg));
+    if (overlayLockIcon) {
+        const bool showLock = overlayLockIcon->isVisible();
+        if (showLock)
+            overlayLockIcon->setPixmap(makeLockIconPixmap(std::clamp(minSide / 5, 28, 44), QColor("#4A86F7")));
+    }
 
     if (auto *layout = qobject_cast<QVBoxLayout *>(overlay->layout())) {
         layout->setContentsMargins(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
@@ -322,29 +350,36 @@ void DeviceView::updateOverlayControls()
     }
 
     QFont buttonFont = overlayUnlockButton->font();
-    buttonFont.setPixelSize(std::clamp(labelPixelSize - 2, 9, 20));
+    buttonFont.setPixelSize(std::clamp(labelPixelSize, 12, 15));
+    buttonFont.setWeight(QFont::DemiBold);
     overlayUnlockButton->setFont(buttonFont);
 
     const QFontMetrics buttonMetrics(buttonFont);
-    const int minButtonW = buttonMetrics.horizontalAdvance(overlayUnlockButton->text()) + std::clamp(viewW / 10, 16, 28);
-    const int maxButtonW = std::max(minButtonW, std::min(horizontalSpace, 180));
-    const int buttonW = std::clamp(viewW * 34 / 100, minButtonW, maxButtonW);
-
-    const int minButtonH = buttonMetrics.height() + std::clamp(viewH / 22, 8, 14);
-    const int maxButtonH = std::max(minButtonH, 44);
-    const int buttonH = std::clamp(viewH * 10 / 100, minButtonH, maxButtonH);
+    const int buttonH = 34;
+    const int buttonW = std::clamp(
+        buttonMetrics.horizontalAdvance(overlayUnlockButton->text()) + 56,
+        96,
+        std::min(horizontalSpace, 140));
     overlayUnlockButton->setFixedSize(buttonW, buttonH);
 }
 
 void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
 {
     videoFrameWidget = widget;
+    widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    QBoxLayout* boxLayout = qobject_cast<QBoxLayout*>(layout());
-    if (qobject_cast<QHBoxLayout*>(boxLayout))
-        boxLayout->insertWidget(0, widget);
-    else
-        boxLayout->insertWidget(1, widget);
+    if (auto *screenFrame = findChild<QFrame *>("screenFrame")) {
+        widget->setParent(screenFrame);
+        updateOverlayControls();
+    } else {
+        QBoxLayout *boxLayout = qobject_cast<QBoxLayout *>(layout());
+        if (boxLayout) {
+            if (qobject_cast<QHBoxLayout *>(boxLayout))
+                boxLayout->insertWidget(0, widget);
+            else
+                boxLayout->insertWidget(1, widget);
+        }
+    }
 
     if (deviceInfo->lockedStatus)
         showOverlay("设备已锁定");

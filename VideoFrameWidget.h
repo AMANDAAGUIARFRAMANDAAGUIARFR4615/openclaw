@@ -9,6 +9,7 @@
 #include <QGraphicsVideoItem>
 #include <QMediaPlayer>
 #include <QResizeEvent>
+#include <QShowEvent>
 #include <QBuffer>
 #include <QPainter>
 #include <QMouseEvent>
@@ -97,47 +98,76 @@ protected:
     void resizeEvent(QResizeEvent *event) override
     {
         QGraphicsView::resizeEvent(event);
+        layoutTimer->start();
+    }
 
-        // --- 防抖动逻辑 ---
-        // 每次 resize 被触发时，重新启动定时器。
-        // 如果布局调整连续触发了 4 次，前 3 次的计时会被重置。
-        // 只有最后一次稳定下来后，定时器才会耗尽并执行 applyVideoSettings。
+    void showEvent(QShowEvent *event) override
+    {
+        QGraphicsView::showEvent(event);
         layoutTimer->start();
     }
 
 private:
+    DeviceWidget* findOwnerWidget() const
+    {
+        for (QWidget *widget = parentWidget(); widget; widget = widget->parentWidget()) {
+            if (auto *owner = qobject_cast<DeviceWidget *>(widget))
+                return owner;
+        }
+        return nullptr;
+    }
+
+    void applyVideoLayout()
+    {
+        if (width() <= 0 || height() <= 0)
+            return;
+
+        const bool isPortrait = connection->deviceInfo->orientation == 1 || connection->deviceInfo->orientation == 2;
+        const QSize containerSize = size();
+        const QSize sourceSize(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight);
+        const QSize displaySourceSize = isPortrait ? sourceSize : sourceSize.transposed();
+
+        const QSizeF targetSizeF = displaySourceSize.scaled(containerSize, Qt::KeepAspectRatio);
+        videoItem->setSize(targetSizeF);
+        scene()->setSceneRect(0, 0, containerSize.width(), containerSize.height());
+
+        const qreal x = (containerSize.width() - targetSizeF.width()) / 2.0;
+        const qreal y = (containerSize.height() - targetSizeF.height()) / 2.0;
+        videoItem->setPos(x, y);
+    }
+
     void applyVideoSettings()
     {
+        applyVideoLayout();
+
         if (!isVisible() || width() <= 0 || height() <= 0)
             return;
 
-        auto isWindow = qobject_cast<DeviceWindow*>(parentWidget());
+        const auto isWindow = qobject_cast<DeviceWindow *>(parentWidget());
         if (!isWindow) {
-            // 小视图本身就是 DeviceWidget，直接判断是否已存在独立窗口即可
-            auto ownerWidget = qobject_cast<DeviceWidget*>(parentWidget());
-            if (ownerWidget && ownerWidget->getDeviceWindow()) {
-                qCriticalEx() << connection->deviceInfo->deviceName << "小视图此时不应发送设置";
-                return;
+            if (const auto *ownerWidget = findOwnerWidget()) {
+                if (ownerWidget->getDeviceWindow()) {
+                    qCriticalEx() << connection->deviceInfo->deviceName << "小视图此时不应发送设置";
+                    return;
+                }
             }
         }
 
-        bool isPortrait = connection->deviceInfo->orientation == 1 || connection->deviceInfo->orientation == 2;
-        QSize containerSize = size();
-        QSize sourceSize(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight);
-        QSize displaySourceSize = isPortrait ? sourceSize : sourceSize.transposed();
-
-        QSizeF targetSizeF = displaySourceSize.scaled(containerSize, Qt::KeepAspectRatio);
-        QSize targetSize = targetSizeF.toSize();
+        const bool isPortrait = connection->deviceInfo->orientation == 1 || connection->deviceInfo->orientation == 2;
+        const QSize containerSize = size();
+        const QSize sourceSize(connection->deviceInfo->screenWidth, connection->deviceInfo->screenHeight);
+        const QSize displaySourceSize = isPortrait ? sourceSize : sourceSize.transposed();
+        const QSizeF targetSizeF = displaySourceSize.scaled(containerSize, Qt::KeepAspectRatio);
+        const QSize targetSize = targetSizeF.toSize();
 
         auto tab = MainWindow::getInstance()->getTab();
         auto videoFps = tab.getVideoFps();
         auto videoQuality = tab.getVideoQuality();
 
-        // 使用实际渲染尺寸的物理像素计算清晰度限制，避免窗口很大但发送分辨率偏小
-        float dpr = devicePixelRatioF();
-        int physicalWidth = qRound(targetSize.width() * dpr);
-        int physicalHeight = qRound(targetSize.height() * dpr);
-        int minPhysicalRes = qMin(physicalWidth, physicalHeight);
+        const float dpr = devicePixelRatioF();
+        const int physicalWidth = qRound(targetSize.width() * dpr);
+        const int physicalHeight = qRound(targetSize.height() * dpr);
+        const int minPhysicalRes = qMin(physicalWidth, physicalHeight);
 
         int minAllowed = 1;
         int maxAllowed = 4;
@@ -154,12 +184,8 @@ private:
 
         videoQuality = qBound(minAllowed, videoQuality, maxAllowed);
 
-        int finalWidth = physicalWidth;
-        int finalHeight = physicalHeight;
-
-        // 确保宽高是 16 的倍数，避免编码侧因对齐不足出现异常
-        // finalWidth = (finalWidth + 15) & ~15;
-        // finalHeight = (finalHeight + 15) & ~15;
+        const int finalWidth = physicalWidth;
+        const int finalHeight = physicalHeight;
 
         connection->send("videoSettings", QJsonObject({
             {"width", qMin(finalWidth, finalHeight)},
@@ -167,15 +193,6 @@ private:
             {"fps", isWindow ? 30 : QList<float>{ 30, 0.2f, 1, 15, 30 }[qBound(0, videoFps, 4)]},
             {"quality", videoQuality}
         }));
-
-        videoItem->setSize(targetSizeF);
-
-        scene()->setSceneRect(0, 0, containerSize.width(), containerSize.height());
-
-        qreal x = (containerSize.width() - targetSizeF.width()) / 2.0;
-        qreal y = (containerSize.height() - targetSizeF.height()) / 2.0;
-        
-        videoItem->setPos(x, y);
     }
 
     DeviceConnection* connection;
