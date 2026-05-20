@@ -37,7 +37,7 @@
 #include <limits>
 #include <numeric>
 
-/** 通过设备 HTTP（参见 docs：设备 ip:8080 转发脚本服务）拉取 /element/source 并以树形展示。 */
+/** 通过设备 HTTP（参见 docs：设备 ip:8080 转发脚本服务）拉取 /element/tree 并以树形展示。 */
 class ElementHierarchyDialog : public BaseDialog {
     struct ElementHit {
         QRect bounds;
@@ -285,7 +285,7 @@ private:
         setBusy(QStringLiteral("正在抓取界面元素树…"));
 
         pendingReply_ = net().submit(
-            apiSes(QLatin1String("/element/source")).postJson(QByteArrayLiteral(R"({})")).timeout(120000),
+            apiSes(QLatin1String("/element/tree")).postJson(QByteArrayLiteral(R"({})")).timeout(120000),
             [this](const HttpUtil::Result &r) {
                 if (pendingReply_ == r.reply)
                     pendingReply_ = nullptr;
@@ -757,7 +757,7 @@ private:
         }
 
         const QJsonObject body{{QStringLiteral("x"), tx}, {QStringLiteral("y"), ty}};
-        net().submit(apiSes(QLatin1String("/element/tap"))
+        net().submit(apiSes(QLatin1String("/touch/tap"))
                          .postJson(QJsonDocument(body).toJson(QJsonDocument::Compact))
                          .timeout(30000),
                      [this](const HttpUtil::Result &r) {
@@ -765,12 +765,10 @@ private:
                              new ToastWidget(QStringLiteral("点击失败：%1").arg(r.errorString), this);
                              return;
                          }
-                         const bool ok = QJsonDocument::fromJson(r.bytes)
-                                             .object()
-                                             .value(QStringLiteral("value"))
-                                             .toObject()
-                                             .value(QStringLiteral("success"))
-                                             .toBool();
+                         const QJsonValue val =
+                             QJsonDocument::fromJson(r.bytes).object().value(QStringLiteral("value"));
+                         const bool ok = val.isBool() ? val.toBool()
+                                                      : val.toObject().value(QStringLiteral("success")).toBool();
                          new ToastWidget(ok ? QStringLiteral("点击已发送") : QStringLiteral("点击未成功"), this);
                      });
     }
