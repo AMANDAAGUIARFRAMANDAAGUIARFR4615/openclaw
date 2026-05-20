@@ -31,6 +31,12 @@
 #include <QAbstractItemView>
 #include <QEvent>
 #include <QWidget>
+#include <QFormLayout>
+#include <QFrame>
+#include <QFontDatabase>
+#include <QScrollArea>
+#include <QSet>
+#include <QTextEdit>
 #include <QLatin1String>
 #include <algorithm>
 #include <functional>
@@ -96,7 +102,7 @@ public:
             return;
         }
         ElementHierarchyDialog dialog(deviceInfo, parent);
-        dialog.resize(1100, 620);
+        dialog.resize(1280, 620);
         dialog.exec();
     }
 
@@ -141,12 +147,67 @@ private:
         tree_->setMinimumHeight(160);
         tree_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
+        auto *propertyPanel = new QWidget(this);
+        auto *propertyOuter = new QVBoxLayout(propertyPanel);
+        propertyOuter->setContentsMargins(8, 0, 0, 0);
+        propertyOuter->setSpacing(6);
+
+        auto *propertyHeader = new QHBoxLayout();
+        auto *propertyTitle = new QLabel(QStringLiteral("属性"), propertyPanel);
+        propertyTitle->setStyleSheet(QStringLiteral("font-weight: bold;"));
+        propertyCopyBtn_ = new QPushButton(QStringLiteral("复制 JSON"), propertyPanel);
+        propertyCopyBtn_->setEnabled(false);
+        propertyHeader->addWidget(propertyTitle);
+        propertyHeader->addStretch();
+        propertyHeader->addWidget(propertyCopyBtn_);
+        propertyOuter->addLayout(propertyHeader);
+
+        propertyPlaceholder_ = new QLabel(
+            QStringLiteral("在层级树或预览图中选择一个节点，此处将显示其属性。"), propertyPanel);
+        propertyPlaceholder_->setWordWrap(true);
+        propertyPlaceholder_->setAlignment(Qt::AlignTop);
+        propertyOuter->addWidget(propertyPlaceholder_);
+
+        propertyScroll_ = new QScrollArea(propertyPanel);
+        propertyScroll_->setWidgetResizable(true);
+        propertyScroll_->setFrameShape(QFrame::NoFrame);
+        propertyScroll_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        propertyScrollContent_ = new QWidget(propertyScroll_);
+        propertyForm_ = new QFormLayout(propertyScrollContent_);
+        propertyForm_->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
+        propertyForm_->setContentsMargins(0, 0, 4, 0);
+        propertyScroll_->setWidget(propertyScrollContent_);
+        propertyScroll_->hide();
+        propertyOuter->addWidget(propertyScroll_, 1);
+
+        auto *jsonLabel = new QLabel(QStringLiteral("完整 JSON"), propertyPanel);
+        propertyJsonEdit_ = new QTextEdit(propertyPanel);
+        propertyJsonEdit_->setReadOnly(true);
+        propertyJsonEdit_->setLineWrapMode(QTextEdit::NoWrap);
+        propertyJsonEdit_->setMaximumHeight(200);
+        {
+            QFont mono = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+            mono.setPointSize(qMax(9, mono.pointSize() - 1));
+            propertyJsonEdit_->setFont(mono);
+        }
+        jsonLabel->hide();
+        propertyJsonEdit_->hide();
+        propertyOuter->addWidget(jsonLabel);
+        propertyOuter->addWidget(propertyJsonEdit_);
+        propertyJsonLabel_ = jsonLabel;
+
+        propertyPanel->setMinimumWidth(260);
+        propertyPanel->setMaximumWidth(400);
+
         split_->addWidget(preview_);
         split_->addWidget(tree_);
+        split_->addWidget(propertyPanel);
         split_->setStretchFactor(0, 2);
         split_->setStretchFactor(1, 3);
+        split_->setStretchFactor(2, 2);
         split_->setCollapsible(0, false);
         split_->setCollapsible(1, false);
+        split_->setCollapsible(2, false);
         root->addWidget(split_, 1);
 
         connect(refreshBtn_, &QPushButton::clicked, this, &ElementHierarchyDialog::startFetch);
@@ -154,16 +215,19 @@ private:
         connect(collapseBtn_, &QPushButton::clicked, tree_, &QTreeWidget::collapseAll);
         connect(filterEdit_, &QLineEdit::textChanged, this, &ElementHierarchyDialog::applyFilter);
         connect(tree_, &QTreeWidget::customContextMenuRequested, this, &ElementHierarchyDialog::showTreeMenu);
-        connect(tree_, &QTreeWidget::itemDoubleClicked, this, &ElementHierarchyDialog::onItemDoubleClicked);
-        connect(tree_, &QTreeWidget::currentItemChanged, this, [this](QTreeWidgetItem *, QTreeWidgetItem *) {
-            if (preview_)
-                preview_->update();
-        });
+        connect(tree_, &QTreeWidget::currentItemChanged, this,
+                [this](QTreeWidgetItem *current, QTreeWidgetItem *) {
+                    updatePropertyPanel(current);
+                    if (preview_)
+                        preview_->update();
+                });
+        connect(propertyCopyBtn_, &QPushButton::clicked, this, &ElementHierarchyDialog::copyCurrentNodeJson);
 
         baseUrl_.setScheme(QStringLiteral("http"));
         baseUrl_.setHost(deviceInfo_->localIp);
         baseUrl_.setPort(65322);
 
+        updatePropertyPanel(nullptr);
         startFetch();
     }
 
@@ -215,6 +279,7 @@ private:
         deleteSessionIfNeeded();
 
         tree_->clear();
+        updatePropertyPanel(nullptr);
         filterEdit_->clear();
         hierarchyHits_.clear();
         hierarchyScreenshot_ = QPixmap();
@@ -773,13 +838,152 @@ private:
                      });
     }
 
-    void onItemDoubleClicked(QTreeWidgetItem *item, int column) {
-        Q_UNUSED(column);
+    static QString jsonValueDisplay(const QJsonValue &v) {
+        if (v.isString())
+            return v.toString();
+        if (v.isDouble())
+            return QString::number(v.toDouble());
+        if (v.isBool())
+            return v.toBool() ? QStringLiteral("true") : QStringLiteral("false");
+        if (v.isArray())
+            return QStringLiteral("[%1 项]").arg(v.toArray().size());
+        if (v.isObject())
+            return QString::fromUtf8(
+                QJsonDocument(v.toObject()).toJson(QJsonDocument::Compact));
+        if (v.isNull() || v.isUndefined())
+            return QStringLiteral("—");
+        return {};
+    }
+
+    static QLabel *makeSelectableValueLabel(const QString &text, QWidget *parent) {
+        auto *label = new QLabel(text.isEmpty() ? QStringLiteral("—") : text, parent);
+        label->setWordWrap(true);
+        label->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        return label;
+    }
+
+    void clearPropertyForm() {
+        if (!propertyForm_)
+            return;
+        while (propertyForm_->rowCount() > 0) {
+            const int row = propertyForm_->rowCount() - 1;
+            if (QLayoutItem *labelItem = propertyForm_->itemAt(row, QFormLayout::LabelRole)) {
+                if (QWidget *w = labelItem->widget())
+                    w->deleteLater();
+            }
+            if (QLayoutItem *fieldItem = propertyForm_->itemAt(row, QFormLayout::FieldRole)) {
+                if (QWidget *w = fieldItem->widget())
+                    w->deleteLater();
+            }
+            propertyForm_->removeRow(row);
+        }
+    }
+
+    void addPropertyRow(const QString &key, const QString &value) {
+        if (!propertyForm_ || !propertyScrollContent_)
+            return;
+        propertyForm_->addRow(key + QLatin1Char(':'),
+                              makeSelectableValueLabel(value, propertyScrollContent_));
+    }
+
+    void updatePropertyPanel(QTreeWidgetItem *item) {
+        clearPropertyForm();
+
+        if (!item) {
+            if (propertyPlaceholder_)
+                propertyPlaceholder_->show();
+            if (propertyScroll_)
+                propertyScroll_->hide();
+            if (propertyJsonLabel_)
+                propertyJsonLabel_->hide();
+            if (propertyJsonEdit_) {
+                propertyJsonEdit_->clear();
+                propertyJsonEdit_->hide();
+            }
+            if (propertyCopyBtn_)
+                propertyCopyBtn_->setEnabled(false);
+            return;
+        }
+
+        const QJsonObject o =
+            QJsonDocument::fromJson(item->data(0, Qt::UserRole).toString().toUtf8()).object();
+
+        if (propertyPlaceholder_)
+            propertyPlaceholder_->hide();
+        if (propertyScroll_)
+            propertyScroll_->show();
+        if (propertyJsonLabel_)
+            propertyJsonLabel_->show();
+        if (propertyJsonEdit_) {
+            propertyJsonEdit_->setPlainText(
+                QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Indented)));
+            propertyJsonEdit_->show();
+        }
+        if (propertyCopyBtn_)
+            propertyCopyBtn_->setEnabled(true);
+
+        static const QStringList preferredKeys = {
+            QStringLiteral("type"),  QStringLiteral("id"),    QStringLiteral("label"),
+            QStringLiteral("value"), QStringLiteral("text"),  QStringLiteral("name"),
+            QStringLiteral("class"), QStringLiteral("enabled"), QStringLiteral("visible"),
+            QStringLiteral("checked"), QStringLiteral("selected"),
+        };
+
+        QSet<QString> shown;
+        for (const QString &key : preferredKeys) {
+            if (!o.contains(key))
+                continue;
+            const QJsonValue v = o.value(key);
+            if (v.isObject() || v.isArray())
+                continue;
+            addPropertyRow(key, jsonValueDisplay(v));
+            shown.insert(key);
+        }
+
+        const QJsonObject bounds = o.value(QStringLiteral("bounds")).toObject();
+        if (!bounds.isEmpty()) {
+            static const QStringList boundKeys = {
+                QStringLiteral("x"), QStringLiteral("y"), QStringLiteral("width"),
+                QStringLiteral("height"), QStringLiteral("centerX"), QStringLiteral("centerY"),
+            };
+            for (const QString &bk : boundKeys) {
+                if (!bounds.contains(bk))
+                    continue;
+                addPropertyRow(QStringLiteral("bounds.") + bk, jsonValueDisplay(bounds.value(bk)));
+            }
+            shown.insert(QStringLiteral("bounds"));
+        }
+
+        if (o.contains(QStringLiteral("children"))) {
+            addPropertyRow(QStringLiteral("children"),
+                           QStringLiteral("[%1 项]").arg(o.value(QStringLiteral("children")).toArray().size()));
+            shown.insert(QStringLiteral("children"));
+        }
+
+        QStringList rest = o.keys();
+        rest.sort(Qt::CaseInsensitive);
+        for (const QString &key : rest) {
+            if (shown.contains(key))
+                continue;
+            const QJsonValue v = o.value(key);
+            if (v.isObject())
+                addPropertyRow(key, jsonValueDisplay(v));
+            else if (v.isArray())
+                addPropertyRow(key, jsonValueDisplay(v));
+            else
+                addPropertyRow(key, jsonValueDisplay(v));
+        }
+    }
+
+    void copyCurrentNodeJson() {
+        QTreeWidgetItem *item = tree_ ? tree_->currentItem() : nullptr;
         if (!item)
             return;
         const QString json = item->data(0, Qt::UserRole).toString();
-        if (!json.isEmpty())
-            QApplication::clipboard()->setText(json);
+        if (json.isEmpty())
+            return;
+        QApplication::clipboard()->setText(json);
         new ToastWidget(QStringLiteral("已复制节点 JSON 到剪贴板"), this);
     }
 
@@ -802,4 +1006,11 @@ private:
     QSplitter *split_ = nullptr;
     HierarchyPreviewWidget *preview_ = nullptr;
     QTreeWidget *tree_ = nullptr;
+    QLabel *propertyPlaceholder_ = nullptr;
+    QLabel *propertyJsonLabel_ = nullptr;
+    QPushButton *propertyCopyBtn_ = nullptr;
+    QScrollArea *propertyScroll_ = nullptr;
+    QWidget *propertyScrollContent_ = nullptr;
+    QFormLayout *propertyForm_ = nullptr;
+    QTextEdit *propertyJsonEdit_ = nullptr;
 };
