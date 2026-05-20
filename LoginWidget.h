@@ -310,10 +310,10 @@ protected:
     }
 
 private:
-    // 参考设计稿比例（卡片宽约等于窗口宽 66%），尺寸按常见登录窗缩放
-    static constexpr int kLoginWindowWidth = 520;
+    // 参考设计稿比例（卡片宽约等于窗口宽 72%），略加宽以容纳选项行两个复选框
+    static constexpr int kLoginWindowWidth = 540;
     static constexpr int kLoginWindowHeight = 660;
-    static constexpr int kLoginFormCardWidth = kLoginWindowWidth * 66 / 100; // 343
+    static constexpr int kLoginFormCardWidth = kLoginWindowWidth * 72 / 100; // 388
 
     enum class InputIcon { User, Lock, Device };
 
