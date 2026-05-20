@@ -82,7 +82,7 @@ protected:
     QFrame* contentPanel = nullptr;
     QSplitter* mainSplitter;
     QToolButton* sideBarToggleButton;
-    int sideBarExpandedWidth = 80;
+    int sideBarExpandedWidth = 128;
     bool sideBarCollapsed = false;
     QListWidget* deviceListWidget;
     QSlider* zoomSlider = nullptr;

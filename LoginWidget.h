@@ -211,36 +211,54 @@ protected:
 
         const qreal w = width();
         const qreal h = height();
+        const bool dark = isDarkMode();
 
         QLinearGradient sky(0, 0, 0, h);
-        sky.setColorAt(0.0, QColor("#F3F9FF"));
-        sky.setColorAt(0.45, QColor("#E4F1FF"));
-        sky.setColorAt(1.0, QColor("#D4E8FF"));
+        if (dark) {
+            sky.setColorAt(0.0, QColor("#0D1117"));
+            sky.setColorAt(0.45, QColor("#111827"));
+            sky.setColorAt(1.0, QColor("#1A2332"));
+        } else {
+            sky.setColorAt(0.0, QColor("#F3F9FF"));
+            sky.setColorAt(0.45, QColor("#E4F1FF"));
+            sky.setColorAt(1.0, QColor("#D4E8FF"));
+        }
         painter.fillRect(rect(), sky);
 
         QRadialGradient topGlow(w * 0.08, h * 0.06, w * 0.55);
-        topGlow.setColorAt(0.0, QColor(120, 178, 255, 95));
-        topGlow.setColorAt(0.55, QColor(170, 210, 255, 35));
-        topGlow.setColorAt(1.0, QColor(227, 241, 255, 0));
+        if (dark) {
+            topGlow.setColorAt(0.0, QColor(74, 134, 247, 55));
+            topGlow.setColorAt(0.55, QColor(45, 90, 160, 25));
+            topGlow.setColorAt(1.0, QColor(17, 24, 39, 0));
+        } else {
+            topGlow.setColorAt(0.0, QColor(120, 178, 255, 95));
+            topGlow.setColorAt(0.55, QColor(170, 210, 255, 35));
+            topGlow.setColorAt(1.0, QColor(227, 241, 255, 0));
+        }
         painter.setPen(Qt::NoPen);
         painter.setBrush(topGlow);
         painter.drawEllipse(QRectF(-w * 0.18, -h * 0.12, w * 0.72, h * 0.55));
 
         QRadialGradient bottomGlow(w * 0.82, h * 0.92, w * 0.42);
-        bottomGlow.setColorAt(0.0, QColor(255, 255, 255, 120));
-        bottomGlow.setColorAt(1.0, QColor(255, 255, 255, 0));
+        if (dark) {
+            bottomGlow.setColorAt(0.0, QColor(74, 134, 247, 30));
+            bottomGlow.setColorAt(1.0, QColor(17, 24, 39, 0));
+        } else {
+            bottomGlow.setColorAt(0.0, QColor(255, 255, 255, 120));
+            bottomGlow.setColorAt(1.0, QColor(255, 255, 255, 0));
+        }
         painter.setBrush(bottomGlow);
         painter.drawEllipse(QRectF(w * 0.48, h * 0.58, w * 0.62, h * 0.42));
 
         auto drawDotGrid = [&](qreal originX, qreal originY, int rows, int cols, qreal spacing, qreal radius, int alpha) {
-            painter.setBrush(QColor(96, 153, 240, alpha));
+            painter.setBrush(QColor(dark ? 74 : 96, dark ? 134 : 153, dark ? 247 : 240, alpha));
             for (int row = 0; row < rows; ++row) {
                 for (int col = 0; col < cols; ++col)
                     painter.drawEllipse(QPointF(originX + col * spacing, originY + row * spacing), radius, radius);
             }
         };
-        drawDotGrid(w - 118, 42, 7, 6, 16, 2.4, 42);
-        drawDotGrid(34, h - 128, 5, 5, 15, 2.2, 36);
+        drawDotGrid(w - 118, 42, 7, 6, 16, 2.4, dark ? 28 : 42);
+        drawDotGrid(34, h - 128, 5, 5, 15, 2.2, dark ? 24 : 36);
 
         auto drawWave = [&](qreal baseY, const QColor &color, qreal amplitude) {
             QPainterPath path;
@@ -264,9 +282,15 @@ protected:
             painter.drawPath(path);
         };
 
-        drawWave(h * 0.78, QColor(255, 255, 255, 95), h * 0.05);
-        drawWave(h * 0.86, QColor(214, 232, 255, 150), h * 0.04);
-        drawWave(h * 0.93, QColor(196, 221, 255, 120), h * 0.03);
+        if (dark) {
+            drawWave(h * 0.78, QColor(31, 35, 43, 120), h * 0.05);
+            drawWave(h * 0.86, QColor(37, 43, 53, 100), h * 0.04);
+            drawWave(h * 0.93, QColor(26, 35, 50, 90), h * 0.03);
+        } else {
+            drawWave(h * 0.78, QColor(255, 255, 255, 95), h * 0.05);
+            drawWave(h * 0.86, QColor(214, 232, 255, 150), h * 0.04);
+            drawWave(h * 0.93, QColor(196, 221, 255, 120), h * 0.03);
+        }
 
         QWidget::paintEvent(event);
     }
@@ -395,9 +419,14 @@ private:
         return wrapper;
     }
 
+    static bool isDarkMode()
+    {
+        return qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+    }
+
     void updatePasswordToggleIcon()
     {
-        const QColor color("#6B7C93");
+        const QColor color(isDarkMode() ? "#8B95A8" : "#6B7C93");
         QPixmap pixmap(22, 22);
         pixmap.fill(Qt::transparent);
 
@@ -636,17 +665,18 @@ private:
             return;
         }
 
+        const bool dark = isDarkMode();
         QString color;
         QString prefix;
         if (isError) {
-            color = "#E74C3C";
+            color = dark ? "#F87171" : "#E74C3C";
             prefix = QStringLiteral("<span style='color:%1;font-size:14px;'>●</span> ").arg(color);
         } else if (text.contains("已连接") || text.contains("成功")) {
-            color = "#22C55E";
+            color = dark ? "#34D399" : "#22C55E";
             prefix = QStringLiteral("<span style='color:%1;font-size:14px;'>●</span> ").arg(color);
         } else {
-            color = "#5B6B82";
-            prefix = QStringLiteral("<span style='color:%1;font-size:14px;'>●</span> ").arg("#94A3B8");
+            color = dark ? "#A8B4C4" : "#5B6B82";
+            prefix = QStringLiteral("<span style='color:%1;font-size:14px;'>●</span> ").arg(dark ? "#6B7C93" : "#94A3B8");
         }
 
         statusLabel->setText(prefix
@@ -670,19 +700,36 @@ private:
             accentPressed = "#2F6AE0";
         }
 
+        const bool dark = isDarkMode();
+        const QString cardBg = dark ? "#1F232B" : "#FFFFFF";
+        const QString cardBorder = dark ? "#3A3F4B" : "rgba(255, 255, 255, 220)";
+        const QString titleColor = dark ? "#E2E8F0" : "#1E3A6E";
+        const QString inputBg = dark ? "#252B35" : "#FFFFFF";
+        const QString inputBorder = dark ? "#3A3F4B" : "#D7E2F1";
+        const QString inputText = dark ? "#E2E8F0" : "#1F2937";
+        const QString placeholder = dark ? "#6B7C93" : "#9AA8BC";
+        const QString checkText = dark ? "#C8D1DC" : "#4B5563";
+        const QString checkBorder = dark ? "#4A5568" : "#C5D3E8";
+        const QString checkBg = dark ? "#252B35" : "#FFFFFF";
+        const QString subBtnBg = dark ? "#252B35" : "#FFFFFF";
+        const QString subBtnHover = dark ? "rgba(74, 134, 247, 24)" : "rgba(74, 134, 247, 10)";
+        const QString subBtnPressed = dark ? "rgba(74, 134, 247, 36)" : "rgba(74, 134, 247, 20)";
+        const QString toggleHover = dark ? "rgba(74, 134, 247, 28)" : "rgba(74, 134, 247, 18)";
+        const QString disabledBtn = dark ? "#3A4A6B" : "#AFC6F8";
+
         const QString qss = QString(R"(
             QWidget#loginWidget {
                 background: transparent;
             }
 
             QFrame#loginFormCard {
-                background: #FFFFFF;
-                border: 1px solid rgba(255, 255, 255, 220);
+                background: %4;
+                border: 1px solid %5;
                 border-radius: 18px;
             }
 
             QLabel#loginTitle {
-                color: #1E3A6E;
+                color: %6;
                 font-size: 26px;
                 font-weight: 700;
                 padding: 0px 0px 6px 0px;
@@ -690,8 +737,8 @@ private:
             }
 
             QFrame#inputField {
-                background: #FFFFFF;
-                border: 1px solid #D7E2F1;
+                background: %7;
+                border: 1px solid %8;
                 border-radius: 12px;
                 min-height: 48px;
             }
@@ -708,13 +755,13 @@ private:
             QLineEdit#loginLineEdit {
                 border: none;
                 background: transparent;
-                color: #1F2937;
+                color: %9;
                 font-size: 15px;
                 padding: 12px 0px;
                 selection-background-color: %1;
             }
             QLineEdit#loginLineEdit::placeholder {
-                color: #9AA8BC;
+                color: %10;
             }
 
             QToolButton#passwordToggleBtn {
@@ -725,12 +772,12 @@ private:
                 min-height: 28px;
             }
             QToolButton#passwordToggleBtn:hover {
-                background: rgba(74, 134, 247, 18);
+                background: %16;
                 border-radius: 8px;
             }
 
             QCheckBox {
-                color: #4B5563;
+                color: %11;
                 font-size: 13px;
                 spacing: 8px;
             }
@@ -738,8 +785,8 @@ private:
                 width: 18px;
                 height: 18px;
                 border-radius: 4px;
-                border: 1px solid #C5D3E8;
-                background: #FFFFFF;
+                border: 1px solid %12;
+                background: %13;
             }
             QCheckBox::indicator:checked {
                 background: %1;
@@ -785,29 +832,37 @@ private:
                 border-color: %3;
             }
             QPushButton#mainBtn:disabled {
-                background-color: #AFC6F8;
-                border-color: #AFC6F8;
+                background-color: %17;
+                border-color: %17;
                 color: rgba(255, 255, 255, 210);
             }
 
             QPushButton#subBtn {
-                background-color: #FFFFFF;
+                background-color: %14;
                 color: %1;
                 border: 1px solid %1;
             }
             QPushButton#subBtn:hover {
-                background-color: rgba(74, 134, 247, 10);
+                background-color: %15;
             }
             QPushButton#subBtn:pressed {
-                background-color: rgba(74, 134, 247, 20);
+                background-color: %18;
             }
 
             QLabel#loginStatus {
                 background: transparent;
                 padding: 4px 12px 0px 12px;
             }
-        )").arg(accent, accentHover, accentPressed);
+        )").arg(accent, accentHover, accentPressed,
+                 cardBg, cardBorder, titleColor, inputBg, inputBorder, inputText, placeholder,
+                 checkText, checkBorder, checkBg, subBtnBg, subBtnHover, toggleHover, disabledBtn, subBtnPressed);
 
         setStyleSheet(qss);
+
+        if (auto *card = findChild<QFrame *>("loginFormCard")) {
+            if (auto *shadow = qobject_cast<QGraphicsDropShadowEffect *>(card->graphicsEffect())) {
+                shadow->setColor(dark ? QColor(0, 0, 0, 90) : QColor(74, 134, 247, 45));
+            }
+        }
     }
 };

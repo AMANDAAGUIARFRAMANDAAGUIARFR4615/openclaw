@@ -68,23 +68,91 @@
 
 namespace {
 constexpr auto kPrimaryBlue = "#4A86F7";
-constexpr auto kPageBg = "#F0F3F8";
-constexpr auto kPanelBg = "#FFFFFF";
-constexpr auto kTextMuted = "#94A3B8";
-constexpr auto kBorder = "#E2E8F0";
+
+struct MainWindowThemeColors {
+    QString pageBg;
+    QString panelBg;
+    QString border;
+    QString textMuted;
+    QString sidebarItem;
+    QString sidebarHover;
+    QString sidebarSelected;
+    QString toolbarText;
+    QString checkBorder;
+    QString checkBg;
+    QString dashLabel;
+    QString pillBg;
+    QString pillBorder;
+    QString pillText;
+    QString runtimeChip;
+    QString runtimeTitle;
+    QString tabBg;
+    QString tabText;
+    QString tabHoverBg;
+    QString tabHoverText;
+    QString tabSelectedBorder;
+    QString cardCheckBorder;
+    QString launchBtnHover;
+    QString sliderGroove;
+    QString toggleText;
+    QString toggleHover;
+    QString switchOff;
+    QColor shadow;
+    QColor cardShadow;
+};
+
+MainWindowThemeColors mainWindowThemeColors()
+{
+    const bool dark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+    if (dark) {
+        return {
+            "#0F1117", "#1F232B", "#3A3F4B", "#8B95A8",
+            "#8B95A8", "#2A2F3A", "#252D3D",
+            "#C8D1DC", "#4A5568", "#252B35",
+            "#4A5568", "#252B35", "#3A3F4B", "#E2E8F0",
+            "#2A2F3A", "#94A3B8",
+            "#2A2F3A", "#94A3B8", "#323949", "#C8D1DC", "#3A3F4B",
+            "#4A5568", "#323949", "#3A3F4B",
+            "#64748B", "#323949", "#3A3F4B",
+            QColor(0, 0, 0, 60), QColor(0, 0, 0, 80)
+        };
+    }
+    return {
+        "#F0F3F8", "#FFFFFF", "#E2E8F0", "#94A3B8",
+        "#6B7280", "#F3F6FA", "#EAF2FF",
+        "#475569", "#C5D3E8", "#FFFFFF",
+        "#CBD5E1", "#FFFFFF", "#E5EAF0", "#1E293B",
+        "#F1F5F9", "#64748B",
+        "#EEF2F7", "#64748B", "#F4F7FB", "#475569", "#EEF2F7",
+        "#CBD5E1", "#F1F5F9", "#E2E8F0",
+        "#64748B", "#F8FAFC", "#E8ECF2",
+        QColor(15, 23, 42, 25), QColor(16, 38, 73, 40)
+    };
+}
+
+constexpr int kSidebarPanelMarginH = 8;
+constexpr int kSidebarItemMarginH = 6;
+constexpr int kSidebarItemPaddingH = 10;
+constexpr int kSidebarIconSize = 20;
+constexpr int kSidebarIconTextGap = 8;
+constexpr int kSidebarFontPixelSize = 13;
 
 int computeSidebarWidth(const QStringList &menu)
 {
     QFont sidebarFont;
-    sidebarFont.setPixelSize(13);
+    sidebarFont.setPixelSize(kSidebarFontPixelSize);
     const QFontMetrics fm(sidebarFont);
-    int maxText = 0;
+
+    // 至少容纳 4 个中文字；同时兼容更长的菜单项。
+    int textWidth = fm.horizontalAdvance(QStringLiteral("设备连接"));
     for (const QString &text : menu) {
         QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
         finder.toNextBoundary();
-        maxText = qMax(maxText, fm.horizontalAdvance(text.mid(finder.position())));
+        textWidth = qMax(textWidth, fm.horizontalAdvance(text.mid(finder.position())));
     }
-    return 20 + 8 + maxText + 32;
+
+    const int horizontalChrome = (kSidebarPanelMarginH + kSidebarItemMarginH + kSidebarItemPaddingH) * 2;
+    return horizontalChrome + kSidebarIconSize + kSidebarIconTextGap + textWidth;
 }
 } // namespace
 
@@ -478,9 +546,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     sideBarToggleButton->show();
 
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-    multiControlSwitchButton->setColors(QColor(kPrimaryBlue), QColor("#E8ECF2"));
     multiControlSwitchButton->setFixedHeight(32);
-    lineDispatcherSwitchButton->setColors(QColor(kPrimaryBlue), QColor("#E8ECF2"));
     lineDispatcherSwitchButton->setFixedHeight(32);
 
     QFont toolbarFont;
@@ -1021,6 +1087,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
 void MainWindow::applyMainWindowTheme()
 {
+    const auto colors = mainWindowThemeColors();
+
+    multiControlSwitchButton->setColors(QColor(kPrimaryBlue), QColor(colors.switchOff));
+    lineDispatcherSwitchButton->setColors(QColor(kPrimaryBlue), QColor(colors.switchOff));
+
     const QString theme = QString(R"(
         QWidget#mainCentral { background: %1; }
         QSplitter#mainSplitter::handle { background: transparent; width: 0px; }
@@ -1036,14 +1107,14 @@ void MainWindow::applyMainWindowTheme()
         }
         QListWidget#sideBarList::item {
             border-radius: 18px;
-            color: #6B7280;
+            color: %6;
             padding: 6px 10px;
             margin: 2px 6px;
             font-size: 13px;
         }
-        QListWidget#sideBarList::item:hover { background: #F3F6FA; }
+        QListWidget#sideBarList::item:hover { background: %7; }
         QListWidget#sideBarList::item:selected {
-            background: #EAF2FF;
+            background: %8;
             color: %3;
             font-weight: 600;
         }
@@ -1054,7 +1125,7 @@ void MainWindow::applyMainWindowTheme()
         }
         QWidget#controlToolbar { background: transparent; }
         QCheckBox#toolbarCheck {
-            color: #475569;
+            color: %9;
             font-size: 13px;
             spacing: 8px;
         }
@@ -1062,8 +1133,8 @@ void MainWindow::applyMainWindowTheme()
             width: 18px;
             height: 18px;
             border-radius: 4px;
-            border: 1.5px solid #C5D3E8;
-            background: #FFFFFF;
+            border: 1.5px solid %10;
+            background: %11;
         }
         QCheckBox#toolbarCheck::indicator:hover { border-color: %3; }
         QCheckBox#toolbarCheck::indicator:checked {
@@ -1072,13 +1143,13 @@ void MainWindow::applyMainWindowTheme()
             image: url(:/icons/check_white.svg);
         }
         QLabel#rangeDashLabel {
-            color: #CBD5E1;
+            color: %12;
             font-size: 14px;
             padding-bottom: 1px;
         }
         QFrame#pillSpinBox {
-            background: #FFFFFF;
-            border: 1px solid #E5EAF0;
+            background: %13;
+            border: 1px solid %14;
             border-radius: 17px;
         }
         QFrame#pillSpinBox[focused="true"] {
@@ -1087,7 +1158,7 @@ void MainWindow::applyMainWindowTheme()
         QSpinBox#pillSpinBoxInner {
             background: transparent;
             border: none;
-            color: #1E293B;
+            color: %15;
             font-size: 13px;
             font-weight: 500;
             padding: 0;
@@ -1099,12 +1170,12 @@ void MainWindow::applyMainWindowTheme()
             border: none;
         }
         QFrame#runtimeChip {
-            background: #F1F5F9;
+            background: %16;
             border: none;
             border-radius: 16px;
             min-height: 32px;
         }
-        QLabel#runtimeTitle { color: #64748B; font-size: 13px; }
+        QLabel#runtimeTitle { color: %17; font-size: 13px; }
         QLabel#runtimeValue {
             color: %3;
             font-size: 13px;
@@ -1129,11 +1200,11 @@ void MainWindow::applyMainWindowTheme()
             padding: 6px 6px 0 6px;
         }
         QTabBar#deviceTabBar::tab {
-            background: #EEF2F7;
-            color: #64748B;
+            background: %18;
+            color: %19;
             border: 1px solid %4;
             border-top: none;
-            border-bottom: 1px solid #EEF2F7;
+            border-bottom: 1px solid %21;
             border-top-left-radius: 8px;
             border-top-right-radius: 8px;
             border-bottom-left-radius: 0;
@@ -1149,8 +1220,8 @@ void MainWindow::applyMainWindowTheme()
             padding-bottom: 7px;
         }
         QTabBar#deviceTabBar::tab:hover:!selected {
-            background: #F4F7FB;
-            color: #475569;
+            background: %20;
+            color: %22;
         }
         QTabBar#deviceTabBar::tab:selected {
             background: %2;
@@ -1188,7 +1259,7 @@ void MainWindow::applyMainWindowTheme()
             width: 18px;
             height: 18px;
             border-radius: 4px;
-            border: 1px solid #CBD5E1;
+            border: 1px solid %23;
             background: %2;
         }
         QCheckBox#deviceCardCheck::indicator:checked {
@@ -1222,10 +1293,10 @@ void MainWindow::applyMainWindowTheme()
             background: transparent;
             padding: 2px;
         }
-        QPushButton#deviceLaunchBtn:hover { background: #F1F5F9; border-radius: 6px; }
+        QPushButton#deviceLaunchBtn:hover { background: %24; border-radius: 6px; }
         QSlider#zoomSlider::groove:horizontal {
             height: 4px;
-            background: #E2E8F0;
+            background: %25;
             border-radius: 2px;
         }
         QSlider#zoomSlider::sub-page:horizontal { background: %3; border-radius: 2px; }
@@ -1237,36 +1308,47 @@ void MainWindow::applyMainWindowTheme()
             border: 2px solid %3;
             border-radius: 7px;
         }
-        QLabel#zoomPercentLabel { color: #64748B; font-size: 13px; }
-    )").arg(kPageBg, kPanelBg, kPrimaryBlue, kBorder, kTextMuted);
+        QLabel#zoomPercentLabel { color: %26; font-size: 13px; }
+    )").arg(colors.pageBg, colors.panelBg, kPrimaryBlue, colors.border, colors.textMuted,
+             colors.sidebarItem, colors.sidebarHover, colors.sidebarSelected,
+             colors.toolbarText, colors.checkBorder, colors.checkBg, colors.dashLabel,
+             colors.pillBg, colors.pillBorder, colors.pillText, colors.runtimeChip, colors.runtimeTitle,
+             colors.tabBg, colors.tabText, colors.tabHoverBg, colors.tabSelectedBorder, colors.tabHoverText,
+             colors.cardCheckBorder, colors.launchBtnHover, colors.sliderGroove, colors.toggleText);
 
     centralWidget()->setStyleSheet(theme);
 
     sideBarToggleButton->setStyleSheet(QString(R"(
         QToolButton {
-            color: #64748B;
+            color: %4;
             background: %1;
             border: 1px solid %2;
             border-radius: 11px;
             font-size: 11px;
             font-weight: 700;
         }
-        QToolButton:hover { background: #F8FAFC; border-color: %3; color: %3; }
-    )").arg(kPanelBg, kBorder, kPrimaryBlue));
+        QToolButton:hover { background: %5; border-color: %3; color: %3; }
+    )").arg(colors.panelBg, colors.border, kPrimaryBlue, colors.toggleText, colors.toggleHover));
 
     if (sideBarPanel && !sideBarPanel->graphicsEffect()) {
         auto *shadow = new QGraphicsDropShadowEffect(sideBarPanel);
         shadow->setBlurRadius(20);
         shadow->setOffset(0, 4);
-        shadow->setColor(QColor(15, 23, 42, 25));
+        shadow->setColor(colors.shadow);
         sideBarPanel->setGraphicsEffect(shadow);
+    } else if (sideBarPanel) {
+        if (auto *shadow = qobject_cast<QGraphicsDropShadowEffect *>(sideBarPanel->graphicsEffect()))
+            shadow->setColor(colors.shadow);
     }
     if (contentPanel && !contentPanel->graphicsEffect()) {
         auto *shadow = new QGraphicsDropShadowEffect(contentPanel);
         shadow->setBlurRadius(20);
         shadow->setOffset(0, 4);
-        shadow->setColor(QColor(15, 23, 42, 25));
+        shadow->setColor(colors.shadow);
         contentPanel->setGraphicsEffect(shadow);
+    } else if (contentPanel) {
+        if (auto *shadow = qobject_cast<QGraphicsDropShadowEffect *>(contentPanel->graphicsEffect()))
+            shadow->setColor(colors.shadow);
     }
 
 }
@@ -1798,7 +1880,7 @@ void MainWindow::addItem(DeviceConnection* connection)
     auto *cardShadow = new QGraphicsDropShadowEffect(frame);
     cardShadow->setBlurRadius(26);
     cardShadow->setOffset(0, 6);
-    cardShadow->setColor(QColor(16, 38, 73, 40));
+    cardShadow->setColor(mainWindowThemeColors().cardShadow);
     frame->setGraphicsEffect(cardShadow);
 
     auto item = new NaturalSortListWidgetItem();
