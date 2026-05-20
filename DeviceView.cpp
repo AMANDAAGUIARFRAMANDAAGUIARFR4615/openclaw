@@ -313,27 +313,27 @@ void DeviceView::updateOverlayControls()
     const int viewW = std::max(1, host->width());
     const int viewH = std::max(1, host->height());
     const int minSide = std::min(viewW, viewH);
-    const int horizontalPadding = std::clamp(viewW / 20, 4, 28);
-    const int verticalPadding = std::clamp(viewH / 20, 4, 28);
+    const int horizontalPadding = std::clamp(viewW / 20, 2, 28);
+    const int verticalPadding = std::clamp(viewH / 20, 2, 28);
     const int horizontalSpace = std::max(1, viewW - horizontalPadding * 2);
+    const bool locked = overlayLockIcon && overlayLockIcon->isVisible();
 
     overlay->setGeometry(0, 0, viewW, viewH);
     if (videoFrameWidget && videoFrameWidget->parentWidget() == host)
         videoFrameWidget->setGeometry(0, 0, viewW, viewH);
 
     if (overlayLockIcon) {
-        const bool showLock = overlayLockIcon->isVisible();
-        if (showLock)
-            overlayLockIcon->setPixmap(makeLockIconPixmap(std::clamp(minSide / 5, 28, 44), QColor("#4A86F7")));
+        if (locked)
+            overlayLockIcon->setPixmap(makeLockIconPixmap(std::clamp(minSide / 5, 16, 44), QColor("#4A86F7")));
     }
 
     if (auto *layout = qobject_cast<QVBoxLayout *>(overlay->layout())) {
         layout->setContentsMargins(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
-        layout->setSpacing(std::clamp(minSide / 40, 2, 10));
+        layout->setSpacing(std::clamp(minSide / 40, 1, 10));
     }
 
     // Keep text readable on small views while avoiding oversized fonts on large views.
-    const int labelPixelSize = std::clamp(minSide / 9, 10, 26);
+    const int labelPixelSize = std::clamp(minSide / 9, 8, 26);
     QFont labelFont = overlayLabel->font();
     labelFont.setPixelSize(labelPixelSize);
     overlayLabel->setFont(labelFont);
@@ -341,28 +341,35 @@ void DeviceView::updateOverlayControls()
     const QFontMetrics labelMetrics(labelFont);
 
     QString overlayText = overlayLabel->text();
-    if (overlayText == "设备已锁定" || overlayText == "已锁定" || overlayText == "锁定") {
+    if (overlayText == "设备已锁定" || overlayText == "已锁定" || overlayText == "锁定" || overlayText == "锁") {
         if (labelMetrics.horizontalAdvance("设备已锁定") <= horizontalSpace)
             overlayText = "设备已锁定";
         else if (labelMetrics.horizontalAdvance("已锁定") <= horizontalSpace)
             overlayText = "已锁定";
-        else
+        else if (labelMetrics.horizontalAdvance("锁定") <= horizontalSpace)
             overlayText = "锁定";
+        else
+            overlayText = "锁";
         overlayLabel->setText(overlayText);
     }
 
     QFont buttonFont = overlayUnlockButton->font();
-    buttonFont.setPixelSize(std::clamp(labelPixelSize, 12, 15));
+    buttonFont.setPixelSize(std::clamp(labelPixelSize, 8, 15));
     buttonFont.setWeight(QFont::DemiBold);
     overlayUnlockButton->setFont(buttonFont);
 
-    const QFontMetrics buttonMetrics(buttonFont);
-    const int buttonH = 34;
-    const int buttonW = std::clamp(
-        buttonMetrics.horizontalAdvance(overlayUnlockButton->text()) + 56,
-        96,
-        std::min(horizontalSpace, 140));
-    overlayUnlockButton->setFixedSize(buttonW, buttonH);
+    if (locked && horizontalSpace >= 24) {
+        const QFontMetrics buttonMetrics(buttonFont);
+        const int buttonH = std::clamp(viewH / 6, 18, 34);
+        const int buttonPad = std::clamp(horizontalSpace / 5, 8, 28);
+        const QString buttonText = horizontalSpace < 40 ? QStringLiteral("解") : QStringLiteral("解锁");
+        overlayUnlockButton->setText(buttonText);
+        const int buttonW = qBound(20, buttonMetrics.horizontalAdvance(buttonText) + buttonPad, horizontalSpace);
+        overlayUnlockButton->setFixedSize(buttonW, buttonH);
+        overlayUnlockButton->show();
+    } else {
+        overlayUnlockButton->hide();
+    }
 }
 
 void DeviceView::addVideoFrameWidget(VideoFrameWidget* widget)
