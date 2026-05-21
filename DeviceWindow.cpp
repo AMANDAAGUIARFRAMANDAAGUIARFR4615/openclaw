@@ -146,6 +146,7 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
             return;
 
         auto locked = data.toBool();
+        this->deviceInfo->lockedStatus = locked;
 
         if (locked)
             showOverlay("设备已锁定");

@@ -48,13 +48,31 @@ QPixmap makeLockIconPixmap(int size, const QColor &color)
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    QPen pen(color, 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    const qreal stroke = std::max(2.2, size * 0.065);
+    QPen pen(color, stroke, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
     const qreal s = size;
-    painter.drawRoundedRect(QRectF(s * 0.28, s * 0.46, s * 0.44, s * 0.36), 3, 3);
-    painter.drawArc(QRectF(s * 0.34, s * 0.18, s * 0.32, s * 0.32), 0, 180 * 16);
+    painter.drawRoundedRect(QRectF(s * 0.27, s * 0.47, s * 0.46, s * 0.35), 4, 4);
+    painter.drawArc(QRectF(s * 0.33, s * 0.17, s * 0.34, s * 0.34), 0, 180 * 16);
     return pixmap;
+}
+
+QString overlayUnlockButtonStyle(int height)
+{
+    const int radius = std::max(13, height / 2);
+    return QStringLiteral(R"(
+        QPushButton#overlayUnlockBtn {
+            background-color: #4A86F7;
+            color: #FFFFFF;
+            border: none;
+            border-radius: %1px;
+            padding: 0 18px;
+            font-weight: 600;
+        }
+        QPushButton#overlayUnlockBtn:hover { background-color: #5A94FF; }
+        QPushButton#overlayUnlockBtn:pressed { background-color: #356FE0; }
+    )").arg(radius);
 }
 } // namespace
 
@@ -65,7 +83,8 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
     setAttribute(Qt::WA_InputMethodEnabled, true);
 
     overlay = new QWidget(this);
-    overlay->setStyleSheet("background-color: #000000;");
+    overlay->setObjectName("deviceScreenOverlay");
+    overlay->setStyleSheet(QStringLiteral("#deviceScreenOverlay { background-color: #000000; }"));
 
     overlayLockIcon = new QLabel(overlay);
     overlayLockIcon->setAlignment(Qt::AlignCenter);
@@ -76,10 +95,13 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
     overlayLabel->setObjectName("overlayStatusLabel");
     overlayLabel->setAlignment(Qt::AlignCenter);
     overlayLabel->setWordWrap(false);
+    overlayLabel->setStyleSheet(QStringLiteral("color: #FFFFFF; background: transparent;"));
 
     overlayUnlockButton = new QPushButton("解锁", overlay);
     overlayUnlockButton->setObjectName("overlayUnlockBtn");
-    overlayUnlockButton->setFixedSize(104, 34);
+    overlayUnlockButton->setStyleSheet(overlayUnlockButtonStyle(28));
+    overlayUnlockButton->setCursor(Qt::PointingHandCursor);
+    overlayUnlockButton->setFixedSize(64, 28);
     overlayUnlockButton->hide();
     connect(overlayUnlockButton, &QPushButton::clicked, this, [this]() {
         send("changeScreenLockedStatus", 0);
@@ -88,9 +110,9 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
     QVBoxLayout *layout = new QVBoxLayout(overlay);
     layout->addStretch();
     layout->addWidget(overlayLockIcon, 0, Qt::AlignHCenter);
-    layout->addSpacing(8);
+    layout->addSpacing(10);
     layout->addWidget(overlayLabel, 0, Qt::AlignHCenter);
-    layout->addSpacing(12);
+    layout->addSpacing(16);
     layout->addWidget(overlayUnlockButton, 0, Qt::AlignHCenter);
     layout->addStretch();
     overlay->setLayout(layout);
@@ -267,18 +289,19 @@ void DeviceView::setSourceDevice(QIODevice *device, const QUrl &sourceUrl)
 void DeviceView::showOverlay(const QString &text)
 {
     overlayLabel->setText(text);
-    const bool locked = text == "设备已锁定";
-    overlayUnlockButton->setVisible(locked);
+    const bool locked = text == QStringLiteral("设备已锁定");
     if (overlayLockIcon)
         overlayLockIcon->setVisible(locked);
-    updateOverlayControls();
+
+    if (videoFrameWidget)
+        videoFrameWidget->hide();
 
     overlay->show();
     overlay->raise();
+    updateOverlayControls();
 
     QTimer::singleShot(0, this, [this]() {
-        if (videoFrameWidget)
-            videoFrameWidget->hide();
+        updateOverlayControls();
     });
 }
 
@@ -316,26 +339,36 @@ void DeviceView::updateOverlayControls()
     const int horizontalPadding = std::clamp(viewW / 20, 2, 28);
     const int verticalPadding = std::clamp(viewH / 20, 2, 28);
     const int horizontalSpace = std::max(1, viewW - horizontalPadding * 2);
-    const bool locked = overlayLockIcon && overlayLockIcon->isVisible();
+    const QString lockText = overlayLabel->text();
+    const bool locked = overlay->isVisible()
+        && (lockText.contains(QStringLiteral("锁定")) || lockText == QStringLiteral("锁"));
 
     overlay->setGeometry(0, 0, viewW, viewH);
-    if (videoFrameWidget && videoFrameWidget->parentWidget() == host)
+    if (videoFrameWidget && videoFrameWidget->parentWidget() == host) {
         videoFrameWidget->setGeometry(0, 0, viewW, viewH);
+        if (overlay->isVisible())
+            videoFrameWidget->hide();
+        else
+            videoFrameWidget->show();
+    }
 
     if (overlayLockIcon) {
+        overlayLockIcon->setVisible(locked);
         if (locked)
-            overlayLockIcon->setPixmap(makeLockIconPixmap(std::clamp(minSide / 5, 16, 44), QColor("#4A86F7")));
+            overlayLockIcon->setPixmap(makeLockIconPixmap(std::clamp(minSide / 4, 28, 48), QColor("#4A86F7")));
     }
 
     if (auto *layout = qobject_cast<QVBoxLayout *>(overlay->layout())) {
         layout->setContentsMargins(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
-        layout->setSpacing(std::clamp(minSide / 40, 1, 10));
+        layout->setSpacing(locked ? 0 : std::clamp(minSide / 40, 2, 10));
     }
 
-    // Keep text readable on small views while avoiding oversized fonts on large views.
-    const int labelPixelSize = std::clamp(minSide / 9, 8, 26);
+    const int labelPixelSize = locked
+        ? std::clamp(minSide / 10, 12, 15)
+        : std::clamp(minSide / 9, 10, 26);
     QFont labelFont = overlayLabel->font();
     labelFont.setPixelSize(labelPixelSize);
+    labelFont.setWeight(locked ? QFont::Medium : QFont::Normal);
     overlayLabel->setFont(labelFont);
     overlayLabel->setMaximumWidth(horizontalSpace);
     const QFontMetrics labelMetrics(labelFont);
@@ -354,19 +387,20 @@ void DeviceView::updateOverlayControls()
     }
 
     QFont buttonFont = overlayUnlockButton->font();
-    buttonFont.setPixelSize(std::clamp(labelPixelSize, 8, 15));
+    buttonFont.setPixelSize(std::clamp(minSide / 12, 12, 14));
     buttonFont.setWeight(QFont::DemiBold);
     overlayUnlockButton->setFont(buttonFont);
 
-    if (locked && horizontalSpace >= 24) {
+    if (locked) {
         const QFontMetrics buttonMetrics(buttonFont);
-        const int buttonH = std::clamp(viewH / 6, 18, 34);
-        const int buttonPad = std::clamp(horizontalSpace / 5, 8, 28);
-        const QString buttonText = horizontalSpace < 40 ? QStringLiteral("解") : QStringLiteral("解锁");
+        const int buttonH = std::clamp(viewH / 9, 26, 30);
+        const QString buttonText = horizontalSpace < 52 ? QStringLiteral("解") : QStringLiteral("解锁");
         overlayUnlockButton->setText(buttonText);
-        const int buttonW = qBound(20, buttonMetrics.horizontalAdvance(buttonText) + buttonPad, horizontalSpace);
+        const int buttonW = qBound(56, buttonMetrics.horizontalAdvance(buttonText) + 36, horizontalSpace);
         overlayUnlockButton->setFixedSize(buttonW, buttonH);
+        overlayUnlockButton->setStyleSheet(overlayUnlockButtonStyle(buttonH));
         overlayUnlockButton->show();
+        overlayUnlockButton->raise();
     } else {
         overlayUnlockButton->hide();
     }
