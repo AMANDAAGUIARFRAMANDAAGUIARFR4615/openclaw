@@ -31,12 +31,13 @@
 #include <QAbstractItemView>
 #include <QEvent>
 #include <QWidget>
-#include <QFormLayout>
 #include <QFrame>
+#include <QHash>
 #include <QFontDatabase>
 #include <QScrollArea>
 #include <QSet>
 #include <QTextEdit>
+#include <QStyleHints>
 #include <QLatin1String>
 #include <algorithm>
 #include <functional>
@@ -110,35 +111,56 @@ private:
     explicit ElementHierarchyDialog(DeviceInfo *deviceInfo, QWidget *parent)
         : BaseDialog(QStringLiteral("界面层级树"), parent, false), deviceInfo_(deviceInfo) {
         auto *root = contentLayout();
-        root->setContentsMargins(12, 12, 12, 12);
-        root->setSpacing(8);
+        root->setContentsMargins(14, 14, 14, 14);
+        root->setSpacing(10);
+
+        auto *toolbar = new QFrame(this);
+        toolbar->setObjectName(QStringLiteral("HierarchyToolbar"));
+        auto *toolbarLay = new QVBoxLayout(toolbar);
+        toolbarLay->setContentsMargins(12, 10, 12, 10);
+        toolbarLay->setSpacing(8);
 
         auto *top = new QHBoxLayout();
-        statusLabel_ = new QLabel(QStringLiteral("就绪"), this);
+        statusLabel_ = new QLabel(QStringLiteral("就绪"), toolbar);
+        statusLabel_->setObjectName(QStringLiteral("HierarchyStatus"));
         statusLabel_->setWordWrap(true);
         top->addWidget(statusLabel_, 1);
 
-        refreshBtn_ = new QPushButton(QStringLiteral("刷新"), this);
-        expandBtn_ = new QPushButton(QStringLiteral("全部展开"), this);
-        collapseBtn_ = new QPushButton(QStringLiteral("全部折叠"), this);
+        refreshBtn_ = new QPushButton(QStringLiteral("刷新"), toolbar);
+        expandBtn_ = new QPushButton(QStringLiteral("全部展开"), toolbar);
+        collapseBtn_ = new QPushButton(QStringLiteral("全部折叠"), toolbar);
+        refreshBtn_->setObjectName(QStringLiteral("HierarchyToolBtn"));
+        expandBtn_->setObjectName(QStringLiteral("HierarchyToolBtn"));
+        collapseBtn_->setObjectName(QStringLiteral("HierarchyToolBtn"));
         top->addWidget(refreshBtn_);
         top->addWidget(expandBtn_);
         top->addWidget(collapseBtn_);
-        root->addLayout(top);
+        toolbarLay->addLayout(top);
 
-        filterEdit_ = new QLineEdit(this);
+        filterEdit_ = new QLineEdit(toolbar);
+        filterEdit_->setObjectName(QStringLiteral("HierarchyFilter"));
         filterEdit_->setPlaceholderText(QStringLiteral("筛选：类型 / 文本 / 标识（子树匹配）"));
-        root->addWidget(filterEdit_);
+        filterEdit_->setClearButtonEnabled(true);
+        toolbarLay->addWidget(filterEdit_);
+        root->addWidget(toolbar);
 
         split_ = new QSplitter(Qt::Horizontal, this);
+        split_->setObjectName(QStringLiteral("HierarchySplit"));
+        split_->setHandleWidth(6);
+        split_->setChildrenCollapsible(false);
+
         preview_ = new HierarchyPreviewWidget(this);
+        preview_->setObjectName(QStringLiteral("HierarchyPreview"));
 
         tree_ = new QTreeWidget(this);
+        tree_->setObjectName(QStringLiteral("HierarchyTree"));
         tree_->setHeaderLabels({QStringLiteral("类型"), QStringLiteral("文本"), QStringLiteral("位置"),
                                QStringLiteral("标识")});
         tree_->setColumnCount(4);
         tree_->setAlternatingRowColors(true);
         tree_->setUniformRowHeights(false);
+        tree_->setRootIsDecorated(true);
+        tree_->setIndentation(18);
         tree_->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
         tree_->header()->setSectionResizeMode(1, QHeaderView::Stretch);
         tree_->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
@@ -147,68 +169,77 @@ private:
         tree_->setMinimumHeight(160);
         tree_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
-        auto *propertyPanel = new QWidget(this);
-        auto *propertyOuter = new QVBoxLayout(propertyPanel);
-        propertyOuter->setContentsMargins(8, 0, 0, 0);
-        propertyOuter->setSpacing(6);
+        auto *propertyBody = new QWidget(this);
+        auto *propertyOuter = new QVBoxLayout(propertyBody);
+        propertyOuter->setContentsMargins(0, 0, 0, 0);
+        propertyOuter->setSpacing(8);
 
         auto *propertyHeader = new QHBoxLayout();
-        auto *propertyTitle = new QLabel(QStringLiteral("属性"), propertyPanel);
-        propertyTitle->setStyleSheet(QStringLiteral("font-weight: bold;"));
-        propertyCopyBtn_ = new QPushButton(QStringLiteral("复制 JSON"), propertyPanel);
+        propertyCopyBtn_ = new QPushButton(QStringLiteral("复制 JSON"), propertyBody);
+        propertyCopyBtn_->setObjectName(QStringLiteral("HierarchyAccentBtn"));
         propertyCopyBtn_->setEnabled(false);
-        propertyHeader->addWidget(propertyTitle);
         propertyHeader->addStretch();
         propertyHeader->addWidget(propertyCopyBtn_);
         propertyOuter->addLayout(propertyHeader);
 
         propertyPlaceholder_ = new QLabel(
-            QStringLiteral("在层级树或预览图中选择一个节点，此处将显示其属性。"), propertyPanel);
+            QStringLiteral("在层级树或预览图中选择节点\n属性将显示在此处"), propertyBody);
+        propertyPlaceholder_->setObjectName(QStringLiteral("HierarchyEmptyHint"));
         propertyPlaceholder_->setWordWrap(true);
-        propertyPlaceholder_->setAlignment(Qt::AlignTop);
-        propertyOuter->addWidget(propertyPlaceholder_);
+        propertyPlaceholder_->setAlignment(Qt::AlignCenter);
+        propertyOuter->addWidget(propertyPlaceholder_, 1);
 
-        propertyScroll_ = new QScrollArea(propertyPanel);
+        propertyScroll_ = new QScrollArea(propertyBody);
+        propertyScroll_->setObjectName(QStringLiteral("HierarchyPropertyScroll"));
         propertyScroll_->setWidgetResizable(true);
         propertyScroll_->setFrameShape(QFrame::NoFrame);
         propertyScroll_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         propertyScrollContent_ = new QWidget(propertyScroll_);
-        propertyForm_ = new QFormLayout(propertyScrollContent_);
-        propertyForm_->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
-        propertyForm_->setContentsMargins(0, 0, 4, 0);
+        propertyScrollContent_->setObjectName(QStringLiteral("HierarchyPropertyBody"));
+        propertyListLayout_ = new QVBoxLayout(propertyScrollContent_);
+        propertyListLayout_->setContentsMargins(0, 0, 0, 0);
+        propertyListLayout_->setSpacing(2);
         propertyScroll_->setWidget(propertyScrollContent_);
         propertyScroll_->hide();
-        propertyOuter->addWidget(propertyScroll_, 1);
+        propertyOuter->addWidget(propertyScroll_, 3);
 
-        auto *jsonLabel = new QLabel(QStringLiteral("完整 JSON"), propertyPanel);
-        propertyJsonEdit_ = new QTextEdit(propertyPanel);
+        auto *jsonFrame = new QFrame(propertyBody);
+        jsonFrame->setObjectName(QStringLiteral("HierarchyJsonBlock"));
+        auto *jsonLay = new QVBoxLayout(jsonFrame);
+        jsonLay->setContentsMargins(10, 8, 10, 8);
+        jsonLay->setSpacing(6);
+        propertyJsonLabel_ = new QLabel(QStringLiteral("完整 JSON"), jsonFrame);
+        propertyJsonLabel_->setObjectName(QStringLiteral("HierarchySectionLabel"));
+        propertyJsonEdit_ = new QTextEdit(jsonFrame);
+        propertyJsonEdit_->setObjectName(QStringLiteral("HierarchyJsonEdit"));
         propertyJsonEdit_->setReadOnly(true);
         propertyJsonEdit_->setLineWrapMode(QTextEdit::NoWrap);
-        propertyJsonEdit_->setMaximumHeight(200);
+        propertyJsonEdit_->setMinimumHeight(88);
+        propertyJsonEdit_->setMaximumHeight(168);
         {
             QFont mono = QFontDatabase::systemFont(QFontDatabase::FixedFont);
             mono.setPointSize(qMax(9, mono.pointSize() - 1));
             propertyJsonEdit_->setFont(mono);
         }
-        jsonLabel->hide();
-        propertyJsonEdit_->hide();
-        propertyOuter->addWidget(jsonLabel);
-        propertyOuter->addWidget(propertyJsonEdit_);
-        propertyJsonLabel_ = jsonLabel;
+        jsonLay->addWidget(propertyJsonLabel_);
+        jsonLay->addWidget(propertyJsonEdit_, 1);
+        jsonFrame->hide();
+        propertyJsonBlock_ = jsonFrame;
+        propertyOuter->addWidget(jsonFrame, 2);
 
-        propertyPanel->setMinimumWidth(260);
-        propertyPanel->setMaximumWidth(400);
+        propertyBody->setMinimumWidth(272);
+        propertyBody->setMaximumWidth(420);
 
-        split_->addWidget(preview_);
-        split_->addWidget(tree_);
-        split_->addWidget(propertyPanel);
+        split_->addWidget(wrapHierarchyPane(QStringLiteral("屏幕预览"), preview_));
+        split_->addWidget(wrapHierarchyPane(QStringLiteral("层级树"), tree_));
+        split_->addWidget(wrapHierarchyPane(QStringLiteral("检查器"), propertyBody));
         split_->setStretchFactor(0, 2);
         split_->setStretchFactor(1, 3);
         split_->setStretchFactor(2, 2);
-        split_->setCollapsible(0, false);
-        split_->setCollapsible(1, false);
-        split_->setCollapsible(2, false);
+        split_->setSizes({380, 430, 300});
         root->addWidget(split_, 1);
+
+        applyDialogChrome();
 
         connect(refreshBtn_, &QPushButton::clicked, this, &ElementHierarchyDialog::startFetch);
         connect(expandBtn_, &QPushButton::clicked, tree_, &QTreeWidget::expandAll);
@@ -838,6 +869,238 @@ private:
                      });
     }
 
+    static QFrame *wrapHierarchyPane(const QString &title, QWidget *body) {
+        auto *pane = new QFrame(body->parentWidget());
+        pane->setObjectName(QStringLiteral("HierarchyPane"));
+        auto *lay = new QVBoxLayout(pane);
+        lay->setContentsMargins(10, 8, 10, 10);
+        lay->setSpacing(8);
+        auto *hdr = new QLabel(title, pane);
+        hdr->setObjectName(QStringLiteral("HierarchyPaneTitle"));
+        lay->addWidget(hdr);
+        lay->addWidget(body, 1);
+        return pane;
+    }
+
+    void applyDialogChrome() {
+        const bool dark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+        const QString toolbarBg = dark ? QStringLiteral("#1A1F28") : QStringLiteral("#FFFFFF");
+        const QString toolbarBorder = dark ? QStringLiteral("#323949") : QStringLiteral("#DCE1EB");
+        const QString paneBg = dark ? QStringLiteral("#1F232B") : QStringLiteral("#FFFFFF");
+        const QString paneBorder = dark ? QStringLiteral("#3A3F4B") : QStringLiteral("#DCE1EB");
+        const QString titleColor = dark ? QStringLiteral("#E2E8F0") : QStringLiteral("#1D2A3A");
+        const QString muted = dark ? QStringLiteral("#8B96A8") : QStringLiteral("#5C6B80");
+        const QString text = dark ? QStringLiteral("#D2D8E2") : QStringLiteral("#222B38");
+        const QString accent = dark ? QStringLiteral("#6BA6FF") : QStringLiteral("#1F6FEB");
+        const QString accentHover = dark ? QStringLiteral("#7EB5FF") : QStringLiteral("#3A84F7");
+        const QString btnBg = dark ? QStringLiteral("#2A3140") : QStringLiteral("#F3F6FC");
+        const QString btnBorder = dark ? QStringLiteral("#3E4658") : QStringLiteral("#C5D0E0");
+        const QString btnHover = dark ? QStringLiteral("#353D4E") : QStringLiteral("#EAF1FF");
+        const QString inputBg = dark ? QStringLiteral("#141820") : QStringLiteral("#FAFCFF");
+        const QString inputBorder = dark ? QStringLiteral("#3A4354") : QStringLiteral("#C8D4E6");
+        const QString treeBg = dark ? QStringLiteral("#181C24") : QStringLiteral("#FAFCFF");
+        const QString treeAlt = dark ? QStringLiteral("#1E2430") : QStringLiteral("#F0F4FA");
+        const QString treeSelBg = dark ? QStringLiteral("#2F4A78") : QStringLiteral("#DDEBFF");
+        const QString treeSelFg = dark ? QStringLiteral("#B8D4FF") : QStringLiteral("#1B4FB8");
+        const QString headerBg = dark ? QStringLiteral("#252B35") : QStringLiteral("#EEF2F8");
+        const QString splitHandle = dark ? QStringLiteral("#2E3544") : QStringLiteral("#D5DDEA");
+        const QString splitHover = dark ? QStringLiteral("#4A5568") : QStringLiteral("#A8B8D0");
+        const QString keyColor = dark ? QStringLiteral("#8FA0B8") : QStringLiteral("#5A6A7E");
+        const QString valColor = dark ? QStringLiteral("#E8EDF5") : QStringLiteral("#1A2433");
+        const QString rowAlt = dark ? QStringLiteral("#232A36") : QStringLiteral("#F4F7FC");
+        const QString jsonBg = dark ? QStringLiteral("#141820") : QStringLiteral("#F6F8FC");
+        const QString jsonBorder = dark ? QStringLiteral("#323949") : QStringLiteral("#D0DAE8");
+        const QString scrollBg = dark ? QStringLiteral("#1A1F28") : QStringLiteral("#F8FAFD");
+
+        setStyleSheet(styleSheet() + QString(R"(
+            QFrame#HierarchyToolbar {
+                background: %1;
+                border: 1px solid %2;
+                border-radius: 10px;
+            }
+            QLabel#HierarchyStatus {
+                color: %3;
+                font-size: 12px;
+            }
+            QPushButton#HierarchyToolBtn {
+                min-width: 72px;
+                padding: 6px 14px;
+                border: 1px solid %4;
+                border-radius: 7px;
+                background: %5;
+                color: %6;
+                font-size: 12px;
+                font-weight: 600;
+            }
+            QPushButton#HierarchyToolBtn:hover {
+                background: %7;
+                border-color: %8;
+            }
+            QPushButton#HierarchyToolBtn:pressed {
+                background: %1;
+            }
+            QPushButton#HierarchyToolBtn:disabled {
+                color: %3;
+            }
+            QPushButton#HierarchyAccentBtn {
+                min-width: 88px;
+                padding: 6px 14px;
+                border: 1px solid %8;
+                border-radius: 7px;
+                background: %8;
+                color: #FFFFFF;
+                font-size: 12px;
+                font-weight: 600;
+            }
+            QPushButton#HierarchyAccentBtn:hover {
+                background: %9;
+                border-color: %9;
+            }
+            QPushButton#HierarchyAccentBtn:disabled {
+                background: %4;
+                border-color: %4;
+                color: %3;
+            }
+            QLineEdit#HierarchyFilter {
+                padding: 8px 12px;
+                border: 1px solid %10;
+                border-radius: 8px;
+                background: %11;
+                color: %6;
+                font-size: 13px;
+            }
+            QLineEdit#HierarchyFilter:focus {
+                border-color: %8;
+            }
+            QSplitter#HierarchySplit::handle {
+                background: %12;
+                border-radius: 3px;
+                margin: 4px 2px;
+            }
+            QSplitter#HierarchySplit::handle:hover {
+                background: %13;
+            }
+            QFrame#HierarchyPane {
+                background: %14;
+                border: 1px solid %15;
+                border-radius: 10px;
+            }
+            QLabel#HierarchyPaneTitle {
+                color: %16;
+                font-size: 13px;
+                font-weight: 700;
+                padding-left: 2px;
+            }
+            QLabel#HierarchySectionLabel {
+                color: %3;
+                font-size: 11px;
+                font-weight: 600;
+            }
+            QLabel#HierarchyEmptyHint {
+                color: %3;
+                font-size: 12px;
+                line-height: 1.45;
+                padding: 24px 12px;
+            }
+            QWidget#HierarchyPreview {
+                border-radius: 8px;
+                border: 1px solid %17;
+            }
+            QTreeWidget#HierarchyTree {
+                border: none;
+                border-radius: 8px;
+                background: %18;
+                alternate-background-color: %19;
+                color: %6;
+                font-size: 12px;
+                outline: none;
+            }
+            QTreeWidget#HierarchyTree::item {
+                padding: 3px 2px;
+                border-radius: 4px;
+            }
+            QTreeWidget#HierarchyTree::item:hover {
+                background: %7;
+            }
+            QTreeWidget#HierarchyTree::item:selected {
+                background: %20;
+                color: %21;
+            }
+            QTreeWidget#HierarchyTree::item:selected:active {
+                background: %20;
+                color: %21;
+            }
+            QHeaderView::section {
+                background: %22;
+                color: %16;
+                border: none;
+                border-bottom: 1px solid %15;
+                padding: 7px 8px;
+                font-size: 11px;
+                font-weight: 700;
+            }
+            QScrollArea#HierarchyPropertyScroll {
+                background: transparent;
+                border: none;
+            }
+            QWidget#HierarchyPropertyBody {
+                background: transparent;
+            }
+            QWidget#PropertyRow {
+                border-radius: 6px;
+            }
+            QWidget#PropertyRow[alternate="true"] {
+                background: %23;
+            }
+            QLabel#PropertyKey {
+                color: %24;
+                font-size: 11px;
+                font-weight: 600;
+                min-width: 96px;
+                max-width: 120px;
+                padding: 6px 4px 6px 8px;
+            }
+            QLabel#PropertyValue {
+                color: %25;
+                font-size: 12px;
+                padding: 6px 8px 6px 4px;
+            }
+            QFrame#HierarchyJsonBlock {
+                background: %26;
+                border: 1px solid %27;
+                border-radius: 8px;
+            }
+            QTextEdit#HierarchyJsonEdit {
+                border: 1px solid %27;
+                border-radius: 6px;
+                background: %28;
+                color: %25;
+                padding: 6px;
+            }
+            QScrollBar:vertical {
+                width: 8px;
+                background: transparent;
+                margin: 2px;
+            }
+            QScrollBar::handle:vertical {
+                background: %12;
+                border-radius: 4px;
+                min-height: 24px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: %13;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0;
+            }
+        )")
+                              .arg(toolbarBg, toolbarBorder, muted, btnBorder, btnBg, text, btnHover, accent,
+                                   accentHover, inputBorder, inputBg, splitHandle, splitHover, paneBg, paneBorder,
+                                   titleColor, dark ? QStringLiteral("#0D1016") : QStringLiteral("#E8ECF2"), treeBg,
+                                   treeAlt, treeSelBg, treeSelFg, headerBg, rowAlt, keyColor, valColor, jsonBg,
+                                   jsonBorder, scrollBg));
+    }
+
     static QString jsonValueDisplay(const QJsonValue &v) {
         if (v.isString())
             return v.toString();
@@ -864,27 +1127,62 @@ private:
     }
 
     void clearPropertyForm() {
-        if (!propertyForm_)
+        if (!propertyListLayout_)
             return;
-        while (propertyForm_->rowCount() > 0) {
-            const int row = propertyForm_->rowCount() - 1;
-            if (QLayoutItem *labelItem = propertyForm_->itemAt(row, QFormLayout::LabelRole)) {
-                if (QWidget *w = labelItem->widget())
-                    w->deleteLater();
-            }
-            if (QLayoutItem *fieldItem = propertyForm_->itemAt(row, QFormLayout::FieldRole)) {
-                if (QWidget *w = fieldItem->widget())
-                    w->deleteLater();
-            }
-            propertyForm_->removeRow(row);
+        while (QLayoutItem *item = propertyListLayout_->takeAt(0)) {
+            if (QWidget *w = item->widget())
+                w->deleteLater();
+            delete item;
         }
     }
 
+    static QString propertyKeyLabel(const QString &key) {
+        static const QHash<QString, QString> labels = {
+            {QStringLiteral("type"), QStringLiteral("类型")},
+            {QStringLiteral("id"), QStringLiteral("标识")},
+            {QStringLiteral("label"), QStringLiteral("标签")},
+            {QStringLiteral("value"), QStringLiteral("值")},
+            {QStringLiteral("text"), QStringLiteral("文本")},
+            {QStringLiteral("name"), QStringLiteral("名称")},
+            {QStringLiteral("class"), QStringLiteral("类名")},
+            {QStringLiteral("enabled"), QStringLiteral("可用")},
+            {QStringLiteral("visible"), QStringLiteral("可见")},
+            {QStringLiteral("checked"), QStringLiteral("选中")},
+            {QStringLiteral("selected"), QStringLiteral("已选")},
+            {QStringLiteral("children"), QStringLiteral("子节点")},
+            {QStringLiteral("bounds.x"), QStringLiteral("边界 X")},
+            {QStringLiteral("bounds.y"), QStringLiteral("边界 Y")},
+            {QStringLiteral("bounds.width"), QStringLiteral("宽度")},
+            {QStringLiteral("bounds.height"), QStringLiteral("高度")},
+            {QStringLiteral("bounds.centerX"), QStringLiteral("中心 X")},
+            {QStringLiteral("bounds.centerY"), QStringLiteral("中心 Y")},
+        };
+        return labels.value(key, key);
+    }
+
     void addPropertyRow(const QString &key, const QString &value) {
-        if (!propertyForm_ || !propertyScrollContent_)
+        if (!propertyListLayout_ || !propertyScrollContent_)
             return;
-        propertyForm_->addRow(key + QLatin1Char(':'),
-                              makeSelectableValueLabel(value, propertyScrollContent_));
+        const int rowIndex = propertyListLayout_->count();
+        auto *row = new QWidget(propertyScrollContent_);
+        row->setObjectName(QStringLiteral("PropertyRow"));
+        if (rowIndex % 2 == 1)
+            row->setProperty("alternate", true);
+
+        auto *rowLay = new QHBoxLayout(row);
+        rowLay->setContentsMargins(0, 0, 0, 0);
+        rowLay->setSpacing(4);
+
+        auto *keyLbl = new QLabel(propertyKeyLabel(key), row);
+        keyLbl->setObjectName(QStringLiteral("PropertyKey"));
+        keyLbl->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+
+        auto *valLbl = makeSelectableValueLabel(value, row);
+        valLbl->setObjectName(QStringLiteral("PropertyValue"));
+
+        rowLay->addWidget(keyLbl, 0);
+        rowLay->addWidget(valLbl, 1);
+        propertyListLayout_->addWidget(row);
     }
 
     void updatePropertyPanel(QTreeWidgetItem *item) {
@@ -895,12 +1193,10 @@ private:
                 propertyPlaceholder_->show();
             if (propertyScroll_)
                 propertyScroll_->hide();
-            if (propertyJsonLabel_)
-                propertyJsonLabel_->hide();
-            if (propertyJsonEdit_) {
+            if (propertyJsonBlock_)
+                propertyJsonBlock_->hide();
+            if (propertyJsonEdit_)
                 propertyJsonEdit_->clear();
-                propertyJsonEdit_->hide();
-            }
             if (propertyCopyBtn_)
                 propertyCopyBtn_->setEnabled(false);
             return;
@@ -913,12 +1209,11 @@ private:
             propertyPlaceholder_->hide();
         if (propertyScroll_)
             propertyScroll_->show();
-        if (propertyJsonLabel_)
-            propertyJsonLabel_->show();
+        if (propertyJsonBlock_)
+            propertyJsonBlock_->show();
         if (propertyJsonEdit_) {
             propertyJsonEdit_->setPlainText(
                 QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Indented)));
-            propertyJsonEdit_->show();
         }
         if (propertyCopyBtn_)
             propertyCopyBtn_->setEnabled(true);
@@ -1011,6 +1306,7 @@ private:
     QPushButton *propertyCopyBtn_ = nullptr;
     QScrollArea *propertyScroll_ = nullptr;
     QWidget *propertyScrollContent_ = nullptr;
-    QFormLayout *propertyForm_ = nullptr;
+    QVBoxLayout *propertyListLayout_ = nullptr;
+    QFrame *propertyJsonBlock_ = nullptr;
     QTextEdit *propertyJsonEdit_ = nullptr;
 };
