@@ -422,9 +422,13 @@ public:
                                                    r, 2, new QTableWidgetItem(days > 0 ? QString::number(days)
                                                                                        : QStringLiteral("—")));
 
-                                               QString status =
-                                                   o[QStringLiteral("redeemed")].toBool() ? QStringLiteral("已兑换")
-                                                                                            : QStringLiteral("未兑换");
+                                               QString status;
+                                               if (o[QStringLiteral("disabled")].toBool())
+                                                   status = QStringLiteral("已禁用");
+                                               else if (o[QStringLiteral("redeemed")].toBool())
+                                                   status = QStringLiteral("已兑换");
+                                               else
+                                                   status = QStringLiteral("未兑换");
                                                resultTable->setItem(r, 3, new QTableWidgetItem(status));
 
                                                QString timeStr = QStringLiteral("—");

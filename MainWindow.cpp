@@ -6,14 +6,13 @@
 #include "UsbDeviceManager.h"
 #include "TcpServer.h"
 #include "DeviceWidget.h"
-#include "SettingsViewer.h"
+#include "DeveloperTools.h"
 #include "UdpTransport.h"
 #include "AppSettingsDialog.h"
 #include "JailbreakAssistantDialog.h"
 #include "RedeemRecordDialog.h"
 #include "RenewalDialog.h"
 #include "Account.h"
-#include "AccountListDialog.h"
 #include "QrConnectDialog.h"
 #include "HelpDialog.h"
 #include "NetworkSegmentEditorDialog.h"
@@ -24,7 +23,6 @@
 #include "NaturalSortListWidgetItem.h"
 #include "Safe.h"
 #include "VersionManagerDialog.h"
-#include "FlowEditorDialog.h"
 #include "VideoFrameWidget.h"
 #include <QVBoxLayout>
 #include <QLabel>
@@ -40,6 +38,7 @@
 #include <QTimer>
 #include <QMenu>
 #include <QDialog>
+#include <QMessageBox>
 #include <QCheckBox>
 #include <QLineEdit>
 #include <QPushButton>
@@ -423,110 +422,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         }
 
         if (title == "开发者") {
-            QMenu menu;
-            menu.addAction("数据查看", [=]() {
-                SettingsViewer(settings, this).exec();
-            });
-            menu.addAction("可视化编程", [=]() {
-                FlowEditorDialog(this).exec();
-            });
-            menu.addAction("兑换码生成", [this]() {
-                QDialog dialog(this);
-                dialog.setWindowTitle("生成兑换码");
-                dialog.setMinimumWidth(350); 
-
-                QFormLayout *formLayout = new QFormLayout(&dialog);
-
-                QLineEdit *phoneEdit = new QLineEdit(&dialog);
-                phoneEdit->setPlaceholderText("请输入目标手机号");
-
-                QHBoxLayout *typeLayout = new QHBoxLayout();
-                QRadioButton *rbWeekly = new QRadioButton("周卡", &dialog);
-                QRadioButton *rbMonthly = new QRadioButton("月卡", &dialog);
-                QRadioButton *rbQuarterly = new QRadioButton("季卡", &dialog);
-                QRadioButton *rbAnnual = new QRadioButton("年卡", &dialog);
-
-                typeLayout->addWidget(rbWeekly);
-                typeLayout->addWidget(rbMonthly);
-                typeLayout->addWidget(rbQuarterly);
-                typeLayout->addWidget(rbAnnual);
-
-                QButtonGroup *typeGroup = new QButtonGroup(&dialog);
-                typeGroup->addButton(rbWeekly, 1);    // 1 代表周卡
-                typeGroup->addButton(rbMonthly, 2);   // 2 代表月卡
-                typeGroup->addButton(rbQuarterly, 3); // 3 代表季卡
-                typeGroup->addButton(rbAnnual, 4);    // 4 代表年卡
-
-                rbMonthly->setChecked(true);
-
-                QSpinBox *countSpin = new QSpinBox(&dialog);
-                countSpin->setRange(1, 1000);
-                countSpin->setValue(1);
-
-                formLayout->addRow("手机号:", phoneEdit);
-                formLayout->addRow("类型:", typeLayout); 
-                formLayout->addRow("生成数量:", countSpin);
-
-                QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
-                connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-                connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-                formLayout->addRow(buttonBox);
-
-                if (dialog.exec() != QDialog::Accepted)
-                    return;
-
-                QString inputPhone = phoneEdit->text().trimmed();
-                int inputCount = countSpin->value();
-
-                int inputType = typeGroup->checkedId(); 
-
-                webSocketClient->emitEvent("generate_codes", 
-                    QJsonObject{
-                        {"phone", inputPhone}, 
-                        {"count", inputCount},
-                        {"type", inputType}
-                    }, 
-                    [=](const QJsonValue &res) {
-                        if (res.isString()) {
-                            Tools::showToast(res.toString(), this);
-                            return;
-                        }
-
-                        QStringList codes;
-                        if (res.isArray()) {
-                            for (const QJsonValue &item : res.toArray()) {
-                                codes << item.toString(); 
-                            }
-                        }
-
-                        qApp->clipboard()->setText(codes.join("\n"));
-                        Tools::showToast(QStringLiteral("成功生成 %1 个兑换码并复制").arg(codes.size()), this);
-                });
-            });
-            menu.addAction("在线用户", [this]() {
-                webSocketClient->emitEvent("online_accounts", QJsonValue(), [=](const QJsonValue &res) {
-                    if (res.isString()) {
-                        Tools::showToast(res.toString(), this);
-                        return;
-                    }
-
-                    QStringList phoneNumbers;
-                    for (const QJsonValue &item : res.toArray()) {
-                        phoneNumbers << item.toString();
-                    }
-
-                    if (phoneNumbers.isEmpty()) {
-                        Tools::showToast(QStringLiteral("没有在线账号"), this);
-                        return;
-                    }
-
-                    AccountListDialog(phoneNumbers, this).exec();
-                });
-            });
-
-            QRect rect = sideBarList->visualItemRect(item);
-            QPoint globalPos = sideBarList->viewport()->mapToGlobal(rect.topRight());
-            menu.exec(globalPos);
+            const QRect rect = sideBarList->visualItemRect(item);
+            const QPoint globalPos = sideBarList->viewport()->mapToGlobal(rect.topRight());
+            DeveloperTools::showMenu(this, globalPos);
             return;
         }
     });
