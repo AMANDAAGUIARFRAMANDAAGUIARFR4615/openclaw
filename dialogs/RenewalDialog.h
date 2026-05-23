@@ -5,6 +5,7 @@
 #include "Tools.h"
 #include "Safe.h"
 #include "BaseDialog.h"
+#include "EventHub.h"
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QDialogButtonBox>
@@ -545,6 +546,14 @@ public:
         filterComboBox->setCurrentIndex(MainWindow::getInstance()->tabWidget->currentIndex());
 
         setVoucherBalance(Account::getInstance()->balance);
+
+        EventHub::on(this, "balanceUpdated", [this](const QJsonValue &data, DeviceConnection*) {
+            setVoucherBalance(data["balance"].toInt());
+        });
+    }
+
+    ~RenewalDialog() override {
+        EventHub::off(this, "balanceUpdated");
     }
 
 protected:

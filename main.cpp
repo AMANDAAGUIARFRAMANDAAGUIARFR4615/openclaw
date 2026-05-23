@@ -219,6 +219,10 @@ int main(int argc, char *argv[])
             return;
 
         webSocketClient->emitEvent("reconnect", Account::getInstance()->id, [=](const QJsonValue &res) {
+            const QJsonValue accountValue = res["account"];
+            if (accountValue.isObject())
+                Account::getInstance()->balance = accountValue["balance"].toInt();
+
             for (const QJsonValue& device: res[HIDE_STR("devices")].toArray()) {
                 const auto udid = device[HIDE_STR("udid")].toString();
                 const auto expireAt = device[HIDE_STR("expireAt")].toInteger();
@@ -242,6 +246,11 @@ int main(int argc, char *argv[])
         settings->setValue("force_logout", data.toString());
         Tools::quitApplication(true);
 #endif
+    });
+
+    webSocketClient->on("balance_updated", [](const QJsonValue &data) {
+        Account::getInstance()->balance = data["balance"].toInt();
+        EventHub::trigger("balanceUpdated", data, nullptr);
     });
 
     QObject::connect(loginWidget, &LoginWidget::authorized, [&](const QJsonValue &account, bool isLanMode) {
