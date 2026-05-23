@@ -5,8 +5,10 @@
 #include "Account.h"
 #include "EventHub.h"
 #include "DeviceConnection.h"
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
+#include <QVersionNumber>
 #include <QApplication>
 #include <QScreen>
 #include <QList>
@@ -102,7 +104,7 @@ public:
         lockers.insert(localIp, value);
 
         if (isLockByOther()) {
-            connection->send("reject", QString("此设备被【%1】独占，需要该账号退出独占模式您才能连接").arg(locker));
+            sendExclusiveReject(connection, locker, version);
             EventHub::trigger("disconnected", QJsonValue(), connection);
         }
     }
@@ -131,6 +133,40 @@ public:
     {
         const auto locker = lockers.value(id);
         return !locker.isEmpty() && locker != Account::getInstance()->phone;
+    }
+
+    static bool supportsExclusiveRejectDialog(const QString& version)
+    {
+        return QVersionNumber::fromString(version) > QVersionNumber(2, 6, 5);
+    }
+
+    static QString exclusiveRejectMessage(const QString& locker)
+    {
+        return QStringLiteral("此设备被【%1】独占，需要该账号退出独占模式您才能连接").arg(locker);
+    }
+
+    static bool sendExclusiveReject(DeviceConnection* connection, const QString& locker, const QString& version)
+    {
+        if (supportsExclusiveRejectDialog(version)) {
+            connection->send("dialog", buildExclusiveRejectDialogData(locker));
+            return true;
+        }
+
+        connection->send("reject", exclusiveRejectMessage(locker));
+        return false;
+    }
+
+    static QJsonObject buildExclusiveRejectDialogData(const QString& locker)
+    {
+        return QJsonObject{
+            {"id", QStringLiteral("exclusiveLock")},
+            {"title", QStringLiteral("无法连接")},
+            {"message", QStringLiteral("此设备被【%1】独占，需要该账号退出独占模式您才能连接").arg(locker)},
+            {"options", QJsonArray{
+                QStringLiteral("知道了"),
+                QStringLiteral("退出独占")
+            }}
+        };
     }
 
     static DeviceInfo* getDevice(const QString& id)

@@ -783,10 +783,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 
         deviceInfo = new DeviceInfo(connection, data.toObject());
         if (deviceInfo->isLockByOther()) {
-            connection->send("reject", QString("此设备被【%1】独占，需要该账号退出独占模式您才能连接").arg(deviceInfo->getLocker()));
+            const bool isDialog = DeviceInfo::sendExclusiveReject(connection, deviceInfo->getLocker(), deviceInfo->version);
 
             if (connection->type == DeviceConnection::Usb)
                 UsbDeviceManager::getInstance()->markUsbExclusiveRejectSent(deviceInfo->deviceId);
+
+            if (isDialog) {
+                connection->deviceInfo = deviceInfo;
+                return;
+            }
 
             connection->close();
             delete deviceInfo;
@@ -795,6 +800,26 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
         
         connection->deviceInfo = deviceInfo;
         addItem(connection);
+    });
+
+    EventHub::on(this, "dialogChoice", [this](const QJsonValue &data, DeviceConnection* connection) {
+        if (!connection)
+            return;
+
+        const auto obj = data.toObject();
+        const auto id = obj["id"].toString();
+        const int index = obj["index"].toInt(-1);
+
+        if (id == QStringLiteral("exclusiveLock")) {
+            if (index == 1 && connection->deviceInfo) {
+                webSocketClient->emitEvent("setDeviceLocker", QJsonObject{
+                    {"udids", QJsonArray{connection->deviceInfo->deviceId}},
+                    {"locked", false}
+                });
+            }
+        }
+
+        connection->close();
     });
 
     EventHub::on(this, "disconnected", [this](const QJsonValue &data, DeviceConnection* connection) {
@@ -815,6 +840,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                     return;
                 }
             }
+        }
+
+        if (connection->deviceInfo) {
+            delete connection->deviceInfo;
+            connection->deviceInfo = nullptr;
         }
     });
 
