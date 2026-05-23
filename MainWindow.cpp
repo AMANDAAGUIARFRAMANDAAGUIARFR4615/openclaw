@@ -814,7 +814,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             if (index == 1 && connection->deviceInfo) {
                 webSocketClient->emitEvent("setDeviceLocker", QJsonObject{
                     {"udids", QJsonArray{connection->deviceInfo->deviceId}},
-                    {"locked", false}
+                    {"locked", false},
+                    {"force", true}
                 });
             }
         }
