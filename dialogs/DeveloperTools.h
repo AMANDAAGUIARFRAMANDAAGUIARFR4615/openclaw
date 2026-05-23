@@ -85,8 +85,8 @@ private:
         formLayout->addRow(QStringLiteral("生成数量:"), countSpin);
 
         auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
-        connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-        connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+        QObject::connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+        QObject::connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
         formLayout->addRow(buttonBox);
 
         if (dialog.exec() != QDialog::Accepted)
@@ -136,8 +136,8 @@ private:
         layout->addWidget(codesEdit);
         layout->addWidget(buttonBox);
 
-        connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-        connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+        QObject::connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+        QObject::connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
         if (dialog.exec() != QDialog::Accepted)
             return;
