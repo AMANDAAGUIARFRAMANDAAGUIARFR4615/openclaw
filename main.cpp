@@ -253,6 +253,14 @@ int main(int argc, char *argv[])
         EventHub::trigger("balanceUpdated", data, nullptr);
     });
 
+    webSocketClient->on("device_expire_updated", [](const QJsonValue &data) {
+        const auto udid = data[HIDE_STR("udid")].toString();
+        const auto expireAt = data[HIDE_STR("expireAt")].toInteger();
+        DeviceInfo::expirations[udid] = expireAt;
+        if (auto deviceInfo = DeviceInfo::getDevice(udid))
+            deviceInfo->expireAt = expireAt;
+    });
+
     QObject::connect(loginWidget, &LoginWidget::authorized, [&](const QJsonValue &account, bool isLanMode) {
         Account::getInstance()->id = account["_id"].toString();
         Account::getInstance()->phone = account["phone"].toString();
