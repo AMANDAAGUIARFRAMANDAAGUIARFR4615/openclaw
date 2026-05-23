@@ -833,8 +833,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             for (int i = 0; i < listWidget->count(); i++) {
                 const auto& item = listWidget->item(i);
                 const auto& deviceWidget = item->data(Qt::UserRole).value<DeviceWidget*>();
-                if (deviceWidget->connection == connection) {
+                if (deviceWidget && deviceWidget->connection == connection) {
                     listWidget->setEnabled(false);
+                    connection->deviceInfo = nullptr;
                     delete listWidget->takeItem(i);
                     listWidget->setEnabled(true);
                     relayoutDevices();
