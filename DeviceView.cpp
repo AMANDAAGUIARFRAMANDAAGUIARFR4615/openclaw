@@ -12,8 +12,9 @@
 #include "AppSettingsDialog.h"
 #include "ScreenshotGalleryDialog.h"
 #include "VideoGalleryDialog.h"
-#if REMOTEPRO_FEATURE_ELEMENT_HIERARCHY_MENU
+#if REMOTEPRO_FEATURE_SCRIPT_TOOLS_MENU
 #include "ElementHierarchyDialog.h"
+#include "PrefsConfigEditorDialog.h"
 #endif
 #include "Account.h"
 #include "DeviceWidget.h"
@@ -509,9 +510,15 @@ void DeviceView::addContextMenuActions()
         else if (labelPart == "应用管理") {
             addAction(text, [this](){AppListWidget::open(connection, this);});
         }
-#if REMOTEPRO_FEATURE_ELEMENT_HIERARCHY_MENU
-        else if (labelPart == "层级树") {
-            addAction(text, [this]() { ElementHierarchyDialog::open(connection, deviceInfo, this); });
+#if REMOTEPRO_FEATURE_SCRIPT_TOOLS_MENU
+        else if (labelPart == "脚本工具") {
+            auto *action = addAction(text);
+            auto *scriptToolsMenu = new QMenu(this);
+            action->setMenu(scriptToolsMenu);
+            scriptToolsMenu->addAction(QStringLiteral("层级树"),
+                [this]() { ElementHierarchyDialog::open(connection, deviceInfo, this); });
+            scriptToolsMenu->addAction(QStringLiteral("配置编辑器"),
+                [this]() { PrefsConfigEditorDialog::open(deviceInfo, this); });
         }
 #endif
         else if (labelPart == "截图") {

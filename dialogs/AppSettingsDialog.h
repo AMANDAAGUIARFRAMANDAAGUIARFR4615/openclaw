@@ -301,8 +301,8 @@ private:
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
             "🧹清理应用", "📁文件管理",
             "⏺️录制+回放", "🧩应用管理",
-#if REMOTEPRO_FEATURE_ELEMENT_HIERARCHY_MENU
-            "🌳层级树",
+#if REMOTEPRO_FEATURE_SCRIPT_TOOLS_MENU
+            "🛠️脚本工具",
 #endif
             "📸截图", "🖼️截图库", "📹投屏录像", "📹录像库", "🔄重启", "🔒锁屏",
             "📋获取剪切板", "🗑️清空相册", "🔊音量+", "🔈音量-", "🏹主控", "🎯被控",
