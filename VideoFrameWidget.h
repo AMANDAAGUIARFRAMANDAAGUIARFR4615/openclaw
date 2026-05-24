@@ -182,7 +182,7 @@ private:
 
         if (minAllowed > maxAllowed) minAllowed = maxAllowed;
 
-        videoQuality = qBound(minAllowed, videoQuality, maxAllowed);
+        videoQuality = safeBound(minAllowed, videoQuality, maxAllowed);
 
         const int finalWidth = physicalWidth;
         const int finalHeight = physicalHeight;
@@ -190,7 +190,7 @@ private:
         connection->send("videoSettings", QJsonObject({
             {"width", qMin(finalWidth, finalHeight)},
             {"height", qMax(finalWidth, finalHeight)},
-            {"fps", isWindow ? 30 : QList<float>{ 30, 0.2f, 1, 15, 30 }[qBound(0, videoFps, 4)]},
+            {"fps", isWindow ? 30 : QList<float>{ 30, 0.2f, 1, 15, 30 }[safeBound(0, videoFps, 4)]},
             {"quality", videoQuality}
         }));
     }

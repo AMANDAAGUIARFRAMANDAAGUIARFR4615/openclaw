@@ -1348,7 +1348,7 @@ void MainWindow::updateSidebarToggleButtonPosition()
     // 悬浮在 central 上：不参与布局、不压缩视频区域，也不会被 splitter/子控件裁剪。
     // X 坐标吸附到分割线中心，保证箭头始终跟着分割线。
     const int buttonY = splitterRect.y() + 8;
-    buttonX = qBound(4, buttonX, qMax(4, centralWidget()->width() - sideBarToggleButton->width() - 4));
+    buttonX = safeBound(4, buttonX, centralWidget()->width() - sideBarToggleButton->width() - 4);
 
     sideBarToggleButton->move(buttonX, buttonY);
 }
@@ -1680,7 +1680,7 @@ void MainWindow::doRelayoutDevices()
         int targetW = (isLandscape ? frameItemHeight : frameItemWidth) * scale;
         int targetH = (isLandscape ? frameItemWidth : frameItemHeight) * scale;
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
-        const int columns = qBound(1, AppSettingsDialog::getInstance()->getValue("mobileGridColumns") + 1, 4);
+        const int columns = safeBound(1, AppSettingsDialog::getInstance()->getValue("mobileGridColumns") + 1, 4);
         const int spacing = listWidget->spacing();
         const int viewportWidth = qMax(1, listWidget->viewport()->width());
         const int scrollBarWidth = qMax(

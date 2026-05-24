@@ -7,6 +7,14 @@
 #include <QSettings>
 #include <QElapsedTimer>
 #include <QNetworkAccessManager>
+#include <algorithm>
+
+/** 等同 qBound(min, val, max)，但 min > max 时不触发 Qt 断言。 */
+template<typename T>
+constexpr T safeBound(const T &min, const T &val, const T &max)
+{
+    return std::min(max, std::max(min, val));
+}
 
 extern QSettings* settings;
 extern WebSocketClient* webSocketClient;

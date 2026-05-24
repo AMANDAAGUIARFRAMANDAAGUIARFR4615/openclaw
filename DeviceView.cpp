@@ -394,7 +394,7 @@ void DeviceView::updateOverlayControls()
         const int buttonH = std::clamp(viewH / 9, 26, 30);
         const QString buttonText = horizontalSpace < 52 ? QStringLiteral("解") : QStringLiteral("解锁");
         overlayUnlockButton->setText(buttonText);
-        const int buttonW = qBound(56, buttonMetrics.horizontalAdvance(buttonText) + 36, horizontalSpace);
+        const int buttonW = safeBound(56, buttonMetrics.horizontalAdvance(buttonText) + 36, horizontalSpace);
         overlayUnlockButton->setFixedSize(buttonW, buttonH);
         overlayUnlockButton->setStyleSheet(overlayUnlockButtonStyle(buttonH));
         overlayUnlockButton->show();
@@ -887,8 +887,8 @@ QPoint DeviceView::getTransformedPosition(QPoint pos) {
     float offY = (wh - vh * scale) / 2;
 
     // 4. 将鼠标坐标映射到视频画面内 (去除黑边并缩放)
-    int x = qBound(0, (int)((pos.x() - offX) / scale), vw);
-    int y = qBound(0, (int)((pos.y() - offY) / scale), vh);
+    int x = safeBound(0, (int)((pos.x() - offX) / scale), vw);
+    int y = safeBound(0, (int)((pos.y() - offY) / scale), vh);
 
     // 5. 坐标旋转映射
     switch (deviceInfo->orientation) {
