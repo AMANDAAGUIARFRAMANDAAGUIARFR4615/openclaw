@@ -62,7 +62,6 @@
 #include <QMouseEvent>
 #include <QWindow>
 #include <QScrollBar>
-#include <QGraphicsDropShadowEffect>
 #include <QFontMetrics>
 
 namespace {
@@ -1260,27 +1259,6 @@ void MainWindow::applyMainWindowTheme()
         QToolButton:hover { background: %5; border-color: %3; color: %3; }
     )").arg(colors.panelBg, colors.border, kPrimaryBlue, colors.toggleText, colors.toggleHover));
 
-    if (sideBarPanel && !sideBarPanel->graphicsEffect()) {
-        auto *shadow = new QGraphicsDropShadowEffect(sideBarPanel);
-        shadow->setBlurRadius(20);
-        shadow->setOffset(0, 4);
-        shadow->setColor(colors.shadow);
-        sideBarPanel->setGraphicsEffect(shadow);
-    } else if (sideBarPanel) {
-        if (auto *shadow = qobject_cast<QGraphicsDropShadowEffect *>(sideBarPanel->graphicsEffect()))
-            shadow->setColor(colors.shadow);
-    }
-    if (contentPanel && !contentPanel->graphicsEffect()) {
-        auto *shadow = new QGraphicsDropShadowEffect(contentPanel);
-        shadow->setBlurRadius(20);
-        shadow->setOffset(0, 4);
-        shadow->setColor(colors.shadow);
-        contentPanel->setGraphicsEffect(shadow);
-    } else if (contentPanel) {
-        if (auto *shadow = qobject_cast<QGraphicsDropShadowEffect *>(contentPanel->graphicsEffect()))
-            shadow->setColor(colors.shadow);
-    }
-
 }
 
 MainWindow::~MainWindow()
@@ -1807,12 +1785,6 @@ void MainWindow::addItem(DeviceConnection* connection)
     auto frameLayout = new QVBoxLayout(frame);
     frameLayout->setContentsMargins(0, 0, 0, 0);
     frameLayout->addWidget(player);
-
-    auto *cardShadow = new QGraphicsDropShadowEffect(frame);
-    cardShadow->setBlurRadius(26);
-    cardShadow->setOffset(0, 6);
-    cardShadow->setColor(mainWindowThemeColors().cardShadow);
-    frame->setGraphicsEffect(cardShadow);
 
     auto item = new NaturalSortListWidgetItem();
     item->setText(deviceInfo->deviceName + " " + deviceInfo->localIp);
