@@ -38,7 +38,7 @@
 #include <QSet>
 #include <QTextEdit>
 #include <QStyleHints>
-#include <QLatin1String>
+#include <QScrollBar>
 #include <algorithm>
 #include <functional>
 #include <limits>
@@ -161,10 +161,15 @@ private:
         tree_->setUniformRowHeights(false);
         tree_->setRootIsDecorated(true);
         tree_->setIndentation(18);
+        tree_->setTextElideMode(Qt::ElideNone);
+        tree_->header()->setStretchLastSection(false);
+        tree_->header()->setMinimumSectionSize(48);
         tree_->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-        tree_->header()->setSectionResizeMode(1, QHeaderView::Stretch);
+        tree_->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
         tree_->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-        tree_->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+        // 标识列固定可拖宽，避免 ResizeToContents 把表格撑得过宽导致「文本」列被滚出视口
+        tree_->header()->setSectionResizeMode(3, QHeaderView::Interactive);
+        tree_->header()->resizeSection(3, 128);
         tree_->setContextMenuPolicy(Qt::CustomContextMenu);
         tree_->setMinimumHeight(160);
         tree_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
@@ -411,14 +416,25 @@ private:
         fetchHierarchyScreenshot();
 
         setIdle(QStringLiteral("共 %1 个顶层节点").arg(tree_->topLevelItemCount()));
+        adjustTreeColumnWidths();
+        if (QScrollBar *hb = tree_->horizontalScrollBar())
+            hb->setValue(0);
         applyFilter(filterEdit_->text());
     }
 
     static QString primaryText(const QJsonObject &o) {
-        const QString lbl = o.value(QStringLiteral("label")).toString();
-        if (!lbl.isEmpty())
-            return lbl;
-        return o.value(QStringLiteral("value")).toString();
+        static const QLatin1String keys[] = {
+            QLatin1String("label"),
+            QLatin1String("text"),
+            QLatin1String("name"),
+            QLatin1String("value"),
+        };
+        for (const QLatin1String &key : keys) {
+            const QString s = o.value(key).toString();
+            if (!s.isEmpty())
+                return s;
+        }
+        return {};
     }
 
     /** 文档 bounds：center 或 x/y/width/height */
@@ -451,11 +467,16 @@ private:
     static void fillItemColumns(QTreeWidgetItem *item, const QJsonObject &o) {
         const QString type = o.value(QStringLiteral("type")).toString();
         const QString id = o.value(QStringLiteral("id")).toString();
+        const QString text = primaryText(o);
         item->setText(0, type.isEmpty() ? QStringLiteral("—") : type);
-        item->setText(1, primaryText(o));
+        item->setText(1, text.isEmpty() ? QStringLiteral("—") : text);
         const QString bt = boundsText(o);
         item->setText(2, bt.isEmpty() ? QStringLiteral("—") : bt);
         item->setText(3, id.isEmpty() ? QStringLiteral("—") : id);
+        if (!text.isEmpty())
+            item->setToolTip(1, text);
+        if (!id.isEmpty())
+            item->setToolTip(3, id);
         item->setData(0, Qt::UserRole, QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Compact)));
     }
 
@@ -470,6 +491,14 @@ private:
             if (v.isObject())
                 appendJsonObjectTree(row, v.toObject());
         }
+    }
+
+    void adjustTreeColumnWidths() {
+        if (!tree_)
+            return;
+        tree_->resizeColumnToContents(0);
+        tree_->resizeColumnToContents(1);
+        tree_->resizeColumnToContents(2);
     }
 
     void populateTree(const QJsonArray &roots) {
