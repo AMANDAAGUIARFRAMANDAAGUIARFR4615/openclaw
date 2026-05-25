@@ -14,6 +14,7 @@
 #include "VideoGalleryDialog.h"
 #if REMOTEPRO_FEATURE_SCRIPT_TOOLS_MENU
 #include "ElementHierarchyDialog.h"
+#include "ImageToolsDialog.h"
 #include "PrefsConfigEditorDialog.h"
 #endif
 #include "Account.h"
@@ -519,6 +520,8 @@ void DeviceView::addContextMenuActions()
                 [this]() { ElementHierarchyDialog::open(connection, deviceInfo, this); });
             scriptToolsMenu->addAction(QStringLiteral("配置编辑器"),
                 [this]() { PrefsConfigEditorDialog::open(deviceInfo, this); });
+            scriptToolsMenu->addAction(QStringLiteral("图片工具"),
+                [this]() { ImageToolsDialog::open(deviceInfo, this); });
         }
 #endif
         else if (labelPart == "截图") {

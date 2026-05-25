@@ -22,7 +22,7 @@ extern QElapsedTimer* elapsedTimer;
 extern QNetworkAccessManager* networkAccessManager;
 extern TunnelClient* tunnelClient;
 
-/** 为 0 时隐藏投屏窗口菜单中的「脚本工具」二级菜单（含层级树、配置编辑器）。 */
+/** 为 0 时隐藏投屏窗口菜单中的「脚本工具」二级菜单（含层级树、配置编辑器、图片工具）。 */
 #ifndef REMOTEPRO_FEATURE_SCRIPT_TOOLS_MENU
 #define REMOTEPRO_FEATURE_SCRIPT_TOOLS_MENU 1
 #endif
