@@ -5,10 +5,10 @@
 #include "HttpUtil.h"
 #include "ToastWidget.h"
 #include "global.h"
+#include <QAction>
 #include <QAbstractSpinBox>
 #include <QApplication>
 #include <QClipboard>
-#include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QFormLayout>
 #include <QFrame>
@@ -17,6 +17,7 @@
 #include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QNetworkReply>
 #include <QPainter>
@@ -26,7 +27,9 @@
 #include <QScrollArea>
 #include <QSpinBox>
 #include <QSplitter>
+#include <QStyle>
 #include <QStyleHints>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include <optional>
 
@@ -90,7 +93,7 @@ private:
         root->setContentsMargins(14, 14, 14, 14);
         root->setSpacing(10);
 
-        auto *toolbar = new QFrame(this);
+        auto *toolbar = new QWidget(this);
         auto *toolbarLay = new QHBoxLayout(toolbar);
         toolbarLay->setContentsMargins(0, 0, 0, 0);
         toolbarLay->setSpacing(8);
@@ -102,17 +105,35 @@ private:
             btn->setDefault(false);
         }
 
-        modeCombo_ = new QComboBox(toolbar);
-        modeCombo_->addItem(QStringLiteral("取色"), static_cast<int>(ToolMode::PickPixel));
-        modeCombo_->addItem(QStringLiteral("选区"), static_cast<int>(ToolMode::SelectRegion));
-        modeCombo_->addItem(QStringLiteral("找色"), static_cast<int>(ToolMode::FindColor));
-        modeCombo_->addItem(QStringLiteral("找图"), static_cast<int>(ToolMode::FindImage));
+        modeBtn_ = new QToolButton(toolbar);
+        modeBtn_->setObjectName(QStringLiteral("ImageToolModeBtn"));
+        modeBtn_->setPopupMode(QToolButton::InstantPopup);
+        modeBtn_->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        modeBtn_->setLayoutDirection(Qt::RightToLeft);
+        modeBtn_->setIconSize(QSize(12, 12));
+        modeBtn_->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+
+        auto *modeMenu = new QMenu(modeBtn_);
+        const struct {
+            QString label;
+            ToolMode mode;
+        } modeItems[] = {{QStringLiteral("取色"), ToolMode::PickPixel},
+                           {QStringLiteral("选区"), ToolMode::SelectRegion},
+                           {QStringLiteral("找色"), ToolMode::FindColor},
+                           {QStringLiteral("找图"), ToolMode::FindImage}};
+        for (const auto &item : modeItems) {
+            auto *action = modeMenu->addAction(item.label);
+            action->setData(static_cast<int>(item.mode));
+        }
+        modeBtn_->setMenu(modeMenu);
+        modeBtn_->setText(modeItems[0].label);
+        currentMode_ = ToolMode::PickPixel;
 
         toolbarLay->addWidget(captureBtn_);
         toolbarLay->addWidget(releaseAllBtn_);
         toolbarLay->addSpacing(8);
         toolbarLay->addWidget(new QLabel(QStringLiteral("模式:"), toolbar));
-        toolbarLay->addWidget(modeCombo_);
+        toolbarLay->addWidget(modeBtn_);
         toolbarLay->addStretch();
         root->addWidget(toolbar);
 
@@ -159,7 +180,11 @@ private:
 
         connect(captureBtn_, &QPushButton::clicked, this, &ImageToolsDialog::captureScreenshot);
         connect(releaseAllBtn_, &QPushButton::clicked, this, &ImageToolsDialog::releaseAllImages);
-        connect(modeCombo_, &QComboBox::currentIndexChanged, this, &ImageToolsDialog::syncModePanels);
+        connect(modeMenu, &QMenu::triggered, this, [this](QAction *action) {
+            modeBtn_->setText(action->text());
+            currentMode_ = static_cast<ToolMode>(action->data().toInt());
+            syncModePanels();
+        });
         connect(copyPixelHexBtn_, &QPushButton::clicked, this, &ImageToolsDialog::copyPixelHex);
         connect(copyPixelCoordBtn_, &QPushButton::clicked, this, &ImageToolsDialog::copyPixelCoord);
         connect(copyRegionBtn_, &QPushButton::clicked, this, &ImageToolsDialog::copyRegionLtrb);
@@ -180,6 +205,7 @@ private:
 
     void buildPixelPanel(QVBoxLayout *sideLay) {
         pixelPanel_ = new QFrame(sidePanel_);
+        pixelPanel_->setObjectName(QStringLiteral("ImageToolPanel"));
         auto *lay = new QVBoxLayout(pixelPanel_);
         lay->setContentsMargins(0, 0, 0, 0);
         lay->setSpacing(8);
@@ -200,6 +226,7 @@ private:
 
     void buildRegionPanel(QVBoxLayout *sideLay) {
         regionPanel_ = new QFrame(sidePanel_);
+        regionPanel_->setObjectName(QStringLiteral("ImageToolPanel"));
         auto *lay = new QVBoxLayout(regionPanel_);
         lay->setContentsMargins(0, 0, 0, 0);
         lay->setSpacing(8);
@@ -225,6 +252,7 @@ private:
 
     void buildFindColorPanel(QVBoxLayout *sideLay) {
         findColorPanel_ = new QFrame(sidePanel_);
+        findColorPanel_->setObjectName(QStringLiteral("ImageToolPanel"));
         auto *lay = new QVBoxLayout(findColorPanel_);
         lay->setContentsMargins(0, 0, 0, 0);
         lay->setSpacing(8);
@@ -249,6 +277,7 @@ private:
 
     void buildFindImagePanel(QVBoxLayout *sideLay) {
         findImagePanel_ = new QFrame(sidePanel_);
+        findImagePanel_->setObjectName(QStringLiteral("ImageToolPanel"));
         auto *lay = new QVBoxLayout(findImagePanel_);
         lay->setContentsMargins(0, 0, 0, 0);
         lay->setSpacing(8);
@@ -296,12 +325,32 @@ private:
         const bool dark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
         const QString border = dark ? QStringLiteral("#3A3F4B") : QStringLiteral("#DCE1EB");
         const QString inputBg = dark ? QStringLiteral("#141820") : QStringLiteral("#FAFCFF");
+        const QString text = dark ? QStringLiteral("#E8ECF1") : QStringLiteral("#1F2937");
         setStyleSheet(QStringLiteral(
-            "QFrame { border: 1px solid %1; border-radius: 8px; padding: 8px; }"
-            "QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {"
-            "  background-color: %2; border: 1px solid %1; border-radius: 6px; padding: 4px 8px;"
-            "}")
-                          .arg(border, inputBg));
+            "QFrame#ImageToolPanel { border: 1px solid %1; border-radius: 8px; padding: 8px; }"
+            "QLineEdit, QSpinBox, QDoubleSpinBox {"
+            "  background-color: %2; color: %3; border: 1px solid %1; border-radius: 6px; padding: 4px 8px;"
+            "}"
+            "QToolButton#ImageToolModeBtn {"
+            "  background-color: %2; color: %3; border: 1px solid %1; border-radius: 6px;"
+            "  padding: 4px 8px; spacing: 4px;"
+            "}"
+            "QToolButton#ImageToolModeBtn::menu-indicator { image: none; width: 0px; }")
+                          .arg(border, inputBg, text));
+        if (modeBtn_)
+            modeBtn_->setIcon(modeMenuArrowIcon(dark));
+    }
+
+    [[nodiscard]] static QIcon modeMenuArrowIcon(bool dark) {
+        const QIcon defaultIcon = qApp->style()->standardIcon(QStyle::SP_ArrowDown);
+        QPixmap pixmap = defaultIcon.pixmap(16, 16);
+        if (pixmap.isNull())
+            return defaultIcon;
+        QPainter painter(&pixmap);
+        painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+        painter.fillRect(pixmap.rect(), dark ? QColor(QStringLiteral("#E8ECF1")) : QColor(QStringLiteral("#1F2937")));
+        painter.end();
+        return QIcon(pixmap);
     }
 
     void syncModePanels() {
@@ -316,9 +365,7 @@ private:
             preview_->update();
     }
 
-    [[nodiscard]] ToolMode currentMode() const {
-        return static_cast<ToolMode>(modeCombo_->currentData().toInt());
-    }
+    [[nodiscard]] ToolMode currentMode() const { return currentMode_; }
 
     void setBusy(const QString &text) {
         busy_ = true;
@@ -923,10 +970,11 @@ private:
     QNetworkReply *captureReply_ = nullptr;
     QNetworkReply *downloadReply_ = nullptr;
 
+    ToolMode currentMode_ = ToolMode::PickPixel;
     QSplitter *split_ = nullptr;
     PreviewWidget *preview_ = nullptr;
     QWidget *sidePanel_ = nullptr;
-    QComboBox *modeCombo_ = nullptr;
+    QToolButton *modeBtn_ = nullptr;
     QPushButton *captureBtn_ = nullptr;
     QPushButton *releaseAllBtn_ = nullptr;
     QLabel *statusLabel_ = nullptr;
