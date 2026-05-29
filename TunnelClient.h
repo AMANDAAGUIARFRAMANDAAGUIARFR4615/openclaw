@@ -160,10 +160,11 @@ public:
         m_ws.open(QUrl(wsUrl));
     }
 
-    void requestAdd(const QString &lanIp, quint16 lanPort, quint16 remotePort = 0) {
+    void requestAdd(const QString &lanIp, quint16 lanPort, quint16 remotePort = 0, const QString &protocol = QStringLiteral("tcp")) {
         if (m_ws.state() != QAbstractSocket::ConnectedState) {
             for (const QJsonObject &p : m_pendingMessages) {
-                if (p["type"].toString() == "ADD" && p["lanIp"].toString() == lanIp && p["lanPort"].toInt() == lanPort) {
+                if (p["type"].toString() == "ADD" && p["lanIp"].toString() == lanIp && p["lanPort"].toInt() == lanPort
+                    && p["protocol"].toString() == protocol) {
                     return; // 已经在等待发送队列中
                 }
             }
@@ -174,6 +175,7 @@ public:
         msg["lanIp"] = lanIp;
         msg["lanPort"] = lanPort;
         msg["udid"] = Account::getInstance()->id;
+        msg["protocol"] = protocol;
         if (remotePort > 0) {
             msg["remotePort"] = remotePort;
         }
@@ -230,8 +232,12 @@ private slots:
 
         if (!previousMappings.isEmpty()) {
             qInfo() << "[Client] Restoring" << previousMappings.size() << "mappings...";
+            const QString accountId = Account::getInstance()->id;
             for (const QJsonObject &m : previousMappings) {
-                requestAdd(m["lanIp"].toString(), m["lanPort"].toInt(), m["remotePort"].toInt());
+                if (!m["udid"].toString().isEmpty() && m["udid"].toString() != accountId)
+                    continue;
+                const QString protocol = m["protocol"].toString(QStringLiteral("tcp"));
+                requestAdd(m["lanIp"].toString(), m["lanPort"].toInt(), m["remotePort"].toInt(), protocol);
             }
         }
 
@@ -282,7 +288,10 @@ private:
             QString lanIp = msg["lanIp"].toString();
             int lanPort = msg["lanPort"].toInt();
             int remotePort = msg["remotePort"].toInt();
-            
+            const QString udid = msg["udid"].toString();
+            if (!udid.isEmpty() && udid != Account::getInstance()->id)
+                return;
+
             m_activeMappings[mappingId] = msg;
             qInfo().noquote() << QString("✨ Live: %1:%2 <-> %3:%4").arg(lanIp).arg(lanPort).arg(m_serverIp).arg(remotePort);
             emit remotePortChanged(lanIp, static_cast<quint16>(lanPort), static_cast<quint16>(remotePort));
