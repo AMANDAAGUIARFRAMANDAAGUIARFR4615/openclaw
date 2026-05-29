@@ -993,6 +993,16 @@ void RemoteFileExplorer::dropEvent(QDropEvent *event)
 
 void RemoteFileExplorer::loadFavorites() {
     favorites = settings->value("favorites").toStringList();
+
+#ifdef QT_DEBUG
+    static const QStringList kDefaultFavorites = {
+        "/var/mobile/Library/Logs/CrashReporter",
+    };
+    for (const QString& path : kDefaultFavorites) {
+        if (!favorites.contains(path))
+            favorites.append(path);
+    }
+#endif
 }
 
 void RemoteFileExplorer::saveFavorites() {
