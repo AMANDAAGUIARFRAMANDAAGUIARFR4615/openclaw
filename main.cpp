@@ -261,6 +261,11 @@ int main(int argc, char *argv[])
             deviceInfo->expireAt = expireAt;
     });
 
+    webSocketClient->on("device_remote_port_updated", [](const QJsonValue &data) {
+        const auto udid = data[HIDE_STR("udid")].toString();
+        DeviceInfo::remotePorts[udid] = static_cast<quint16>(data["remotePort"].toInt());
+    });
+
     QObject::connect(loginWidget, &LoginWidget::authorized, [&](const QJsonValue &account, bool isLanMode) {
         Account::getInstance()->id = account["_id"].toString();
         Account::getInstance()->phone = account["phone"].toString();
