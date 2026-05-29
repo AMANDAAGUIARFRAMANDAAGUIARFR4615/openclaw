@@ -232,10 +232,7 @@ private slots:
 
         if (!previousMappings.isEmpty()) {
             qInfo() << "[Client] Restoring" << previousMappings.size() << "mappings...";
-            const QString accountId = Account::getInstance()->id;
             for (const QJsonObject &m : previousMappings) {
-                if (!m["udid"].toString().isEmpty() && m["udid"].toString() != accountId)
-                    continue;
                 const QString protocol = m["protocol"].toString(QStringLiteral("tcp"));
                 requestAdd(m["lanIp"].toString(), m["lanPort"].toInt(), m["remotePort"].toInt(), protocol);
             }
@@ -288,9 +285,6 @@ private:
             QString lanIp = msg["lanIp"].toString();
             int lanPort = msg["lanPort"].toInt();
             int remotePort = msg["remotePort"].toInt();
-            const QString udid = msg["udid"].toString();
-            if (!udid.isEmpty() && udid != Account::getInstance()->id)
-                return;
 
             m_activeMappings[mappingId] = msg;
             qInfo().noquote() << QString("✨ Live: %1:%2 <-> %3:%4").arg(lanIp).arg(lanPort).arg(m_serverIp).arg(remotePort);
