@@ -381,6 +381,14 @@ jobs:
             install_name_tool -change /usr/local/lib/libusbmuxd-2.0.7.dylib @rpath/libusbmuxd-2.0.7.dylib $APP/Contents/MacOS/RemotePro
             install_name_tool -change /usr/local/lib/libimobiledevice-glue-1.0.0.dylib @rpath/libimobiledevice-glue-1.0.0.dylib $APP/Contents/MacOS/RemotePro
 
+            # 7️⃣ 清除 .app 内所有 Mach-O 二进制中残留的绝对路径 RPATH
+            find "$APP" -type f | while read -r bin; do
+              otool -l "$bin" >/dev/null 2>&1 || continue
+              while IFS= read -r rpath; do
+                [[ "$rpath" == /* ]] && install_name_tool -delete_rpath "$rpath" "$bin"
+              done < <(otool -l "$bin" | awk '/cmd LC_RPATH/{getline; getline; if ($1=="path") print $2}')
+            done
+
             zip -r RemotePro-${{ matrix.os }}-${{ matrix.qt_target }}.zip RemotePro.app
           fi
 
