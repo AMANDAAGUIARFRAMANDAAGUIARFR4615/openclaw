@@ -171,17 +171,35 @@ endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     target_compile_definitions(${PROJECT_NAME} PRIVATE NDEBUG QT_NO_DEBUG_OUTPUT QT_NO_WARNING_OUTPUT)
 
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN ON
+    )
+
     # --- MinGW / GCC / Clang ---
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         target_compile_options(${PROJECT_NAME} PRIVATE
             -O3                 # 最高级优化
             -g0                 # 关闭调试信息
-            # -fno-rtti         # 禁用 RTTI (如果代码没有用 dynamic_cast 可开启)
-            -fstack-protector-strong 
+            -fno-rtti           # 禁用 RTTI，减少 typeinfo 类名泄露
+            -fstack-protector-strong
         )
 
-        if(APPLE)
-            target_link_options(${PROJECT_NAME} PRIVATE -Wl,-x -Wl,-S)
+        if(ANDROID)
+            target_link_options(${PROJECT_NAME} PRIVATE
+                -Wl,--gc-sections
+                -Wl,--exclude-libs,ALL
+                -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/cmake/android-symbols.map
+            )
+            find_program(_RP_LLVM_STRIP NAMES llvm-strip)
+            if(NOT _RP_LLVM_STRIP AND ANDROID_NDK)
+                file(GLOB _NDK_STRIP_CAND "${ANDROID_NDK}/toolchains/llvm/prebuilt/*/bin/llvm-strip")
+                if(_NDK_STRIP_CAND)
+                    list(GET _NDK_STRIP_CAND 0 _RP_LLVM_STRIP)
+                endif()
+            endif()
+        elseif(APPLE)
+            target_link_options(${PROJECT_NAME} PRIVATE -Wl,-x -Wl,-S -Wl,-dead_strip)
         elseif(NOT EMSCRIPTEN)
             # em++/wasm 会将「-s」解析为 Emscripten 选项，禁止使用这里的 strip 语义
             target_link_options(${PROJECT_NAME} PRIVATE
@@ -208,6 +226,76 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         # 禁用生成 PDB 文件 (这是调试符号文件)
         set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY "")
         set_target_properties(${PROJECT_NAME} PROPERTIES PDB_OUTPUT_DIRECTORY "")
+    endif()
+
+    # Release：全平台（除 WebAssembly）MOC 元字符串混淆 + 链接后 strip / 二进制残留类名修补
+    if(NOT EMSCRIPTEN)
+        find_program(_RP_PYTHON3 NAMES python3 python)
+        set(_RP_QT_META_OBFUSCATE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/qt-meta-obfuscate.py)
+
+        if(NOT _RP_PYTHON3)
+            message(WARNING "python3 not found; skip Qt meta string obfuscation")
+        else()
+            if(ANDROID AND _RP_LLVM_STRIP)
+                add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                    COMMAND ${_RP_LLVM_STRIP} --strip-all "$<TARGET_FILE:${PROJECT_NAME}>"
+                    COMMAND ${_RP_PYTHON3} ${_RP_QT_META_OBFUSCATE} binary
+                        "$<TARGET_FILE:${PROJECT_NAME}>"
+                        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_autogen"
+                    COMMENT "Strip and obfuscate Qt meta strings in ${PROJECT_NAME}"
+                    VERBATIM
+                )
+            elseif(ANDROID)
+                message(WARNING "llvm-strip not found; obfuscating class names without strip")
+                add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                    COMMAND ${_RP_PYTHON3} ${_RP_QT_META_OBFUSCATE} binary
+                        "$<TARGET_FILE:${PROJECT_NAME}>"
+                        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_autogen"
+                    COMMENT "Obfuscate Qt meta strings in ${PROJECT_NAME}"
+                    VERBATIM
+                )
+            elseif(APPLE)
+                add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                    COMMAND strip -Sx "$<TARGET_FILE:${PROJECT_NAME}>"
+                    COMMAND ${_RP_PYTHON3} ${_RP_QT_META_OBFUSCATE} binary
+                        "$<TARGET_FILE:${PROJECT_NAME}>"
+                        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_autogen"
+                    COMMENT "Strip and obfuscate Qt meta strings in ${PROJECT_NAME}"
+                    VERBATIM
+                )
+            else()
+                add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                    COMMAND ${_RP_PYTHON3} ${_RP_QT_META_OBFUSCATE} binary
+                        "$<TARGET_FILE:${PROJECT_NAME}>"
+                        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_autogen"
+                    COMMENT "Obfuscate Qt meta strings in ${PROJECT_NAME}"
+                    VERBATIM
+                )
+            endif()
+        endif()
+
+        # Qt MOC 会在元对象字符串表里写入类/信号/槽名；autogen 完成后、主目标编译前执行（勿 add_dependencies，会与 Qt autogen 形成环）
+        function(_rp_hook_moc_obfuscate autogen_target autogen_dir)
+            if(NOT TARGET ${autogen_target} OR NOT _RP_PYTHON3)
+                return()
+            endif()
+            add_custom_command(
+                TARGET ${autogen_target} POST_BUILD
+                COMMAND ${_RP_PYTHON3} ${_RP_QT_META_OBFUSCATE} moc ${autogen_dir}
+                COMMENT "Obfuscating Qt meta strings (${autogen_target})"
+                VERBATIM
+            )
+        endfunction()
+
+        _rp_hook_moc_obfuscate(${PROJECT_NAME}_autogen "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_autogen")
+        _rp_hook_moc_obfuscate(QtNodes_autogen "${CMAKE_BINARY_DIR}/nodeeditor/QtNodes_autogen")
+    endif()
+
+    if(TARGET QtNodes)
+        set_target_properties(QtNodes PROPERTIES
+            CXX_VISIBILITY_PRESET hidden
+            VISIBILITY_INLINES_HIDDEN ON
+        )
     endif()
 endif()
 

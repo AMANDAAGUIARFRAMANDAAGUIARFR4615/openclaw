@@ -947,7 +947,7 @@ bool DeviceView::event(QEvent *event)
         // case QEvent::DragLeave:
         case QEvent::Drop:
         case QEvent::Close:
-            auto mouseEvent = dynamic_cast<QMouseEvent*>(event);
+            QMouseEvent *mouseEvent = asMouseEvent(event);
 
             if (mouseEvent) {
                 if (mouseEvent->type() != QEvent::MouseMove && mouseEvent->button() != Qt::MouseButton::LeftButton)
@@ -1050,7 +1050,7 @@ bool DeviceView::event(QEvent *event)
         }
     }
 
-    auto mouseEvent = dynamic_cast<QMouseEvent *>(event);
+    QMouseEvent *mouseEvent = asMouseEvent(event);
     if (!mouseEvent)
         return QWidget::event(event);
 

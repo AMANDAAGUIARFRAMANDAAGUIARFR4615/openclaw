@@ -1,0 +1,7 @@
+# App .so has no JNI_OnLoad/JNI_OnUnload (Qt provides them in libQt6Core etc.).
+# Listing undefined symbols in global: makes ld.lld fail at link time.
+{
+  global:
+    Java_*;
+  local: *;
+};
