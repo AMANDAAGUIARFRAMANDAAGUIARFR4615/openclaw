@@ -1111,12 +1111,20 @@ bool DeviceView::event(QEvent *event)
             } else {
                 flushPendingMouseMove();
                 sendMouseEvent(type, pos);
+                if (type == 1)
+                    grabMouse();
             }
+        } else if (type == 2 && mouseGrabber() == this) {
+            flushPendingMouseMove();
+            sendMouseEvent(type, getTransformedPosition(localPos));
         }
     }
 
-    if (type == 2)
+    if (type == 2) {
+        if (mouseGrabber() == this)
+            releaseMouse();
         pressedButtons &= ~mouseEvent->button();
+    }
 
     return QWidget::event(event);
 }
