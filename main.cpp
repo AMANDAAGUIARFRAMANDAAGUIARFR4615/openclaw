@@ -26,7 +26,7 @@ void onDataReceived(DeviceConnection *connection, const QJsonObject &jsonObject)
 
     qDebugEx() << connection << event << data;
 
-    EventHub::trigger(event, data, connection);
+    EventHub::dispatch(event, data, connection);
 }
 
 class GlobalEventFilter : public QObject

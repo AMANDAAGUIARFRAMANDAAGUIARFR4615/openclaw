@@ -150,7 +150,7 @@ DeviceWidget::DeviceWidget(DeviceConnection* connection, DeviceInfo* deviceInfo)
         this->deviceInfo->orientation = data.toInt();
     });
 
-    EventHub::on(this, HIDE_STR("deviceExpired"), [=](const QJsonValue &data, DeviceConnection* connection) {
+    EventHub::on(this, "deviceExpired", [=](const QJsonValue &data, DeviceConnection* connection) {
         if (this->connection != connection)
             return;
 
@@ -166,7 +166,7 @@ DeviceWidget::~DeviceWidget()
     EventHub::off(this, "deviceNameChanged");
     EventHub::off(this, "lockedStatus");
     EventHub::off(this, "orientation");
-    EventHub::off(this, HIDE_STR("deviceExpired"));
+    EventHub::off(this, "deviceExpired");
 
     teardownVideoConnection();
 
