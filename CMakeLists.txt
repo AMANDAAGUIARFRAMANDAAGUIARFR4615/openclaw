@@ -58,9 +58,13 @@ endif()
 if(MSVC)
     # Visual Studio 2019 16.10+ 支持
     add_compile_options(/d1trimfile:${CMAKE_SOURCE_DIR})
+    add_compile_options(/d1trimfile:${CMAKE_BINARY_DIR})
 else()
-    # GCC / Clang / MinGW 支持
-    add_compile_options("-fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=")
+    # GCC / Clang / MinGW：同时剥离源码与 build/autogen 路径（__FILE__ 与调试信息）
+    add_compile_options(
+        "-ffile-prefix-map=${CMAKE_SOURCE_DIR}/="
+        "-ffile-prefix-map=${CMAKE_BINARY_DIR}/="
+    )
 endif()
 
 # =========================================================

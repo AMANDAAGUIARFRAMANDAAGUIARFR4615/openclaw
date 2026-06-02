@@ -1,9 +1,13 @@
 #pragma once
 
+#if defined(NDEBUG)
+#define LOG_PREFIX() QStringLiteral("")
+#else
 #define LOG_PREFIX() QStringLiteral("%1:%2@%3 | ") \
     .arg(__FILE__) \
     .arg(__LINE__) \
     .arg(__FUNCTION__)
+#endif
 
 #if defined(QT_NO_DEBUG_OUTPUT)
 #define qDebugEx()    while (false) qDebug().noquote()
