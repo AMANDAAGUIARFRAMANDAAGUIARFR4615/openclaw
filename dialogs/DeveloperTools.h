@@ -4,7 +4,6 @@
 #include "Tools.h"
 #include "SettingsViewer.h"
 #include "AccountListDialog.h"
-#include "FlowEditorDialog.h"
 #include <QMenu>
 #include <QDialog>
 #include <QVBoxLayout>
@@ -31,9 +30,6 @@ public:
         QMenu menu(parent);
         menu.addAction(QStringLiteral("数据查看"), [=]() {
             SettingsViewer(settings, parent).exec();
-        });
-        menu.addAction(QStringLiteral("可视化编程"), [=]() {
-            FlowEditorDialog(parent).exec();
         });
         menu.addAction(QStringLiteral("兑换码生成"), [=]() {
             showGenerateCodesDialog(parent);

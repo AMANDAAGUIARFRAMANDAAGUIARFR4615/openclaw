@@ -85,8 +85,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     endif()
 endif()
 
-add_subdirectory(nodeeditor)
-
 # =========================================================
 # 2. 头文件与库路径配置
 # =========================================================
@@ -96,8 +94,6 @@ include_directories(".")
 include_directories(tools)
 include_directories(dialogs)
 include_directories(behaviors)
-include_directories(visualscripting)
-
 if(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(PLATFORM_DIR "macOS")
 elseif(WIN32)
@@ -137,7 +133,6 @@ file(GLOB ALL_SOURCES
     CONFIGURE_DEPENDS
     "*.cpp" "*.h" "*.hpp"
     "tools/*.h" "dialogs/*.h" "behaviors/*.h"
-    "visualscripting/*.cpp" "visualscripting/*.h" "visualscripting/*.hpp"
 )
 
 # WASM 专用实现；原生构建编译会得到空 TU，排除以免多余编译单元
@@ -288,14 +283,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         endfunction()
 
         _rp_hook_moc_obfuscate(${PROJECT_NAME}_autogen "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_autogen")
-        _rp_hook_moc_obfuscate(QtNodes_autogen "${CMAKE_BINARY_DIR}/nodeeditor/QtNodes_autogen")
-    endif()
-
-    if(TARGET QtNodes)
-        set_target_properties(QtNodes PROPERTIES
-            CXX_VISIBILITY_PRESET hidden
-            VISIBILITY_INLINES_HIDDEN ON
-        )
     endif()
 endif()
 
@@ -336,7 +323,6 @@ endif()
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     Qt6::Core Qt6::CorePrivate Qt6::Gui Qt6::Widgets Qt6::Network 
     Qt6::Concurrent Qt6::Multimedia Qt6::MultimediaWidgets Qt6::WebSockets
-    QtNodes
     ${THIRD_PARTY_LIBS}
 )
 
