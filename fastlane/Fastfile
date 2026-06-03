@@ -1,4 +1,5 @@
 require "fileutils"
+require "plist"
 require "shellwords"
 
 default_platform(:ios)
@@ -28,10 +29,18 @@ platform :ios do
       certificate_password: ENV["P12_PASSWORD"]
     )
 
+    profile_path = project_path("certs", "embedded.mobileprovision")
+    profile_xml = sh("security cms -D -i #{Shellwords.escape(profile_path)}", log: false)
+    entitlements = (Plist.parse_xml(profile_xml)["Entitlements"] || {}).dup
+    entitlements.delete("get-task-allow")
+    entitlements_path = File.join(Dir.tmpdir, "RemotePro-entitlements.plist")
+    File.write(entitlements_path, Plist::Emit.dump(entitlements))
+
     resign(
       ipa: target_app,
       signing_identity: "Apple Development: 664301573@qq.com (2443DGF2H7)",
-      provisioning_profile: "certs/embedded.mobileprovision"
+      provisioning_profile: profile_path,
+      entitlements: entitlements_path
     )
   end
 end
