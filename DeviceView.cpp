@@ -947,7 +947,7 @@ bool DeviceView::event(QEvent *event)
         // case QEvent::DragLeave:
         case QEvent::Drop:
         case QEvent::Close:
-            auto mouseEvent = dynamic_cast<QMouseEvent*>(event);
+            QMouseEvent *mouseEvent = asMouseEvent(event);
 
             if (mouseEvent) {
                 if (mouseEvent->type() != QEvent::MouseMove && mouseEvent->button() != Qt::MouseButton::LeftButton)
@@ -1050,7 +1050,7 @@ bool DeviceView::event(QEvent *event)
         }
     }
 
-    auto mouseEvent = dynamic_cast<QMouseEvent *>(event);
+    QMouseEvent *mouseEvent = asMouseEvent(event);
     if (!mouseEvent)
         return QWidget::event(event);
 
@@ -1111,12 +1111,20 @@ bool DeviceView::event(QEvent *event)
             } else {
                 flushPendingMouseMove();
                 sendMouseEvent(type, pos);
+                if (type == 1)
+                    grabMouse();
             }
+        } else if (type == 2 && mouseGrabber() == this) {
+            flushPendingMouseMove();
+            sendMouseEvent(type, getTransformedPosition(localPos));
         }
     }
 
-    if (type == 2)
+    if (type == 2) {
+        if (mouseGrabber() == this)
+            releaseMouse();
         pressedButtons &= ~mouseEvent->button();
+    }
 
     return QWidget::event(event);
 }

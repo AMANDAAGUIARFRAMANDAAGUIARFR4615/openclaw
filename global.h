@@ -6,6 +6,8 @@
 #include "TunnelClient.h"
 #include <QSettings>
 #include <QElapsedTimer>
+#include <QEvent>
+#include <QMouseEvent>
 #include <QNetworkAccessManager>
 #include <algorithm>
 
@@ -14,6 +16,22 @@ template<typename T>
 constexpr T safeBound(const T &min, const T &val, const T &max)
 {
     return std::min(max, std::max(min, val));
+}
+
+/** 不依赖 RTTI，将 QEvent 安全转为 QMouseEvent；非鼠标事件返回 nullptr。 */
+inline QMouseEvent *asMouseEvent(QEvent *event)
+{
+    if (!event)
+        return nullptr;
+
+    switch (event->type()) {
+    case QEvent::MouseButtonPress:
+    case QEvent::MouseButtonRelease:
+    case QEvent::MouseMove:
+        return static_cast<QMouseEvent *>(event);
+    default:
+        return nullptr;
+    }
 }
 
 extern QSettings* settings;
@@ -46,5 +64,5 @@ namespace Config {
     const int SERVER_PORT = 9000;
 
     const QString SITE_URL = "https://remotepro.cn/";
-    const QString VERSION = "2.8.8";
+    const QString VERSION = "2.8.9";
 }
