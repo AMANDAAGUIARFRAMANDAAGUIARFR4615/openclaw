@@ -49,16 +49,16 @@ sign_app() {
     sign_args+=(--options runtime)
   fi
 
-  while IFS= read -r -d '' macho; do
-    codesign "${sign_args[@]}" "$macho"
-  done < <(find "$APP" -type f -print0 | while IFS= read -r -d '' f; do
-    if file "$f" | grep -q "Mach-O"; then printf '%s\0' "$f"; fi
-  done)
+  # 从内到外签名：dylib → framework/bundle → 主程序 → .app
+  while IFS= read -r -d '' dylib; do
+    codesign "${sign_args[@]}" "$dylib"
+  done < <(find "$APP" -type f -name "*.dylib" -print0)
 
   while IFS= read -r -d '' bundle; do
     codesign "${sign_args[@]}" "$bundle"
-  done < <(find "$APP" \( -name "*.framework" -o -name "*.app" -o -name "*.plugin" -o -name "*.dylib" \) -print0)
+  done < <(find "$APP" \( -name "*.framework" -o -name "*.plugin" \) -print0)
 
+  codesign "${sign_args[@]}" "$APP/Contents/MacOS/$(basename "$APP" .app)"
   codesign "${sign_args[@]}" "$APP"
   codesign --verify --deep --strict --verbose=2 "$APP"
   echo "✅ 签名验证通过"

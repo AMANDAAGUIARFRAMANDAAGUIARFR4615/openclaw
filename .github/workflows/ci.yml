@@ -348,7 +348,8 @@ jobs:
             APP=RemotePro.app
             FRAMEWORKS=$APP/Contents/Frameworks
 
-            cp -r ../translations $APP/Contents/MacOS/
+            mkdir -p $APP/Contents/Resources
+            cp -r ../translations $APP/Contents/Resources/
 
             # 1️⃣ 拷贝所有相关库
             cp /usr/local/opt/openssl/lib/libcrypto.3.dylib $FRAMEWORKS/

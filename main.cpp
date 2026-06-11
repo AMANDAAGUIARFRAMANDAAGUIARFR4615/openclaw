@@ -144,6 +144,8 @@ int main(int argc, char *argv[])
     QTranslator qtTranslator;
 #ifdef QT_DEBUG
     QString translationsPath = QLibraryInfo::location(QLibraryInfo::TranslationsPath);
+#elif defined(Q_OS_MACOS)
+    QString translationsPath = qApp->applicationDirPath() + "/../Resources/translations";
 #else
     QString translationsPath = qApp->applicationDirPath() + "/translations";
 #endif
