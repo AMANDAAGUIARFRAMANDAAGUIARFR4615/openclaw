@@ -389,21 +389,16 @@ jobs:
               done < <(otool -l "$bin" | awk '/cmd LC_RPATH/{getline; getline; if ($1=="path") print $2}')
             done
 
-            zip -r RemotePro-${{ matrix.os }}-${{ matrix.qt_target }}.zip RemotePro.app
           fi
 
       - name: Run Fastlane
-        if: matrix.qt_target == 'ios' || matrix.qt_target == 'android'
+        if: matrix.qt_target == 'ios' || matrix.qt_target == 'android' || (runner.os == 'macOS' && matrix.qt_target == 'desktop')
         env:
           # P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
           P12_PASSWORD: QJsonValue
         run: |
           gem install fastlane
-          if [[ "${{ matrix.qt_target }}" == "ios" ]]; then
-            fastlane ios build_and_sign
-          else
-            fastlane android sign_release
-          fi
+          fastlane ci_package qt_target:${{ matrix.qt_target }} os:${{ matrix.os }}
 
       - name: 发布 Release
         uses: softprops/action-gh-release@v2.4.2

@@ -2,91 +2,121 @@ require "fileutils"
 require "plist"
 require "shellwords"
 
-default_platform(:ios)
-
 PROJECT_ROOT = File.expand_path("..", __dir__)
+MAC_SIGNING_IDENTITY = "Apple Development: 664301573@qq.com (2443DGF2H7)"
 
 def project_path(*parts)
   File.join(PROJECT_ROOT, *parts)
 end
 
-platform :ios do
-  desc "针对免费账号的自动化签名"
-  lane :build_and_sign do |options|
-    target_app = "build/RemotePro.ipa"
-    
-    create_keychain(
-      name: "ci_keychain",
-      password: "ci_password",
-      default_keychain: true,
-      unlock: true
-    )
+def setup_ci_keychain!
+  create_keychain(
+    name: "ci_keychain",
+    password: "ci_password",
+    default_keychain: true,
+    unlock: true
+  )
 
-    import_certificate(
-      keychain_name: "ci_keychain",
-      keychain_password: "ci_password",
-      certificate_path: "certs/development.p12",
-      certificate_password: ENV["P12_PASSWORD"]
-    )
+  import_certificate(
+    keychain_name: "ci_keychain",
+    keychain_password: "ci_password",
+    certificate_path: project_path("certs", "development.p12"),
+    certificate_password: ENV["P12_PASSWORD"]
+  )
+end
 
-    profile_path = project_path("certs", "embedded.mobileprovision")
-    profile_xml = sh("security cms -D -i #{Shellwords.escape(profile_path)}", log: false)
-    entitlements = (Plist.parse_xml(profile_xml)["Entitlements"] || {}).dup
-    entitlements.delete("get-task-allow")
-    entitlements_path = File.join(Dir.tmpdir, "RemotePro-entitlements.plist")
-    File.write(entitlements_path, Plist::Emit.dump(entitlements))
+def sign_ios_ipa!
+  target_ipa = project_path("build", "RemotePro.ipa")
+  setup_ci_keychain!
 
-    resign(
-      ipa: target_app,
-      signing_identity: "Apple Development: 664301573@qq.com (2443DGF2H7)",
-      provisioning_profile: profile_path,
-      entitlements: entitlements_path
-    )
+  profile_path = project_path("certs", "embedded.mobileprovision")
+  profile_xml = sh("security cms -D -i #{Shellwords.escape(profile_path)}", log: false)
+  entitlements = (Plist.parse_xml(profile_xml)["Entitlements"] || {}).dup
+  entitlements.delete("get-task-allow")
+  entitlements_path = File.join(Dir.tmpdir, "RemotePro-entitlements.plist")
+  File.write(entitlements_path, Plist::Emit.dump(entitlements))
+
+  resign(
+    ipa: target_ipa,
+    signing_identity: MAC_SIGNING_IDENTITY,
+    provisioning_profile: profile_path,
+    entitlements: entitlements_path
+  )
+end
+
+def sign_android_apk!
+  build_dir = project_path("build")
+  aligned_apk = project_path("build", "RemotePro-aligned.apk")
+  signed_apk = project_path("build", "RemotePro-signed.apk")
+  final_apk = project_path("build", "RemotePro.apk")
+  keystore = project_path("android", "release.keystore")
+  key_alias = "release"
+  key_password = ENV["P12_PASSWORD"]
+
+  apk_matches = Dir[File.join(build_dir, "**", "*.apk")].sort
+  apk_candidates = apk_matches.reject { |path| [aligned_apk, signed_apk].include?(path) }
+  apk_candidates_without_final = apk_candidates.reject { |path| path == final_apk }
+  apk_candidates = apk_candidates_without_final.empty? ? apk_candidates : apk_candidates_without_final
+  release_output_marker = "#{File::SEPARATOR}outputs#{File::SEPARATOR}apk#{File::SEPARATOR}release#{File::SEPARATOR}"
+  unsigned_apk =
+    apk_candidates.find { |path| path.end_with?("-release-unsigned.apk") } ||
+    apk_candidates.find { |path| path.include?(release_output_marker) } ||
+    apk_candidates.first
+
+  UI.user_error!("Missing APK under #{build_dir}") if unsigned_apk.to_s.empty?
+  UI.message("Using unsigned APK: #{unsigned_apk}")
+
+  UI.user_error!("Missing keystore: #{keystore}") unless File.exist?(keystore)
+  UI.user_error!("P12_PASSWORD is empty") if key_password.to_s.empty?
+
+  sdk_root = ENV["ANDROID_SDK_ROOT"] || ENV["ANDROID_HOME"]
+  UI.user_error!("ANDROID_SDK_ROOT / ANDROID_HOME is not set") if sdk_root.to_s.empty?
+
+  apksigner = Dir["#{sdk_root}/build-tools/*/apksigner"].sort.last
+  zipalign = Dir["#{sdk_root}/build-tools/*/zipalign"].sort.last
+
+  UI.user_error!("apksigner not found under #{sdk_root}/build-tools") if apksigner.to_s.empty?
+  UI.user_error!("zipalign not found under #{sdk_root}/build-tools") if zipalign.to_s.empty?
+
+  FileUtils.mkdir_p(build_dir)
+  FileUtils.rm_f([aligned_apk, signed_apk])
+  sh([zipalign, "-f", "-p", "4", unsigned_apk, aligned_apk].shelljoin)
+  sh([apksigner, "sign", "--ks", keystore, "--ks-key-alias", key_alias, "--ks-pass", "pass:#{key_password}", "--key-pass", "pass:#{key_password}", "--out", signed_apk, aligned_apk].shelljoin)
+  sh([apksigner, "verify", "--verbose", signed_apk].shelljoin)
+  FileUtils.mv(signed_apk, final_apk, force: true)
+end
+
+def sign_and_package_mac!(zip_name:)
+  UI.user_error!("zip_name is required") if zip_name.to_s.empty?
+
+  setup_ci_keychain!
+
+  package_script = project_path("macOS", "package_app.sh")
+  sh("chmod +x #{Shellwords.escape(package_script)}")
+
+  Dir.chdir(project_path("build")) do
+    ENV["MACOS_SIGNING_IDENTITY"] = MAC_SIGNING_IDENTITY
+    sh("#{Shellwords.escape(package_script)} RemotePro.app #{Shellwords.escape(zip_name)}")
   end
 end
 
+desc "CI 统一入口：按 qt_target 签名并打包"
+lane :ci_package do |options|
+  qt_target = options[:qt_target].to_s
+  os = options[:os].to_s
 
-platform :android do
-  desc "签名已构建的 Android Release APK"
-  lane :sign_release do
-    build_dir = project_path("build")
-    aligned_apk = project_path("build", "RemotePro-aligned.apk")
-    signed_apk = project_path("build", "RemotePro-signed.apk")
-    final_apk = project_path("build", "RemotePro.apk")
-    keystore = project_path("android", "release.keystore")
-    key_alias = "release"
-    key_password = ENV["P12_PASSWORD"]
+  UI.user_error!("qt_target is required") if qt_target.empty?
 
-    apk_matches = Dir[File.join(build_dir, "**", "*.apk")].sort
-    apk_candidates = apk_matches.reject { |path| [aligned_apk, signed_apk].include?(path) }
-    apk_candidates_without_final = apk_candidates.reject { |path| path == final_apk }
-    apk_candidates = apk_candidates_without_final.empty? ? apk_candidates : apk_candidates_without_final
-    release_output_marker = "#{File::SEPARATOR}outputs#{File::SEPARATOR}apk#{File::SEPARATOR}release#{File::SEPARATOR}"
-    unsigned_apk =
-      apk_candidates.find { |path| path.end_with?("-release-unsigned.apk") } ||
-      apk_candidates.find { |path| path.include?(release_output_marker) } ||
-      apk_candidates.first
-
-    UI.user_error!("Missing APK under #{build_dir}") if unsigned_apk.to_s.empty?
-    UI.message("Using unsigned APK: #{unsigned_apk}")
-
-    UI.user_error!("Missing keystore: #{keystore}") unless File.exist?(keystore)
-    UI.user_error!("P12_PASSWORD is empty") if key_password.to_s.empty?
-
-    sdk_root = ENV["ANDROID_SDK_ROOT"] || ENV["ANDROID_HOME"]
-    UI.user_error!("ANDROID_SDK_ROOT / ANDROID_HOME is not set") if sdk_root.to_s.empty?
-
-    apksigner = Dir["#{sdk_root}/build-tools/*/apksigner"].sort.last
-    zipalign = Dir["#{sdk_root}/build-tools/*/zipalign"].sort.last
-
-    UI.user_error!("apksigner not found under #{sdk_root}/build-tools") if apksigner.to_s.empty?
-    UI.user_error!("zipalign not found under #{sdk_root}/build-tools") if zipalign.to_s.empty?
-
-    FileUtils.mkdir_p(build_dir)
-    FileUtils.rm_f([aligned_apk, signed_apk])
-    sh([zipalign, "-f", "-p", "4", unsigned_apk, aligned_apk].shelljoin)
-    sh([apksigner, "sign", "--ks", keystore, "--ks-key-alias", key_alias, "--ks-pass", "pass:#{key_password}", "--key-pass", "pass:#{key_password}", "--out", signed_apk, aligned_apk].shelljoin)
-    sh([apksigner, "verify", "--verbose", signed_apk].shelljoin)
-    FileUtils.mv(signed_apk, final_apk, force: true)
+  case qt_target
+  when "ios"
+    sign_ios_ipa!
+  when "android"
+    sign_android_apk!
+  when "desktop"
+    UI.user_error!("os is required for desktop") if os.empty?
+    zip_name = options[:zip_name] || "RemotePro-#{os}-#{qt_target}.zip"
+    sign_and_package_mac!(zip_name: zip_name)
+  else
+    UI.user_error!("Unsupported qt_target: #{qt_target}")
   end
 end
