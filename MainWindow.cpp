@@ -973,7 +973,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
             }
         }
         else {
-            const auto serverIp = Config::SERVER_IP();
             for (auto it = DeviceInfo::remotePorts.constBegin(); it != DeviceInfo::remotePorts.constEnd(); ++it) {
                 const auto remotePort = it.value();
                 if (remotePort == 0)
@@ -982,7 +981,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
                 if (DeviceInfo::getDevice(it.key()) != nullptr)
                     continue;
 
-                udpTransport->sendData(TcpServer::getInstance()->getHostInfo(serverIp), serverIp, remotePort);
+                // UDP 唤醒走公共线路；hostInfo 里的 ip 告诉手机实际连哪条 Tunnel
+                udpTransport->sendData(
+                    TcpServer::getInstance()->getHostInfo(Config::TUNNEL_SERVER_IP()),
+                    Config::SERVER_IP(),
+                    remotePort);
             }
         }
     };
