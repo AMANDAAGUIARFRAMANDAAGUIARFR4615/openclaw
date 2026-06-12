@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
 
         if (!isLanMode) {
             if (!tunnelClient) {
-                tunnelClient = new TunnelClient(Config::SERVER_IP(), 10000, 10001);
+                tunnelClient = new TunnelClient(Config::TUNNEL_SERVER_IP(), 10000, 10001);
                 tunnelClient->connectToServer();
             }
 

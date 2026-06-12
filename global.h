@@ -48,17 +48,35 @@ extern TunnelClient* tunnelClient;
 namespace Config {
     static constexpr qint64 WAN_FILE_TRANSFER_SIZE_LIMIT = 5LL * 1024 * 1024;
 
+    inline QString publicServerIp() {
+#ifdef QT_DEBUG
+        return QStringLiteral("192.168.0.111");
+#else
+        return qApp->property("SERVER_IP").toString();
+#endif
+    }
+
     inline bool isWanMode() {
-        return settings && !settings->value("isLanMode", true).toBool();
+        return !settings->value("isLanMode", true).toBool();
     }
 
     inline const QString SERVER_IP() {
-#ifdef QT_DEBUG
-        const QString ip = "192.168.0.111";
-#else
-        QString ip = qApp->property("SERVER_IP").toString();
-#endif
-        return ip;
+        return publicServerIp();
+    }
+
+    inline bool isPrivateRoute() {
+        return isWanMode()
+            && settings->value("routeType", "public").toString() == "private";
+    }
+
+    /** 广域网 Tunnel 服务器 IP（公共线路为默认解析 IP，私有线路为用户配置的 IP） */
+    inline const QString TUNNEL_SERVER_IP() {
+        if (isPrivateRoute()) {
+            const QString ip = settings->value("privateRouteIp").toString().trimmed();
+            if (!ip.isEmpty())
+                return ip;
+        }
+        return publicServerIp();
     }
 
     const int SERVER_PORT = 9000;

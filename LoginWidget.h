@@ -12,6 +12,7 @@
 #include <QHBoxLayout>
 #include <QJsonObject>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QByteArray>
 #include <QRandomGenerator>
 #include <QJsonArray>
@@ -105,6 +106,30 @@ public:
         lanModeCheckBox->setToolTip("广域网只能连接已在局域网连接过的设备");
         lanModeCheckBox->setChecked(settings->value("isLanMode", true).toBool());
 
+        routeTypeComboBox = new QComboBox;
+        routeTypeComboBox->addItem("公共线路");
+        routeTypeComboBox->addItem("私有线路");
+        routeTypeComboBox->setToolTip("私有线路需填写专用服务器 IP，且账号需已授权");
+        routeTypeComboBox->setCurrentIndex(
+            settings->value("routeType", "public").toString() == "private" ? 1 : 0);
+
+        privateRouteIpLineEdit = new QLineEdit;
+        privateRouteIpLineEdit->setPlaceholderText("私有线路服务器 IP");
+        privateRouteIpLineEdit->setText(settings->value("privateRouteIp").toString());
+        privateRouteIpLineEdit->setValidator(
+            new QRegularExpressionValidator(
+                QRegularExpression(R"(^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$)"),
+                this));
+
+        privateRouteIpField = wrapInputField(privateRouteIpLineEdit, InputIcon::Device);
+        routeRow = new QWidget;
+        auto *routeLayout = new QHBoxLayout(routeRow);
+        routeLayout->setContentsMargins(0, 0, 0, 0);
+        routeLayout->setSpacing(10);
+        routeTypeComboBox->setObjectName("routeTypeComboBox");
+        routeLayout->addWidget(routeTypeComboBox, 1);
+        routeLayout->addWidget(privateRouteIpField, 2);
+
         findPwdBtn = new QPushButton("忘记密码?");
         findPwdBtn->setObjectName("linkBtn");
         findPwdBtn->setCursor(Qt::PointingHandCursor);
@@ -150,6 +175,7 @@ public:
         formLayout->addWidget(passwordField);
         formLayout->addWidget(confirmField);
         formLayout->addLayout(optionsLayout);
+        formLayout->addWidget(routeRow);
         formLayout->addSpacing(6);
         formLayout->addLayout(buttonLayout);
 
@@ -181,6 +207,11 @@ public:
             isFindPwdMode = true;
             isRegisterMode = false;
             udidLineEdit->clear();
+            updateUIState();
+        });
+
+        connect(lanModeCheckBox, &QCheckBox::toggled, this, [this]() { updateUIState(); });
+        connect(routeTypeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
             updateUIState();
         });
 
@@ -312,7 +343,7 @@ protected:
 private:
     // 参考设计稿比例（卡片宽约等于窗口宽 72%），略加宽以容纳选项行两个复选框
     static constexpr int kLoginWindowWidth = 540;
-    static constexpr int kLoginWindowHeight = 660;
+    static constexpr int kLoginWindowHeight = 720;
     static constexpr int kLoginFormCardWidth = kLoginWindowWidth * 72 / 100; // 388
 
     enum class InputIcon { User, Lock, Device };
@@ -329,6 +360,10 @@ private:
     QToolButton *passwordToggleBtn = nullptr;
     QCheckBox *rememberCheckBox = nullptr;
     QCheckBox *lanModeCheckBox = nullptr;
+    QComboBox *routeTypeComboBox = nullptr;
+    QWidget *routeRow = nullptr;
+    QWidget *privateRouteIpField = nullptr;
+    QLineEdit *privateRouteIpLineEdit = nullptr;
     QPushButton *findPwdBtn = nullptr;
     QPushButton *actionButton = nullptr;
     QPushButton *switchButton = nullptr;
@@ -514,6 +549,49 @@ private:
         }
     }
 
+    bool isPrivateRouteSelected() const
+    {
+        return routeTypeComboBox && routeTypeComboBox->currentIndex() == 1;
+    }
+
+    void saveRouteSettings()
+    {
+        settings->setValue("routeType", isPrivateRouteSelected() ? "private" : "public");
+        if (isPrivateRouteSelected())
+            settings->setValue("privateRouteIp", privateRouteIpLineEdit->text().trimmed());
+    }
+
+    QJsonObject buildRoutePayload() const
+    {
+        QJsonObject payload;
+        if (!lanModeCheckBox->isChecked() && isPrivateRouteSelected()) {
+            payload["routeType"] = "private";
+            payload["routeIp"] = privateRouteIpLineEdit->text().trimmed();
+        } else {
+            payload["routeType"] = "public";
+        }
+        return payload;
+    }
+
+    bool validateRouteSelection(QString *errorMessage = nullptr) const
+    {
+        if (lanModeCheckBox->isChecked() || !isPrivateRouteSelected())
+            return true;
+
+        const auto ip = privateRouteIpLineEdit->text().trimmed();
+        if (ip.isEmpty()) {
+            if (errorMessage)
+                *errorMessage = "请输入私有线路服务器 IP";
+            return false;
+        }
+        if (!privateRouteIpLineEdit->hasAcceptableInput()) {
+            if (errorMessage)
+                *errorMessage = "私有线路 IP 格式不正确";
+            return false;
+        }
+        return true;
+    }
+
     void updateUIState()
     {
         udidField->setVisible(isFindPwdMode);
@@ -524,6 +602,11 @@ private:
         rememberCheckBox->setVisible(!isRegisterMode && !isFindPwdMode);
         lanModeCheckBox->setVisible(!isRegisterMode && !isFindPwdMode);
         findPwdBtn->setVisible(!isRegisterMode && !isFindPwdMode);
+
+        const bool showRoute = !isFindPwdMode && !lanModeCheckBox->isChecked();
+        routeRow->setVisible(showRoute);
+        privateRouteIpField->setVisible(showRoute && isPrivateRouteSelected());
+
         if (isRegisterMode) {
             titleLabel->setText("创建账号");
             actionButton->setText("立即注册");
@@ -587,6 +670,12 @@ private:
             return;
         }
 
+        QString routeError;
+        if (!validateRouteSelection(&routeError)) {
+            setStatus(routeError, true);
+            return;
+        }
+
         const auto &password = passwordLineEdit->text();
         if (isRegisterMode || isFindPwdMode) {
             const auto &confirm = confirmLineEdit->text();
@@ -620,11 +709,17 @@ private:
                 setStatus(res["msg"].toString(), true);
             });
         } else if (isRegisterMode) {
-            webSocketClient->emitEvent("register", QJsonObject{{"phone", phone}, {"password", password}, {"version", Config::VERSION}}, [=](const QJsonValue &res) {
+            auto payload = QJsonObject{{"phone", phone}, {"password", password}, {"version", Config::VERSION}};
+            const auto routePayload = buildRoutePayload();
+            for (auto it = routePayload.begin(); it != routePayload.end(); ++it)
+                payload.insert(it.key(), it.value());
+
+            webSocketClient->emitEvent("register", payload, [=](const QJsonValue &res) {
                 actionButton->setEnabled(true);
 
                 if (res["msg"].isUndefined()) {
                     settings->setValue("isLanMode", lanModeCheckBox->isChecked());
+                    saveRouteSettings();
                     saveCredentials(phone, password);
                     Account::getInstance()->tabs = res["tabs"].toArray();
                     emit authorized(res["account"], lanModeCheckBox->isChecked());
@@ -635,11 +730,17 @@ private:
                 setStatus(res["msg"].toString(), true);
             });
         } else {
-            webSocketClient->emitEvent("login", QJsonObject{{"phone", phone}, {"password", password}, {"version", Config::VERSION}}, [=](const QJsonValue &res) {
+            auto payload = QJsonObject{{"phone", phone}, {"password", password}, {"version", Config::VERSION}};
+            const auto routePayload = buildRoutePayload();
+            for (auto it = routePayload.begin(); it != routePayload.end(); ++it)
+                payload.insert(it.key(), it.value());
+
+            webSocketClient->emitEvent("login", payload, [=](const QJsonValue &res) {
                 actionButton->setEnabled(true);
 
                 if (res["msg"].isUndefined()) {
                     settings->setValue("isLanMode", lanModeCheckBox->isChecked());
+                    saveRouteSettings();
                     saveCredentials(phone, password);
                     for (const QJsonValue &device : res[HIDE_STR("devices")].toArray()) {
                         const auto &udid = device[HIDE_STR("udid")].toString();
@@ -795,6 +896,38 @@ private:
             }
             QCheckBox::indicator:hover {
                 border-color: %1;
+            }
+
+            QComboBox#routeTypeComboBox {
+                min-height: 48px;
+                padding: 0px 12px;
+                border: 1px solid %8;
+                border-radius: 12px;
+                background: %7;
+                color: %9;
+                font-size: 14px;
+            }
+            QComboBox#routeTypeComboBox:focus {
+                border: 2px solid %1;
+            }
+            QComboBox#routeTypeComboBox::drop-down {
+                border: none;
+                width: 28px;
+            }
+            QComboBox#routeTypeComboBox::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 6px solid %1;
+                margin-right: 8px;
+            }
+            QComboBox#routeTypeComboBox QAbstractItemView {
+                background: %7;
+                color: %9;
+                border: 1px solid %8;
+                selection-background-color: %1;
+                selection-color: #FFFFFF;
+                outline: 0;
             }
 
             QPushButton#linkBtn {
