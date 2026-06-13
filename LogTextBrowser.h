@@ -15,6 +15,7 @@
 #include <QPixmap>
 #include <QLineEdit>
 #include <QEvent>
+#include <QShowEvent>
 #include <QLayout>
 #include <magic_enum/magic_enum.hpp>
 
@@ -77,7 +78,11 @@ public:
                     .arg(formattedMessage);
 
                 instance->allLogs.append(htmlMessage);
-                instance->appendIfMatch(htmlMessage);
+
+                // 富文本 append 会触发 HTML 解析+文档重排+重绘，代价很高。
+                // 面板默认隐藏，隐藏时只留文件与内存记录，不碰 GUI（显示时由 showEvent 重建）。
+                if (instance->isVisible())
+                    instance->appendIfMatch(htmlMessage);
 
                 QTextStream out(&instance->logFile);
                 out << formattedMessage << "\n";
@@ -104,6 +109,14 @@ public:
     }
 
 protected:
+    // 面板从隐藏变为显示时，用内存中的日志重建视图（隐藏期间为省 GUI 开销没有实时 append）
+    void showEvent(QShowEvent *event) override {
+        QTextBrowser::showEvent(event);
+        clear();
+        for (const QString &text : allLogs)
+            appendIfMatch(text);
+    }
+
     bool event(QEvent *e) override {
         if (e->type() == QEvent::ParentChange) {
             if (QWidget *p = parentWidget()) {
