@@ -157,6 +157,9 @@ inline const Palette &palette()
     return isDark() ? darkPalette() : lightPalette();
 }
 
+inline QString chevronDown() { return isDark() ? QStringLiteral(":/icons/chevron_down_dark.svg") : QStringLiteral(":/icons/chevron_down_light.svg"); }
+inline QString chevronUp() { return isDark() ? QStringLiteral(":/icons/chevron_up_dark.svg") : QStringLiteral(":/icons/chevron_up_light.svg"); }
+
 // —— 便捷访问器 ——
 inline QString primary() { return palette().primary; }
 inline QString primaryHover() { return palette().primaryHover; }
@@ -207,6 +210,8 @@ inline QString fill(QString tpl)
         {"scrollHandle", p.scrollHandle},
         {"scrollHandleHover", p.scrollHandleHover},
         {"menuBg", p.menuBg},
+        {"chevronDown", chevronDown()},
+        {"chevronUp", chevronUp()},
     };
     for (const auto &entry : map)
         tpl.replace(QLatin1String("@{") + QLatin1String(entry.first) + QLatin1String("}"), entry.second);
@@ -367,14 +372,10 @@ inline QString globalStyleSheet()
         QSpinBox::up-button:hover, QSpinBox::down-button:hover,
         QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover { background-color: @{primarySoft}; }
         QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
-            width: 0; height: 0; image: none;
-            border-left: 4px solid transparent; border-right: 4px solid transparent;
-            border-bottom: 5px solid @{textSecondary};
+            image: url(@{chevronUp}); width: 10px; height: 10px;
         }
         QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
-            width: 0; height: 0; image: none;
-            border-left: 4px solid transparent; border-right: 4px solid transparent;
-            border-top: 5px solid @{textSecondary};
+            image: url(@{chevronDown}); width: 10px; height: 10px;
         }
 
         /* ===== 下拉框 ===== */
@@ -389,11 +390,9 @@ inline QString globalStyleSheet()
         QComboBox:hover { border-color: @{primary}; }
         QComboBox:focus, QComboBox:on { border: 1px solid @{primary}; }
         QComboBox:disabled { background-color: @{surfaceAlt}; color: @{textMuted}; }
-        QComboBox::drop-down { border: none; width: 24px; }
+        QComboBox::drop-down { border: none; width: 26px; }
         QComboBox::down-arrow {
-            width: 0; height: 0; image: none;
-            border-left: 5px solid transparent; border-right: 5px solid transparent;
-            border-top: 6px solid @{textSecondary}; margin-right: 8px;
+            image: url(@{chevronDown}); width: 12px; height: 12px; margin-right: 8px;
         }
         QComboBox QAbstractItemView {
             background-color: @{menuBg};
@@ -421,22 +420,25 @@ inline QString globalStyleSheet()
             border-radius: 9px; border: 1px solid @{borderStrong}; background: @{inputBg};
         }
         QRadioButton::indicator:hover { border-color: @{primary}; }
-        QRadioButton::indicator:checked { border: 5px solid @{primary}; background: #FFFFFF; }
+        QRadioButton::indicator:checked {
+            background: @{primary}; border: 1px solid @{primary}; image: url(:/icons/check_white.svg);
+        }
+        QRadioButton::indicator:disabled { background: @{surfaceAlt}; border-color: @{border}; }
 
         /* ===== 分组框 ===== */
         QGroupBox {
             background-color: @{surface};
             border: 1px solid @{border};
             border-radius: 10px;
-            margin-top: 14px;
-            padding: 12px;
+            margin-top: 18px;
+            padding: 18px 16px 16px 16px;
             font-weight: 600;
             color: @{textPrimary};
         }
         QGroupBox::title {
             subcontrol-origin: margin;
             subcontrol-position: top left;
-            left: 12px; padding: 0 6px;
+            left: 14px; padding: 2px 8px;
             color: @{textSecondary};
         }
 
