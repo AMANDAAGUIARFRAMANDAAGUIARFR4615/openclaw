@@ -430,15 +430,15 @@ inline QString globalStyleSheet()
             background-color: @{surface};
             border: 1px solid @{border};
             border-radius: 10px;
-            margin-top: 18px;
-            padding: 18px 16px 16px 16px;
+            margin-top: 6px;
+            padding: 36px 16px 16px 16px;
             font-weight: 600;
             color: @{textPrimary};
         }
         QGroupBox::title {
-            subcontrol-origin: margin;
+            subcontrol-origin: border;
             subcontrol-position: top left;
-            left: 14px; padding: 2px 8px;
+            left: 14px; top: 11px; padding: 0;
             color: @{textSecondary};
         }
 
