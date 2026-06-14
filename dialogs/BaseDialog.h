@@ -14,7 +14,11 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QScroller>
+#include <QShowEvent>
+#include <QEvent>
+#include <QScopedValueRollback>
 
 class AdaptiveScrollArea : public QScrollArea {
 public:
@@ -118,7 +122,8 @@ public:
             scrollArea->setWidgetResizable(true);
             scrollArea->setFrameShape(QFrame::NoFrame);
             scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-            scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            // 对话框内容始终保持纵向布局，禁用横向滚动条，避免余额支付等动态显隐导致的水平滚动条
+            scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             QScroller::grabGesture(scrollArea->viewport(), QScroller::LeftMouseButtonGesture);
             QScrollerProperties props = QScroller::scroller(scrollArea->viewport())->scrollerProperties();
             props.setScrollMetric(QScrollerProperties::MousePressEventDelay, 0.1);
@@ -128,18 +133,70 @@ public:
         }
 
         auto *contentWidget = new QWidget(this);
+        m_contentWidget = contentWidget;
+        m_scrollArea = scrollArea;
         m_contentLayout = new QVBoxLayout(contentWidget);
         m_contentLayout->setContentsMargins(15, 15, 15, 15);
         if (scrollArea)
             scrollArea->setWidget(contentWidget);
 
         m_mainLayout->addWidget(scrollArea ? scrollArea : contentWidget, 1);
+
+        // 监听内容布局变化（如动态显隐控件），实时保证宽度足够，杜绝横向滚动条
+        contentWidget->installEventFilter(this);
     }
 
     // 提供给子类获取内容布局的接口
     QVBoxLayout* contentLayout() const { return m_contentLayout; }
 
+protected:
+    // 保证对话框宽度足以容纳内容的最小宽度，从根本上避免出现横向滚动条
+    void ensureContentFitsWidth()
+    {
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
+        if (!m_contentWidget || m_adjustingWidth)
+            return;
+
+        QScopedValueRollback<bool> guard(m_adjustingWidth, true);
+
+        int needed = m_contentWidget->minimumSizeHint().width();
+        if (needed <= 0)
+            needed = m_contentWidget->sizeHint().width();
+
+        // 主布局左右边距
+        int leftMargin = 0, rightMargin = 0;
+        if (m_mainLayout)
+            m_mainLayout->getContentsMargins(&leftMargin, nullptr, &rightMargin, nullptr);
+        needed += leftMargin + rightMargin;
+
+        // 预留纵向滚动条宽度，纵向滚动出现时也不会挤出横向滚动条
+        if (m_scrollArea)
+            needed += m_scrollArea->verticalScrollBar()->sizeHint().width() + 2;
+
+        if (minimumWidth() < needed)
+            setMinimumWidth(needed);
+        if (width() < needed)
+            resize(needed, height());
+#endif
+    }
+
+    void showEvent(QShowEvent *event) override
+    {
+        QDialog::showEvent(event);
+        ensureContentFitsWidth();
+    }
+
+    bool eventFilter(QObject *watched, QEvent *event) override
+    {
+        if (watched == m_contentWidget && event->type() == QEvent::LayoutRequest)
+            ensureContentFitsWidth();
+        return QDialog::eventFilter(watched, event);
+    }
+
 private:
     QVBoxLayout* m_mainLayout;
     QVBoxLayout* m_contentLayout;
+    QWidget* m_contentWidget = nullptr;
+    QScrollArea* m_scrollArea = nullptr;
+    bool m_adjustingWidth = false;
 };
