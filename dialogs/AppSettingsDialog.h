@@ -16,7 +16,6 @@
 #include <QDialogButtonBox>
 #include <QPushButton>
 #include <QKeyEvent>
-#include <QTabWidget>
 
 class SingleKeySequenceEdit : public QKeySequenceEdit {
 public:
@@ -36,6 +35,95 @@ protected:
         
         QKeySequenceEdit::keyPressEvent(event);
     }
+};
+
+// 可展开/折叠的分组容器：标题栏点击切换，默认折叠，无内容时不占用多余空白
+class CollapsibleGroupBox : public QWidget {
+    Q_OBJECT
+public:
+    explicit CollapsibleGroupBox(const QString &title, QWidget *parent = nullptr, bool expanded = false)
+        : QWidget(parent)
+    {
+        auto *outer = new QVBoxLayout(this);
+        outer->setContentsMargins(0, 0, 0, 0);
+        outer->setSpacing(0);
+
+        m_header = new QToolButton(this);
+        m_header->setText(title);
+        m_header->setCheckable(true);
+        m_header->setChecked(expanded);
+        m_header->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        m_header->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
+        m_header->setCursor(Qt::PointingHandCursor);
+        m_header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        m_header->setStyleSheet(Theme::fill(QStringLiteral(R"(
+            QToolButton {
+                text-align: left;
+                padding: 10px 12px;
+                border: 1px solid @{border};
+                border-radius: 10px;
+                background: @{surfaceAlt};
+                color: @{textPrimary};
+                font-size: 13px;
+                font-weight: 700;
+            }
+            QToolButton:hover { background: @{surfaceHover}; }
+        )")));
+
+        m_content = new QWidget(this);
+        m_contentLayout = new QVBoxLayout(m_content);
+        m_contentLayout->setContentsMargins(16, 12, 16, 14);
+        m_contentLayout->setSpacing(10);
+        m_content->setStyleSheet(Theme::fill(QStringLiteral(R"(
+            QWidget#collapsibleContent {
+                border: 1px solid @{border};
+                border-top: none;
+                border-bottom-left-radius: 10px;
+                border-bottom-right-radius: 10px;
+                background: @{surfaceAlt};
+            }
+        )")));
+        m_content->setObjectName(QStringLiteral("collapsibleContent"));
+        m_content->setVisible(expanded);
+        syncHeaderRadius(expanded);
+
+        outer->addWidget(m_header);
+        outer->addWidget(m_content);
+
+        connect(m_header, &QToolButton::toggled, this, [this](bool on) {
+            m_header->setArrowType(on ? Qt::DownArrow : Qt::RightArrow);
+            m_content->setVisible(on);
+            syncHeaderRadius(on);
+        });
+    }
+
+    QVBoxLayout *contentLayout() const { return m_contentLayout; }
+
+private:
+    // 展开时标题栏底部不再圆角，与内容区拼接成一个整体
+    void syncHeaderRadius(bool expanded) {
+        QString radius = expanded
+            ? QStringLiteral("border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: none;")
+            : QString();
+        m_header->setStyleSheet(Theme::fill(QStringLiteral(R"(
+            QToolButton {
+                text-align: left;
+                padding: 10px 12px;
+                border: 1px solid @{border};
+                border-radius: 10px;
+                background: @{surfaceAlt};
+                color: @{textPrimary};
+                font-size: 13px;
+                font-weight: 700;
+                %1
+            }
+            QToolButton:hover { background: @{surfaceHover}; }
+        )").arg(radius)));
+    }
+
+    QToolButton *m_header;
+    QWidget *m_content;
+    QVBoxLayout *m_contentLayout;
 };
 
 class AppSettingsDialog : public BaseDialog
@@ -110,34 +198,9 @@ private:
     explicit AppSettingsDialog(QWidget *parent = nullptr) : BaseDialog("设置", parent)
     {
         auto mainLayout = contentLayout();
-        setMinimumSize(860, 760);
+        mainLayout->setSpacing(12);
+        resize(620, 680);
         setStyleSheet(styleSheet() + Theme::fill(QStringLiteral(R"(
-            QTabWidget::pane {
-                border: 1px solid @{border};
-                border-radius: 10px;
-                top: -1px;
-                background: @{surface};
-            }
-            QTabBar::tab {
-                min-width: 126px;
-                padding: 8px 16px;
-                margin-right: 6px;
-                border: 1px solid @{border};
-                border-bottom: none;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-                background: @{surfaceAlt};
-                color: @{textSecondary};
-                font-size: 13px;
-                font-weight: 600;
-            }
-            QTabBar::tab:selected {
-                background: @{surface};
-                color: @{primary};
-            }
-            QTabBar::tab:hover:!selected {
-                background: @{surfaceHover};
-            }
             QGroupBox {
                 border: 1px solid @{border};
                 border-radius: 10px;
@@ -180,17 +243,12 @@ private:
             }
         )")));
         
-        QTabWidget *tabWidget = new QTabWidget(this);
-        mainLayout->addWidget(tabWidget);
-
         // ==========================================
-        // --- Tab 1: 常规与投屏设置 ---
+        // --- 常规设置 ---
         // ==========================================
 
-        QWidget *generalTab = new QWidget();
-        QVBoxLayout *generalLayout = new QVBoxLayout(generalTab);
-        generalLayout->setSpacing(18);
-        generalLayout->setContentsMargins(18, 18, 18, 18);
+        CollapsibleGroupBox *generalBox = new CollapsibleGroupBox("常规设置", this, true);
+        QVBoxLayout *generalLayout = generalBox->contentLayout();
 
         addSettingGroup(generalLayout, "colorScheme", "颜色主题", {"默认", "浅色", "深色"}, 0);
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
@@ -202,12 +260,14 @@ private:
 #else
         addSettingGroup(generalLayout, "mobileGridColumns", "投屏每行显示", {"1个", "2个", "3个", "4个"}, 1);
 #endif
+        mainLayout->addWidget(generalBox);
 
-        QGroupBox *defaultBox = new QGroupBox("投屏设置 (分组单独设置优先)", generalTab);
+        // ==========================================
+        // --- 投屏设置 ---
+        // ==========================================
 
-        QVBoxLayout *boxLayout = new QVBoxLayout(defaultBox);
-        boxLayout->setSpacing(10);
-        boxLayout->setContentsMargins(18, 26, 18, 16);
+        CollapsibleGroupBox *defaultBox = new CollapsibleGroupBox("投屏设置 (分组单独设置优先)", this);
+        QVBoxLayout *boxLayout = defaultBox->contentLayout();
 
         addSettingGroup(boxLayout, "isLandscape", "投屏显示", {"竖屏显示", "横屏显示"}, 0);
         addSettingGroup(boxLayout, "videoFps", "视频帧率", {"", "5秒1帧", "1帧", "15帧", "30帧"}, 4);
@@ -218,24 +278,11 @@ private:
 #endif
         addSettingGroup(boxLayout, "autoScanLANDevices", "自动连接局域网设备", {"关闭", "开启"}, 1);
 
-        generalLayout->addWidget(defaultBox);
-        generalLayout->addStretch();
-
-        tabWidget->addTab(generalTab, "常规与投屏");
-
+        mainLayout->addWidget(defaultBox);
 
         // ==========================================
-        // --- Tab 2: 菜单排序与快捷键 ---
+        // --- 菜单排序与快捷键 ---
         // ==========================================
-
-        QWidget *menuTab = new QWidget();
-        QVBoxLayout *menuLayout = new QVBoxLayout(menuTab);
-        menuLayout->setSpacing(16);
-        menuLayout->setContentsMargins(18, 16, 18, 16);
-
-        QHBoxLayout *topMenusLayout = new QHBoxLayout();
-        topMenusLayout->setSpacing(22);
-        topMenusLayout->setAlignment(Qt::AlignTop);
 
         QStringList sideBarMenu{"🔗设备连接", "⚙️设置", "💡帮助", "📱软件源", "💿USB驱动", "⏳续费", "🤝换绑"};
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
@@ -262,18 +309,20 @@ private:
         if (Tools::isStartedByQtCreator())
             sideBarMenu.append("🛠️开发者");
 
-        // 左侧：Sidebar
-        addSortableGroup(topMenusLayout, "sideBarMenu", "左侧栏 (拖拽调整顺序)", sideBarMenu);
+        // 折叠项：左侧栏
+        CollapsibleGroupBox *sideBarBox = new CollapsibleGroupBox("左侧栏 (拖拽调整顺序)", this);
+        addSortableGroup(sideBarBox->contentLayout(), "sideBarMenu", "左侧栏 (拖拽调整顺序)", sideBarMenu, {}, true, false);
+        mainLayout->addWidget(sideBarBox);
 
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-        // 右侧：TabBar Menu
-        addSortableGroup(topMenusLayout, "tabBarMenu", "分组标签页右键菜单 (拖拽调整顺序)", 
-            {"重命名分组", "添加分组", "删除分组", "投屏显示", "视频清晰度", "连接方式", "自动连接局域网设备", "自动连接USB设备"});
+        // 折叠项：分组标签页右键菜单
+        CollapsibleGroupBox *tabBarBox = new CollapsibleGroupBox("分组标签页右键菜单 (拖拽调整顺序)", this);
+        addSortableGroup(tabBarBox->contentLayout(), "tabBarMenu", "分组标签页右键菜单 (拖拽调整顺序)", 
+            {"重命名分组", "添加分组", "删除分组", "投屏显示", "视频清晰度", "连接方式", "自动连接局域网设备", "自动连接USB设备"}, {}, true, false);
+        mainLayout->addWidget(tabBarBox);
 #endif
 
-        menuLayout->addLayout(topMenusLayout);
-
-        // 第二排：窗口右键菜单
+        // 折叠项：投屏窗口右键菜单
         QStringList windowMenuItems = {
             "🏠主屏幕", "🎛️控制中心", "↕️应用切换",
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
@@ -295,12 +344,12 @@ private:
         windowShortcuts["🔈音量-"] = "Ctrl+Down";
         windowShortcuts["📌置顶"] = "Ctrl+T";
 
-        addSortableGroup(menuLayout, "windowMenu", "投屏窗口右键菜单 (拖拽调整顺序 / 双击设置快捷键)", 
-            windowMenuItems, windowShortcuts);
+        CollapsibleGroupBox *windowBox = new CollapsibleGroupBox("投屏窗口右键菜单 (拖拽调整顺序 / 双击设置快捷键)", this);
+        addSortableGroup(windowBox->contentLayout(), "windowMenu", "投屏窗口右键菜单 (拖拽调整顺序 / 双击设置快捷键)", 
+            windowMenuItems, windowShortcuts, true, false);
+        mainLayout->addWidget(windowBox);
 
-        menuLayout->addStretch();
-
-        tabWidget->addTab(menuTab, "菜单与快捷键");
+        mainLayout->addStretch();
     }
 
     ~AppSettingsDialog() = default;
@@ -310,7 +359,7 @@ signals:
 
 private:
     void addSortableGroup(QBoxLayout *parentLayout, const QString &key, const QString &title, 
-                          const QStringList &defaults, const QHash<QString, QString> &defaultShortcuts = {}, bool checkable = true)
+                          const QStringList &defaults, const QHash<QString, QString> &defaultShortcuts = {}, bool checkable = true, bool showTitle = true)
     {
         m_listDefaults.insert(key, defaults);
         m_shortcutDefaults.insert(key, defaultShortcuts);
@@ -318,12 +367,15 @@ private:
         QVBoxLayout *groupLayout = new QVBoxLayout();
         groupLayout->setSpacing(7);
 
-        QLabel *titleLabel = new QLabel(title, this);
-        QFont font = titleLabel->font();
-        font.setBold(true);
-        font.setPointSize(10);
-        titleLabel->setFont(font);
-        titleLabel->setStyleSheet(QString("color:%1;").arg(Theme::textPrimary()));
+        QLabel *titleLabel = nullptr;
+        if (showTitle) {
+            titleLabel = new QLabel(title, this);
+            QFont font = titleLabel->font();
+            font.setBold(true);
+            font.setPointSize(10);
+            titleLabel->setFont(font);
+            titleLabel->setStyleSheet(QString("color:%1;").arg(Theme::textPrimary()));
+        }
 
         QListWidget *listWidget = new QListWidget(this);
         listWidget->setDragDropMode(QAbstractItemView::InternalMove);
@@ -430,7 +482,8 @@ private:
             listWidget->setFixedHeight(h);
         }
 
-        groupLayout->addWidget(titleLabel);
+        if (titleLabel)
+            groupLayout->addWidget(titleLabel);
         groupLayout->addWidget(listWidget);
         groupLayout->addStretch();
 
