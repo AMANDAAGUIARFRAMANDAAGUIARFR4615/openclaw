@@ -1,5 +1,6 @@
 #include "DeviceView.h"
 #include "Logger.h"
+#include "Theme.h"
 #include "Tools.h"
 #include "RemoteFileExplorer.h"
 #include "FileTransfer.h"
@@ -63,18 +64,18 @@ QPixmap makeLockIconPixmap(int size, const QColor &color)
 QString overlayUnlockButtonStyle(int height)
 {
     const int radius = std::max(13, height / 2);
-    return QStringLiteral(R"(
+    return Theme::fill(QStringLiteral(R"(
         QPushButton#overlayUnlockBtn {
-            background-color: #4A86F7;
+            background-color: @{primary};
             color: #FFFFFF;
             border: none;
             border-radius: %1px;
             padding: 0 18px;
             font-weight: 600;
         }
-        QPushButton#overlayUnlockBtn:hover { background-color: #5A94FF; }
-        QPushButton#overlayUnlockBtn:pressed { background-color: #356FE0; }
-    )").arg(radius);
+        QPushButton#overlayUnlockBtn:hover { background-color: @{primaryHover}; }
+        QPushButton#overlayUnlockBtn:pressed { background-color: @{primaryPressed}; }
+    )")).arg(radius);
 }
 } // namespace
 
@@ -90,7 +91,7 @@ DeviceView::DeviceView(DeviceConnection* connection, DeviceInfo* deviceInfo, QWi
 
     overlayLockIcon = new QLabel(overlay);
     overlayLockIcon->setAlignment(Qt::AlignCenter);
-    overlayLockIcon->setPixmap(makeLockIconPixmap(36, QColor("#4A86F7")));
+    overlayLockIcon->setPixmap(makeLockIconPixmap(36, QColor(Theme::primary())));
     overlayLockIcon->hide();
 
     overlayLabel = new QLabel("投屏加载中...", overlay);
@@ -355,7 +356,7 @@ void DeviceView::updateOverlayControls()
     if (overlayLockIcon) {
         overlayLockIcon->setVisible(locked);
         if (locked)
-            overlayLockIcon->setPixmap(makeLockIconPixmap(std::clamp(minSide / 4, 28, 48), QColor("#4A86F7")));
+            overlayLockIcon->setPixmap(makeLockIconPixmap(std::clamp(minSide / 4, 28, 48), QColor(Theme::primary())));
     }
 
     if (auto *layout = qobject_cast<QVBoxLayout *>(overlay->layout())) {

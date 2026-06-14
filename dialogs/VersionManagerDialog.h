@@ -1,6 +1,7 @@
 #pragma once
 
 #include "global.h"
+#include "../Theme.h"
 #include "ZipUtils.h"
 #include <QDialog>
 #include <QVBoxLayout>
@@ -184,51 +185,36 @@ private:
     }
 
     void applyStyles() {
-        bool dark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-
-        // 颜色变量: 背景, 内容背, 边框, 主字, 次字, 悬停边框, 悬停背景, 最新背, 最新框, 主色
-        QString c[] = {
-            dark ? "#232324" : "#F7F8FA", // 0
-            dark ? "#2D2D2D" : "#FFFFFF", // 1
-            dark ? "#484849" : "#E5E6EB", // 2
-            dark ? "#E5E6EB" : "#1D2129", // 3
-            dark ? "#A9AEB8" : "#86909C", // 4
-            "#165DFF",                    // 5 Hover Border
-            dark ? "#353535" : "#FFFFFF", // 6 Hover Bg
-            dark ? "#1A2234" : "#F2F8FE", // 7 Latest Bg
-            dark ? "#2A3D5E" : "#BEDAFF", // 8 Latest Border
-            "#165DFF"                     // 9 Primary
-        };
-
-        setStyleSheet(QString(R"(
-            QDialog { background: %0; font-family: "Microsoft YaHei", sans-serif; }
-            QWidget#Header { background: %1; border-bottom: 1px solid %2; }
+        setStyleSheet(Theme::fill(QStringLiteral(R"(
+            QDialog { background: @{pageBg}; }
+            QWidget#Header { background: @{surface}; border-bottom: 1px solid @{border}; }
             QWidget#ScrollContent { background: transparent; }
-            
-            QLabel#Title { font-size: 20px; font-weight: bold; color: %3; }
-            QLabel#SubTitle, QLabel#StatusLabel { font-size: 13px; color: %4; }
-            QLabel#SectionTitle { font-size: 14px; font-weight: 600; color: %4; margin: 10px 0 4px 0; }
-            
+
+            QLabel#Title { font-size: 20px; font-weight: bold; color: @{textPrimary}; }
+            QLabel#SubTitle, QLabel#StatusLabel { font-size: 13px; color: @{textMuted}; }
+            QLabel#SectionTitle { font-size: 14px; font-weight: 600; color: @{textSecondary}; margin: 10px 0 4px 0; }
+
             /* 卡片基础 */
-            VersionCard { background: %1; border-radius: 8px; border: 1px solid %2; }
-            VersionCard:hover { border: 1px solid %5; background: %6; }
-            VersionCard QLabel#LabelTag { font-size: 18px; font-weight: bold; color: %3; }
-            VersionCard QLabel#LabelDate, QLabel#LabelBody { font-size: 13px; color: %4; line-height: 20px; }
+            VersionCard { background: @{surface}; border-radius: 12px; border: 1px solid @{border}; }
+            VersionCard:hover { border: 1px solid @{primary}; background: @{surfaceHover}; }
+            VersionCard QLabel#LabelTag { font-size: 18px; font-weight: bold; color: @{textPrimary}; }
+            VersionCard QLabel#LabelDate, QLabel#LabelBody { font-size: 13px; color: @{textSecondary}; line-height: 20px; }
 
             /* 最新版样式 */
-            VersionCard[isLatest="true"] { background: %7; border: 1px solid %8; }
-            VersionCard[isLatest="true"] QLabel#LabelTag { color: %9; }
-            VersionCard[isLatest="true"]:hover { border: 1px solid %9; }
-            QLabel#BadgeLatest { background: %9; color: white; border-radius: 4px; padding: 4px 8px; font-weight: 600; }
+            VersionCard[isLatest="true"] { background: @{primarySoft}; border: 1px solid @{primary}; }
+            VersionCard[isLatest="true"] QLabel#LabelTag { color: @{primary}; }
+            VersionCard[isLatest="true"]:hover { border: 1px solid @{primary}; }
+            QLabel#BadgeLatest { background: @{primary}; color: white; border-radius: 6px; padding: 4px 8px; font-weight: 600; }
 
             /* 按钮 */
-            QPushButton#BtnPrimary { background: %9; color: white; border: none; border-radius: 4px; font-weight: bold; }
-            QPushButton#BtnPrimary:hover { background: #4080FF; }
-            QPushButton#BtnPrimary:pressed { background: #0E42D2; }
-            
-            QScrollBar:vertical { width: 6px; background: transparent; }
-            QScrollBar::handle:vertical { background: %2; border-radius: 3px; }
-        )").arg(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8], c[9]));
+            QPushButton#BtnPrimary { background: @{primary}; color: white; border: none; border-radius: 8px; font-weight: bold; }
+            QPushButton#BtnPrimary:hover { background: @{primaryHover}; }
+            QPushButton#BtnPrimary:pressed { background: @{primaryPressed}; }
+
+            QScrollBar:vertical { width: 8px; background: transparent; }
+            QScrollBar::handle:vertical { background: @{scrollHandle}; border-radius: 4px; }
+            QScrollBar::handle:vertical:hover { background: @{scrollHandleHover}; }
+        )")));
     }
 
     void fetchVersions() {
@@ -240,7 +226,7 @@ private:
             reply->deleteLater();
             if (reply->error()) {
                 m_statusLabel->setText("获取失败: " + reply->errorString());
-                m_statusLabel->setStyleSheet("color: #F53F3F;");
+                m_statusLabel->setStyleSheet(QString("color: %1;").arg(Theme::danger()));
                 return;
             }
 
@@ -291,7 +277,7 @@ private:
         QProgressDialog *pd = new QProgressDialog("正在下载 " + tagName + " ...", "取消", 0, 100, this);
         pd->setWindowTitle("下载更新");
         pd->setWindowModality(Qt::WindowModal);
-        pd->setStyleSheet("QProgressBar{border:1px solid #E5E6EB;border-radius:4px;text-align:center} QProgressBar::chunk{background-color:#165DFF}");
+        pd->setStyleSheet(Theme::fill(QStringLiteral("QProgressBar{border:1px solid @{border};border-radius:8px;text-align:center} QProgressBar::chunk{background-color:@{primary};border-radius:7px}")));
         
         QNetworkReply *reply = networkAccessManager->get(QNetworkRequest(qurl));
         connect(pd, &QProgressDialog::canceled, reply, &QNetworkReply::abort);

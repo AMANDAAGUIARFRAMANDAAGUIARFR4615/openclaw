@@ -1,4 +1,5 @@
 #include "Logger.h"
+#include "Theme.h"
 #include "MainWindow.h"
 #include "TcpServer.h"
 #include "EventHub.h"
@@ -136,6 +137,7 @@ int main(int argc, char *argv[])
     QStyle *fusionStyle = QStyleFactory::create("Fusion");
     app.setStyle(fusionStyle);
     app.setPalette(fusionStyle->standardPalette());
+    app.setStyleSheet(Theme::globalStyleSheet());
 
     app.installEventFilter(new GlobalEventFilter(&app));
 

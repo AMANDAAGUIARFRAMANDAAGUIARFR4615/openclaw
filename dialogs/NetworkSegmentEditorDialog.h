@@ -348,47 +348,30 @@ private:
     }
 
     void applyDynamicStyle() {
-        bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-
-        QString winBg      = isDark ? "#252526" : "#F5F5F7";
-        QString panelBg    = isDark ? "#2D2D30" : "#FFFFFF";
-        QString textColor  = isDark ? "#E0E0E0" : "#333333";
-        QString subText    = isDark ? "#888888" : "#999999";
-        QString border     = isDark ? "#454545" : "#DCDCDC";
-        QString accent     = isDark ? "#007ACC" : "#0078D7";
-        QString itemBg     = isDark ? "#333337" : "#FFFFFF";
-        QString itemHover  = isDark ? "#3E3E42" : "#F7F9FA";
-        QString itemSel    = isDark ? "#3F3F46" : "#EDF4FC";
-        QString readOnlyBg = isDark ? "#2A2A2D" : "#F8F8F8";
-        QString editBg     = isDark ? "#1E1E1E" : "#FFFFFF";
-        QString btnBg      = isDark ? "#3E3E42" : "#FFFFFF";
-
-        QString css = QString(R"(
-            NetworkSegmentEditorDialog { background-color: %1; color: %2; font-family: 'Segoe UI', Arial; font-size: 13px; }
-            QLabel { color: %2; }
+        QString css = Theme::fill(QStringLiteral(R"(
+            NetworkSegmentEditorDialog { background-color: @{pageBg}; color: @{textPrimary}; font-size: 13px; }
+            QLabel { color: @{textPrimary}; }
 
             QListWidget { background: transparent; border: none; outline: none; padding: 4px; }
-            QListWidget::item { background: %7; border: 1px solid %5; border-radius: 6px; margin: 5px 8px; }
-            QListWidget::item:hover { background: %8; border-color: %5; }
-            QListWidget::item:selected { background: %9; border: 1px solid %6; }
+            QListWidget::item { background: @{surface}; border: 1px solid @{border}; border-radius: 8px; margin: 5px 8px; }
+            QListWidget::item:hover { background: @{surfaceHover}; border-color: @{primary}; }
+            QListWidget::item:selected { background: @{primarySoft}; border: 1px solid @{primary}; }
 
-            QLineEdit#mainIpInput { border: 1px solid %5; border-radius: 4px; padding: 6px 10px; background: %3; color: %2; }
-            QLineEdit#mainIpInput:focus { border: 1px solid %6; }
-            QLineEdit::placeholder { color: %4; }
+            QLineEdit#mainIpInput { border: 1px solid @{borderStrong}; border-radius: 8px; padding: 6px 10px; background: @{inputBg}; color: @{textPrimary}; }
+            QLineEdit#mainIpInput:focus { border: 1px solid @{primary}; }
+            QLineEdit::placeholder { color: @{placeholder}; }
 
-            QSpinBox { border: 1px solid %5; border-radius: 4px; background: %11; color: %2; }
-            QSpinBox:focus { border: 2px solid %6; padding: -1px; }
-            QLineEdit[readOnly="true"] { border: 1px solid %5; border-radius: 4px; background: %10; color: %4; }
+            QSpinBox { border: 1px solid @{borderStrong}; border-radius: 8px; background: @{inputBg}; color: @{textPrimary}; }
+            QSpinBox:focus { border: 1px solid @{primary}; }
+            QLineEdit[readOnly="true"] { border: 1px solid @{border}; border-radius: 8px; background: @{surfaceAlt}; color: @{textMuted}; }
 
-            QPushButton { border: 1px solid %5; border-radius: 4px; background: %12; color: %2; outline: none; }
-            QPushButton:hover { background: %8; }
-            QPushButton:pressed { background: %5; }
+            QPushButton { border: 1px solid @{borderStrong}; border-radius: 8px; background: @{surface}; color: @{textPrimary}; outline: none; padding: 6px 14px; }
+            QPushButton:hover { background: @{surfaceHover}; border-color: @{primary}; }
+            QPushButton:pressed { background: @{primarySoft}; }
 
-            QPushButton#btnSave { background-color: #28a745; color: white; border: none; font-weight: bold; font-size: 14px; }
-            QPushButton#btnSave:hover { background-color: #218838; }
-        )").arg(winBg, textColor, panelBg, subText, border)
-                          .arg(accent, itemBg, itemHover, itemSel, readOnlyBg)
-                          .arg(editBg, btnBg);
+            QPushButton#btnSave { background-color: @{primary}; color: @{onPrimary}; border: none; font-weight: 600; font-size: 14px; }
+            QPushButton#btnSave:hover { background-color: @{primaryHover}; }
+        )"));
 
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
         css += QString(R"(

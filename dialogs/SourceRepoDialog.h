@@ -70,8 +70,8 @@ public:
             imgLabel->setAlignment(Qt::AlignCenter);
 
             const auto displayUrl = source.url.mid(source.url.lastIndexOf("https://"));
-            const QString richText = QString("如不方便扫码，请手动输入软件源地址：<br><a href=\"%1\" style=\"color: #0078d7; text-decoration: none;\">%1</a>")
-                                         .arg(displayUrl);
+            const QString richText = QString("如不方便扫码，请手动输入软件源地址：<br><a href=\"%1\" style=\"color: %2; text-decoration: none;\">%1</a>")
+                                         .arg(displayUrl, Theme::primary());
 
             auto textLabel = new QLabel(richText, page);
             textLabel->setAlignment(Qt::AlignCenter);

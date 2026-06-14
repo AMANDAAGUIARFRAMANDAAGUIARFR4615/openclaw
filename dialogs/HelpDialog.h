@@ -40,17 +40,17 @@ public:
         const QString listPadding = "24px";
 #endif
 
-        const bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-        // 暗色模式使用纯色背景，避免出现条纹/渐变感。
-        const QString bgColor = isDarkMode ? "#14171D" : "#F5F8FD";
-        const QString cardColor = isDarkMode ? "#14171D" : "#FFFFFF";
-        const QString borderColor = isDarkMode ? "#2A3140" : "#DEE6F2";
-        const QString titleColor = isDarkMode ? "#E8EEF9" : "#0F1D33";
-        const QString subTitleColor = isDarkMode ? "#8CB7FF" : "#1B62D1";
-        const QString bodyColor = isDarkMode ? "#C9D4E4" : "#2B3A4F";
-        const QString strongColor = isDarkMode ? "#F2F6FF" : "#122540";
-        const QString tipColor = isDarkMode ? "#87AEEB" : "#2A5CB5";
-        const QString tipBgColor = isDarkMode ? "#1A2232" : "#EEF3FF";
+        // 统一引用全局色板；纯色背景，避免出现条纹/渐变感。
+        const Theme::Palette &t = Theme::palette();
+        const QString bgColor = t.pageBg;
+        const QString cardColor = t.surface;
+        const QString borderColor = t.border;
+        const QString titleColor = t.textPrimary;
+        const QString subTitleColor = t.primary;
+        const QString bodyColor = t.textSecondary;
+        const QString strongColor = t.textPrimary;
+        const QString tipColor = t.primary;
+        const QString tipBgColor = t.surfaceAlt;
 
         helpText->setStyleSheet(QString(R"(
             QTextBrowser {

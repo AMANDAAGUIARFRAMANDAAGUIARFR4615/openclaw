@@ -47,10 +47,8 @@ public:
 
         auto mainLayout = contentLayout();
 
-        bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-        
-        // 红色 (强调/警告/价格) - 深色模式下用亮红，浅色模式下用深红
-        alertColor = isDarkMode ? QColor("#ff5252") : QColor("#d32f2f");
+        // 红色 (强调/警告/价格) - 统一使用全局语义色，自动适配明暗
+        alertColor = QColor(Theme::danger());
 
         auto filterLayout = new QHBoxLayout();
         auto filterLabel = new QLabel("分组筛选:");

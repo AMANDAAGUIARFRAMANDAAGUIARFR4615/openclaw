@@ -72,7 +72,7 @@ public:
 
         if (selected) {
             painter->setPen(Qt::NoPen);
-            painter->setBrush(dark_ ? QColor(59, 130, 246, 38) : QColor(59, 130, 246, 22));
+            painter->setBrush(QColor(74, 134, 247, dark_ ? 48 : 28));
             painter->drawPath(cardPath);
         } else if (hover) {
             painter->setPen(Qt::NoPen);
@@ -80,8 +80,9 @@ public:
             painter->drawPath(cardPath);
         }
 
-        painter->setPen(QPen(dark_ ? QColor(QStringLiteral("#353538")) : QColor(QStringLiteral("#E5E7EB")), 1));
-        painter->setBrush(dark_ ? QColor(QStringLiteral("#161618")) : QColor(QStringLiteral("#FFFFFF")));
+        const Theme::Palette &t = Theme::palette();
+        painter->setPen(QPen(QColor(t.border), 1));
+        painter->setBrush(QColor(t.surface));
         painter->drawPath(cardPath);
 
         const QRect inner = card.adjusted(kInnerPad, kInnerPad, -kInnerPad, -kInnerPad);
@@ -114,7 +115,7 @@ public:
             painter->drawPixmap(imgRect.x() + (imgRect.width() - pix.width()) / 2,
                                 imgRect.y() + (imgRect.height() - pix.height()) / 2, pix);
             painter->setClipping(false);
-            painter->setPen(QPen(dark_ ? QColor(QStringLiteral("#2A2A2E")) : QColor(QStringLiteral("#EDEFF2")), 1));
+            painter->setPen(QPen(QColor(Theme::palette().divider), 1));
             painter->setBrush(Qt::NoBrush);
             painter->drawRoundedRect(imgRect.adjusted(0, 0, -1, -1), 8, 8);
         }
@@ -172,14 +173,15 @@ private:
     explicit ScreenshotGalleryDialog(QWidget *parent, const QString &deviceId)
         : BaseDialog(QStringLiteral("截图库"), parent),
           galleryDir_(Tools::screenshotSaveDirectory(deviceId)) {
-        dark_ = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-        cardBg_ = dark_ ? QStringLiteral("#1A1B1E") : QStringLiteral("#FFFFFF");
-        cardBorder_ = dark_ ? QStringLiteral("#2E3036") : QStringLiteral("#E2E5EB");
-        subtle_ = dark_ ? QStringLiteral("#94A3B8") : QStringLiteral("#64748B");
-        textMain_ = dark_ ? QStringLiteral("#F1F5F9") : QStringLiteral("#0F172A");
-        mutedBg_ = dark_ ? QStringLiteral("#121316") : QStringLiteral("#F8FAFC");
-        accent_ = QStringLiteral("#3B82F6");
-        selBorderLight_ = QStringLiteral("#2563EB");
+        const Theme::Palette &t = Theme::palette();
+        dark_ = Theme::isDark();
+        cardBg_ = t.surface;
+        cardBorder_ = t.border;
+        subtle_ = t.textMuted;
+        textMain_ = t.textPrimary;
+        mutedBg_ = t.surfaceAlt;
+        accent_ = t.primary;
+        selBorderLight_ = t.primaryPressed;
 
         buildUi();
         reloadGallery();
@@ -361,9 +363,9 @@ private:
         if (primary) {
             b->setStyleSheet(QStringLiteral(
                 "QPushButton { padding: 7px 16px; border-radius: 8px; border: none; background: %1; color: white; font-weight: 600; }"
-                "QPushButton:hover { background: #2563EB; }"
-                "QPushButton:pressed { background: #1D4ED8; }")
-                .arg(accent_));
+                "QPushButton:hover { background: %2; }"
+                "QPushButton:pressed { background: %3; }")
+                .arg(accent_, Theme::primaryHover(), Theme::primaryPressed()));
         } else {
             b->setStyleSheet(QStringLiteral(
                 "QPushButton { padding: 7px 16px; border-radius: 8px; border: 1px solid %1; background: %2; color: %3; }"
@@ -377,7 +379,7 @@ private:
         de->setStyleSheet(QStringLiteral(
             "QDateEdit { padding: 5px 8px; border-radius: 8px; border: 1px solid %1; background: %2; color: %3; }"
             "QDateEdit:hover { border-color: %4; }")
-            .arg(cardBorder_, dark_ ? QStringLiteral("#22252B") : QStringLiteral("#FFFFFF"), textMain_, accent_));
+            .arg(cardBorder_, Theme::palette().inputBg, textMain_, accent_));
     }
 
     void onDateRangeChanged() {

@@ -220,11 +220,11 @@ private:
                 } else {
                     // 源取消选中 -> 目标恢复可用
                     targetItem->setFlags(targetItem->flags() | Qt::ItemIsEnabled);
-                    targetTableWidget->item(i, 1)->setForeground(Qt::black);
+                    targetTableWidget->item(i, 1)->setForeground(palette().color(QPalette::Text));
                     
                     // 恢复到期时间的颜色逻辑
                     bool isExpired = targetTableWidget->item(i, 3)->data(Qt::UserRole).toBool();
-                    targetTableWidget->item(i, 3)->setForeground(isExpired ? QColor("#d32f2f") : Qt::black);
+                    targetTableWidget->item(i, 3)->setForeground(isExpired ? QColor(Theme::danger()) : palette().color(QPalette::Text));
                 }
                 break;
             }
@@ -304,7 +304,7 @@ private:
                 if (isLocked)
                     itemTime->setForeground(Qt::gray);
                 else if (isExpired)
-                    itemTime->setForeground(QColor("#d32f2f"));
+                    itemTime->setForeground(QColor(Theme::danger()));
                 
                 tableWidget->setItem(i, 3, itemTime);
             }

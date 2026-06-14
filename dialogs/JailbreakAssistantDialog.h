@@ -3,6 +3,7 @@
 
 #pragma once
 #include "Tools.h"
+#include "../Theme.h"
 #include <QApplication>
 #include <QWidget>
 #include <QVBoxLayout>
@@ -35,10 +36,9 @@ public:
         setFrameShape(QFrame::NoFrame);
         setStyleSheet(".StepBase { background-color: transparent; }");
 
-        bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-        QString iconBg = isDark ? "#454545" : "#e0e0e0";
-        QString iconFg = isDark ? "#cccccc" : "#555555";
-        QString lineBg = isDark ? "#555555" : "#cccccc";
+        QString iconBg = Theme::surfaceAlt();
+        QString iconFg = Theme::textSecondary();
+        QString lineBg = Theme::border();
 
         QWidget *leftSide = new QWidget;
         leftSide->setFixedWidth(40);
@@ -108,16 +108,13 @@ public:
 
         statusIcon->setStyleSheet(QString("background-color: %1; color: %2; border-radius: 15px; font-weight: bold;")
                                   .arg(highlight.name(), highlightText.name()));
-        
-        bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-        QString lineActive = isDark ? "#666666" : "#e0e0e0";
-        line->setStyleSheet(QString("background-color: %1;").arg(lineActive));
+
+        line->setStyleSheet(QString("background-color: %1;").arg(Theme::palette().borderStrong));
         onActivated(); 
     }
 
     void finish() {
-        bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-        QString green = isDark ? "#2ecc71" : "#28a745";
+        const QString green = Theme::success();
 
         statusIcon->setText("✔");
         statusIcon->setStyleSheet(QString("background-color: %1; color: white; border-radius: 15px; font-weight: bold;").arg(green));
@@ -292,18 +289,14 @@ public:
         btnConfirm = new QPushButton("确认选择");
         btnConfirm->setFixedHeight(35);
         
-        bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-        QString btnColor = isDark ? "#3daee9" : "#007bff";
-        QString btnHover = isDark ? "#5abdf0" : "#0069d9";
-
-        btnConfirm->setStyleSheet(QString("QPushButton { background-color: %1; color: white; border-radius: 4px; }"
-                                          "QPushButton:hover { background-color: %2; }"
-                                          "QPushButton:disabled { background-color: #ccc; }").arg(btnColor, btnHover));
+        btnConfirm->setStyleSheet(Theme::fill(QStringLiteral(
+            "QPushButton { background-color: @{primary}; color: white; border-radius: 6px; }"
+            "QPushButton:hover { background-color: @{primaryHover}; }"
+            "QPushButton:disabled { background-color: @{primaryDisabled}; }")));
 
         lblResult = new QLabel("");
-        
-        QString green = isDark ? "#2ecc71" : "#28a745";
-        lblResult->setStyleSheet(QString("color: %1; font-weight: bold; margin-top: 5px;").arg(green));
+
+        lblResult->setStyleSheet(QString("color: %1; font-weight: bold; margin-top: 5px;").arg(Theme::success()));
 
         contentLayout->addWidget(appCombo);
         contentLayout->addWidget(btnConfirm);
@@ -348,25 +341,20 @@ public:
         btnLayout->setContentsMargins(0, 0, 0, 0);
         btnLayout->setSpacing(10);
 
-        bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-        
-        QString pink = isDark ? "#d04e96" : "#d63384";
-        QString pinkHover = isDark ? "#e060a6" : "#c21b6c";
-        
-        QString gray = isDark ? "#555555" : "#6c757d";
-        QString grayHover = isDark ? "#666666" : "#5a6268";
+        QString gray = Theme::isDark() ? "#5A6270" : "#6c757d";
+        QString grayHover = Theme::isDark() ? "#6B7280" : "#5a6268";
 
         btnStart = new QPushButton("开始注入 (运行 TrollRestore)");
         btnStart->setFixedHeight(35);
-        btnStart->setStyleSheet(QString("QPushButton { background-color: %1; color: white; border-radius: 4px; font-weight: bold; }"
-                                        "QPushButton:hover { background-color: %2; }"
-                                        "QPushButton:disabled { background-color: #ccc; }").arg(pink, pinkHover));
-        
+        btnStart->setStyleSheet(Theme::fill(QStringLiteral(
+            "QPushButton { background-color: @{primary}; color: white; border-radius: 6px; font-weight: bold; }"
+            "QPushButton:hover { background-color: @{primaryHover}; }"
+            "QPushButton:disabled { background-color: @{primaryDisabled}; }")));
+
         btnSkip = new QPushButton("已注入，直接跳过");
         btnSkip->setFixedHeight(35);
-        btnSkip->setStyleSheet(QString("QPushButton { background-color: %1; color: white; border-radius: 4px; }"
-                                       "QPushButton:hover { background-color: %2; }"
-                                       "QPushButton:disabled { background-color: #ccc; }").arg(gray, grayHover));
+        btnSkip->setStyleSheet(QString("QPushButton { background-color: %1; color: white; border-radius: 6px; }"
+                                       "QPushButton:hover { background-color: %2; }").arg(gray, grayHover));
 
         btnLayout->addWidget(btnStart, 2);
         btnLayout->addWidget(btnSkip, 1);
@@ -493,12 +481,10 @@ public:
         QPushButton *btnFinish = new QPushButton("我已完成下载");
         btnFinish->setMinimumWidth(150);
         
-        bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-        QString green = isDark ? "#2ecc71" : "#28a745";
-        QString greenHover = isDark ? "#48e08d" : "#218838";
+        const QString green = Theme::success();
 
-        btnFinish->setStyleSheet(QString("QPushButton { background-color: %1; color: white; border-radius: 4px; padding: 8px; font-weight: bold; }"
-                                         "QPushButton:hover { background-color: %2; }").arg(green, greenHover));
+        btnFinish->setStyleSheet(QString("QPushButton { background-color: %1; color: white; border-radius: 6px; padding: 8px; font-weight: bold; }"
+                                         "QPushButton:hover { background-color: %1; }").arg(green));
 
         btnLayout->addWidget(btnFinish);
         btnLayout->addStretch();

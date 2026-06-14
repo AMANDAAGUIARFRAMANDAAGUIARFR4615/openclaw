@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Theme.h"
 #include "DeviceConnection.h"
 #include "EventHub.h"
 #include "RemoteFileExplorer.h"
@@ -63,7 +64,7 @@ private:
             QLineEdit {
                 padding: 6px 10px;
                 border: 1px solid palette(mid);
-                border-radius: 4px;
+                border-radius: 8px;
                 background-color: palette(base);
                 color: palette(text);
                 selection-background-color: palette(highlight);
@@ -263,13 +264,13 @@ private:
         // 包名
         QTableWidgetItem *pkgItem = new QTableWidgetItem(packageName);
         pkgItem->setTextAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-        pkgItem->setForeground(QBrush(QColor("#606060"))); // 标准灰色
+        pkgItem->setForeground(QBrush(QColor(Theme::textMuted()))); // 次要灰色，自动适配明暗
         table->setItem(row, 2, pkgItem);
 
         // 版本
         QTableWidgetItem *versionItem = new QTableWidgetItem(version);
         versionItem->setTextAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-        versionItem->setForeground(QBrush(QColor("#606060")));
+        versionItem->setForeground(QBrush(QColor(Theme::textMuted())));
         table->setItem(row, 3, versionItem);
 
         // 操作按钮区域
@@ -324,17 +325,17 @@ private:
             // 特殊按钮样式
             QString specificStyle;
             if (name == "卸载") {
-                // 红色文字，边框微红
-                specificStyle = R"(
+                // 红色文字，边框微红（统一引用全局语义色）
+                specificStyle = Theme::fill(R"(
                     QPushButton {
-                        color: #EF5350; 
-                        border: 1px solid #EF5350;
+                        color: @{danger};
+                        border: 1px solid @{danger};
                     }
                     QPushButton:hover {
-                        border: 1px solid #D32F2F;
-                        background-color: rgba(211, 47, 47, 40); 
+                        border: 1px solid @{dangerHover};
+                        background-color: @{dangerSoft};
                     }
-                )";
+                )");
             } 
 
             button->setStyleSheet(baseStyle + specificStyle);

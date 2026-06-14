@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Theme.h"
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -37,10 +38,9 @@ public:
     {
         setWindowTitle(title);
 
-        bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+        const Theme::Palette &theme = Theme::palette();
 
-        QString bgColor = isDarkMode ? "#121212" : "#F4F5F7";
-        this->setStyleSheet(QString("QDialog { background-color: %1; }").arg(bgColor));
+        this->setStyleSheet(QString("QDialog { background-color: %1; }").arg(theme.pageBg));
 
         m_mainLayout = new QVBoxLayout(this);
 
@@ -52,9 +52,8 @@ public:
         // --- 移动端特有：自定义顶部导航栏 ---
         auto navBarWidget = new QWidget(this);
         navBarWidget->setFixedHeight(54);
-        
-        QString navBgColor = isDarkMode ? "#1E1E1E" : "#ffffff";
-        navBarWidget->setStyleSheet(QString("background-color: %1;").arg(navBgColor));
+
+        navBarWidget->setStyleSheet(QString("background-color: %1;").arg(theme.surface));
 
         auto navBarLayout = new QHBoxLayout(navBarWidget);
         navBarLayout->setContentsMargins(10, 0, 10, 0);
@@ -69,7 +68,7 @@ public:
             QPainter painter(&pixmap);
             painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
             // 暗色模式用亮色图标，浅色模式用深色图标
-            QColor iconColor = isDarkMode ? QColor("#E0E0E0") : QColor("#303133");
+            QColor iconColor = QColor(theme.textPrimary);
             painter.fillRect(pixmap.rect(), iconColor);
             painter.end();
             backBtn->setIcon(QIcon(pixmap));
@@ -88,8 +87,7 @@ public:
         font.setPointSize(14);
         titleLabel->setFont(font);
 
-        QString titleColor = isDarkMode ? "#E0E0E0" : "#303133";
-        titleLabel->setStyleSheet(QString("color: %1;").arg(titleColor));
+        titleLabel->setStyleSheet(QString("color: %1;").arg(theme.textPrimary));
 
         // 右侧占位符：为了让中间的标题绝对居中，右侧需要一个和左侧按钮等宽的空对象
         auto rightSpacer = new QWidget(this);
@@ -106,8 +104,7 @@ public:
         line->setFrameShape(QFrame::HLine);
         line->setFixedHeight(1);
 
-        QString lineColor = isDarkMode ? "#2D2D30" : "#dddddd";
-        line->setStyleSheet(QString("background-color: %1; border: none;").arg(lineColor));
+        line->setStyleSheet(QString("background-color: %1; border: none;").arg(theme.divider));
         
         m_mainLayout->addWidget(line);
 

@@ -1,5 +1,6 @@
 #include "DeviceWindow.h"
 #include "DeviceWidget.h"
+#include "Theme.h"
 #include "EventHub.h"
 #include "UsbDeviceManager.h"
 #include "MainWindow.h"
@@ -102,25 +103,25 @@ DeviceWindow::DeviceWindow(DeviceConnection* connection, DeviceInfo* deviceInfo,
     // 设置全局样式
 #if defined(Q_OS_IOS) || defined(Q_OS_ANDROID)
     // 【移动端】去掉所有圆角 (border-radius: 0px)，做成沉浸式底栏块
-    buttonPanel->setStyleSheet(
+    buttonPanel->setStyleSheet(Theme::fill(
         "QFrame#FloatingPanel { background-color: #1E2228; border-radius: 0px; }"
-        "QPushButton { color: white; background-color: #0D74CE; border: none; border-radius: 0px; font-size: 15px; font-weight: bold; padding: 0 16px; }"
-        "QPushButton:hover { background-color: #158AE5; }"
-        "QPushButton:pressed { background-color: #0A5A9E; }"
-    );
+        "QPushButton { color: white; background-color: @{primary}; border: none; border-radius: 0px; font-size: 15px; font-weight: bold; padding: 0 16px; }"
+        "QPushButton:hover { background-color: @{primaryHover}; }"
+        "QPushButton:pressed { background-color: @{primaryPressed}; }"
+    ));
 #else
     // 【桌面端】样式：垂直滚动条
-    buttonPanel->setStyleSheet(
+    buttonPanel->setStyleSheet(Theme::fill(
         "QFrame#FloatingPanel { background-color: rgba(30, 34, 40, 220); border-radius: 8px; }"
-        "QPushButton { color: white; background-color: #0D74CE; border: none; border-radius: 5px; font-size: 14px; font-weight: bold; }"
-        "QPushButton:hover { background-color: #158AE5; }"
-        "QPushButton:pressed { background-color: #0A5A9E; }"
+        "QPushButton { color: white; background-color: @{primary}; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; }"
+        "QPushButton:hover { background-color: @{primaryHover}; }"
+        "QPushButton:pressed { background-color: @{primaryPressed}; }"
         "QScrollBar:vertical { background: transparent; width: 6px; margin: 4px 0px 4px 0px; }"
         "QScrollBar::handle:vertical { background: rgba(255, 255, 255, 80); border-radius: 3px; min-height: 20px; }"
         "QScrollBar::handle:vertical:hover { background: rgba(255, 255, 255, 120); }"
         "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }"
         "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }"
-    );
+    ));
 #endif
 
     addContextMenuActions();

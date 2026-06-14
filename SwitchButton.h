@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Theme.h"
 #include <QWidget>
 #include <QPropertyAnimation>
 #include <QPainter>
@@ -93,7 +94,7 @@ protected:
         p.setPen(Qt::NoPen);
         p.drawRoundedRect(0, 0, w, h, h/2, h/2);
 
-        p.setPen(m_offset > 0.5 ? QColor(Qt::white) : QColor("#64748B"));
+        p.setPen(m_offset > 0.5 ? QColor(Qt::white) : QColor(Theme::textMuted()));
         QFont labelFont = font();
         labelFont.setPixelSize(13);
         labelFont.setWeight(m_offset > 0.5 ? QFont::DemiBold : QFont::Normal);

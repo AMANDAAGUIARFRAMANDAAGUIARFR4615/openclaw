@@ -181,102 +181,59 @@ private:
     }
 
     void setupStyle() {
-        bool isDarkMode = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-        QString qss;
+        this->setStyleSheet(Theme::fill(QStringLiteral(R"(
+            RedeemRecordDialog { background-color: @{pageBg}; }
+            #TopWidget { background-color: @{surface}; border-bottom: 1px solid @{border}; }
+            #CardContainer { background-color: @{pageBg}; }
 
-        if (isDarkMode) {
-            qss = R"(
-                RedeemRecordDialog { background-color: #121212; }
-                #TopWidget { background-color: #1E1E1E; border-bottom: 1px solid #2D2D30; }
-                #CardContainer { background-color: #121212; }
+            QDateEdit {
+                border: 1px solid @{borderStrong}; border-radius: 8px; padding: 5px 10px;
+                background-color: @{inputBg}; font-size: 13px; color: @{textPrimary};
+            }
+            QDateEdit:focus { border: 1px solid @{primary}; }
+            QDateEdit:disabled { background-color: @{surfaceAlt}; color: @{textMuted}; }
+            QDateEdit::drop-down { border: none; width: 22px; }
+            QDateEdit::down-arrow {
+                width: 0; height: 0; image: none;
+                border-left: 5px solid transparent; border-right: 5px solid transparent;
+                border-top: 6px solid @{textSecondary}; margin-right: 6px;
+            }
+            QCheckBox { color: @{textSecondary}; }
+            QRadioButton { color: @{textPrimary}; font-size: 14px; spacing: 8px; }
+            QRadioButton::indicator { width: 18px; height: 18px; }
 
-                QDateEdit {
-                    border: 1px solid #3E3E42; border-radius: 4px; padding: 4px 10px;
-                    background-color: #252526; font-size: 13px; color: #D4D4D4;
-                }
-                QDateEdit:disabled { background-color: #1E1E1E; color: #666666; }
-                QCheckBox { color: #CCCCCC; }
-                QRadioButton { color: #E0E0E0; font-size: 14px; spacing: 8px; }
-                QRadioButton::indicator { width: 18px; height: 18px; }
+            #QueryButton {
+                background-color: @{primary}; color: @{onPrimary}; border: none;
+                border-radius: 8px; font-size: 14px; font-weight: 600; padding: 0 18px;
+            }
+            #QueryButton:hover { background-color: @{primaryHover}; }
+            #QueryButton:pressed { background-color: @{primaryPressed}; }
 
-                #QueryButton {
-                    background-color: #0E639C; color: #FFFFFF; border: none;
-                    border-radius: 4px; font-size: 14px; font-weight: bold; padding: 0 15px; 
-                }
-                #QueryButton:pressed { background-color: #1177BB; }
+            /* --- 移动端卡片样式 --- */
+            #CardFrame { background-color: @{surface}; border-radius: 12px; border: 1px solid @{border}; }
+            .CodeLabel { font-size: 16px; font-weight: bold; color: @{textPrimary}; font-family: monospace; }
+            .InfoLabel { font-size: 13px; color: @{textMuted}; }
+            .CopyButton {
+                background-color: @{surfaceAlt}; color: @{primary}; border: 1px solid @{borderStrong};
+                border-radius: 12px; padding: 4px 12px; font-size: 12px; font-weight: bold;
+            }
+            .CopyButton:hover { border-color: @{primary}; }
+            .CopyButton:pressed { background-color: @{surfaceHover}; }
 
-                /* --- 移动端卡片样式 --- */
-                #CardFrame { background-color: #1E1E1E; border-radius: 8px; border: 1px solid #2D2D30; }
-                .CodeLabel { font-size: 16px; font-weight: bold; color: #E0E0E0; font-family: monospace; }
-                .InfoLabel { font-size: 13px; color: #888888; }
-                .CopyButton {
-                    background-color: #252526; color: #4DAAF1; border: 1px solid #3E3E42;
-                    border-radius: 12px; padding: 4px 12px; font-size: 12px; font-weight: bold;
-                }
-                .CopyButton:pressed { background-color: #333333; }
-
-                /* --- PC端表格现代化样式 --- */
-                QTableWidget {
-                    background-color: #1E1E1E; border-radius: 6px;
-                    border: 1px solid #2D2D30; outline: none;
-                }
-                QTableWidget::item {
-                    border-bottom: 1px solid #2D2D30; padding: 0px 10px; color: #CCCCCC; font-size: 13px;
-                }
-                QTableWidget::item:selected { background-color: #094771; color: #FFFFFF; }
-                QHeaderView::section {
-                    background-color: #252526; color: #AAAAAA; font-weight: bold; font-size: 13px;
-                    border: none; border-bottom: 2px solid #2D2D30; padding: 8px 10px; text-align: left;
-                }
-            )";
-        } else {
-            qss = R"(
-                RedeemRecordDialog { background-color: #F4F5F7; }
-                #TopWidget { background-color: #FFFFFF; border-bottom: 1px solid #E4E7ED; }
-                #CardContainer { background-color: #F4F5F7; }
-
-                QDateEdit {
-                    border: 1px solid #DCDFE6; border-radius: 4px; padding: 4px 10px;
-                    background-color: #FFFFFF; font-size: 13px; color: #303133;
-                }
-                QDateEdit:disabled { background-color: #F2F6FC; color: #C0C4CC; }
-                QCheckBox { color: #606266; }
-                QRadioButton { color: #303133; font-size: 14px; spacing: 8px; }
-                QRadioButton::indicator { width: 18px; height: 18px; }
-
-                #QueryButton {
-                    background-color: #409EFF; color: white; border: none;
-                    border-radius: 4px; font-size: 14px; font-weight: bold; padding: 0 15px; 
-                }
-                #QueryButton:pressed { background-color: #3a8ee6; }
-
-                /* --- 移动端卡片样式 --- */
-                #CardFrame { background-color: #FFFFFF; border-radius: 8px; border: 1px solid #EBEEF5; }
-                .CodeLabel { font-size: 16px; font-weight: bold; color: #303133; font-family: monospace; }
-                .InfoLabel { font-size: 13px; color: #909399; }
-                .CopyButton {
-                    background-color: #F2F6FC; color: #409EFF; border: 1px solid #DCDFE6;
-                    border-radius: 12px; padding: 4px 12px; font-size: 12px; font-weight: bold;
-                }
-                .CopyButton:pressed { background-color: #E4E7ED; }
-
-                /* --- PC端表格现代化样式 --- */
-                QTableWidget {
-                    background-color: #FFFFFF; border-radius: 6px;
-                    border: 1px solid #E4E7ED; outline: none;
-                }
-                QTableWidget::item {
-                    border-bottom: 1px solid #EBEEF5; padding: 0px 10px; color: #606266; font-size: 13px;
-                }
-                QTableWidget::item:selected { background-color: #F0F7FF; color: #409EFF; }
-                QHeaderView::section {
-                    background-color: #FAFAFA; color: #909399; font-weight: bold; font-size: 13px;
-                    border: none; border-bottom: 2px solid #EBEEF5; padding: 8px 10px; text-align: left;
-                }
-            )";
-        }
-        
-        this->setStyleSheet(qss);
+            /* --- PC端表格现代化样式 --- */
+            QTableWidget {
+                background-color: @{surface}; border-radius: 10px;
+                border: 1px solid @{border}; outline: none;
+            }
+            QTableWidget::item {
+                border-bottom: 1px solid @{divider}; padding: 0px 10px; color: @{textPrimary}; font-size: 13px;
+            }
+            QTableWidget::item:selected { background-color: @{primary}; color: @{onPrimary}; }
+            QHeaderView::section {
+                background-color: @{surfaceAlt}; color: @{textSecondary}; font-weight: bold; font-size: 13px;
+                border: none; border-bottom: 2px solid @{border}; padding: 8px 10px; text-align: left;
+            }
+        )")));
     }
 
     void setupConnections() {
@@ -324,9 +281,7 @@ private:
             if (jsonArray.isEmpty()) {
                 auto emptyLabel = new QLabel("暂无兑换码记录", cardContainer);
                 emptyLabel->setAlignment(Qt::AlignCenter);
-                bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-                QString emptyColor = isDark ? "#666666" : "#C0C4CC";
-                emptyLabel->setStyleSheet(QString("color: %1; font-size: 14px; margin-top: 50px;").arg(emptyColor));
+                emptyLabel->setStyleSheet(QString("color: %1; font-size: 14px; margin-top: 50px;").arg(Theme::textMuted()));
                 
                 cardLayout->insertWidget(cardLayout->count() - 1, emptyLabel);
                 return;
@@ -353,13 +308,8 @@ private:
                 connect(copyBtn, &QPushButton::clicked, [=]() {
                     qApp->clipboard()->setText(codeStr);
                     copyBtn->setText("已复制 ✔");
-                    
-                    bool isDark = qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-                    if (isDark) {
-                        copyBtn->setStyleSheet("background-color: #1A3315; color: #67C23A; border-color: #67C23A;");
-                    } else {
-                        copyBtn->setStyleSheet("background-color: #E1F3D8; color: #67C23A; border-color: #67C23A;");
-                    }
+
+                    copyBtn->setStyleSheet(QString("color: %1; border-color: %1;").arg(Theme::success()));
 
                     QTimer::singleShot(1500, copyBtn, [=](){
                         copyBtn->setText("复制");
