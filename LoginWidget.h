@@ -122,11 +122,12 @@ public:
                 this));
 
         privateRouteIpField = wrapInputField(privateRouteIpLineEdit, InputIcon::Device);
+        routeTypeComboBox->setObjectName("routeCombo");
+
         routeRow = new QWidget;
         auto *routeLayout = new QHBoxLayout(routeRow);
         routeLayout->setContentsMargins(0, 0, 0, 0);
         routeLayout->setSpacing(10);
-        routeTypeComboBox->setObjectName("routeTypeComboBox");
         routeLayout->addWidget(routeTypeComboBox, 1);
         routeLayout->addWidget(privateRouteIpField, 2);
 
@@ -194,7 +195,7 @@ public:
         windowLayout->addStretch(1);
         windowLayout->addWidget(formContainer, 0, Qt::AlignHCenter);
         windowLayout->addStretch(1);
-        windowLayout->addWidget(statusLabel, 0, Qt::AlignHCenter);
+        windowLayout->addWidget(statusLabel);
 
         updateStyle();
         loadCredentials();
@@ -898,36 +899,31 @@ private:
                 border-color: %1;
             }
 
-            QComboBox#routeTypeComboBox {
-                min-height: 48px;
-                padding: 0px 12px;
+            QComboBox#routeCombo {
+                background: %7;
                 border: 1px solid %8;
                 border-radius: 12px;
-                background: %7;
+                min-height: 48px;
+                padding-left: 14px;
+                padding-right: 6px;
                 color: %9;
-                font-size: 14px;
+                font-size: 15px;
             }
-            QComboBox#routeTypeComboBox:focus {
-                border: 2px solid %1;
+            QComboBox#routeCombo:hover { border: 1px solid %1; }
+            QComboBox#routeCombo:focus, QComboBox#routeCombo:on { border: 2px solid %1; }
+            QComboBox#routeCombo::drop-down { border: none; width: 30px; }
+            QComboBox#routeCombo::down-arrow {
+                image: url(%19); width: 12px; height: 12px; margin-right: 8px;
             }
-            QComboBox#routeTypeComboBox::drop-down {
-                border: none;
-                width: 28px;
-            }
-            QComboBox#routeTypeComboBox::down-arrow {
-                image: none;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 6px solid %1;
-                margin-right: 8px;
-            }
-            QComboBox#routeTypeComboBox QAbstractItemView {
+            QComboBox#routeCombo QAbstractItemView {
                 background: %7;
                 color: %9;
                 border: 1px solid %8;
+                border-radius: 8px;
+                outline: 0;
+                padding: 4px;
                 selection-background-color: %1;
                 selection-color: #FFFFFF;
-                outline: 0;
             }
 
             QPushButton#linkBtn {
@@ -988,7 +984,9 @@ private:
             }
         )").arg(accent, accentHover, accentPressed,
                  cardBg, cardBorder, titleColor, inputBg, inputBorder, inputText, placeholder,
-                 checkText, checkBorder, checkBg, subBtnBg, subBtnHover, toggleHover, disabledBtn, subBtnPressed);
+                 checkText, checkBorder, checkBg, subBtnBg, subBtnHover, toggleHover, disabledBtn, subBtnPressed,
+                 dark ? QStringLiteral(":/icons/chevron_down_dark.svg")
+                      : QStringLiteral(":/icons/chevron_down_light.svg"));
 
         setStyleSheet(qss);
 
